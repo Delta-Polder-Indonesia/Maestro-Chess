@@ -9,11 +9,11 @@ const roboto = Roboto({
 })
 
 export const metadata: Metadata = {
-  title: "Brilliant Chess - Free Chess Analyzer",
+  title: "Maestro Chess - Free Chess Analyzer",
   description: "Analyze your chess games and improve your skills completely free.",
-  keywords: ["chess", "chess analysis", "free chess analyzer", "free chess.com analyzer", "analyze chess for free", "analyze chess games", "brilliant move chess", "brilliant chess", "brilliant-chess"],
+  keywords: ["chess", "chess analysis", "free chess analyzer", "free chess.com analyzer", "analyze chess for free", "analyze chess games", "brilliant move chess", "maestro chess", "maestro-chess"],
   authors: [{ name: 'Delo', url: "https://github.com/wdeloo" }],
-  applicationName: "Brilliant Chess",
+  applicationName: "Maestro Chess",
 
   icons: {
     icon: "favicon.ico"

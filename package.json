@@ -1,8 +1,8 @@
 {
-  "name": "brilliant-chess",
+  "name": "maestro-chess",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://wdeloo.github.io/Brilliant-Chess/",
+  "homepage": "https://github.com/Delta-Polder-Indonesia/Maestro-Chess",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

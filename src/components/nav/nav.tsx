@@ -39,7 +39,7 @@ export default function Nav() {
     }
 
     const botLinks: BotLinks[] = [
-        { label: "Source Code", href: "https://github.com/wdeloo/Brilliant-Chess", icon: (props: {className: string}) => <GitHub class={props.className} /> },
+        { label: "Source Code", href: "https://github.com/Delta-Polder-Indonesia/Maestro-Chess", icon: (props: {className: string}) => <GitHub class={props.className} /> },
         { label: "Attributions", href: "/attributions", icon: (props: {className: string}) => <Licenses class={props.className} /> },
     ]
 
@@ -73,9 +73,9 @@ export default function Nav() {
         <nav className="flex flex-col navTop:h-screen navTop:w-max w-screen relative">
             <div className="navTop:pt-1 navTop:pb-6 navTop:h-full w-full overflow-y-auto bg-backgroundBox flex navTop:flex-col flex-row justify-between select-none navTop:items-start items-stretch">
                 <div ref={topLinksRef} className="flex navTop:flex-col flex-row">
-                    <Link draggable={false} onMouseEnter={() => setOpenedMenu(null)} href="/" className="flex flex-row gap-1 font-extrabold text-xl navTop:p-3 p-1.5 transition-colors hover:bg-backgroundBoxHover hover:text-foregroundHighlighted">
-                        <Image draggable={false} height={30} width={30} alt="logo" src={`${process.env.NEXT_PUBLIC_BASE_PATH}/images/logo.svg`} className="navTop:mt-[-2px]" />
-                        <div className="h-fit w-fit reduceNav:block hidden">Brilliant<span className="text-sm font-light">Chess</span></div>
+                    <Link draggable={false} onMouseEnter={() => setOpenedMenu(null)} href="/" aria-label="Maestro Chess" className="flex flex-row gap-1 font-extrabold text-xl navTop:p-3 p-1.5 transition-colors hover:bg-backgroundBoxHover hover:text-foregroundHighlighted">
+                        <Image draggable={false} height={30} width={30} alt="" src={`${process.env.NEXT_PUBLIC_BASE_PATH}/images/logo.svg`} className="navTop:mt-[-2px]" />
+                        <div className="h-fit w-fit reduceNav:block hidden">Maestro{" "}<span className="text-sm font-light">Chess</span></div>
                     </Link>
                     {topLinks.map((link, i) => {
                         return (
