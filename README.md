@@ -18,17 +18,23 @@ Buka <http://localhost:3000>. Untuk pengembangan lokal, biarkan `NEXT_PUBLIC_BAS
 
 ## Pemeriksaan sebelum merge
 
-GitHub Actions menjalankan CI pada pull request ke `main` dan setiap push ke `main`. Untuk mengulangi pemeriksaan secara lokal, gunakan Node.js 22 dan `.env` seperti pada langkah instalasi:
+GitHub Actions menjalankan CI pada setiap push dan pull request. CI juga dapat dijalankan secara manual dari tab Actions. Job terpisah memeriksa ESLint dan TypeScript, build produksi beserta kelengkapan hasil ekspor statis, serta keamanan dependensi. Tidak diperlukan secret untuk pemeriksaan ini.
+
+Untuk mengulangi pemeriksaan secara lokal, gunakan Node.js 22 dan `.env` seperti pada langkah instalasi:
 
 ```sh
 npm ci
 npm run lint
 npm run typecheck
+npm test --if-present
 npm run build
-npm audit --audit-level=high
+npm run test:build
+npm audit --include=dev --audit-level=high
 ```
 
-Peringatan ESLint membuat pemeriksaan lint gagal. Build memerlukan akses ke Google Fonts untuk mengunduh Roboto. Audit berjalan terpisah dari build dan gagal jika npm menemukan kerentanan **high** atau **critical**, termasuk pada dependensi pengembangan.
+Peringatan ESLint membuat pemeriksaan lint gagal. File hasil build dan Stockfish pihak ketiga tidak ikut dilint. CI akan menjalankan `npm test` jika skrip tersebut tersedia; saat ini belum ada rangkaian unit test terpisah. `test:build` memeriksa halaman, aset Next.js, data opening, serta file engine Stockfish yang diperlukan di `dist/`. Build memerlukan akses ke Google Fonts untuk mengunduh Roboto.
+
+Audit berjalan terpisah dari build dan gagal jika npm menemukan kerentanan **high** atau **critical**, termasuk pada dependensi pengembangan. Versi PostCSS bawaan Next.js ditimpa dengan versi 8 yang lebih baru untuk mengatasi kerentanan; tinjau kembali override tersebut saat memperbarui Next.js.
 
 ## Menerbitkan situs
 
