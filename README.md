@@ -18,21 +18,32 @@ Buka <http://localhost:3000>. Untuk pengembangan lokal, biarkan `NEXT_PUBLIC_BAS
 
 ## Pemeriksaan sebelum merge
 
-GitHub Actions menjalankan CI pada pull request ke `main` dan setiap push ke `main`. Untuk mengulangi pemeriksaan secara lokal, gunakan Node.js 22 dan `.env` seperti pada langkah instalasi:
+GitHub Actions menjalankan CI pada setiap push dan pull request. CI juga dapat dijalankan secara manual dari tab Actions. Job terpisah memeriksa ESLint dan TypeScript, build produksi beserta kelengkapan hasil ekspor statis, serta keamanan dependensi. Tidak diperlukan secret untuk pemeriksaan ini.
+
+Untuk mengulangi pemeriksaan secara lokal, gunakan Node.js 22 dan `.env` seperti pada langkah instalasi:
 
 ```sh
 npm ci
 npm run lint
 npm run typecheck
+npm test
 npm run build
-npm audit --audit-level=high
+npm run test:build
+npm run test:vercel
+npm audit --include=dev --audit-level=high
 ```
 
-Peringatan ESLint membuat pemeriksaan lint gagal. Build memerlukan akses ke Google Fonts untuk mengunduh Roboto. Audit berjalan terpisah dari build dan gagal jika npm menemukan kerentanan **high** atau **critical**, termasuk pada dependensi pengembangan.
+Peringatan ESLint membuat pemeriksaan lint gagal. File hasil build dan Stockfish pihak ketiga tidak ikut dilint. `npm test` menguji konfigurasi base path saat variabel tidak disetel, kosong, maupun berisi subpath. CI menjalankan build tanpa menyetel `NEXT_PUBLIC_BASE_PATH`, seperti konfigurasi root bawaan. `test:build` memeriksa halaman, URL aset yang tidak valid, aset Next.js, data opening, serta file engine Stockfish yang diperlukan di `dist/`. `test:vercel` memeriksa konfigurasi dan manifest build Next.js di `.next/`. Build memerlukan akses ke Google Fonts untuk mengunduh Roboto.
+
+Audit berjalan terpisah dari build dan gagal jika npm menemukan kerentanan **high** atau **critical**, termasuk pada dependensi pengembangan. Versi PostCSS bawaan Next.js ditimpa dengan versi 8 yang lebih baru untuk mengatasi kerentanan; tinjau kembali override tersebut saat memperbarui Next.js.
 
 ## Menerbitkan situs
 
-Jika situs akan diakses di subpath seperti `/Maestro-Chess/`, isi `NEXT_PUBLIC_BASE_PATH=/Maestro-Chess` di `.env` sebelum menjalankan `npm run build`. Jika situs berada di root domain, biarkan nilainya kosong. Unggah isi folder `dist/` hasil build ke hosting statis.
+Jika situs akan diakses di subpath seperti `/Maestro-Chess/`, isi `NEXT_PUBLIC_BASE_PATH=/Maestro-Chess` di `.env` sebelum menjalankan `npm run build`. Jika situs berada di root domain, biarkan nilainya kosong atau tidak disetel. Unggah isi folder `dist/` hasil build ke hosting statis.
+
+Untuk deployment Vercel, `vercel.json` mengatur deteksi otomatis Output Directory. Jangan mengarahkan builder Next.js ke `dist`: folder tersebut berisi situs statis, sedangkan manifest build yang dibutuhkan Vercel berada di `.next/`.
+
+Karena menggunakan `output: "export"`, aturan HTTP header di `next.config.ts` tidak diterapkan secara otomatis pada hasil ekspor; konfigurasi header harus diatur pada hosting statis.
 
 ## Lisensi dan kredit
 

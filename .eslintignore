@@ -1,0 +1,8 @@
+# Build output and generated Next.js types
+.next/
+dist/
+out/
+next-env.d.ts
+
+# Bundled third-party Stockfish files
+public/engine/
