@@ -1,4 +1,4 @@
-import { statSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const exportDirectory = process.argv[2] ?? "dist";
@@ -25,6 +25,21 @@ for (const file of requiredFiles) {
     }
   } catch {
     console.error(`Missing or empty export file: ${path}`);
+    failed = true;
+  }
+}
+
+for (const file of ["index.html", "404.html", "attributions.html"]) {
+  const path = join(exportDirectory, file);
+  try {
+    const html = readFileSync(path, "utf8");
+    const invalidUrl = html.match(/\b(?:src|href)="undefined\/[^"]*"/);
+    if (invalidUrl) {
+      console.error(`Invalid exported asset URL in ${path}: ${invalidUrl[0]}`);
+      failed = true;
+    }
+  } catch {
+    console.error(`Cannot read exported page: ${path}`);
     failed = true;
   }
 }

@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx,.mjs --max-warnings=0",
     "typecheck": "tsc --noEmit",
+    "test": "node --test",
     "test:build": "node scripts/verify-static-export.mjs",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist -t"

@@ -26,19 +26,21 @@ Untuk mengulangi pemeriksaan secara lokal, gunakan Node.js 22 dan `.env` seperti
 npm ci
 npm run lint
 npm run typecheck
-npm test --if-present
+npm test
 npm run build
 npm run test:build
 npm audit --include=dev --audit-level=high
 ```
 
-Peringatan ESLint membuat pemeriksaan lint gagal. File hasil build dan Stockfish pihak ketiga tidak ikut dilint. CI akan menjalankan `npm test` jika skrip tersebut tersedia; saat ini belum ada rangkaian unit test terpisah. `test:build` memeriksa halaman, aset Next.js, data opening, serta file engine Stockfish yang diperlukan di `dist/`. Build memerlukan akses ke Google Fonts untuk mengunduh Roboto.
+Peringatan ESLint membuat pemeriksaan lint gagal. File hasil build dan Stockfish pihak ketiga tidak ikut dilint. `npm test` menguji konfigurasi base path saat variabel tidak disetel, kosong, maupun berisi subpath. CI menjalankan build tanpa menyetel `NEXT_PUBLIC_BASE_PATH`, seperti konfigurasi root bawaan. `test:build` memeriksa halaman, URL aset yang tidak valid, aset Next.js, data opening, serta file engine Stockfish yang diperlukan di `dist/`. Build memerlukan akses ke Google Fonts untuk mengunduh Roboto.
 
 Audit berjalan terpisah dari build dan gagal jika npm menemukan kerentanan **high** atau **critical**, termasuk pada dependensi pengembangan. Versi PostCSS bawaan Next.js ditimpa dengan versi 8 yang lebih baru untuk mengatasi kerentanan; tinjau kembali override tersebut saat memperbarui Next.js.
 
 ## Menerbitkan situs
 
-Jika situs akan diakses di subpath seperti `/Maestro-Chess/`, isi `NEXT_PUBLIC_BASE_PATH=/Maestro-Chess` di `.env` sebelum menjalankan `npm run build`. Jika situs berada di root domain, biarkan nilainya kosong. Unggah isi folder `dist/` hasil build ke hosting statis.
+Jika situs akan diakses di subpath seperti `/Maestro-Chess/`, isi `NEXT_PUBLIC_BASE_PATH=/Maestro-Chess` di `.env` sebelum menjalankan `npm run build`. Jika situs berada di root domain, biarkan nilainya kosong atau tidak disetel. Unggah isi folder `dist/` hasil build ke hosting statis.
+
+Karena menggunakan `output: "export"`, aturan HTTP header di `next.config.ts` tidak diterapkan secara otomatis; konfigurasi header harus diatur pada hosting statis.
 
 ## Lisensi dan kredit
 
