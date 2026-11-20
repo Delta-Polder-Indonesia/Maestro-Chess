@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test",
     "test:build": "node scripts/verify-static-export.mjs",
+    "test:vercel": "node scripts/verify-vercel-build.mjs",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist -t"
   },

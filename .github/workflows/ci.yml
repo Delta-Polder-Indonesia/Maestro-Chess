@@ -59,6 +59,8 @@ jobs:
         run: npm run build
       - name: Verify static export
         run: npm run test:build
+      - name: Verify Vercel build metadata
+        run: npm run test:vercel
 
   security:
     name: Dependency audit
