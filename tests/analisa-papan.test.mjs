@@ -22,7 +22,7 @@ function compile(path, dependencies) {
   const factory = runInThisContext(`(function (require, module, exports) {\n${compiled}\n})`);
   const compiledModule = { exports: {} };
   factory((id) => {
-    if (id === "react/jsx-runtime" || id === "lucide-react") return nodeRequire(id);
+    if (id === "react" || id === "react/jsx-runtime" || id === "lucide-react") return nodeRequire(id);
     if (id in dependencies) return dependencies[id];
     throw new Error(`Unexpected dashboard dependency: ${id}`);
   }, compiledModule, compiledModule.exports);
@@ -80,13 +80,14 @@ test("dashboard has six cards, a separate new action, and a usable recent-work l
   assert.equal(cards.length, 6);
   assert.equal(byTestId(renderer, "papan-kartu-report").findByType("h2").children.join(""), "Report Analisa");
   assert.match(text(byTestId(renderer, "pekerjaan-daftar")), /File Terbaru/);
-  assert.match(text(item(renderer, "interrupted")), /Analisis belum selesai/);
-  assert.match(text(item(renderer, "previous")), /hasil sebelumnya tersedia/);
-  // An extra retry button must wrap below the main button on narrow screens.
+  assert.match(text(item(renderer, "interrupted")), /Terputus/);
+  assert.match(text(item(renderer, "previous")), /Terputus/);
   const previousOpen = item(renderer, "previous").find((node) => node.props["data-uji"] === "pekerjaan-buka");
-  assert.match(previousOpen.props.className, /\bw-full\b.*\bflex-none\b/);
-  assert.match(previousOpen.props.className, /sm:w-auto.*sm:flex-1/);
-  assert.match(text(item(renderer, "running")), /Analisis sedang berjalan/);
+  assert.match(previousOpen.props["aria-label"], /hasil sebelumnya tersedia/);
+  assert.match(text(item(renderer, "running")), /Proses/);
+  // Each row remains compact; interrupted results have a labelled retry icon.
+  assert.match(item(renderer, "previous").props.className, /\bflex\b.*\bitems-center\b/);
+  assert.match(item(renderer, "previous").find((node) => node.props["data-uji"] === "pekerjaan-ulang").props["aria-label"], /Analisis ulang/);
 
   TestRenderer.act(() => {
     byTestId(renderer, "papan-tombol-report").props.onClick();
@@ -97,7 +98,7 @@ test("dashboard has six cards, a separate new action, and a usable recent-work l
     }
     item(renderer, "previous").find((node) => node.props["data-uji"] === "pekerjaan-ulang").props.onClick();
   });
-  assert.deepEqual(calls, ["report", "baru", "impor", "buka:draft", "buka:done", "ulang:interrupted", "buka:previous", "buka:running", "ulang:previous"]);
+  assert.deepEqual(calls, ["report", "baru", "impor", "buka:draft", "buka:done", "buka:interrupted", "buka:previous", "buka:running", "ulang:previous"]);
   for (const key of ["main", "analisa", "repertoar", "puzzle"]) {
     assert.equal(byTestId(renderer, `papan-tombol-${key}`).props.disabled, true);
   }
@@ -119,4 +120,60 @@ test("dashboard and board controls retain Indonesian and English labels", () => 
     assert.equal(dictionary.papan.promosi, promotion);
     renderer.unmount();
   }
+});
+
+test("recent files use the original compact panel and empty state without explanatory copy", () => {
+  const renderer = renderPapan(indonesia);
+  const panel = byTestId(renderer, "pekerjaan-daftar");
+  assert.match(panel.props.className, /rounded-lg border border-border bg-backgroundBoxBox p-4/);
+  assert.match(text(panel), /Belum ada file yang dibuka/);
+  assert.doesNotMatch(text(panel), /Laporan dan draf disimpan otomatis/);
+  assert.doesNotMatch(text(panel), /Impor partai atau mulai laporan/);
+  assert.equal(byTestId(renderer, "pekerjaan-lihat-semua").props.disabled, true);
+  assert.equal(byTestId(renderer, "pekerjaan-status").props.className, "sr-only");
+  renderer.unmount();
+});
+
+test("compact timestamps keep the full relative time accessible in both languages", () => {
+  const waktu = Date.now() - 2 * 60 * 60 * 1000;
+  const work = {
+    siap: true, tersedia: true, menyimpan: false, aktif: {},
+    daftar: [{ id: "previous", jenis: "laporan", status: "terputus", judul: "Alice vs Bob", adaHasil: true, waktu }],
+  };
+  for (const [dictionary, singkat, lengkap, status] of [
+    [indonesia, "2j", "2 jam yang lalu", "Analisis terputus · hasil sebelumnya tersedia"],
+    [english, "2h", "2 hours ago", "Analysis interrupted · previous result available"],
+  ]) {
+    const renderer = renderPapan(dictionary, {}, work);
+    const row = item(renderer, "previous");
+    const open = row.find((node) => node.props["data-uji"] === "pekerjaan-buka");
+    assert.ok(open.props["aria-label"].includes(status));
+    assert.ok(open.props["aria-label"].includes(lengkap));
+    const time = row.findByType("time");
+    assert.equal(time.props.dateTime, new Date(waktu).toISOString());
+    const [mobile, desktop] = time.findAllByType("span");
+    assert.equal(mobile.children.join(""), singkat);
+    assert.match(mobile.props.className, /sm:hidden/);
+    assert.equal(desktop.children.join(""), lengkap);
+    assert.match(desktop.props.className, /hidden sm:inline/);
+    renderer.unmount();
+  }
+});
+
+test("see all expands only the work history, including entries beyond the first ten", () => {
+  const work = {
+    siap: true, tersedia: true, menyimpan: false, aktif: {},
+    daftar: Array.from({ length: 12 }, (_, n) => ({ id: `item-${n}`, jenis: "draf", status: "draf", judul: `Draft ${n}`, waktu: n + 1 })),
+  };
+  const renderer = renderPapan(indonesia, {}, work);
+  const rows = () => renderer.root.findAll((node) => node.props["data-uji"] === "pekerjaan-item");
+  assert.equal(rows().length, 10);
+  assert.equal(byTestId(renderer, "pekerjaan-lihat-semua").props.disabled, false);
+  TestRenderer.act(() => byTestId(renderer, "pekerjaan-lihat-semua").props.onClick());
+  assert.equal(rows().length, 12);
+  assert.equal(byTestId(renderer, "pekerjaan-lihat-semua").props["aria-expanded"], true);
+  assert.equal(byTestId(renderer, "pekerjaan-lihat-semua").children.join(""), "Lihat lebih sedikit");
+  TestRenderer.act(() => byTestId(renderer, "pekerjaan-lihat-semua").props.onClick());
+  assert.equal(rows().length, 10);
+  renderer.unmount();
 });

@@ -1,94 +1,145 @@
-import { ChevronRight, FileClock, FileText, RotateCw } from "lucide-react";
+import { useState } from "react";
+import { RotateCw } from "lucide-react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { usePekerjaan } from "../../usePekerjaan.js";
 
-/** Daftar ini berisi pekerjaan yang benar-benar bisa dibuka kembali. */
+const BATAS_TERBARU = 10;
+
+function IkonFile({ className = "h-5 w-5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+      <path d="M5 13V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3" />
+      <path d="M2 19h7" />
+      <path d="M6 16l3 3-3 3" />
+    </svg>
+  );
+}
+
+function IkonJam({ className = "h-3.5 w-3.5" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <polyline points="12 7 12 12 15 15" />
+    </svg>
+  );
+}
+
+function formatWaktu(timestamp, bahasa) {
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return null;
+  const tanggal = new Date(timestamp);
+  if (Number.isNaN(tanggal.getTime())) return null;
+  const locale = bahasa === "en" ? "en-US" : "id-ID";
+  const lengkap = tanggal.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
+  const detik = Math.round((tanggal.getTime() - Date.now()) / 1000);
+  const satuan = [["year", 31536000], ["month", 2592000], ["week", 604800], ["day", 86400], ["hour", 3600], ["minute", 60]];
+  const [unit, ukuran] = satuan.find(([, nilai]) => Math.abs(detik) >= nilai) ?? ["second", 1];
+  const singkatan = bahasa === "en"
+    ? { year: "y", month: "mo", week: "w", day: "d", hour: "h", minute: "m" }
+    : { year: "th", month: "bln", week: "mg", day: "hr", hour: "j", minute: "m" };
+  const ringkas = unit === "second" ? (bahasa === "en" ? "now" : "baru")
+    : `${detik > 0 ? "+" : ""}${Math.abs(Math.round(detik / ukuran))}${singkatan[unit]}`;
+  try {
+    const rtf = new Intl.RelativeTimeFormat(bahasa === "en" ? "en" : "id", { numeric: "auto" });
+    return { lengkap, ringkas, relatif: rtf.format(Math.round(detik / ukuran), unit), iso: tanggal.toISOString() };
+  } catch {
+    return { lengkap, ringkas, relatif: lengkap, iso: tanggal.toISOString() };
+  }
+}
+
+/** Panel seperti beranda semula, tetapi isinya adalah pekerjaan yang dapat dilanjutkan. */
 export default function DaftarPekerjaan({ onBuka, onUlang }) {
   const { t, bahasa } = useI18n();
   const { siap, tersedia, menyimpan, daftar, aktif } = usePekerjaan();
-  const formatTanggal = new Intl.DateTimeFormat(bahasa === "en" ? "en-US" : "id-ID", {
-    dateStyle: "medium", timeStyle: "short",
-  });
+  const [lihatSemua, setLihatSemua] = useState(false);
+  const ditampilkan = lihatSemua ? daftar : daftar.slice(0, BATAS_TERBARU);
 
   return (
-    <section
-      data-uji="pekerjaan-daftar"
-      aria-labelledby="judul-pekerjaan"
-      className={`pb-8 ${daftar.length ? "order-first mb-6 mt-2 sm:order-none sm:mb-0 sm:mt-8" : "mt-8"}`}
-    >
-      <div className="mb-4 flex items-start gap-3">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-backgroundBoxBox text-foregroundGrey">
-          <FileClock size={19} aria-hidden="true" />
-        </span>
-        <div>
-          <h2 id="judul-pekerjaan" className="text-base font-semibold text-foreground">{t("analisa.pekerjaan.judul")}</h2>
-          <p className="mt-1 text-sm leading-5 text-foregroundGrey">{t("analisa.pekerjaan.keterangan")}</p>
-          {siap && tersedia ? (
-            <p role="status" className="mt-1 text-xs text-foregroundGrey">{t(menyimpan ? "analisa.pekerjaan.menyimpan" : "analisa.pekerjaan.tersimpan")}</p>
-          ) : null}
-        </div>
+    <section data-uji="pekerjaan-daftar" aria-labelledby="judul-pekerjaan" className="rounded-lg border border-border bg-backgroundBoxBox p-4 shadow-sm">
+      <div className="mb-2.5 flex items-center justify-between gap-2">
+        <h2 id="judul-pekerjaan" className="text-lg font-semibold text-foreground">{t("analisa.pekerjaan.judul")}</h2>
+        <button
+          type="button"
+          data-uji="pekerjaan-lihat-semua"
+          disabled={daftar.length <= BATAS_TERBARU}
+          aria-expanded={lihatSemua}
+          onClick={() => setLihatSemua((nilai) => !nilai)}
+          className="cursor-pointer rounded px-2 py-1 text-xs font-medium text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-foregroundHighlighted disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-foregroundGrey"
+        >
+          {t(lihatSemua ? "analisa.pekerjaan.lebihSedikit" : "analisa.pekerjaan.lihatSemua")}
+        </button>
       </div>
+      {siap && tersedia ? (
+        <span data-uji="pekerjaan-status" role="status" className="sr-only">{t(menyimpan ? "analisa.pekerjaan.menyimpan" : "analisa.pekerjaan.tersimpan")}</span>
+      ) : null}
 
       {!siap ? (
-        <p className="rounded-lg border border-border bg-backgroundBoxBox px-4 py-5 text-sm text-foregroundGrey">{t("analisa.pekerjaan.memuat")}</p>
+        <div className="flex h-[200px] items-center justify-center">
+          <p className="text-sm text-foregroundGrey">{t("analisa.pekerjaan.memuat")}</p>
+        </div>
       ) : daftar.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-backgroundBoxBox/50 px-4 py-6 text-sm text-foregroundGrey">
-          <p className="font-medium text-foreground">{t("analisa.pekerjaan.kosongJudul")}</p>
-          <p className="mt-1">{t("analisa.pekerjaan.kosongIsi")}</p>
+        <div className="flex h-[200px] flex-col items-center justify-center gap-2">
+          <IkonJam className="h-12 w-12 opacity-30" />
+          <p className="text-sm text-foregroundGrey">{t("analisa.pekerjaan.kosong")}</p>
         </div>
       ) : (
-        <ul className="overflow-hidden rounded-lg border border-border bg-backgroundBoxBox">
-          {daftar.map((item) => {
-            const draf = item.jenis === "draf";
-            const berjalan = item.status === "berjalan" && item.id === aktif.id && aktif.berjalan;
-            const belumSelesai = !draf && !["selesai", "baru"].includes(item.status) && !berjalan;
-            const judul = draf ? [t("analisa.pekerjaan.draf"), item.judul].filter(Boolean).join(" · ") : item.judul || t(
-              item.format === "fen" ? "analisa.pekerjaan.posisi" : "analisa.pekerjaan.laporan",
-            );
-            const status = draf ? t("analisa.pekerjaan.statusDraf") : berjalan
-              ? t("analisa.pekerjaan.statusBerjalan") : belumSelesai
-                ? t(item.adaHasil ? "analisa.pekerjaan.statusHasilLama" : "analisa.pekerjaan.statusTerputus")
-                : t(item.status === "baru" ? "analisa.pekerjaan.statusBaru" : "analisa.pekerjaan.statusSelesai");
-            const tanggal = Number.isFinite(item.waktu) && item.waktu > 0 ? new Date(item.waktu) : null;
-            const waktu = tanggal && !Number.isNaN(tanggal.getTime()) ? tanggal : null;
-            const aksi = belumSelesai && !item.adaHasil ? onUlang : onBuka;
-            const labelAksi = belumSelesai && !item.adaHasil
-              ? t("analisa.pekerjaan.ulang") : t("analisa.pekerjaan.buka");
-            return (
-              <li key={item.id} data-uji="pekerjaan-item" data-pekerjaan-id={item.id} className="flex flex-wrap items-center border-b border-border last:border-b-0 sm:flex-nowrap">
-                <button
-                  type="button"
-                  data-uji="pekerjaan-buka"
-                  onClick={() => aksi(item)}
-                  aria-label={`${labelAksi}: ${judul}`}
-                  className="flex w-full min-w-0 flex-none items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-backgroundBoxBoxHover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-backgroundBoxBoxHighlighted sm:w-auto sm:flex-1"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-backgroundBox text-foregroundGrey">
-                    <FileText size={18} aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-foreground">{judul}</span>
-                    <span className="mt-1 block text-xs leading-4 text-foregroundGrey">
-                      {status}{waktu ? <> · <time dateTime={waktu.toISOString()}>{formatTanggal.format(waktu)}</time></> : null}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-xs font-medium text-backgroundBoxBoxHighlighted">{labelAksi}</span>
-                  <ChevronRight size={16} className="shrink-0 text-foregroundGrey" aria-hidden="true" />
-                </button>
-                {belumSelesai && item.adaHasil ? (
+        <div className="max-h-[300px] overflow-y-auto">
+          <ul className="flex flex-col gap-0.5">
+            {ditampilkan.map((item) => {
+              const draf = item.jenis === "draf";
+              const berjalan = item.status === "berjalan" && item.id === aktif.id && aktif.berjalan;
+              const belumSelesai = !draf && !["selesai", "baru"].includes(item.status) && !berjalan;
+              const judul = draf ? [t("analisa.pekerjaan.draf"), item.judul].filter(Boolean).join(" · ") : item.judul || t(
+                item.format === "fen" ? "analisa.pekerjaan.posisi" : "analisa.pekerjaan.laporan",
+              );
+              const status = draf ? "Draf" : berjalan ? "Berjalan" : belumSelesai ? "Terputus" : item.status === "baru" ? "Baru" : "Selesai";
+              const keterangan = t(`analisa.pekerjaan.status${status === "Terputus" && item.adaHasil ? "HasilLama" : status}`);
+              const waktu = formatWaktu(item.waktu, bahasa);
+              return (
+                <li key={item.id} data-uji="pekerjaan-item" data-pekerjaan-id={item.id} className="flex min-w-0 items-center">
                   <button
                     type="button"
-                    data-uji="pekerjaan-ulang"
-                    onClick={() => onUlang(item)}
-                    className="mb-3 ml-16 mr-4 inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-foreground sm:mb-0 sm:ml-0"
+                    data-uji="pekerjaan-buka"
+                    onClick={() => onBuka(item)}
+                    aria-label={`${t("analisa.pekerjaan.buka")}: ${judul}. ${keterangan}${waktu ? `. ${waktu.relatif}` : ""}`}
+                    className="flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-backgroundBoxBoxHover focus-visible:outline focus-visible:outline-2 focus-visible:outline-backgroundBoxBoxHighlighted sm:gap-3 sm:px-3"
                   >
-                    <RotateCw size={13} aria-hidden="true" /> {t("analisa.pekerjaan.ulang")}
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="shrink-0 text-foregroundGrey"><IkonFile /></span>
+                      <span className="truncate text-sm font-medium text-foreground">{judul}</span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span title={keterangan} className="rounded bg-backgroundBoxBoxHover px-1.5 py-0.5 text-[10px] font-semibold text-foregroundGrey">
+                        {t(`analisa.pekerjaan.singkat${status}`)}
+                      </span>
+                      {waktu ? (
+                        <span className="flex items-center gap-1 text-foregroundGrey" title={`${waktu.relatif} · ${waktu.lengkap}`}>
+                          <span className="hidden sm:inline-flex"><IkonJam /></span>
+                          <time dateTime={waktu.iso} className="text-xs">
+                            <span className="sm:hidden">{waktu.ringkas}</span>
+                            <span className="hidden sm:inline">{waktu.relatif}</span>
+                          </time>
+                        </span>
+                      ) : null}
+                    </span>
                   </button>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
+                  {belumSelesai && item.adaHasil ? (
+                    <button
+                      type="button"
+                      data-uji="pekerjaan-ulang"
+                      onClick={() => onUlang(item)}
+                      aria-label={`${t("analisa.pekerjaan.ulang")}: ${judul}`}
+                      title={t("analisa.pekerjaan.ulang")}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-foregroundHighlighted focus-visible:outline focus-visible:outline-2 focus-visible:outline-backgroundBoxBoxHighlighted"
+                    >
+                      <RotateCw size={14} aria-hidden="true" />
+                    </button>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </section>
   );

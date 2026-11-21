@@ -216,12 +216,14 @@ export default function LayarPapan({ onReport, onBaru, onImpor, onBukaPekerjaan,
   return (
     <PanelLayar lebarMaks="max-w-[1400px]">
       <h1 className="sr-only">{t("analisa.papan.judul")}</h1>
-      <div className="grid grid-cols-1 gap-4 pt-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {kartu.map((k) => (
-          <Kartu key={k.kunci} t={t} {...k} />
-        ))}
+      <div className="flex flex-col gap-6 pt-2.5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {kartu.map((k) => (
+            <Kartu key={k.kunci} t={t} {...k} />
+          ))}
+        </div>
+        <DaftarPekerjaan onBuka={onBukaPekerjaan} onUlang={onUlangPekerjaan} />
       </div>
-      <DaftarPekerjaan onBuka={onBukaPekerjaan} onUlang={onUlangPekerjaan} />
     </PanelLayar>
   );
 }
