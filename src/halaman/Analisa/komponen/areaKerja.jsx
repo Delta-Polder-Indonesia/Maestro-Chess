@@ -633,9 +633,10 @@ function LapisanLayar({
 
 // Lapisan bisa berganti tanpa membangun ulang seluruh pohon papan yang tetap
 // mounted. Pembaruan konteks papan/analisis tetap menembus batas memo ini.
+// Di desktop, safe center membagi sisa ruang tanpa memotong sisi kiri saat meluap.
 const IsiPapan = memo(function IsiPapan({ wadahRef }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-start gap-4 overflow-y-auto p-2 vertical:flex-row vertical:justify-start vertical:gap-2 vertical:overflow-visible vertical:p-4">
+    <div className="flex h-full w-full flex-col items-center justify-start gap-4 overflow-y-auto p-2 vertical:flex-row vertical:[justify-content:safe_center] vertical:gap-2 vertical:overflow-visible vertical:p-4">
       <div className="flex h-full w-min flex-col navTop:flex-row vertical:gap-[10px] gap-[6px]">
         <Game wadah={wadahRef} />
         <BoardMenu />

@@ -270,6 +270,99 @@ test("move navigation defers the side panel without overriding a later tab selec
   await act(async () => { renderer.unmount(); });
 });
 
+test("the board observes its workspace from the first mount and resizes when the sidebar changes", async (t) => {
+  const sebelumnya = { window: globalThis.window, ResizeObserver: globalThis.ResizeObserver };
+  const pendengar = new Map();
+  globalThis.window = {
+    innerWidth: 1100, innerHeight: 800,
+    addEventListener: (jenis, fn) => pendengar.set(jenis, fn),
+    removeEventListener: (jenis) => pendengar.delete(jenis),
+  };
+  const observers = [];
+  globalThis.ResizeObserver = class {
+    constructor(callback) { this.callback = callback; observers.push(this); }
+    observe(elemen) { this.elemen = elemen; }
+    disconnect() { this.terputus = true; }
+  };
+  t.after(() => {
+    for (const [key, value] of Object.entries(sebelumnya)) {
+      if (value === undefined) delete globalThis[key]; else globalThis[key] = value;
+    }
+  });
+
+  const main = { clientWidth: 890, clientHeight: 764 };
+  let refWadah;
+  let fallbackSaatRefKosong = false;
+  const component = {
+    offsetHeight: 732,
+    getElementsByTagName: () => [{ offsetHeight: 44 }],
+    closest: (selector) => {
+      assert.equal(selector, "main");
+      if (!refWadah.current) fallbackSaatRefKosong = true;
+      return main;
+    },
+  };
+  const kosong = () => null;
+  const Board = ({ boardSize }) => React.createElement("div", { "data-uji": "ukuran-papan-test", "data-size": boardSize });
+  const Game = kompilasi("../src/halaman/Analisa/komponen/game/game.jsx", {
+    "./board.jsx": { default: Board },
+    "./clock.jsx": { default: kosong },
+    "./name.jsx": { default: kosong },
+    "./evaluation.jsx": { default: kosong },
+    "../../konteks/analyzeKonteks.js": analyzeContext,
+    "../../mesin/evaluasi.js": { ratingTampilan: noop },
+    "../errors/pushPageError.js": { pushPageWarning: noop },
+    "../../konteks/mesinKonteks.js": { useMesin: () => ({ didukung: true, siapkan: noop, ambilMesin: noop }) },
+    "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
+    "../../../../lib/pemainCatur.js": { useKartuPemain: () => null },
+    "../../konteks/errorsKonteks.js": { ErrorsContext: React.createContext({ errors: [[], noop] }) },
+    "../../konstanta.js": { maxVertical: 1100, navTop: 516 },
+    "../../konteks/configKonteks.js": configContext,
+    "../menu/analysis/gameButtons.jsx": { default: kosong },
+    "./getMoves.js": {
+      getMoves: (game, i) => ({ move: game[i] }), getArrows: () => [], getCapturedPieces,
+      getCustomResult: () => "", formatPlayerLabel: (player) => player.name,
+    },
+    "./useMuatPartai.js": { useMuatPartai: () => ({ controllerRef: {}, muatSeqRef: {}, openingsRef: {} }) },
+    "./useAnalisisPapan.js": { useAnalisisPapan: () => ({ analyzeMove: noop, analyzingMoveRef: {} }) },
+    "./usePekerjaanLaporan.js": { usePekerjaanLaporan: () => ({}) },
+    "./pendengarKeyboard.jsx": { default: kosong },
+  }).default;
+  const state = {
+    players: [{ name: "Alice" }, { name: "Bob" }], time: 0, moveNumber: 0,
+    game: [{ color: "w" }], data: { format: "fen", string: "" }, pageState: "default",
+    forward: true, animation: false, white: true, playing: false, materialAdvantage: 0,
+    result: "", progress: 0, langkahSementara: [], tab: "moves", analyzeController: new AbortController(),
+    customLine: { moveNumber: -1, moves: [], arrows: {} }, returnedToNormalGame: null,
+    analyzingMove: false, depth: 13,
+  };
+  const nilai = { ...Object.fromEntries(Object.entries(state).map(([key, value]) => [key, [value, noop]])), gameController: {} };
+  function Harness() {
+    refWadah = React.useRef(null);
+    return React.createElement("main", { ref: refWadah }, React.createElement(Game, { wadah: refWadah }));
+  }
+  let renderer;
+  await act(async () => {
+    renderer = TestRenderer.create(React.createElement(analyzeContext.AnalyzeContext.Provider, { value: nilai }, React.createElement(Harness)), {
+      createNodeMock: (element) => element.type === "main" ? main : element.props.className === "h-full flex flex-col justify-start" ? component : null,
+    });
+  });
+  assert.equal(fallbackSaatRefKosong, true, "the child layout effect runs before the parent main ref is attached");
+  assert.equal(observers.length, 1);
+  assert.equal(observers[0].elemen, main);
+  const ukuran = () => renderer.root.findByProps({ "data-uji": "ukuran-papan-test" }).props["data-size"];
+  assert.equal(ukuran(), 296);
+  main.clientWidth = 1052;
+  await act(async () => { observers[0].callback(); });
+  assert.equal(ukuran(), 464, "closing the sidebar must recalculate the board from the workspace width");
+  main.clientWidth = 890;
+  await act(async () => { observers[0].callback(); });
+  assert.equal(ukuran(), 296, "reopening the sidebar must shrink the board again");
+  await act(async () => { renderer.unmount(); });
+  assert.equal(observers[0].terputus, true);
+  assert.equal(pendengar.has("resize"), false);
+});
+
 test("captured pieces follow the current move and the visible custom line", () => {
   const game = [
     {},

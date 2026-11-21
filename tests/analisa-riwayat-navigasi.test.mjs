@@ -193,6 +193,40 @@ test("screen changes and Escape keep the board mounted without rebuilding it", a
   assert.equal(navigasi.gameUnmounts, 1);
 });
 
+test("the board and report panel use overflow-safe centering only at the desktop breakpoint", async (t) => {
+  pasangDocument(t);
+  pasangSession(t);
+  const store = buatPenyimpananPekerjaan(adapterMemori());
+  await store.init();
+  const navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); });
+
+  const main = renderer.root.findByType("main");
+  const wrapper = main.find((node) => node.type === "div" && node.props.className?.split(" ").includes("vertical:flex-row"));
+  const kelas = wrapper.props.className.split(" ");
+  for (const nama of ["flex-col", "items-center", "justify-start", "overflow-y-auto", "vertical:flex-row"]) {
+    assert.ok(kelas.includes(nama), `missing ${nama}`);
+  }
+
+  // Compile the actual classes with the project config: an unsupported
+  // Tailwind utility would otherwise pass a class-name-only test.
+  const postcss = require("postcss");
+  const tailwind = require("tailwindcss");
+  const config = require("tailwindcss/loadConfig")(new URL("../tailwind.config.ts", import.meta.url).pathname);
+  const css = await postcss([tailwind({ ...config, content: [{ raw: `<div class="${wrapper.props.className}"></div>` }] })])
+    .process("@tailwind utilities;", { from: undefined });
+  const rules = [];
+  postcss.parse(css.css).walkRules((rule) => {
+    if (rule.nodes.some((node) => node.prop === "justify-content" && node.value === "safe center")) rules.push(rule);
+  });
+  assert.equal(rules.length, 1);
+  assert.equal(rules[0].parent.name, "media");
+  assert.equal(rules[0].parent.params, `(min-width: ${config.theme.screens.vertical})`);
+
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+});
+
 test("opened screens enter history and their rows return to the corresponding feature or saved target", async (t) => {
   pasangDocument(t);
   const store = buatPenyimpananPekerjaan(adapterMemori());

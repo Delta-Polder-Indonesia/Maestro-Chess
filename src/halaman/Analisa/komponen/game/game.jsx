@@ -258,8 +258,10 @@ const IsiGame = memo(function IsiGame({ wadah, boardSoundsRef, didukung, siapkan
    * terbesar skor Performance halaman ini.
    */
   useLayoutEffect(() => {
+    // Ref <main> baru terpasang setelah layout effect anak saat mount awal.
+    const cariWadah = () => wadah?.current ?? componentRef.current?.closest?.("main");
     function updateBoardSize() {
-      const el = wadah?.current;
+      const el = cariWadah();
       const lebar = el?.clientWidth ?? window.innerWidth;
       const tinggi = el?.clientHeight ?? window.innerHeight;
 
@@ -318,7 +320,8 @@ const IsiGame = memo(function IsiGame({ wadah, boardSoundsRef, didukung, siapkan
     updateBoardSize();
     window.addEventListener("resize", updateBoardSize);
     const observer = typeof ResizeObserver === "function" ? new ResizeObserver(updateBoardSize) : null;
-    if (observer && wadah?.current) observer.observe(wadah.current);
+    const elemenWadah = cariWadah();
+    if (observer && elemenWadah) observer.observe(elemenWadah);
     return () => {
       window.removeEventListener("resize", updateBoardSize);
       observer?.disconnect();
