@@ -33,7 +33,9 @@ npm run test:vercel
 npm audit --include=dev --audit-level=high
 ```
 
-Peringatan ESLint membuat pemeriksaan lint gagal. File hasil build dan Stockfish pihak ketiga tidak ikut dilint. `npm test` menguji konfigurasi base path saat variabel tidak disetel, kosong, maupun berisi subpath. CI menjalankan build tanpa menyetel `NEXT_PUBLIC_BASE_PATH`, seperti konfigurasi root bawaan. `test:build` memeriksa halaman, URL aset yang tidak valid, aset Next.js, data opening, serta file engine Stockfish yang diperlukan di `dist/`. `test:vercel` memeriksa konfigurasi dan manifest build Next.js di `.next/`. Build memerlukan akses ke Google Fonts untuk mengunduh Roboto.
+Peringatan ESLint membuat pemeriksaan lint gagal. File hasil build dan Stockfish pihak ketiga tidak ikut dilint. `npm test` menguji konfigurasi base path, kompatibilitas API catur, dan konfigurasi ESLint. CI menjalankan build tanpa menyetel `NEXT_PUBLIC_BASE_PATH`, seperti konfigurasi root bawaan. `test:build` memeriksa halaman, URL aset yang tidak valid, aset Next.js, data opening, serta file engine Stockfish yang diperlukan di `dist/`. `test:vercel` memeriksa konfigurasi dan manifest build Next.js di `.next/`. Build memerlukan akses ke Google Fonts untuk mengunduh Roboto.
+
+`chess.js` dipatok pada rilis npm 1.1.0 untuk mempertahankan perilaku header PGN yang dipakai aplikasi. Rilis yang lebih baru menambahkan nilai header bawaan; tinjau kompatibilitasnya sebelum memperbarui versi tersebut. ESLint 9 masih ditandai deprecated, tetapi merupakan versi utama terbaru yang didukung oleh `eslint-config-next` 15 dan plugin yang dipakai; peningkatan lebih lanjut perlu meninjau kompatibilitas konfigurasi dan plugin terlebih dahulu.
 
 Audit berjalan terpisah dari build dan gagal jika npm menemukan kerentanan **high** atau **critical**, termasuk pada dependensi pengembangan. Versi PostCSS bawaan Next.js ditimpa dengan versi 8 yang lebih baru untuk mengatasi kerentanan; tinjau kembali override tersebut saat memperbarui Next.js.
 
