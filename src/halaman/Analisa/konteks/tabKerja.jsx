@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { adaPgnTitipan } from "../../../lib/titipanAnalisa.js";
 import { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan } from "../pekerjaan.js";
-import { aktifkanTab, bacaSesiTab, hapusTabLain, perbaruiTab, sesiBaru, simpanSesiTab, tabBaru, tambahTab } from "../tabKerja.js";
+import { aktifkanTab, bacaSesiTab, hapusPilihanAkun, hapusTabLain, normalisasiAkunTab, perbaruiTab, sesiBaru, simpanSesiTab, tabBaru, tambahTab } from "../tabKerja.js";
 import { TAMPILAN_ANALISA } from "./analyzeKonteks.js";
 import { useBoard } from "./boardKonteks.js";
 
@@ -16,11 +16,15 @@ export function TabKerjaProvider({ children }) {
     const tersimpan = bacaSesiTab(storageSesi());
     // PGN kiriman dari luar workspace harus dibuka, bukan ditimpa oleh
     // pemulihan tab lama. Pertahankan tab lama dan gunakan satu tab baru.
-    if (tersimpan && adaPgnTitipan()) return { sesi: tambahTab(tersimpan, tabBaru()), perluPulih: false };
+    if (tersimpan && adaPgnTitipan()) {
+      const akun = tersimpan.daftar.find((tab) => tab.id === tersimpan.aktifId)?.akun;
+      return { sesi: tambahTab(tersimpan, tabBaru(undefined, akun)), perluPulih: false };
+    }
     return { sesi: tersimpan ?? sesiBaru(), perluPulih: Boolean(tersimpan) };
   });
   const [sesi, setSesi] = useState(awal.sesi);
   const [perluPulih, setPerluPulih] = useState(awal.perluPulih);
+  const [sesiTersedia, setSesiTersedia] = useState(true);
   const sesiRef = useRef(sesi);
   sesiRef.current = sesi;
   const [tampilan, setTampilan] = useBoard().tampilan;
@@ -32,17 +36,26 @@ export function TabKerjaProvider({ children }) {
   }
 
   useEffect(() => {
-    if (!perluPulih) simpanSesiTab(storageSesi(), sesi);
+    if (!perluPulih) setSesiTersedia(simpanSesiTab(storageSesi(), sesi));
   }, [sesi, perluPulih]);
 
   const catat = useCallback((id, perubahan) => setSesi((lama) => perbaruiTab(lama, id, perubahan)), []);
   const tambah = useCallback((hapusId = null) => {
-    const baru = tabBaru();
-    setSesi((lama) => tambahTab(lama, baru, hapusId));
+    const akunSaatIni = sesiRef.current.daftar.find((tab) => tab.id === sesiRef.current.aktifId)?.akun;
+    const baru = tabBaru(undefined, akunSaatIni);
+    setSesi((lama) => {
+      // Tab baru mewarisi pilihan awal agar alur Akun → fitur tetap nyaman;
+      // setelah dibuat, pilihan masing-masing tab berubah secara mandiri.
+      const akun = lama.daftar.find((tab) => tab.id === lama.aktifId)?.akun;
+      return tambahTab(lama, { ...baru, akun: normalisasiAkunTab(akun) }, hapusId);
+    });
     return baru;
   }, []);
   const aktifkan = useCallback((id, hapusId = null) => setSesi((lama) => aktifkanTab(lama, id, hapusId)), []);
   const hapusLain = useCallback((id) => setSesi((lama) => hapusTabLain(lama, id)), []);
+  const hapusAkunTerpilih = useCallback((platform, nama, pengganti) => {
+    setSesi((lama) => hapusPilihanAkun(lama, platform, nama, pengganti));
+  }, []);
   const selesaiPulih = useCallback(() => setPerluPulih(false), []);
 
   /** Pilih draf milik tab, bukan menimpa draf yang sedang dibuka tab lain. */
@@ -80,14 +93,16 @@ export function TabKerjaProvider({ children }) {
     daftar: sesi.daftar,
     aktifId: sesi.aktifId,
     perluPulih,
+    sesiTersedia,
     selesaiPulih,
     catat,
     tambah,
     aktifkan,
     hapusLain,
+    hapusAkunTerpilih,
     siapkanImpor,
     bukaImpor,
-  }), [sesi, perluPulih, selesaiPulih, catat, tambah, aktifkan, hapusLain, siapkanImpor, bukaImpor]);
+  }), [sesi, perluPulih, sesiTersedia, selesaiPulih, catat, tambah, aktifkan, hapusLain, hapusAkunTerpilih, siapkanImpor, bukaImpor]);
   return <KonteksTabKerja.Provider value={nilai}>{children}</KonteksTabKerja.Provider>;
 }
 

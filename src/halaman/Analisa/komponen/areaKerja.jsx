@@ -46,6 +46,7 @@ import { TAMPILAN_ANALISA } from "../konteks/analyzeKonteks.js";
 import { useBoard } from "../konteks/boardKonteks.js";
 import { useImport } from "../konteks/importKonteks.js";
 import { useTabKerja } from "../konteks/tabKerja.jsx";
+import { PanelAktifContext } from "../konteks/panelAktif.js";
 import { ErrorsContext } from "../konteks/errorsKonteks.js";
 import { pekerjaan, snapshotLaporanAman } from "../pekerjaan.js";
 import { catatFitur, KUNCI_FITUR } from "../riwayatFitur.js";
@@ -151,6 +152,17 @@ function PeringatanPenyimpanan() {
   );
 }
 
+function PeringatanSesiTab() {
+  const { t } = useI18n();
+  const { sesiTersedia } = useTabKerja();
+  if (sesiTersedia) return null;
+  return (
+    <div data-uji="sesi-tab-gagal" role="alert" className="shrink-0 border-b border-[#a56c25] bg-[#50391b] px-3 py-2 text-xs leading-5 text-[#ffe3ae] sm:px-5">
+      <strong>{t("analisa.tabKerja.gagalJudul")}</strong> {t("analisa.tabKerja.gagalIsi")}
+    </div>
+  );
+}
+
 /**
  * Bilah tab dan lapisan layar non-papan. Panel fitur yang sudah dikunjungi
  * tetap terpasang per tab, sementara satu instance papan tetap terpasang di
@@ -171,7 +183,7 @@ function LapisanLayar({
   const { t } = useI18n();
   const {
     daftar: daftarTab, aktifId, perluPulih, selesaiPulih,
-    catat, tambah, aktifkan, hapusLain, siapkanImpor,
+    catat, tambah, aktifkan, hapusLain, hapusAkunTerpilih, siapkanImpor,
   } = useTabKerja();
   const [dialog, setDialog] = useState(null);
   const permintaanRef = useRef(0);
@@ -454,6 +466,7 @@ function LapisanLayar({
           if (perluPulih || !tabTerpasangRef.current.has(tab.id) || layar === TAMPILAN_ANALISA.BERMAIN ||
             (!aktif && [TAMPILAN_ANALISA.PAPAN, TAMPILAN_ANALISA.IMPOR].includes(layar))) return null;
           const masihAktif = () => tabAktifRef.current === tab.id && tampilanRef.current === layar;
+          const akunTab = [tab.akun, (akun) => catat(tab.id, { akun })];
           return (
             <div
               key={tab.id}
@@ -464,41 +477,45 @@ function LapisanLayar({
               data-layar={layar}
               className="absolute inset-0 z-[900] min-h-0 overflow-y-auto overflow-x-hidden bg-backgroundBoxDarker"
             >
-              <Suspense fallback={<div className="h-full min-h-0 w-full bg-backgroundBox" />}>
-                {layar === TAMPILAN_ANALISA.PAPAN ? (
-                  <LayarPapan
-                    onReport={() => minta({ jenis: "aktif" })}
-                    onImpor={keImpor}
-                    onBukaPekerjaan={bukaRiwayat}
-                  />
-                ) : null}
-                {layar === TAMPILAN_ANALISA.AKUN ? <LayarAkun aktif={aktif} onTutup={() => { if (masihAktif()) kePapan(); }} /> : null}
-                {layar === TAMPILAN_ANALISA.PENGATURAN ? <LayarPengaturan aktif={aktif} /> : null}
-                {layar === TAMPILAN_ANALISA.DETEKSI_ENGINE ? (
-                  <LayarDeteksiEngine aktif={aktif} onBukaAkun={() => { if (masihAktif()) keAkun(); }} />
-                ) : null}
-                {layar === TAMPILAN_ANALISA.WAWASAN ? <LayarWawasan aktif={aktif} /> : null}
-                {layar === TAMPILAN_ANALISA.BASIS_DATA ? (
-                  <LayarDatabase
-                    aktif={aktif}
-                    onTutup={() => { if (masihAktif()) kePapan(); }}
-                    onBukaAkun={() => { if (masihAktif()) keAkun(); }}
-                    onAnalisa={(partai) => {
-                      if (masihAktif()) minta({ jenis: "muat", data: partai });
-                      return false;
-                    }}
-                  />
-                ) : null}
-                {layar === TAMPILAN_ANALISA.IMPOR ? (
-                  <LayarImpor
-                    onTutup={kePapan}
-                    onImpor={muatPartai}
-                    onSebelumImpor={(lanjut) => { if (masihAktif()) minta({ jenis: "muat", lanjut }); }}
-                    drafId={tab.drafId}
-                    onDrafId={(id) => catat(tab.id, { drafId: id })}
-                  />
-                ) : null}
-              </Suspense>
+              <PanelAktifContext.Provider value={aktif}>
+                <Suspense fallback={<div className="h-full min-h-0 w-full bg-backgroundBox" />}>
+                  {layar === TAMPILAN_ANALISA.PAPAN ? (
+                    <LayarPapan
+                      onReport={() => minta({ jenis: "aktif" })}
+                      onImpor={keImpor}
+                      onBukaPekerjaan={bukaRiwayat}
+                    />
+                  ) : null}
+                  {layar === TAMPILAN_ANALISA.AKUN ? (
+                    <LayarAkun aktif={aktif} akunTab={akunTab} onAkunDihapus={hapusAkunTerpilih} onTutup={() => { if (masihAktif()) kePapan(); }} />
+                  ) : null}
+                  {layar === TAMPILAN_ANALISA.PENGATURAN ? <LayarPengaturan aktif={aktif} /> : null}
+                  {layar === TAMPILAN_ANALISA.DETEKSI_ENGINE ? (
+                    <LayarDeteksiEngine aktif={aktif} akunTab={akunTab} onBukaAkun={() => { if (masihAktif()) keAkun(); }} />
+                  ) : null}
+                  {layar === TAMPILAN_ANALISA.WAWASAN ? <LayarWawasan aktif={aktif} akunTab={akunTab} /> : null}
+                  {layar === TAMPILAN_ANALISA.BASIS_DATA ? (
+                    <LayarDatabase
+                      aktif={aktif}
+                      onTutup={() => { if (masihAktif()) kePapan(); }}
+                      onBukaAkun={() => { if (masihAktif()) keAkun(); }}
+                      onAnalisa={(partai) => {
+                        if (masihAktif()) minta({ jenis: "muat", data: partai });
+                        return false;
+                      }}
+                    />
+                  ) : null}
+                  {layar === TAMPILAN_ANALISA.IMPOR ? (
+                    <LayarImpor
+                      onTutup={kePapan}
+                      onImpor={muatPartai}
+                      onSebelumImpor={(lanjut) => { if (masihAktif()) minta({ jenis: "muat", lanjut }); }}
+                      drafId={tab.drafId}
+                      onDrafId={(id) => catat(tab.id, { drafId: id })}
+                    />
+                  ) : null}
+                </Suspense>
+              </PanelAktifContext.Provider>
             </div>
           );
         })}
@@ -591,6 +608,7 @@ export default function AreaKerja() {
   return (
     <div className="relative flex h-full min-h-0 min-w-0 w-full flex-1 flex-col">
       <PeringatanPenyimpanan />
+      <PeringatanSesiTab />
       <LapisanLayar
         tampilan={tampilan}
         lapisanRef={lapisanRef}

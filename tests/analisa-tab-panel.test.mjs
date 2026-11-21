@@ -48,6 +48,54 @@ function dialogMock() {
   };
 }
 
+test("dropdown Escape is handled before navigation and hidden panels remove their global listeners", (tes) => {
+  const sebelumnya = globalThis.document;
+  const pendengar = new Map();
+  let dialogTerbuka = false;
+  const kunci = (jenis, tangkap) => `${jenis}:${Boolean(tangkap)}`;
+  globalThis.document = {
+    addEventListener(jenis, callback, tangkap) { pendengar.set(kunci(jenis, tangkap), callback); },
+    removeEventListener(jenis, callback, tangkap) {
+      const id = kunci(jenis, tangkap);
+      if (pendengar.get(id) === callback) pendengar.delete(id);
+    },
+    querySelector: () => (dialogTerbuka ? {} : null),
+  };
+  tes.after(() => { if (sebelumnya === undefined) delete globalThis.document; else globalThis.document = sebelumnya; });
+  const PanelAktifContext = React.createContext(true);
+  const useDropdown = kompilasi("../src/halaman/Analisa/komponen/nav/useDropdown.js", {
+    "../../konteks/panelAktif.js": { PanelAktifContext },
+  }, "useDropdown");
+  function Menu() {
+    const state = useDropdown();
+    return React.createElement("div", { "data-uji": "dropdown-test", ...state });
+  }
+  const isi = (aktif) => React.createElement(PanelAktifContext.Provider, { value: aktif }, React.createElement(Menu));
+  let renderer;
+  act(() => { renderer = TestRenderer.create(isi(true)); });
+  const state = () => renderer.root.findByProps({ "data-uji": "dropdown-test" }).props;
+  act(() => state().setTerbuka(true));
+  assert.equal(pendengar.has("mousedown:false"), true);
+  assert.equal(pendengar.has("keydown:true"), true);
+  let dicegah = false;
+  act(() => pendengar.get("keydown:true")({ key: "Escape", preventDefault() { dicegah = true; } }));
+  assert.equal(dicegah, true);
+  assert.equal(state().terbuka, false);
+  assert.equal(pendengar.size, 0);
+  act(() => state().setTerbuka(true));
+  dialogTerbuka = true;
+  dicegah = false;
+  act(() => pendengar.get("keydown:true")({ key: "Escape", preventDefault() { dicegah = true; } }));
+  assert.equal(dicegah, false); // an alert dialog gets Escape first
+  assert.equal(state().terbuka, true);
+  act(() => renderer.update(isi(false)));
+  assert.equal(state().terbuka, false);
+  assert.equal(pendengar.size, 0);
+  act(() => renderer.update(isi(true)));
+  assert.equal(state().terbuka, false);
+  act(() => renderer.unmount());
+});
+
 test("a hidden account tab closes its portaled delete confirmation", async (tes) => {
   lingkungan(tes);
   const KartuAkun = kompilasi("../src/halaman/Analisa/akun/KartuAkun.jsx", {
@@ -71,10 +119,50 @@ test("a hidden account tab closes its portaled delete confirmation", async (tes)
   act(() => renderer.unmount());
 });
 
+test("account cards refresh game counts on revision without accepting stale reads or losing dialogs", async (tes) => {
+  lingkungan(tes);
+  const pembaca = [];
+  let revisi = 0;
+  const KartuAkun = kompilasi("../src/halaman/Analisa/akun/KartuAkun.jsx", {
+    "../../../lib/i18n.jsx": { useI18n: () => ({ t, bahasa: "id" }) },
+    "../../../components/ui/tooltip.jsx": { TooltipLabel: wrapper },
+    "../../../components/ui/alert-dialog.jsx": dialogMock(),
+    "../../../lib/pemainCatur.js": { useKartuPemain: () => null },
+    "../basisData.js": {
+      bacaRevisiBasis: () => revisi,
+      ambilDaftarPartai: () => new Promise((resolve) => pembaca.push(resolve)),
+    },
+    "../komponen/svg/profile.jsx": { default: kosong },
+    "../komponen/svg/trash.jsx": { default: kosong },
+  });
+  const props = { platform: "chessCom", username: "Alice", onPilih() {}, onHapus() {} };
+  let renderer;
+  act(() => { renderer = TestRenderer.create(React.createElement(KartuAkun, { ...props, revisi })); });
+  act(() => renderer.root.findByProps({ "aria-label": "analisa.akun.hapus: Alice" }).props.onClick({ stopPropagation() {} }));
+  revisi = 1;
+  act(() => renderer.update(React.createElement(KartuAkun, { ...props, revisi })));
+  await act(async () => { pembaca[1]({ partai: [], total: 4 }); await flush(); });
+  await act(async () => { pembaca[0]({ partai: [], total: 50 }); await flush(); });
+  assert.equal(renderer.root.findAllByType("span").some((node) => node.children.join("") === "4 / 4"), true);
+  assert.equal(renderer.root.findByProps({ "data-uji": "dialog-test" }).props["data-open"], true);
+  revisi = 2;
+  act(() => renderer.update(React.createElement(KartuAkun, { ...props, revisi })));
+  await act(async () => { pembaca[2]({ partai: [], total: 0, galat: true }); await flush(); });
+  assert.equal(renderer.root.findByProps({ role: "status" }).children.includes("analisa.statistik.galatBasis"), true);
+  assert.equal(renderer.root.findAllByType("span").some((node) => node.children.join("") === "0 / 0"), false);
+  revisi = 3;
+  act(() => renderer.update(React.createElement(KartuAkun, { ...props, revisi })));
+  await act(async () => { pembaca[3]({ partai: [], total: 5 }); await flush(); });
+  assert.equal(renderer.root.findAllByProps({ role: "status" }).length, 0);
+  assert.equal(renderer.root.findAllByType("span").some((node) => node.children.join("") === "5 / 5"), true);
+  act(() => renderer.unmount());
+});
+
 test("a hidden detection tab closes its portal and aborts its engine search without losing input", async (tes) => {
   lingkungan(tes);
   const AnalyzeContext = React.createContext(null);
   let sinyal;
+  let galatBasis = false;
   const mesin = { idEngine: "engine", opsi: { hash: 32 }, siapkan: async () => ({}), setop() {} };
   const Deteksi = kompilasi("../src/halaman/Analisa/komponen/nav/layarDeteksiEngine.jsx", {
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t }) },
@@ -82,7 +170,7 @@ test("a hidden detection tab closes its portal and aborts its engine search with
     "../../../../lib/engineCatur.js": { DAFTAR_ENGINE: [{ id: "engine", label: "Stockfish 18" }], cariEngine: () => ({ label: "Stockfish 18" }) },
     "../../konteks/analyzeKonteks.js": { AnalyzeContext },
     "../../konteks/mesinKonteks.js": { useMesin: () => mesin },
-    "../../basisData.js": { ambilDaftarPartai: async () => ({ partai: [{ pgn: "1. e4 *" }] }) },
+    "../../basisData.js": { ambilDaftarPartai: async () => (galatBasis ? { partai: [], galat: true } : { partai: [{ pgn: "1. e4 *" }] }) },
     "../../akun/useAkunKoleksi.js": { useAkunKoleksi: () => ({ akunTersimpan: [], koleksi: [] }) },
     "../../akun/antiCheatRiwayat.js": {
       BATAS_PARTAI: 50, KEDALAMAN_AGGREGAT: 6, batasPartaiDariInput: (value) => Number(value) || 50,
@@ -114,6 +202,10 @@ test("a hidden detection tab closes its portal and aborts its engine search with
   act(() => renderer.update(isi(true)));
   assert.equal(renderer.root.findAllByProps({ "data-uji": "dialog-test" }).length, 0);
   assert.equal(renderer.root.findByProps({ "data-uji": "deteksi-jumlah" }).props.value, "12");
+  galatBasis = true;
+  const mulaiLagi = renderer.root.findAllByType("button").find((node) => node.children.includes("analisa.antiCheat.riwayat.mulai"));
+  await act(async () => { mulaiLagi.props.onClick(); await flush(); });
+  assert.equal(renderer.root.findAllByProps({ role: "alert" }).some((node) => node.children.includes("analisa.antiCheat.riwayat.gagal")), true);
   act(() => renderer.unmount());
 });
 
@@ -178,30 +270,135 @@ test("hidden database dialogs and delayed reads cannot reopen or navigate a late
   act(() => renderer.unmount());
 });
 
+test("database reloads metadata when its revision changes during a pending read", async (tes) => {
+  lingkungan(tes);
+  let revisi = 0;
+  const pembaca = [];
+  const pendengar = new Set();
+  const Database = kompilasi("../src/halaman/Analisa/komponen/nav/layarDatabase.jsx", {
+    "./PanelLayar.jsx": { default: wrapper },
+    "../svg/database.jsx": { default: kosong },
+    "../svg/back.jsx": { default: kosong },
+    "../../../../components/ui/alert.jsx": { Alert: wrapper, Alertjudul: wrapper },
+    "../../../../components/ui/tooltip.jsx": { TooltipLabel: wrapper },
+    "../../../../lib/i18n.jsx": { useI18n: () => ({ t, bahasa: "id" }) },
+    "../../basisData.js": {
+      bacaRevisiBasis: () => revisi,
+      langgananRevisi: (callback) => { pendengar.add(callback); return () => pendengar.delete(callback); },
+      ambilSemuaKoleksi: () => new Promise((resolve) => pembaca.push(resolve)),
+      hitungStatistikBasisData: async () => ({}), ambilDaftarPartai: async () => ({ partai: [], total: 0 }),
+      hitungStatistikKoleksiRingan: async () => ({}), pastikanKoleksi: async () => {},
+    },
+    "../../akun/daftarAkun.js": { bacaDaftarAkun: () => [] },
+    "./database/formatDatabase.js": { BARIS_PER_HALAMAN: 20 },
+    "./database/toolbarTabel.jsx": { default: kosong },
+    "./database/kolomKoleksi.jsx": { default: (props) => React.createElement("div", { "data-uji": "koleksi-test", ...props }) },
+    "./database/panelRingkasanDatabase.jsx": { default: kosong },
+    "./database/panelTabelData.jsx": { default: kosong },
+    "./database/dialogDatabase.jsx": { default: kosong },
+  });
+  let renderer;
+  await act(async () => {
+    renderer = TestRenderer.create(React.createElement(Database, { aktif: true, onTutup() {}, onAnalisa() {}, onBukaAkun() {} }));
+    await flush();
+  });
+  assert.equal(pembaca.length, 1);
+  revisi = 1;
+  act(() => { for (const callback of pendengar) callback(); });
+  await act(async () => { pembaca[0]([{ id: "lama", label: "Alice" }]); await flush(); });
+  assert.equal(pembaca.length, 2); // an old revision cannot satisfy the new request
+  await act(async () => { pembaca[1]([{ id: "baru", label: "Bob" }]); await flush(); });
+  assert.deepEqual(renderer.root.findByProps({ "data-uji": "koleksi-test" }).props.koleksiList.map((k) => k.label), ["Bob"]);
+  act(() => renderer.unmount());
+});
+
+test("database player and event summaries refresh when shared games change", async (tes) => {
+  lingkungan(tes);
+  let revisi = 0;
+  let partai = [{ id: "1", whiteName: "Alice", blackName: "Bob", event: "Turnamen Lama", result: "white", timestamp: 1 }];
+  const pendengar = new Set();
+  const Database = kompilasi("../src/halaman/Analisa/komponen/nav/layarDatabase.jsx", {
+    "./PanelLayar.jsx": { default: wrapper },
+    "../svg/database.jsx": { default: kosong },
+    "../svg/back.jsx": { default: kosong },
+    "../../../../components/ui/alert.jsx": { Alert: wrapper, Alertjudul: wrapper },
+    "../../../../components/ui/tooltip.jsx": { TooltipLabel: wrapper },
+    "../../../../lib/i18n.jsx": { useI18n: () => ({ t, bahasa: "id" }) },
+    "../../basisData.js": {
+      bacaRevisiBasis: () => revisi,
+      langgananRevisi: (callback) => { pendengar.add(callback); return () => pendengar.delete(callback); },
+      ambilSemuaKoleksi: async () => [], hitungStatistikBasisData: async () => ({}),
+      ambilDaftarPartai: async () => ({ partai, total: partai.length }),
+      hitungStatistikKoleksiRingan: async () => ({}), pastikanKoleksi: async () => {},
+    },
+    "../../akun/daftarAkun.js": { bacaDaftarAkun: () => [] },
+    "./database/formatDatabase.js": { BARIS_PER_HALAMAN: 20 },
+    "./database/toolbarTabel.jsx": { default: kosong },
+    "./database/kolomKoleksi.jsx": { default: (props) => React.createElement("div", { "data-uji": "koleksi-test", ...props }) },
+    "./database/panelRingkasanDatabase.jsx": { default: kosong },
+    "./database/panelTabelData.jsx": { default: (props) => React.createElement("div", { "data-uji": "tabel-test", ...props }) },
+    "./database/dialogDatabase.jsx": { default: kosong },
+  });
+  let renderer;
+  await act(async () => {
+    renderer = TestRenderer.create(React.createElement(Database, { aktif: true, onTutup() {}, onAnalisa() {}, onBukaAkun() {} }));
+    await flush();
+  });
+  const tabel = () => renderer.root.findByProps({ "data-uji": "tabel-test" }).props;
+  await act(async () => { renderer.root.findByProps({ "data-uji": "koleksi-test" }).props.setMode("tabel"); await flush(); });
+  await act(async () => { tabel().setTampilan("pemain"); await flush(); });
+  assert.deepEqual(tabel().daftarPemainTampil.map((p) => p.nama).sort(), ["Alice", "Bob"]);
+  partai = [{ id: "2", whiteName: "Carol", blackName: "Dan", event: "Turnamen Baru", result: "black", timestamp: 2 }];
+  revisi += 1;
+  await act(async () => { for (const callback of pendengar) callback(); await flush(); });
+  assert.deepEqual(tabel().daftarPemainTampil.map((p) => p.nama).sort(), ["Carol", "Dan"]);
+  await act(async () => { tabel().setTampilan("event"); await flush(); });
+  assert.deepEqual(tabel().daftarEventTampil.map((p) => p.nama), ["Turnamen Baru"]);
+  partai = [{ ...partai[0], event: "Turnamen Terbaru" }];
+  revisi += 1;
+  await act(async () => { for (const callback of pendengar) callback(); await flush(); });
+  assert.deepEqual(tabel().daftarEventTampil.map((p) => p.nama), ["Turnamen Terbaru"]);
+  act(() => renderer.unmount());
+});
+
 test("returning to an account tab refreshes the shared list changed by another tab", async (tes) => {
   lingkungan(tes);
   const AnalyzeContext = React.createContext(null);
   let daftar = [{ platform: "chessCom", username: "Alice" }, { platform: "chessCom", username: "Bob" }];
+  let revisi = 0;
+  const pendengar = new Set();
   const Akun = kompilasi("../src/halaman/Analisa/komponen/nav/layarAkun.jsx", {
     "./PanelLayar.jsx": { default: wrapper },
-    "../../akun/DaftarAkun.jsx": { default: ({ daftar: nilai }) => React.createElement("div", { "data-uji": "daftar-akun-test", daftar: nilai }) },
+    "../../akun/DaftarAkun.jsx": { default: (props) => React.createElement("div", { "data-uji": "daftar-akun-test", ...props }) },
     "../../akun/PanelTarikPartai.jsx": { default: kosong },
     "../../akun/daftarAkun.js": { bacaDaftarAkun: () => [...daftar], tambahKeDaftar: () => [...daftar], hapusDariDaftar: () => [...daftar] },
-    "../../basisData.js": { bacaRevisiBasis: () => 0, pastikanKoleksi: async () => {}, hapusKoleksi: async () => {} },
+    "../../basisData.js": {
+      bacaRevisiBasis: () => revisi, pastikanKoleksi: async () => {}, hapusKoleksi: async () => {},
+      langgananRevisi: (callback) => { pendengar.add(callback); return () => pendengar.delete(callback); },
+    },
     "../../konteks/analyzeKonteks.js": { AnalyzeContext },
   });
   const analyze = { akun: [{ platform: "chessCom", username: "" }, () => {}] };
   const isi = (aktif) => React.createElement(AnalyzeContext.Provider, { value: analyze }, React.createElement(Akun, { aktif, onTutup() {} }));
   let renderer;
   await act(async () => { renderer = TestRenderer.create(isi(true)); await flush(); });
-  const akun = () => renderer.root.findByProps({ "data-uji": "daftar-akun-test" }).props.daftar.map((item) => item.username);
+  const panel = () => renderer.root.findByProps({ "data-uji": "daftar-akun-test" }).props;
+  const akun = () => panel().daftar.map((item) => item.username);
   assert.deepEqual(akun(), ["Alice", "Bob"]);
+  assert.equal(pendengar.size, 1);
   act(() => renderer.update(isi(false)));
+  assert.equal(pendengar.size, 0);
   daftar = [daftar[1]];
+  revisi = 1;
   assert.deepEqual(akun(), ["Alice", "Bob"]);
   act(() => renderer.update(isi(true)));
   assert.deepEqual(akun(), ["Bob"]);
+  assert.equal(panel().revisi, 1);
+  revisi = 2;
+  act(() => { for (const callback of pendengar) callback(); });
+  assert.equal(panel().revisi, 2);
   act(() => renderer.unmount());
+  assert.equal(pendengar.size, 0);
 });
 
 test("active account options refresh on database revisions and ignore stale reads", async () => {
@@ -293,6 +490,15 @@ test("insights reload shared games on activation and revisions while retaining f
   act(() => { for (const callback of pendengar) callback(); });
   await act(async () => { pembaca[3](data(3)); await flush(); });
   assert.equal(renderer.root.findByProps({ "data-uji": "kpi-test" }).props.total, 3);
+  act(() => { for (const callback of pendengar) callback(); });
+  await act(async () => { pembaca[4]({ partai: [], total: 0, galat: true }); await flush(); });
+  assert.equal(renderer.root.findAllByProps({ role: "alert" }).length, 1);
+  assert.equal(renderer.root.findAllByProps({ "data-uji": "kpi-test" }).length, 0);
+  const ulang = renderer.root.findAllByType("button").find((node) => node.children.includes("analisa.wawasan.cobaMuatLagi"));
+  act(() => { void ulang.props.onClick(); });
+  await act(async () => { pembaca[5](data(4)); await flush(); });
+  assert.equal(renderer.root.findByProps({ "data-uji": "kpi-test" }).props.total, 4);
+  assert.equal(renderer.root.findByProps({ "data-uji": "filter-test" }).props.filterWarna, "white");
   act(() => renderer.unmount());
   assert.equal(pendengar.size, 0);
 });

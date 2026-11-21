@@ -197,15 +197,22 @@ export default function LayarDatabase({
     }
     // Pembacaan yang sama sedang berjalan → ikut menunggu, jangan dobel.
     if (janjiRingkasan.current) {
+      let gagal = false;
       try {
         await janjiRingkasan.current;
       } catch {
-        /* abaikan */
+        gagal = true;
       }
-      if (token === tokenMetadata.current && cacheRingkasan?.revisi === bacaRevisiBasis()) {
-        setKoleksiList(cacheRingkasan.koleksi);
-        setStats(cacheRingkasan.stats);
-        setStatMap(cacheRingkasan.statMap);
+      if (token === tokenMetadata.current) {
+        if (cacheRingkasan?.revisi === bacaRevisiBasis()) {
+          setKoleksiList(cacheRingkasan.koleksi);
+          setStats(cacheRingkasan.stats);
+          setStatMap(cacheRingkasan.statMap);
+        } else if (!gagal) {
+          // Revisi berubah selagi pembacaan bersama berjalan; hasilnya tidak
+          // dapat memenuhi permintaan terbaru, jadi baca lagi revisi terkini.
+          void muatMetadata();
+        }
       }
       return;
     }
@@ -230,19 +237,25 @@ export default function LayarDatabase({
       return { revisi, koleksi: semuaKoleksi, stats: st, statMap: map };
     })();
     janjiRingkasan.current = pekerjaan;
+    let ulang = false;
     try {
       const ringkasan = await pekerjaan;
-      cacheRingkasan = ringkasan;
-      if (token === tokenMetadata.current) {
-        setKoleksiList(ringkasan.koleksi);
-        setStats(ringkasan.stats);
-        setStatMap(ringkasan.statMap);
+      if (ringkasan.revisi !== bacaRevisiBasis()) {
+        ulang = token === tokenMetadata.current;
+      } else {
+        cacheRingkasan = ringkasan;
+        if (token === tokenMetadata.current) {
+          setKoleksiList(ringkasan.koleksi);
+          setStats(ringkasan.stats);
+          setStatMap(ringkasan.statMap);
+        }
       }
     } catch {
       /* abaikan */
     } finally {
       janjiRingkasan.current = null;
     }
+    if (ulang && token === tokenMetadata.current) void muatMetadata();
   }
 
   async function muatPartai() {
@@ -470,7 +483,7 @@ export default function LayarDatabase({
     return () => {
       hidup = false;
     };
-  }, [tampilan, koleksiTerpilih, koleksiList.length]);
+  }, [tampilan, koleksiTerpilih, koleksiList.length, revisiRingkasan]);
 
   useEffect(() => {
     if (tampilan !== "event") return undefined;
@@ -552,7 +565,7 @@ export default function LayarDatabase({
     return () => {
       hidup = false;
     };
-  }, [tampilan, koleksiTerpilih, koleksiList.length]);
+  }, [tampilan, koleksiTerpilih, koleksiList.length, revisiRingkasan]);
 
   // Bila belum ada koleksi yang dipilih, pilih koleksi pertama otomatis (satu kali saja).
   useEffect(() => {

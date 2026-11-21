@@ -29,10 +29,10 @@ import KartuAkurasiPartai from "./wawasan/kartuAkurasi.jsx";
 
 const TAB_RINGKASAN_PERINGKAT_AKUN = ["overview", "ratings"];
 
-export default function LayarWawasan({ aktif = true }) {
+export default function LayarWawasan({ akunTab, aktif = true }) {
   const { t, bahasa: locale } = useI18n();
   const analyzeContext = useContext(AnalyzeContext);
-  const [akun] = analyzeContext.akun;
+  const [akun, setAkun] = akunTab ?? analyzeContext.akun;
   const platform = akun?.platform === "lichessOrg" ? "lichessOrg" : "chessCom";
   const username = String(akun?.username || "").trim();
 
@@ -59,7 +59,7 @@ export default function LayarWawasan({ aktif = true }) {
     setMuat(true);
     setGalatMuat(false);
     try {
-      const { partai: daftar } = await ambilDaftarPartai({
+      const hasil = await ambilDaftarPartai({
         koleksiId: `${platform}:${username.toLowerCase()}`,
         // Daily mencakup juga "correspondence" dari Lichess, jadi
         // kueri IndexedDB tidak boleh memangkasnya sebelum filter domain berjalan.
@@ -70,7 +70,8 @@ export default function LayarWawasan({ aktif = true }) {
         arah: "desc",
       });
       if (idPermintaan === permintaanPartai.current) {
-        setSemuaPartai(Array.isArray(daftar) ? daftar : []);
+        if (hasil?.galat) setGalatMuat(true);
+        else setSemuaPartai(Array.isArray(hasil?.partai) ? hasil.partai : []);
       }
     } catch {
       if (idPermintaan === permintaanPartai.current) setGalatMuat(true);
@@ -215,13 +216,13 @@ export default function LayarWawasan({ aktif = true }) {
 
   function pilihSitus(situsBaru) {
     const pertama = daftarAkun.find((a) => a.platform === situsBaru);
-    analyzeContext.akun[1]({ platform: situsBaru, username: pertama?.username || "" });
+    setAkun({ platform: situsBaru, username: pertama?.username || "" });
   }
 
   function pilihAkun(kunci) {
     const kunciKecil = String(kunci || "").toLowerCase();
     const pilihan = akunSitus.find((a) => a.username.toLowerCase() === kunciKecil);
-    analyzeContext.akun[1]({ platform, username: pilihan?.username || "" });
+    setAkun({ platform, username: pilihan?.username || "" });
   }
 
   return (

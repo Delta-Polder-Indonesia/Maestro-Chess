@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useDropdown } from "../useDropdown.js";
 import Check from "../../svg/check.jsx";
 import { IkonSort } from "./ikonDatabase.jsx";
 import { statusHasil, TINGGI_BARIS, formatTanggal } from "./formatDatabase.js";
@@ -27,24 +27,7 @@ import { ArrowUpDown, ChevronDown } from "lucide-react";
  * latar hitam-abu (#2a2a2a) dan sorotan/item terpilih warna HITAM.
  */
 export function DropdownPilih({ ariaLabel, nilai, opsi, onPilih, sejajar = "kiri", keAtas = false, labelKhusus, kontenAtas }) {
-  const [terbuka, setTerbuka] = useState(false);
-  const wadahRef = useRef(null);
-
-  useEffect(() => {
-    if (!terbuka) return undefined;
-    function klikLuar(e) {
-      if (!wadahRef.current?.contains(e.target)) setTerbuka(false);
-    }
-    function tekanEsc(e) {
-      if (e.key === "Escape") setTerbuka(false);
-    }
-    document.addEventListener("mousedown", klikLuar);
-    document.addEventListener("keydown", tekanEsc);
-    return () => {
-      document.removeEventListener("mousedown", klikLuar);
-      document.removeEventListener("keydown", tekanEsc);
-    };
-  }, [terbuka]);
+  const { terbuka, setTerbuka, wadahRef } = useDropdown();
 
   const aktif = opsi.find((o) => o.nilai === nilai) ?? opsi[0];
   const labelTampil = labelKhusus !== undefined ? labelKhusus : (aktif?.label ?? "");
@@ -373,24 +356,7 @@ export function HeaderKolom({ kolom, t: _t }) {
 }
 
 export function MenuKolom({ t, nilai, onPilih }) {
-  const [terbuka, setTerbuka] = useState(false);
-  const wadahRef = useRef(null);
-
-  useEffect(() => {
-    if (!terbuka) return undefined;
-    function klikLuar(e) {
-      if (!wadahRef.current?.contains(e.target)) setTerbuka(false);
-    }
-    function tekanEsc(e) {
-      if (e.key === "Escape") setTerbuka(false);
-    }
-    document.addEventListener("mousedown", klikLuar);
-    document.addEventListener("keydown", tekanEsc);
-    return () => {
-      document.removeEventListener("mousedown", klikLuar);
-      document.removeEventListener("keydown", tekanEsc);
-    };
-  }, [terbuka]);
+  const { terbuka, setTerbuka, wadahRef } = useDropdown();
 
   const opsi = [
     { nilai: "mingguan", label: t("analisa.basisData.periodeMingguan") },

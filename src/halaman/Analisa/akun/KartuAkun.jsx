@@ -44,7 +44,7 @@ function formatRating(x) {
   return x == null ? "—" : String(x);
 }
 
-export default function KartuAkun({ platform, username, aktif = false, tabAktif = true, onPilih, onHapus }) {
+export default function KartuAkun({ platform, username, aktif = false, tabAktif = true, revisi = 0, onPilih, onHapus }) {
   const { t, bahasa: locale } = useI18n();
   const user = String(username || "").trim();
   const koleksiId = `${platform}:${user.toLowerCase()}`;
@@ -64,6 +64,7 @@ export default function KartuAkun({ platform, username, aktif = false, tabAktif 
     (async () => {
       try {
         const db = await ambilDaftarPartai({ koleksiId, limit: 0, sertakanPgn: false });
+        if (db?.galat) throw new Error("basis data tidak dapat dibaca");
         const daftar = db?.partai || [];
         const ts = daftar.reduce((m, p) => Math.max(m, Number(p.timestamp) || 0), 0);
         if (hidup) {
@@ -72,13 +73,13 @@ export default function KartuAkun({ platform, username, aktif = false, tabAktif 
           setInfo({ games, lastUpdate: ts, galat: false });
         }
       } catch {
-        if (hidup) setInfo({ games: 0, lastUpdate: null, galat: true });
+        if (hidup) setInfo((lama) => ({ ...lama, galat: true }));
       }
     })();
     return () => {
       hidup = false;
     };
-  }, [koleksiId]);
+  }, [koleksiId, revisi]);
 
   // Simpan `total` (dari kartu profil) ke cache modul supaya penyebut bar
   // tidak kembali ke 0 sesaat saat kartu di-mount ulang.
@@ -159,18 +160,24 @@ export default function KartuAkun({ platform, username, aktif = false, tabAktif 
 
         {/* Games terunduh / total + progress + last update */}
         <div className="px-3 pb-3">
-          <div className="flex items-center justify-between pb-1">
-            <span className="text-[0.7rem] text-foregroundGrey">{t("analisa.statistik.games")}</span>
-            <span className="text-[0.7rem] font-bold tabular-nums text-foreground">
-              {terunduh} / {efektif}
-            </span>
-          </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-backgroundBoxBox">
-            <div className="h-full rounded-full" style={{ width: `${persen}%`, backgroundColor: BIRU }} />
-          </div>
-          <div className="pt-1.5 text-[0.7rem] text-foregroundGrey">
-            {t("analisa.statistik.terakhir")} {tanggal(info.lastUpdate)}
-          </div>
+          {info.galat ? (
+            <p role="status" className="text-[0.7rem] text-warning">{t("analisa.statistik.galatBasis")}</p>
+          ) : (
+            <>
+              <div className="flex items-center justify-between pb-1">
+                <span className="text-[0.7rem] text-foregroundGrey">{t("analisa.statistik.games")}</span>
+                <span className="text-[0.7rem] font-bold tabular-nums text-foreground">
+                  {terunduh} / {efektif}
+                </span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-backgroundBoxBox">
+                <div className="h-full rounded-full" style={{ width: `${persen}%`, backgroundColor: BIRU }} />
+              </div>
+              <div className="pt-1.5 text-[0.7rem] text-foregroundGrey">
+                {t("analisa.statistik.terakhir")} {tanggal(info.lastUpdate)}
+              </div>
+            </>
+          )}
         </div>
       </div>
       <AlertDialog open={tabAktif && konfirmasiHapus} onOpenChange={setKonfirmasiHapus}>

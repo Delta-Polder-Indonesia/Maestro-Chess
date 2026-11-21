@@ -53,7 +53,7 @@ function TombolInfo({ uji, judul, buka }) {
   );
 }
 
-function useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk, aktif }) {
+function useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk, aktif, pesanBasis }) {
   const mesin = useMesin();
   const [hasil, setHasil] = useState(null);
   const [status, setStatus] = useState("kosong");
@@ -124,15 +124,17 @@ function useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk, a
     try {
       // Filter diterapkan oleh kueri SEBELUM limit; jangan ambil N partai
       // semua waktu lalu menyaringnya, karena sampel bisa menjadi terlalu kecil.
-      const daftar = (await ambilDaftarPartai({
+      const jawaban = await ambilDaftarPartai({
         koleksiId: `${platform}:${username.toLowerCase()}`,
         timeClass: waktu === "any" ? "" : waktu,
         limit: batas,
         sertakanPgn: true,
         urut: "tanggal",
         arah: "desc",
-      }))?.partai || [];
+      });
       if (!terkini() || signal.aborted) return;
+      if (jawaban?.galat) throw new Error(pesanBasis);
+      const daftar = jawaban?.partai || [];
       setProgres({ ke: 0, total: daftar.length });
       if (!daftar.length) {
         setStatus("tanpaPartai");
@@ -180,11 +182,11 @@ function useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk, a
   return { hasil, status, berjalan, progres, pesan, jumlahPartai, setJumlahPartai, batas, jalankan, batalkan };
 }
 
-export default function LayarDeteksiEngine({ onBukaAkun, aktif = true }) {
+export default function LayarDeteksiEngine({ onBukaAkun, akunTab, aktif = true }) {
   const { t } = useI18n();
   const analyzeContext = useContext(AnalyzeContext);
   const mesin = useMesin();
-  const [akun, setAkun] = analyzeContext.akun;
+  const [akun, setAkun] = akunTab ?? analyzeContext.akun;
   const platform = akun?.platform === "lichessOrg" ? "lichessOrg" : "chessCom";
   const username = String(akun?.username || "").trim();
   const papanSibuk = analyzeContext.pageState[0] === "loading" || analyzeContext.analyzingMove[0];
@@ -204,7 +206,7 @@ export default function LayarDeteksiEngine({ onBukaAkun, aktif = true }) {
   const [infoTerbuka, setInfoTerbuka] = useState(null);
   useEffect(() => { if (!aktif) setInfoTerbuka(null); }, [aktif]);
   const wadahDialog = useMemo(() => document.querySelector?.(".analisa-root") || undefined, []);
-  const ac = useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk, aktif });
+  const ac = useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk, aktif, pesanBasis: t("analisa.basisData.muatGagal") });
   const daftar = gabungkanAkun([...akunTersimpan, ...koleksi, akun]);
   const engineAktif = cariEngine(mesin.idEngine);
   const versiEngine = /\d+/.exec(engineAktif.label)?.[0] ?? "-";

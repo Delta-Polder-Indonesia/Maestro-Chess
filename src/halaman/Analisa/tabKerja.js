@@ -7,8 +7,16 @@ export function idTabBaru() {
   return `tab:${id}`;
 }
 
-export function tabBaru(id = idTabBaru()) {
-  return { id, tampilan: "papan", laporanId: null, drafId: null };
+/** Pilihan akun milik tab; daftar akun dan koleksinya tetap data bersama. */
+export function normalisasiAkunTab(akun) {
+  return {
+    platform: akun?.platform === "lichessOrg" ? "lichessOrg" : "chessCom",
+    username: typeof akun?.username === "string" && akun.username.length <= 200 ? akun.username.trim() : "",
+  };
+}
+
+export function tabBaru(id = idTabBaru(), akun = null) {
+  return { id, tampilan: "papan", laporanId: null, drafId: null, akun: normalisasiAkunTab(akun) };
 }
 
 export function sesiBaru() {
@@ -36,6 +44,7 @@ export function bacaSesiTab(storage) {
         tampilan: tab.tampilan,
         laporanId: idAman(tab.laporanId) ? tab.laporanId : null,
         drafId: idAman(tab.drafId) ? tab.drafId : null,
+        akun: normalisasiAkunTab(tab.akun),
       });
     }
     if (!daftar.length || !daftar.some((tab) => tab.id === nilai.aktifId)) return null;
@@ -46,7 +55,13 @@ export function bacaSesiTab(storage) {
 }
 
 export function simpanSesiTab(storage, sesi) {
-  try { storage?.setItem(KUNCI_SESI_TAB, JSON.stringify({ versi: 1, daftar: sesi.daftar, aktifId: sesi.aktifId })); } catch { /* tab tetap bekerja dalam memori */ }
+  try {
+    if (!storage || typeof storage.setItem !== "function") return false;
+    storage.setItem(KUNCI_SESI_TAB, JSON.stringify({ versi: 1, daftar: sesi.daftar, aktifId: sesi.aktifId }));
+    return true;
+  } catch {
+    return false; // tab tetap bekerja dalam memori
+  }
 }
 
 export function perbaruiTab(sesi, id, perubahan) {
@@ -54,9 +69,24 @@ export function perbaruiTab(sesi, id, perubahan) {
   const daftar = sesi.daftar.map((tab) => {
     if (tab.id !== id) return tab;
     const berikut = { ...tab, ...perubahan };
-    if (tab.tampilan === berikut.tampilan && tab.laporanId === berikut.laporanId && tab.drafId === berikut.drafId) return tab;
+    if (Object.hasOwn(perubahan, "akun")) berikut.akun = normalisasiAkunTab(perubahan.akun);
+    if (tab.tampilan === berikut.tampilan && tab.laporanId === berikut.laporanId && tab.drafId === berikut.drafId &&
+      tab.akun?.platform === berikut.akun?.platform && tab.akun?.username === berikut.akun?.username) return tab;
     berubah = true;
     return berikut;
+  });
+  return berubah ? { ...sesi, daftar } : sesi;
+}
+
+/** Akun yang dihapus bersama tidak boleh tetap terpilih di tab lain. */
+export function hapusPilihanAkun(sesi, platform, nama, pengganti) {
+  const kunci = String(nama || "").trim().toLowerCase();
+  if (!kunci) return sesi;
+  let berubah = false;
+  const daftar = sesi.daftar.map((tab) => {
+    if (tab.akun?.platform !== platform || String(tab.akun?.username || "").trim().toLowerCase() !== kunci) return tab;
+    berubah = true;
+    return { ...tab, akun: normalisasiAkunTab(pengganti) };
   });
   return berubah ? { ...sesi, daftar } : sesi;
 }

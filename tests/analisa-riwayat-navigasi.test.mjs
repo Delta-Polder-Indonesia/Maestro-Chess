@@ -65,14 +65,17 @@ function siapkanAreaKerja(store, navigasi) {
     const [cari, setCari] = React.useState("");
     return React.createElement("input", { "data-uji": "database-cari-test", "data-tab-aktif": aktif, value: cari, onChange: (e) => setCari(e.target.value) });
   };
+  const LayarAkunTabMock = (props) => React.createElement("div", { "data-uji": "akun-tab-test", ...props });
   const layar = Object.fromEntries([
-    "layarAkun", "layarDeteksiEngine", "layarWawasan", "layarPengaturan",
-  ].map((nama) => [`./nav/${nama}.jsx`, { default: kosong }]));
+    "layarAkun", "layarDeteksiEngine", "layarWawasan",
+  ].map((nama) => [`./nav/${nama}.jsx`, { default: LayarAkunTabMock }]));
+  layar["./nav/layarPengaturan.jsx"] = { default: kosong };
   const dependencies = {
     "../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA },
     "../konteks/boardKonteks.js": { useBoard: () => React.useContext(Board) },
     "../konteks/importKonteks.js": { useImport: () => React.useContext(Import) },
     "../konteks/tabKerja.jsx": tab,
+    "../konteks/panelAktif.js": { PanelAktifContext: React.createContext(true) },
     "../konteks/errorsKonteks.js": { ErrorsContext: Errors },
     "../pekerjaan.js": { pekerjaan: store, snapshotLaporanAman },
     "../riwayatFitur.js": { KUNCI_FITUR, catatFitur: (fitur, target) => catatFitur(fitur, target, store, ++waktu) },
@@ -261,6 +264,62 @@ test("independent feature panels retain their local state while another tab is s
   assert.deepEqual(panel().map((item) => [item.props.hidden, item.findByProps({ "data-uji": "database-cari-test" }).props.value]), [
     [true, "one"], [false, "two"],
   ]);
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+});
+
+test("blocked session storage warns while tabs remain usable and recovers after a successful save", async (t) => {
+  pasangDocument(t);
+  const nilai = pasangSession(t);
+  let diblokir = true;
+  globalThis.sessionStorage = {
+    getItem: (key) => nilai.get(key) ?? null,
+    setItem(key, value) { if (diblokir) throw new Error("blocked"); nilai.set(key, value); },
+  };
+  const store = buatPenyimpananPekerjaan(adapterMemori());
+  await store.init();
+  const navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); });
+  assert.equal(navigasi.tab.sesiTersedia, false);
+  assert.equal(renderer.root.findAllByProps({ "data-uji": "sesi-tab-gagal" }).length, 1);
+  await act(async () => { navigasi.tabBar.onTambah(); await flush(); });
+  assert.equal(navigasi.tab.daftar.length, 2);
+  diblokir = false;
+  await act(async () => { navigasi.tabBar.onTambah(); await flush(); });
+  assert.equal(navigasi.tab.daftar.length, 3);
+  assert.equal(navigasi.tab.sesiTersedia, true);
+  assert.equal(renderer.root.findAllByProps({ "data-uji": "sesi-tab-gagal" }).length, 0);
+  assert.equal(JSON.parse(nilai.get(modelTab.KUNCI_SESI_TAB)).daftar.length, 3);
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+});
+
+test("feature tabs keep independent account selections while sharing deliberate deletions", async (t) => {
+  pasangDocument(t);
+  pasangSession(t);
+  const store = buatPenyimpananPekerjaan(adapterMemori());
+  await store.init();
+  const navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); });
+  const tab1 = navigasi.tab.aktifId;
+  const aktif = () => renderer.root.findAllByProps({ "data-uji": "akun-tab-test" }).find((node) => node.props.aktif);
+  const akun = (id) => navigasi.tab.daftar.find((tab) => tab.id === id).akun;
+  await act(async () => { navigasi.setTampilan("akun"); await flush(); });
+  await act(async () => { aktif().props.akunTab[1]({ platform: "chessCom", username: "Alice" }); await flush(); });
+  await act(async () => { navigasi.tabBar.onTambah(); await flush(); });
+  const tab2 = navigasi.tab.aktifId;
+  assert.equal(akun(tab2).username, "Alice"); // a new tab starts from the current selection
+  await act(async () => { navigasi.setTampilan("deteksi-engine"); await flush(); });
+  await act(async () => { aktif().props.akunTab[1]({ platform: "chessCom", username: "Bob" }); await flush(); });
+  assert.equal(akun(tab1).username, "Alice");
+  assert.equal(akun(tab2).username, "Bob");
+  await act(async () => { navigasi.setTampilan("wawasan"); await flush(); });
+  assert.equal(aktif().props.akunTab[0].username, "Bob");
+  await act(async () => { await navigasi.tabBar.onPilih(tab1); await flush(); });
+  assert.equal(aktif().props.akunTab[0].username, "Alice");
+  await act(async () => { aktif().props.onAkunDihapus("chessCom", "alice", { platform: "chessCom", username: "Bob" }); await flush(); });
+  assert.equal(akun(tab1).username, "Bob");
+  assert.equal(akun(tab2).username, "Bob");
   await act(async () => { renderer.unmount(); await store.tungguTulis(); });
 });
 

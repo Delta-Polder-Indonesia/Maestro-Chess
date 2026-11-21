@@ -6,12 +6,12 @@ import PanelLayar from "./PanelLayar.jsx";
 import DaftarAkun from "../../akun/DaftarAkun.jsx";
 import PanelTarikPartai from "../../akun/PanelTarikPartai.jsx";
 import { bacaDaftarAkun, tambahKeDaftar, hapusDariDaftar } from "../../akun/daftarAkun.js";
-import { bacaRevisiBasis, hapusKoleksi, pastikanKoleksi } from "../../basisData.js";
+import { bacaRevisiBasis, hapusKoleksi, langgananRevisi, pastikanKoleksi } from "../../basisData.js";
 import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
 
-export default function LayarAkun({ onTutup, aktif = true }) {
+export default function LayarAkun({ onTutup, onAkunDihapus, akunTab, aktif = true }) {
   const analyzeContext = useContext(AnalyzeContext);
-  const [username, setUsername] = analyzeContext.akun;
+  const [username, setUsername] = akunTab ?? analyzeContext.akun;
   const [daftar, setDaftar] = useState(() => bacaDaftarAkun());
   const [revisiBasis, setRevisiBasis] = useState(() => bacaRevisiBasis());
   const kendaliTarikRef = useRef(null);
@@ -19,9 +19,17 @@ export default function LayarAkun({ onTutup, aktif = true }) {
     username?.platform === platform &&
     String(username?.username || "").toLowerCase() === String(nama || "").toLowerCase();
 
-  // Daftar akun adalah data bersama. Panel yang tetap terpasang saat tidak
-  // aktif perlu menyegarkan daftar jika tab lain menambah atau menghapus akun.
-  useEffect(() => { if (aktif) setDaftar(bacaDaftarAkun()); }, [aktif]);
+  // Daftar akun dan jumlah partai adalah data bersama. Segarkan saat kembali
+  // ke tab ini serta ketika basis berubah, tanpa mereset pilihan akun lokal.
+  useEffect(() => {
+    if (!aktif) return undefined;
+    const segarkan = () => {
+      setDaftar(bacaDaftarAkun());
+      setRevisiBasis(bacaRevisiBasis());
+    };
+    segarkan();
+    return langgananRevisi(segarkan);
+  }, [aktif]);
 
   useEffect(() => {
     const list = bacaDaftarAkun();
@@ -63,6 +71,9 @@ export default function LayarAkun({ onTutup, aktif = true }) {
     if (aktif) kendaliTarikRef.current?.abort();
     const list = hapusDariDaftar(platform, nama);
     setDaftar(list);
+    // Pemilihan akun terpisah per tab, tetapi penghapusan akun bersifat
+    // bersama. Bersihkan hanya tab yang masih menunjuk akun yang dihapus.
+    onAkunDihapus?.(platform, nama, list[0]);
     hapusKoleksi(`${platform}:${String(nama || "").trim().toLowerCase()}`).catch(() => {});
     if (aktif) {
       const berikut = list[0];
