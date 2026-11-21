@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { daftarRiwayat, KUNCI_FITUR } from "../../riwayatFitur.js";
 import { usePekerjaan } from "../../usePekerjaan.js";
@@ -64,6 +64,7 @@ export default function DaftarPekerjaan({ onBuka }) {
   const { t, bahasa } = useI18n();
   const { siap, tersedia, menyimpan, daftar, aktif } = usePekerjaan();
   const [lihatSemua, setLihatSemua] = useState(false);
+  const idDaftar = useId();
   const riwayat = daftarRiwayat(daftar);
   const ditampilkan = lihatSemua ? riwayat : riwayat.slice(0, BATAS_TERBARU);
 
@@ -98,7 +99,7 @@ export default function DaftarPekerjaan({ onBuka }) {
       ) : (
         <div data-uji="pekerjaan-scroll" role="region" aria-labelledby="judul-pekerjaan" tabIndex={0} className="h-[200px] overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable] focus-visible:outline focus-visible:outline-2 focus-visible:outline-backgroundBoxBoxHighlighted">
           <ul className="flex flex-col gap-0.5">
-            {ditampilkan.map(({ item, fitur, pekerjaan }) => {
+            {ditampilkan.map(({ item, fitur, pekerjaan }, indeks) => {
               const draf = pekerjaan?.jenis === "draf";
               const berjalan = pekerjaan?.status === "berjalan" && pekerjaan.id === aktif.id && aktif.berjalan;
               const belumSelesai = pekerjaan && !draf && !["selesai", "baru"].includes(pekerjaan.status) && !berjalan;
@@ -106,16 +107,17 @@ export default function DaftarPekerjaan({ onBuka }) {
               const status = !pekerjaan ? null : draf ? "Draf" : berjalan ? "Berjalan" : belumSelesai ? "Terputus" : pekerjaan.status === "baru" ? "Baru" : "Selesai";
               const keterangan = status ? t(`analisa.pekerjaan.status${status === "Terputus" && pekerjaan.adaHasil ? "HasilLama" : status}`) : null;
               const waktu = formatWaktu(item.waktu, bahasa);
-              const label = [`${t("analisa.pekerjaan.buka")}: ${judul}`, keterangan, waktu?.relatif].filter(Boolean).join(". ");
+              const idRincian = `${idDaftar}-${indeks}`;
               return (
                 <li key={item.id} data-uji="pekerjaan-item" data-pekerjaan-id={item.id} data-fitur={fitur} className="min-w-0">
                   <button
                     type="button"
                     data-uji="pekerjaan-buka"
                     onClick={() => onBuka(item)}
-                    aria-label={label}
+                    aria-describedby={keterangan || waktu ? idRincian : undefined}
                     className="flex w-full min-w-0 cursor-pointer items-center justify-between gap-2 rounded px-2 py-1.5 text-left transition-colors hover:bg-backgroundBoxBoxHover focus-visible:outline focus-visible:outline-2 focus-visible:outline-backgroundBoxBoxHighlighted sm:gap-3 sm:px-3"
                   >
+                    <span className="sr-only">{t("analisa.pekerjaan.buka")}: </span>
                     <span className="flex min-w-0 items-center gap-2">
                       <span className="shrink-0 text-foregroundGrey"><IkonFile /></span>
                       <span className="truncate text-sm font-medium text-foreground">{judul}</span>
@@ -137,6 +139,13 @@ export default function DaftarPekerjaan({ onBuka }) {
                       ) : null}
                     </span>
                   </button>
+                  {/* Nama mengikuti isi tombol; rincian status dan waktu ponsel tetap tersedia sebagai deskripsi. */}
+                  {keterangan || waktu ? (
+                    <span id={idRincian} className="sr-only">
+                      {keterangan}
+                      {waktu ? <span className="sm:hidden">{keterangan ? ". " : ""}{waktu.relatif}</span> : null}
+                    </span>
+                  ) : null}
                 </li>
               );
             })}
