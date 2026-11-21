@@ -61,10 +61,10 @@ function kontrol(renderer, id) {
   return renderer.root.find((node) => node.props["data-uji"] === id);
 }
 
-async function render(Impor) {
+async function render(Impor, onImpor = () => {}) {
   let renderer;
   await act(async () => {
-    renderer = TestRenderer.create(React.createElement(Impor, { onTutup: () => {}, onImpor: () => {} }));
+    renderer = TestRenderer.create(React.createElement(Impor, { onTutup: () => {}, onImpor }));
     await flush();
   });
   return renderer;
@@ -76,7 +76,7 @@ function pasangWindow(t) {
   t.after(() => { if (sebelumnya === undefined) delete globalThis.window; else globalThis.window = sebelumnya; });
 }
 
-test("import form creates a separate draft and restores the selected older draft", async (t) => {
+test("successful import leaves a fresh draft without adding a button or overwriting the older one", async (t) => {
   pasangWindow(t);
   const adapter = adapterMemori();
   const store = buatPenyimpananPekerjaan(adapter);
@@ -84,12 +84,18 @@ test("import form creates a separate draft and restores the selected older draft
   simpanDrafImpor({ tipe: "pgn", pgn: "old PGN", fen: "", tautan: "" }, "draf:impor", store);
   await store.tungguTulis();
   const Impor = komponenImpor(store);
-  let renderer = await render(Impor);
+  const imported = [];
+  let renderer = await render(Impor, (data) => imported.push(data));
   assert.equal(kontrol(renderer, "impor-pgn").props.value, "old PGN");
   assert.equal(store.snapshot().terakhirDrafId, "draf:impor");
-  act(() => kontrol(renderer, "impor-draf-baru").props.onClick());
+  assert.equal(renderer.root.findAll((node) => node.props["data-uji"] === "impor-draf-baru").length, 0);
+  await act(async () => { await kontrol(renderer, "kirim-impor").props.onClick(); });
+  assert.deepEqual(imported, [{ format: "pgn", string: "old PGN" }]);
   const baru = store.snapshot().terakhirDrafId;
   assert.notEqual(baru, "draf:impor");
+  act(() => renderer.unmount());
+
+  renderer = await render(Impor);
   assert.equal(kontrol(renderer, "impor-pgn").props.value, "");
   act(() => kontrol(renderer, "impor-pgn").props.onChange({ currentTarget: { value: "new PGN" } }));
   await store.tungguTulis();

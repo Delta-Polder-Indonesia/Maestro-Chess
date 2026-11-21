@@ -134,14 +134,11 @@ export default function LayarImpor({ onTutup, onImpor }) {
     simpanDrafImpor(berikut, drafIdRef.current);
   }
 
-  function mulaiDrafBaru() {
-    const kosong = { tipe: "pgn", pgn: "", tautan: "", fen: "" };
-    drafIdRef.current = buatIdDrafImpor();
-    pekerjaan.tetapkanDrafAktif(drafIdRef.current);
-    drafRef.current = kosong;
-    setDraf(kosong);
-    setGalat(null);
-    setGalatDraf(false);
+  function lanjutkanImpor(data) {
+    // Impor berikutnya dimulai dengan draf kosong, sementara draf yang baru
+    // dipakai tetap dapat dibuka dari riwayat tanpa tombol tambahan.
+    pekerjaan.tetapkanDrafAktif(buatIdDrafImpor());
+    onImpor(data);
   }
 
   useEffect(() => () => {
@@ -181,14 +178,14 @@ export default function LayarImpor({ onTutup, onImpor }) {
         return;
       }
       imporPgnKeBasisData(pgn).catch(() => {});
-      onImpor({ format: "pgn", string: pgn });
+      lanjutkanImpor({ format: "pgn", string: pgn });
       return;
     }
     if (tipe === "fen") {
       if (!fen.trim()) return;
       try {
         const fenValid = validasiFen(fen);
-        onImpor({ format: "fen", string: fenValid });
+        lanjutkanImpor({ format: "fen", string: fenValid });
       } catch (e) {
         setGalat(pesanGalat(e?.code));
       }
@@ -211,7 +208,7 @@ export default function LayarImpor({ onTutup, onImpor }) {
       if (!pgn2.trim()) throw galatImpor(KODE_GALAT.RESPONS);
       validasiPgn(pgn2);
       imporPgnKeBasisData(pgn2).catch(() => {});
-      onImpor({ format: "pgn", string: pgn2 });
+      lanjutkanImpor({ format: "pgn", string: pgn2 });
     } catch (e) {
       if (controllerRef.current !== controller) return;
       const kode = timeoutTerjadi ? KODE_GALAT.TIMEOUT : e?.code;
@@ -238,17 +235,6 @@ export default function LayarImpor({ onTutup, onImpor }) {
     <PanelLayar
       judul={t("analisa.impor.judul")}
       subjudul={t("analisa.impor.tipe")}
-      headerKanan={(
-        <button
-          type="button"
-          data-uji="impor-draf-baru"
-          onClick={mulaiDrafBaru}
-          disabled={!siapDraf || memuat}
-          className="rounded-borderRoundness border border-border bg-backgroundBoxBox px-3 py-2 text-sm font-medium text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-foreground disabled:cursor-default disabled:opacity-40"
-        >
-          {t("analisa.impor.drafBaru")}
-        </button>
-      )}
       lebarMaks="max-w-[720px]"
     >
       <div className="grid grid-cols-3 gap-2">
@@ -332,9 +318,8 @@ export default function LayarImpor({ onTutup, onImpor }) {
         </div>
       )}
 
-      <p className="mt-3 text-xs leading-5 text-foregroundGrey">{t("analisa.impor.drafLokal")}</p>
       {penyimpanan.siap && penyimpanan.tersedia ? (
-        <p role="status" className="text-xs text-foregroundGrey">{t(penyimpanan.menyimpan ? "analisa.pekerjaan.menyimpan" : "analisa.pekerjaan.tersimpan")}</p>
+        <span role="status" className="sr-only">{t(penyimpanan.menyimpan ? "analisa.pekerjaan.menyimpan" : "analisa.pekerjaan.tersimpan")}</span>
       ) : null}
       {galatDraf ? (
         <p data-uji="galat-draf" role="alert" className="mt-2 text-xs text-lossRed">{t("analisa.impor.drafRusak")}</p>

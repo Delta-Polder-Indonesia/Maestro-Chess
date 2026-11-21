@@ -47,6 +47,7 @@ import { useBoard } from "../konteks/boardKonteks.js";
 import { useImport } from "../konteks/importKonteks.js";
 import { ErrorsContext } from "../konteks/errorsKonteks.js";
 import { pekerjaan, snapshotLaporanAman } from "../pekerjaan.js";
+import { catatFitur, KUNCI_FITUR } from "../riwayatFitur.js";
 import { usePekerjaan } from "../usePekerjaan.js";
 import { useI18n } from "../../../lib/i18n.jsx";
 import {
@@ -123,6 +124,16 @@ function PenitipPgn() {
   return null;
 }
 
+/** Catat layar yang benar-benar dibuka tanpa mengubah tampilan navigasi. */
+function PencatatFitur({ tampilan }) {
+  const [data] = useImport().data;
+  const { terakhirDrafId } = usePekerjaan();
+  const targetId = tampilan === TAMPILAN_ANALISA.BERMAIN ? data?.pekerjaanId
+    : tampilan === TAMPILAN_ANALISA.IMPOR ? terakhirDrafId : null;
+  useEffect(() => { catatFitur(tampilan, targetId); }, [tampilan, targetId]);
+  return null;
+}
+
 /** Peringatan tidak hilang saat pengguna berpindah layar. */
 function PeringatanPenyimpanan() {
   const { t } = useI18n();
@@ -152,6 +163,7 @@ function LapisanLayar({
 }) {
   const muatPartai = useMuatPartai();
   const [data, setData] = useImport().data;
+  const setTampilan = useBoard().tampilan[1];
   const setErrors = useContext(ErrorsContext).errors[1];
   const { t } = useI18n();
   const [dialog, setDialog] = useState(null);
@@ -168,11 +180,6 @@ function LapisanLayar({
   async function jalankan(aksi, nomor) {
     const masihDipilih = () => nomor === permintaanRef.current && tampilanRef.current === TAMPILAN_ANALISA.PAPAN;
     if (!masihDipilih()) return;
-    if (aksi.jenis === "baru") {
-      setData({ format: "fen", string: "" });
-      kePapan();
-      return;
-    }
     if (aksi.jenis === "aktif") {
       await pekerjaan.init();
       if (!masihDipilih()) return;
@@ -232,12 +239,29 @@ function LapisanLayar({
   function minta(aksi) {
     const nomor = ++permintaanRef.current;
     const aktif = pekerjaan.snapshot().aktif;
-    const berganti = aksi.jenis === "baru" || (aksi.jenis === "buka" && aksi.item?.jenis !== "draf" && (aksi.ulang || aksi.item?.id !== aktif.id));
+    const berganti = aksi.jenis === "buka" && aksi.item?.jenis === "laporan" && (aksi.ulang || aksi.item.id !== aktif.id);
     if (aktif.berjalan && berganti) {
       setDialog({ jenis: "hentikan", aksi });
       return;
     }
     jalankan(aksi, nomor);
+  }
+
+  function bukaRiwayat(item) {
+    if (item.jenis !== "fitur") {
+      minta({ jenis: "buka", item });
+      return;
+    }
+    if (!Object.hasOwn(KUNCI_FITUR, item.fitur)) return;
+    if (item.fitur === TAMPILAN_ANALISA.BERMAIN) {
+      const laporan = pekerjaan.snapshot().daftar.find((entry) => entry.jenis === "laporan" && entry.id === item.targetId);
+      minta(laporan ? { jenis: "buka", item: laporan } : { jenis: "aktif" });
+    } else if (item.fitur === TAMPILAN_ANALISA.IMPOR) {
+      if (item.targetId) pekerjaan.tetapkanDrafAktif(item.targetId);
+      keImpor();
+    } else {
+      setTampilan(item.fitur);
+    }
   }
 
   if (papanAktif) return null;
@@ -254,10 +278,8 @@ function LapisanLayar({
         <Suspense fallback={<div className="h-full min-h-0 w-full bg-backgroundBox" />}>
           <LayarPapan
             onReport={() => minta({ jenis: "aktif" })}
-            onBaru={() => minta({ jenis: "baru" })}
             onImpor={keImpor}
-            onBukaPekerjaan={(item) => minta({ jenis: "buka", item })}
-            onUlangPekerjaan={(item) => minta({ jenis: "buka", item, ulang: true })}
+            onBukaPekerjaan={bukaRiwayat}
           />
         </Suspense>
       ) : null}
@@ -401,6 +423,7 @@ export default function AreaKerja() {
        * tampil sebelum PGN titipan dipasang.
        */}
       <PenitipPgn />
+      <PencatatFitur tampilan={tampilan} />
 
       <LapisanLayar
         tampilan={tampilan}

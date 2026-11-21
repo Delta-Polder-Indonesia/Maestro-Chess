@@ -172,7 +172,7 @@ export function buatPenyimpananPekerjaan(adapter = buatAdapterPekerjaan()) {
         for (const item of Array.isArray(daftar) ? daftar : []) {
           if (item?.id === ID_AKTIF && !disentuh.has(ID_AKTIF)) terakhirId = item.laporanId ?? null;
           else if (item?.id === ID_DRAF_AKTIF && !disentuh.has(ID_DRAF_AKTIF)) terakhirDrafId = item.drafId ?? null;
-          else if (item?.id && ["laporan", "draf"].includes(item.jenis) && !disentuh.has(item.id)) metadata.set(item.id, item);
+          else if (item?.id && ["laporan", "draf", "fitur"].includes(item.jenis) && !disentuh.has(item.id)) metadata.set(item.id, item);
         }
       } catch {
         tersedia = false;
@@ -212,7 +212,7 @@ export function buatPenyimpananPekerjaan(adapter = buatAdapterPekerjaan()) {
   }
 
   function simpan(record) {
-    if (!record?.id || !["laporan", "draf"].includes(record.jenis)) return;
+    if (!record?.id || !["laporan", "draf", "fitur"].includes(record.jenis)) return;
     const meta = {
       id: record.id,
       jenis: record.jenis,
@@ -221,6 +221,7 @@ export function buatPenyimpananPekerjaan(adapter = buatAdapterPekerjaan()) {
       format: String(record.sumber?.format ?? record.isi?.tipe ?? ""),
       adaHasil: Boolean(record.snapshot),
       waktu: Number.isFinite(record.waktu) ? record.waktu : Date.now(),
+      ...(record.jenis === "fitur" ? { fitur: record.fitur, targetId: record.targetId ?? null } : {}),
     };
     const lengkap = { ...record, ...meta };
     disentuh.add(meta.id);

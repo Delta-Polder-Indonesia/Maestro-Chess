@@ -3,6 +3,7 @@ import test from "node:test";
 import { Chess } from "chess.js";
 import { ID_DRAF_IMPOR, buatAdapterPekerjaan, buatIdDrafImpor, buatPenyimpananPekerjaan, simpanDrafImpor, snapshotLaporanAman } from "../src/halaman/Analisa/pekerjaan.js";
 import { buatManajerLaporan } from "../src/halaman/Analisa/manajerLaporan.js";
+import { catatFitur, daftarRiwayat } from "../src/halaman/Analisa/riwayatFitur.js";
 
 function adapterMemori(records = []) {
   const isi = new Map(records.map((record) => [record.id, structuredClone(record)]));
@@ -21,6 +22,39 @@ function adapterMemori(records = []) {
 
 const report = (id, judul, waktu = Date.now()) => ({
   id, jenis: "laporan", judul, status: "selesai", sumber: { format: "pgn", string: "1. e4 e5 *" }, waktu,
+});
+
+test("feature history persists, updates recency, and retains older work without duplicates", async () => {
+  const adapter = adapterMemori();
+  const store = buatPenyimpananPekerjaan(adapter);
+  store.simpan(report("laporan:lain", "Citra vs Bayu", 2));
+  store.simpan(report("laporan:lama", "Alice vs Bob", 3));
+  store.simpan({ id: "draf:lama", jenis: "draf", judul: "1. e4", status: "draf", waktu: 4, isi: { tipe: "pgn", pgn: "1. e4" } });
+  catatFitur("papan", null, store, 5);
+  catatFitur("constructor", null, store, 6);
+  catatFitur("akun", null, store, 7);
+  catatFitur("impor", null, store, 8);
+  catatFitur("impor", "draf:lama", store, 9);
+  catatFitur("bermain", "laporan:lama", store, 10);
+  catatFitur("akun", null, store, 11);
+  await store.tungguTulis();
+
+  const reopened = buatPenyimpananPekerjaan(adapter);
+  await reopened.init();
+  const rows = daftarRiwayat(reopened.snapshot().daftar);
+  assert.deepEqual(rows.map((row) => row.item.id), ["fitur:akun", "fitur:bermain:laporan:lama", "fitur:impor:draf:lama", "laporan:lain"]);
+  assert.equal(rows[1].pekerjaan.judul, "Alice vs Bob");
+  assert.equal(rows[2].pekerjaan.judul, "1. e4");
+  assert.equal((await reopened.ambil("laporan:lama")).judul, "Alice vs Bob");
+  assert.equal((await reopened.ambil("draf:lama")).isi.pgn, "1. e4");
+  assert.equal(reopened.snapshot().daftar.some((item) => item.id === "fitur:papan"), false);
+
+  // A newly opened generic feature remains visible until its selected draft is known.
+  catatFitur("impor", null, reopened, 12);
+  assert.equal(daftarRiwayat(reopened.snapshot().daftar)[0].item.id, "fitur:impor");
+  catatFitur("impor", "draf:lama", reopened, 13);
+  assert.equal(daftarRiwayat(reopened.snapshot().daftar).filter((row) => row.fitur === "impor").length, 1);
+  await reopened.tungguTulis();
 });
 
 test("loading metadata cannot overwrite newer edits made before initialization completes", async () => {

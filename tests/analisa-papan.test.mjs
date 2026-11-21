@@ -8,6 +8,7 @@ import TestRenderer from "react-test-renderer";
 import ts from "typescript";
 import { analisa as indonesia } from "../src/lib/terjemahan/id/analisa.js";
 import { analisa as english } from "../src/lib/terjemahan/en/analisa.js";
+import { daftarRiwayat, KUNCI_FITUR } from "../src/halaman/Analisa/riwayatFitur.js";
 
 // Node's test runner cannot import JSX directly. Compile the two UI components
 // and substitute only the storage/i18n boundaries.
@@ -34,6 +35,7 @@ function renderPapan(dictionary, handlers = {}, work = { siap: true, tersedia: t
   const i18n = { useI18n: () => ({ t: translate, bahasa: dictionary === english ? "en" : "id" }) };
   const Daftar = compile("../src/halaman/Analisa/komponen/nav/daftarPekerjaan.jsx", {
     "../../../../lib/i18n.jsx": i18n,
+    "../../riwayatFitur.js": { daftarRiwayat, KUNCI_FITUR },
     "../../usePekerjaan.js": { usePekerjaan: () => work },
   });
   const Papan = compile("../src/halaman/Analisa/komponen/nav/layarPapan.jsx", {
@@ -56,7 +58,7 @@ function text(node) {
   return node.children.map((child) => typeof child === "string" ? child : text(child)).join(" ");
 }
 
-test("dashboard has six cards, a separate new action, and a usable recent-work list", () => {
+test("dashboard has one report button and opens recent features or saved work", () => {
   const calls = [];
   const work = {
     siap: true, tersedia: true, menyimpan: false,
@@ -67,38 +69,36 @@ test("dashboard has six cards, a separate new action, and a usable recent-work l
       { id: "interrupted", jenis: "laporan", status: "berjalan", judul: "Carol vs Dan", adaHasil: false, waktu: 3 },
       { id: "previous", jenis: "laporan", status: "terputus", judul: "Eve vs Fox", adaHasil: true, waktu: 4 },
       { id: "running", jenis: "laporan", status: "berjalan", judul: "Gina vs Han", adaHasil: false, waktu: 5 },
+      { id: "fitur:akun", jenis: "fitur", fitur: "akun", waktu: 6 },
     ],
   };
   const renderer = renderPapan(indonesia, {
     onReport: () => calls.push("report"),
-    onBaru: () => calls.push("baru"),
     onImpor: () => calls.push("impor"),
     onBukaPekerjaan: (record) => calls.push(`buka:${record.id}`),
-    onUlangPekerjaan: (record) => calls.push(`ulang:${record.id}`),
   }, work);
   const cards = renderer.root.findAll((node) => node.props["data-uji"]?.startsWith("papan-kartu-"));
   assert.equal(cards.length, 6);
-  assert.equal(byTestId(renderer, "papan-kartu-report").findByType("h2").children.join(""), "Report Analisa");
+  const report = byTestId(renderer, "papan-kartu-report");
+  assert.equal(report.findByType("h2").children.join(""), "Report Analisa");
+  assert.equal(report.findAllByType("button").length, 1);
   assert.match(text(byTestId(renderer, "pekerjaan-daftar")), /File Terbaru/);
+  assert.match(text(item(renderer, "fitur:akun")), /Akun/);
   assert.match(text(item(renderer, "interrupted")), /Terputus/);
   assert.match(text(item(renderer, "previous")), /Terputus/);
   const previousOpen = item(renderer, "previous").find((node) => node.props["data-uji"] === "pekerjaan-buka");
   assert.match(previousOpen.props["aria-label"], /hasil sebelumnya tersedia/);
   assert.match(text(item(renderer, "running")), /Proses/);
-  // Each row remains compact; interrupted results have a labelled retry icon.
-  assert.match(item(renderer, "previous").props.className, /\bflex\b.*\bitems-center\b/);
-  assert.match(item(renderer, "previous").find((node) => node.props["data-uji"] === "pekerjaan-ulang").props["aria-label"], /Analisis ulang/);
+  assert.equal(item(renderer, "previous").findAllByType("button").length, 1);
 
   TestRenderer.act(() => {
     byTestId(renderer, "papan-tombol-report").props.onClick();
-    byTestId(renderer, "papan-tombol-baru").props.onClick();
     byTestId(renderer, "papan-tombol-impor").props.onClick();
-    for (const id of ["draft", "done", "interrupted", "previous", "running"]) {
+    for (const id of ["draft", "done", "interrupted", "previous", "running", "fitur:akun"]) {
       item(renderer, id).find((node) => node.props["data-uji"] === "pekerjaan-buka").props.onClick();
     }
-    item(renderer, "previous").find((node) => node.props["data-uji"] === "pekerjaan-ulang").props.onClick();
   });
-  assert.deepEqual(calls, ["report", "baru", "impor", "buka:draft", "buka:done", "buka:interrupted", "buka:previous", "buka:running", "ulang:previous"]);
+  assert.deepEqual(calls, ["report", "impor", "buka:draft", "buka:done", "buka:interrupted", "buka:previous", "buka:running", "buka:fitur:akun"]);
   for (const key of ["main", "analisa", "repertoar", "puzzle"]) {
     assert.equal(byTestId(renderer, `papan-tombol-${key}`).props.disabled, true);
   }
@@ -106,14 +106,13 @@ test("dashboard has six cards, a separate new action, and a usable recent-work l
 });
 
 test("dashboard and board controls retain Indonesian and English labels", () => {
-  for (const [dictionary, title, button, recent, fresh, flip, settings, promotion] of [
-    [indonesia, "Report Analisa", "Buka laporan", "File Terbaru", "Mulai baru", "Balik papan", "Pengaturan", "Pilih bidak promosi"],
-    [english, "Analysis Report", "View report", "Recent Files", "Start new", "Flip board", "Settings", "Choose promotion piece"],
+  for (const [dictionary, title, button, recent, flip, settings, promotion] of [
+    [indonesia, "Report Analisa", "Buka laporan", "File Terbaru", "Balik papan", "Pengaturan", "Pilih bidak promosi"],
+    [english, "Analysis Report", "View report", "Recent Files", "Flip board", "Settings", "Choose promotion piece"],
   ]) {
-    const renderer = renderPapan(dictionary, { onBaru: () => {} });
+    const renderer = renderPapan(dictionary);
     assert.equal(byTestId(renderer, "papan-kartu-report").findByType("h2").children.join(""), title);
     assert.equal(byTestId(renderer, "papan-tombol-report").children.join(""), button);
-    assert.equal(byTestId(renderer, "papan-tombol-baru").children.join(""), fresh);
     assert.equal(byTestId(renderer, "pekerjaan-daftar").findByType("h2").children.join(""), recent);
     assert.equal(dictionary.papan.balik, flip);
     assert.equal(dictionary.papan.pengaturan, settings);
@@ -132,6 +131,37 @@ test("recent files use the original compact panel and empty state without explan
   assert.equal(byTestId(renderer, "pekerjaan-lihat-semua").props.disabled, true);
   assert.equal(byTestId(renderer, "pekerjaan-status").props.className, "sr-only");
   renderer.unmount();
+});
+
+test("stored feature names follow the current language", () => {
+  const work = {
+    siap: true, tersedia: true, menyimpan: false, aktif: {},
+    daftar: [{ id: "fitur:pengaturan", jenis: "fitur", fitur: "pengaturan", waktu: Date.now() }],
+  };
+  for (const [dictionary, label] of [[indonesia, "Pengaturan"], [english, "Settings"]]) {
+    const renderer = renderPapan(dictionary, {}, work);
+    assert.match(text(item(renderer, "fitur:pengaturan")), new RegExp(label));
+    renderer.unmount();
+  }
+});
+
+test("recent files retain the same height and scroll vertically when populated", () => {
+  const empty = renderPapan(indonesia);
+  const emptyPanel = byTestId(empty, "pekerjaan-daftar");
+  assert.ok(emptyPanel.findAllByType("div").some((node) => node.props.className?.includes("h-[200px]")));
+  empty.unmount();
+
+  const work = {
+    siap: true, tersedia: true, menyimpan: false, aktif: {},
+    daftar: [{ id: "fitur:akun", jenis: "fitur", fitur: "akun", waktu: Date.now() }],
+  };
+  const populated = renderPapan(indonesia, {}, work);
+  const scroll = byTestId(populated, "pekerjaan-scroll");
+  assert.match(scroll.props.className, /h-\[200px\].*overflow-y-auto/);
+  assert.equal(scroll.props.role, "region");
+  assert.equal(scroll.props.tabIndex, 0);
+  assert.equal(scroll.props["aria-labelledby"], "judul-pekerjaan");
+  populated.unmount();
 });
 
 test("compact timestamps keep the full relative time accessible in both languages", () => {
