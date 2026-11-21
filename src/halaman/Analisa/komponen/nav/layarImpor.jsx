@@ -73,10 +73,15 @@ function GambarIkon({ ikon }) {
   );
 }
 
-export default function LayarImpor({ onTutup, onImpor }) {
+export default function LayarImpor({ onTutup, onImpor, onSebelumImpor, drafId, onDrafId }) {
   const { t } = useI18n();
   const penyimpanan = usePekerjaan();
   const [draf, setDraf] = useState({ tipe: "pgn", pgn: "", tautan: "", fen: "" });
+  // Draf milik tab ditangkap saat formulir dibuka; perubahan penunjuk global
+  // ketika tab lain dipilih tidak boleh mengalihkan simpanan formulir ini.
+  const drafAwalRef = useRef(drafId);
+  const onDrafIdRef = useRef(onDrafId);
+  onDrafIdRef.current = onDrafId;
   const drafRef = useRef(draf);
   const drafIdRef = useRef(null);
   const [siapDraf, setSiapDraf] = useState(false);
@@ -96,7 +101,7 @@ export default function LayarImpor({ onTutup, onImpor }) {
       // Draf awal versi sebelumnya tetap bisa dibuka. Jika pengguna memilih
       // draf baru yang masih kosong, penunjuknya sengaja tidak jatuh kembali
       // ke draf lama hanya karena belum ada isinya.
-      let id = keadaan.terakhirDrafId ?? keadaan.daftar.find((item) => item.jenis === "draf")?.id ?? ID_DRAF_IMPOR;
+      let id = drafAwalRef.current ?? keadaan.terakhirDrafId ?? keadaan.daftar.find((item) => item.jenis === "draf")?.id ?? ID_DRAF_IMPOR;
       const record = await pekerjaan.ambil(id);
       if (!hidup) return;
       const sah = record?.jenis === "draf" && record.isi && typeof record.isi === "object" && !Array.isArray(record.isi);
@@ -109,6 +114,7 @@ export default function LayarImpor({ onTutup, onImpor }) {
         setGalatDraf(Boolean(dikenal || record));
       }
       pekerjaan.tetapkanDrafAktif(id);
+      onDrafIdRef.current?.(id);
       const isi = sah ? record.isi : null;
       const dipulihkan = {
         tipe: ["pgn", "fen", "online"].includes(isi?.tipe) ? isi.tipe : "pgn",
@@ -135,10 +141,17 @@ export default function LayarImpor({ onTutup, onImpor }) {
   }
 
   function lanjutkanImpor(data) {
-    // Impor berikutnya dimulai dengan draf kosong, sementara draf yang baru
-    // dipakai tetap dapat dibuka dari riwayat tanpa tombol tambahan.
-    pekerjaan.tetapkanDrafAktif(buatIdDrafImpor());
-    onImpor(data);
+    const lanjut = () => {
+      // Baru ganti penunjuk setelah pengguna menyetujui pergantian laporan.
+      // Jika dibatalkan, formulir dan draf tab ini tetap tidak berubah.
+      if (data.format === "pgn") imporPgnKeBasisData(data.string).catch(() => {});
+      const idBaru = buatIdDrafImpor();
+      pekerjaan.tetapkanDrafAktif(idBaru);
+      onDrafIdRef.current?.(idBaru);
+      onImpor(data);
+    };
+    if (onSebelumImpor) onSebelumImpor(lanjut);
+    else lanjut();
   }
 
   useEffect(() => () => {
@@ -177,7 +190,6 @@ export default function LayarImpor({ onTutup, onImpor }) {
         setGalat(pesanGalat(e?.code));
         return;
       }
-      imporPgnKeBasisData(pgn).catch(() => {});
       lanjutkanImpor({ format: "pgn", string: pgn });
       return;
     }
@@ -207,7 +219,6 @@ export default function LayarImpor({ onTutup, onImpor }) {
       if (controllerRef.current !== controller || controller.signal.aborted) return;
       if (!pgn2.trim()) throw galatImpor(KODE_GALAT.RESPONS);
       validasiPgn(pgn2);
-      imporPgnKeBasisData(pgn2).catch(() => {});
       lanjutkanImpor({ format: "pgn", string: pgn2 });
     } catch (e) {
       if (controllerRef.current !== controller) return;

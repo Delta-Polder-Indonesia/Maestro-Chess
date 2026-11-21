@@ -46,6 +46,13 @@ export const analisa = {
       judul: "Game Review",
       petunjuk: "Engines are served from this site's own files and run entirely on your device.",
     },
+    tabKerja: {
+      daftar: "Workspace tabs",
+      baru: "New Tab",
+      tambah: "Add tab",
+      tutup: "Close tab {nama}",
+      memulihkan: "Restoring tab…",
+    },
     tab: {
       analisa: "Analyze game",
       analisaBaru: "Analyze a new game",

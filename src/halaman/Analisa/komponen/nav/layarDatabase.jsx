@@ -76,6 +76,7 @@ export default function LayarDatabase({
   onTutup,
   onAnalisa,
   onBukaAkun,
+  aktif = true,
 }) {
   const { t, bahasa: locale } = useI18n();
 
@@ -106,6 +107,20 @@ export default function LayarDatabase({
   const [targetHapusPartai, setTargetHapusPartai] = useState(null);
   const [dialogHapusKoleksi, setDialogHapusKoleksi] = useState(null);
   const [dialogKosongkanSemua, setDialogKosongkanSemua] = useState(false);
+  const aktivitasRef = useRef({ aktif, versi: 0 });
+  if (aktivitasRef.current.aktif !== aktif) {
+    aktivitasRef.current = { aktif, versi: aktivitasRef.current.versi + 1 };
+  }
+  const masihPadaKunjungan = (versi) => aktivitasRef.current.aktif && aktivitasRef.current.versi === versi;
+  useEffect(() => {
+    if (aktif) return;
+    // Konten dialog di-portal ke luar panel yang disembunyikan.
+    setDialogEksporKosong(false);
+    setDialogHapusPartai(false);
+    setTargetHapusPartai(null);
+    setDialogHapusKoleksi(null);
+    setDialogKosongkanSemua(false);
+  }, [aktif]);
 
   // Mode panel kanan: "data" (ringkasan + tools) atau "tabel" (browse/analisa).
   const [mode, setMode] = useState(modeTersimpan);
@@ -569,13 +584,18 @@ export default function LayarDatabase({
   }
 
   async function tanganiAnalisa(game) {
+    const versi = aktivitasRef.current.versi;
     const pgn = await pgnPartai(game);
+    // Pembacaan dari tab yang ditinggalkan tidak boleh membuka laporan
+    // belakangan, bahkan jika pengguna sudah kembali ke tab yang sama.
+    if (!masihPadaKunjungan(versi)) return;
     if (!pgn) {
       tampilkanNotif(t("analisa.basisData.pgnTidakAda"), "gagal");
       return;
     }
-    onAnalisa({ format: "pgn", string: pgn });
-    onTutup();
+    // Area kerja bisa meminta konfirmasi sebelum mengganti analisis berjalan.
+    // Dalam hal itu ia sendiri akan pindah ke papan setelah disetujui.
+    if (onAnalisa({ format: "pgn", string: pgn }) !== false) onTutup();
   }
 
   async function _tanganiSalinPgn(game) {
@@ -597,6 +617,7 @@ export default function LayarDatabase({
   }
 
   async function tanganiEksporPgn(id) {
+    const versi = aktivitasRef.current.versi;
     try {
       const koleksiId = id ?? koleksiTerpilih;
       let plat = "";
@@ -617,7 +638,7 @@ export default function LayarDatabase({
       });
 
       if (!pgnString) {
-        setDialogEksporKosong(true);
+        if (masihPadaKunjungan(versi)) setDialogEksporKosong(true);
         return;
       }
 
@@ -877,7 +898,7 @@ export default function LayarDatabase({
       </div>
       </div>
 
-      <DialogDatabase
+      {aktif ? <DialogDatabase
         wadahDialog={wadahDialog}
         dialogEksporKosong={dialogEksporKosong}
         setDialogEksporKosong={setDialogEksporKosong}
@@ -893,7 +914,7 @@ export default function LayarDatabase({
         dialogKosongkanSemua={dialogKosongkanSemua}
         setDialogKosongkanSemua={setDialogKosongkanSemua}
         konfirmasiKosongkanSemua={konfirmasiKosongkanSemua}
-      />
+      /> : null}
     </PanelLayar>
   );
 }

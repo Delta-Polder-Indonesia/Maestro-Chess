@@ -7,7 +7,7 @@ import KartuAkun from "./KartuAkun.jsx";
 import FormulirAkun from "./FormulirAkun.jsx";
 import Profile from "../komponen/svg/profile.jsx";
 
-export default function DaftarAkun({ daftar, aktif, revisi = 0, onPilih, onHapus, onTambah }) {
+export default function DaftarAkun({ daftar, aktif, tabAktif = true, revisi = 0, onPilih, onHapus, onTambah }) {
   const { t } = useI18n();
   const [buka, setBuka] = useState(false);
   const list = daftar || [];
@@ -62,6 +62,7 @@ export default function DaftarAkun({ daftar, aktif, revisi = 0, onPilih, onHapus
                   platform={a.platform}
                   username={a.username}
                   aktif={aktif?.platform === a.platform && String(aktif?.username || "").toLowerCase() === String(a.username || "").toLowerCase()}
+                  tabAktif={tabAktif}
                   onPilih={() => onPilih(a.platform, a.username)}
                   onHapus={() => onHapus(a.platform, a.username)}
                 />

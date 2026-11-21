@@ -25,14 +25,14 @@ function adapterMemori() {
 }
 
 // Render the actual import form, substituting storage, i18n and other boundaries.
-function komponenImpor(store) {
+function komponenImpor(store, onDatabaseImport = async () => {}) {
   let idBaru = 0;
   const dependencies = {
     "./PanelLayar.jsx": { default: ({ headerKanan, children }) => React.createElement("section", null, headerKanan, children) },
     "../svg/ChessComLogo.jsx": { default: () => null },
     "../svg/LichessLogo.jsx": { default: () => null },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
-    "../../basisData.js": { imporPgnKeBasisData: async () => {} },
+    "../../basisData.js": { imporPgnKeBasisData: onDatabaseImport },
     "../../pekerjaan.js": {
       ID_DRAF_IMPOR: "draf:impor", pekerjaan: store,
       buatIdDrafImpor: () => `draf:baru-${++idBaru}`,
@@ -61,10 +61,10 @@ function kontrol(renderer, id) {
   return renderer.root.find((node) => node.props["data-uji"] === id);
 }
 
-async function render(Impor, onImpor = () => {}) {
+async function render(Impor, onImpor = () => {}, props = {}) {
   let renderer;
   await act(async () => {
-    renderer = TestRenderer.create(React.createElement(Impor, { onTutup: () => {}, onImpor }));
+    renderer = TestRenderer.create(React.createElement(Impor, { onTutup: () => {}, onImpor, ...props }));
     await flush();
   });
   return renderer;
@@ -132,4 +132,39 @@ test("unreadable draft is not overwritten when later writes succeed", async (t) 
   assert.equal(adapter.isi.get("draf:impor").isi.pgn, "valuable original");
   assert.equal(adapter.isi.get(store.snapshot().terakhirDrafId).isi.pgn, "replacement text");
   act(() => renderer.unmount());
+});
+
+test("a tab loads its own draft and defers import until confirmation", async (t) => {
+  pasangWindow(t);
+  const store = buatPenyimpananPekerjaan(adapterMemori());
+  simpanDrafImpor({ tipe: "pgn", pgn: "first PGN" }, "draf:1", store);
+  simpanDrafImpor({ tipe: "pgn", pgn: "second PGN" }, "draf:2", store);
+  store.tetapkanDrafAktif("draf:2");
+  await store.tungguTulis();
+  const imported = [];
+  const database = [];
+  const draftIds = [];
+  let lanjut;
+  const renderer = await render(komponenImpor(store, async (pgn) => database.push(pgn)), (data) => imported.push(data), {
+    drafId: "draf:1",
+    onDrafId: (id) => draftIds.push(id),
+    onSebelumImpor: (aksi) => { lanjut = aksi; },
+  });
+  assert.equal(kontrol(renderer, "impor-pgn").props.value, "first PGN");
+  assert.equal(store.snapshot().terakhirDrafId, "draf:1");
+  await act(async () => { await kontrol(renderer, "kirim-impor").props.onClick(); });
+  assert.equal(typeof lanjut, "function");
+  assert.deepEqual(imported, []);
+  assert.deepEqual(database, []);
+  assert.equal(store.snapshot().terakhirDrafId, "draf:1");
+  assert.equal(kontrol(renderer, "impor-pgn").props.value, "first PGN");
+
+  await act(async () => { lanjut(); await flush(); });
+  assert.deepEqual(imported, [{ format: "pgn", string: "first PGN" }]);
+  assert.deepEqual(database, ["first PGN"]);
+  assert.deepEqual(draftIds, ["draf:1", "draf:baru-1"]);
+  assert.equal((await store.ambil("draf:1")).isi.pgn, "first PGN");
+  assert.equal((await store.ambil("draf:2")).isi.pgn, "second PGN");
+  act(() => renderer.unmount());
+  await store.tungguTulis();
 });

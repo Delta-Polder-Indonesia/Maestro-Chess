@@ -46,6 +46,13 @@ export const analisa = {
       judul: "Ulasan Game",
       petunjuk: "Engine diambil dari berkas lokal situs dan berjalan sepenuhnya di perangkat Anda.",
     },
+    tabKerja: {
+      daftar: "Tab area kerja",
+      baru: "New Tab",
+      tambah: "Tambah tab",
+      tutup: "Tutup tab {nama}",
+      memulihkan: "Memulihkan tab…",
+    },
     tab: {
       analisa: "Analisis permainan",
       analisaBaru: "Analisis permainan baru",

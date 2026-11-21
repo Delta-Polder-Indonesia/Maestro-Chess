@@ -9,7 +9,7 @@ import { bacaDaftarAkun, tambahKeDaftar, hapusDariDaftar } from "../../akun/daft
 import { bacaRevisiBasis, hapusKoleksi, pastikanKoleksi } from "../../basisData.js";
 import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
 
-export default function LayarAkun({ onTutup }) {
+export default function LayarAkun({ onTutup, aktif = true }) {
   const analyzeContext = useContext(AnalyzeContext);
   const [username, setUsername] = analyzeContext.akun;
   const [daftar, setDaftar] = useState(() => bacaDaftarAkun());
@@ -18,6 +18,10 @@ export default function LayarAkun({ onTutup }) {
   const akunSedangDipilih = (platform, nama) =>
     username?.platform === platform &&
     String(username?.username || "").toLowerCase() === String(nama || "").toLowerCase();
+
+  // Daftar akun adalah data bersama. Panel yang tetap terpasang saat tidak
+  // aktif perlu menyegarkan daftar jika tab lain menambah atau menghapus akun.
+  useEffect(() => { if (aktif) setDaftar(bacaDaftarAkun()); }, [aktif]);
 
   useEffect(() => {
     const list = bacaDaftarAkun();
@@ -79,6 +83,7 @@ export default function LayarAkun({ onTutup }) {
           <DaftarAkun
             daftar={daftar}
             aktif={username}
+            tabAktif={aktif}
             revisi={revisiBasis}
             onPilih={(p, u) => {
               if (!akunSedangDipilih(p, u)) kendaliTarikRef.current?.abort();

@@ -12,8 +12,8 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "r
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { hashPgn } from "../../../../lib/pgnRingan.js";
 import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
-import { ambilDaftarPartai, ambilSemuaKoleksi } from "../../basisData.js";
-import { bacaDaftarAkun } from "../../akun/daftarAkun.js";
+import { ambilDaftarPartai, langgananRevisi } from "../../basisData.js";
+import { useAkunKoleksi } from "../../akun/useAkunKoleksi.js";
 import DashboardAkun from "../../akun/DashboardAkun.jsx";
 import { agregasiWawasan, filterPartaiWawasan, hitungPembukaanTeratas } from "../../mesin/wawasan.js";
 import { ambilPetaAnalisis, langgananAnalisis } from "../../mesin/analisisTersimpan.js";
@@ -29,15 +29,14 @@ import KartuAkurasiPartai from "./wawasan/kartuAkurasi.jsx";
 
 const TAB_RINGKASAN_PERINGKAT_AKUN = ["overview", "ratings"];
 
-export default function LayarWawasan() {
+export default function LayarWawasan({ aktif = true }) {
   const { t, bahasa: locale } = useI18n();
   const analyzeContext = useContext(AnalyzeContext);
   const [akun] = analyzeContext.akun;
   const platform = akun?.platform === "lichessOrg" ? "lichessOrg" : "chessCom";
   const username = String(akun?.username || "").trim();
 
-  const [akunTersimpan] = useState(bacaDaftarAkun);
-  const [koleksi, setKoleksi] = useState([]);
+  const { akunTersimpan, koleksi } = useAkunKoleksi(aktif);
   const [semuaPartai, setSemuaPartai] = useState([]);
   const [filterWaktu, setFilterWaktu] = useState("all");
   const [filterWarna, setFilterWarna] = useState("all");
@@ -47,16 +46,6 @@ export default function LayarWawasan() {
   const permintaanPartai = useRef(0);
 
   const partai = semuaPartai;
-
-  useEffect(() => {
-    let hidup = true;
-    ambilSemuaKoleksi().then((list) => {
-      if (hidup) setKoleksi(list);
-    }).catch(() => {
-      if (hidup) setKoleksi([]);
-    });
-    return () => { hidup = false; };
-  }, []);
 
   const muatPartai = useCallback(async () => {
     const idPermintaan = ++permintaanPartai.current;
@@ -91,8 +80,14 @@ export default function LayarWawasan() {
   }, [username, platform, filterWaktu]);
 
   useEffect(() => {
+    if (!aktif) return undefined;
     muatPartai();
-  }, [muatPartai]);
+    const berhenti = langgananRevisi(muatPartai);
+    return () => {
+      permintaanPartai.current += 1;
+      berhenti();
+    };
+  }, [aktif, muatPartai]);
 
   /*
    * Hasil analisis engine sesi ini (padanan prop `analysisMap` di acuan:

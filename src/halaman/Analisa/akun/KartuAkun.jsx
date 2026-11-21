@@ -44,12 +44,15 @@ function formatRating(x) {
   return x == null ? "—" : String(x);
 }
 
-export default function KartuAkun({ platform, username, aktif = false, onPilih, onHapus }) {
+export default function KartuAkun({ platform, username, aktif = false, tabAktif = true, onPilih, onHapus }) {
   const { t, bahasa: locale } = useI18n();
   const user = String(username || "").trim();
   const koleksiId = `${platform}:${user.toLowerCase()}`;
   const kartu = useKartuPemain(user, !!user, platform);
   const [konfirmasiHapus, setKonfirmasiHapus] = useState(false);
+  // Dialog di-portal ke luar panel; jangan biarkan tab tersembunyi menahan
+  // fokus atau tetap meminta konfirmasi saat pengguna kembali.
+  useEffect(() => { if (!tabAktif) setKonfirmasiHapus(false); }, [tabAktif]);
   const [info, setInfo] = useState(() => {
     const e = cacheValid(cacheInfo, koleksiId);
     return e ? { games: e.games, lastUpdate: e.lastUpdate, galat: false } : { games: 0, lastUpdate: null, galat: false };
@@ -170,7 +173,7 @@ export default function KartuAkun({ platform, username, aktif = false, onPilih, 
           </div>
         </div>
       </div>
-      <AlertDialog open={konfirmasiHapus} onOpenChange={setKonfirmasiHapus}>
+      <AlertDialog open={tabAktif && konfirmasiHapus} onOpenChange={setKonfirmasiHapus}>
         <AlertDialogContent className="border-[#5d5d5d] bg-[#1e1d1c] text-[#dedede] shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">{t("analisa.akun.hapus")}</AlertDialogTitle>

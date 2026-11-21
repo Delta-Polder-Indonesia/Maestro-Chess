@@ -9,7 +9,7 @@ import SoundMute from "../svg/sound-mute.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { bacaTeks, tulis } from "../../penyimpanan.js";
 import { Switch } from "../../../../components/ui/switch.jsx";
-function Moves() {
+function Moves({ aktif = true }) {
   const { t } = useI18n();
   const [animateMovesMoved, setAnimateMovesMoved] = useState(false);
   const configContext = useContext(ConfigContext);
@@ -18,14 +18,14 @@ function Moves() {
   const [animateMoves, setAnimateMoves] = configContext.animateMoves;
   const [boardSounds, setBoardSounds] = configContext.boardSounds;
   useEffect(() => {
-    // Tab "Langkah" terpasang baru setiap kali panel pengaturan dibuka;
-    // tanpa clearInterval() interval menumpuk dan terus berjalan
-    // setelah komponen lepas.
+    // Panel yang tersembunyi tetap terpasang, tetapi animasinya tidak perlu
+    // berjalan di belakang tab lain.
+    if (!aktif) return undefined;
     const interval = setInterval(() => {
       setAnimateMovesMoved((prev) => !prev);
     }, 2e3);
     return () => clearInterval(interval);
-  }, []);
+  }, [aktif]);
   useEffect(() => {
     const showLegalMoves2 = bacaTeks("showLegalMoves");
     if (!showLegalMoves2) return;

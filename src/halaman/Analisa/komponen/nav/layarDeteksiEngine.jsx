@@ -2,15 +2,15 @@
  * Deteksi riwayat memakai panel Analisa dan engine bersama. Membuka layar ini
  * tidak memulai analisis atau mengubah data/kedalaman papan yang masih terpasang.
  */
-import { useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { InfoIcon } from "lucide-react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { gambar } from "../../../../lib/asets.js";
 import { cariEngine, DAFTAR_ENGINE } from "../../../../lib/engineCatur.js";
 import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
 import { useMesin } from "../../konteks/mesinKonteks.js";
-import { ambilDaftarPartai, ambilSemuaKoleksi } from "../../basisData.js";
-import { bacaDaftarAkun } from "../../akun/daftarAkun.js";
+import { ambilDaftarPartai } from "../../basisData.js";
+import { useAkunKoleksi } from "../../akun/useAkunKoleksi.js";
 import { analisisRiwayatAntiCheat, BATAS_PARTAI, batasPartaiDariInput, KEDALAMAN_AGGREGAT } from "../../akun/antiCheatRiwayat.js";
 import { MULTI_PV } from "../../mesin/engine.js";
 import { hashUntukEngine } from "../../mesin/cekWasm.js";
@@ -53,7 +53,7 @@ function TombolInfo({ uji, judul, buka }) {
   );
 }
 
-function useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk }) {
+function useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk, aktif }) {
   const mesin = useMesin();
   const [hasil, setHasil] = useState(null);
   const [status, setStatus] = useState("kosong");
@@ -80,6 +80,18 @@ function useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk })
   }, [platform, username, resetHasil]);
 
   useEffect(resetHasil, [waktu, kedalaman, resetHasil]);
+
+  // Satu engine dipakai bersama papan. Panel tersembunyi mempertahankan
+  // hasil dan filternya, tetapi pencarian yang sedang berjalan dihentikan
+  // sebelum efek papan untuk tab berikutnya mulai memakai engine.
+  useLayoutEffect(() => {
+    if (aktif || !controllerRef.current) return;
+    const controller = controllerRef.current;
+    controllerRef.current = null;
+    controller.abort();
+    setBerjalan(false);
+    setStatus("batal");
+  }, [aktif]);
 
   useEffect(() => () => {
     controllerRef.current?.abort();
@@ -168,7 +180,7 @@ function useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk })
   return { hasil, status, berjalan, progres, pesan, jumlahPartai, setJumlahPartai, batas, jalankan, batalkan };
 }
 
-export default function LayarDeteksiEngine({ onBukaAkun }) {
+export default function LayarDeteksiEngine({ onBukaAkun, aktif = true }) {
   const { t } = useI18n();
   const analyzeContext = useContext(AnalyzeContext);
   const mesin = useMesin();
@@ -176,8 +188,7 @@ export default function LayarDeteksiEngine({ onBukaAkun }) {
   const platform = akun?.platform === "lichessOrg" ? "lichessOrg" : "chessCom";
   const username = String(akun?.username || "").trim();
   const papanSibuk = analyzeContext.pageState[0] === "loading" || analyzeContext.analyzingMove[0];
-  const [akunTersimpan] = useState(bacaDaftarAkun);
-  const [koleksi, setKoleksi] = useState([]);
+  const { akunTersimpan, koleksi } = useAkunKoleksi(aktif);
   const [waktu, setWaktu] = useState("any");
   const [kedalaman, setKedalaman] = useState(KEDALAMAN_AGGREGAT);
   // Teks mentah saat mengetik: angka dijepit hanya saat melebihi batas atas
@@ -191,8 +202,9 @@ export default function LayarDeteksiEngine({ onBukaAkun }) {
   const hashId = useId();
   const threadsId = useId();
   const [infoTerbuka, setInfoTerbuka] = useState(null);
+  useEffect(() => { if (!aktif) setInfoTerbuka(null); }, [aktif]);
   const wadahDialog = useMemo(() => document.querySelector?.(".analisa-root") || undefined, []);
-  const ac = useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk });
+  const ac = useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk, aktif });
   const daftar = gabungkanAkun([...akunTersimpan, ...koleksi, akun]);
   const engineAktif = cariEngine(mesin.idEngine);
   const versiEngine = /\d+/.exec(engineAktif.label)?.[0] ?? "-";
@@ -225,17 +237,6 @@ export default function LayarDeteksiEngine({ onBukaAkun }) {
               ],
             }
           : null;
-
-  useEffect(() => {
-    let hidup = true;
-    ambilSemuaKoleksi().then((list) => {
-      if (hidup) setKoleksi(list);
-    }).catch(() => {
-      // Daftar lokal dan akun aktif tetap dapat dipilih bila metadata DB gagal.
-      if (hidup) setKoleksi([]);
-    });
-    return () => { hidup = false; };
-  }, []);
 
   function pilihSitus(situs) {
     const pertama = daftar.find((a) => a.platform === situs);
@@ -522,7 +523,7 @@ export default function LayarDeteksiEngine({ onBukaAkun }) {
           </div>
         </div>
       </div>
-      {infoDialog ? (
+      {aktif && infoDialog ? (
         <AlertDialog open onOpenChange={(b) => { if (!b) setInfoTerbuka(null); }}>
           <AlertDialogContent container={wadahDialog} className="bg-[#1e1d1c] border-[#5d5d5d] text-[#dedede] shadow-2xl">
             <AlertDialogHeader>
