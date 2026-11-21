@@ -347,6 +347,8 @@ export const analisa = {
     papan: { balik: "Flip board", pengaturan: "Settings", promosi: "Choose promotion piece" },
     nav: {
       pengaturan: "Settings",
+      papan: "Board",
+      papanKeterangan: "Board home — every feature",
       play: "Analysis Report",
       playKeterangan: "Back to the analysis board",
       baru: "New",
@@ -362,6 +364,46 @@ export const analisa = {
       beranda: "Go to the Blunder Skuad home page",
       tutupBilah: "Collapse panel",
       bukaBilah: "Expand panel",
+    },
+    papan: {
+      judul: "Board",
+      subjudul: "Every Maestro Chess feature in one place.",
+      segera: "Coming soon",
+      kartu: {
+        main: {
+          judul: "Play Chess",
+          deskripsi: "Play against an engine or a friend",
+          tombol: "Play",
+        },
+        analisa: {
+          judul: "Analysis Board",
+          deskripsi: "Analyze a game or a position",
+          tombol: "Open",
+        },
+        repertoar: {
+          judul: "New Repertoire",
+          deskripsi: "Build and practice your opening repertoire",
+          tombol: "Create",
+        },
+        impor: {
+          judul: "Import Game",
+          deskripsi: "Import a game from PGN, link, or FEN",
+          tombol: "Import",
+        },
+        puzzle: {
+          judul: "Puzzles",
+          deskripsi: "Train your tactical skills",
+          tombol: "Train",
+        },
+      },
+      terbaru: {
+        judul: "Recent Files",
+        keDatabase: "See all",
+        memuat: "Loading recent files…",
+        kosong: "No files open recently",
+        tanpaNama: "Unknown",
+        buka: "Open {putih} vs {hitam}",
+      },
     },
     pemain: { putih: "White", hitam: "Black", anonim: "Unknown" },
     waktu: { jam: "{n} hours", menit: "{n} min", hari: "{n} days" },

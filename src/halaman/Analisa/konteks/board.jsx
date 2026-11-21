@@ -61,7 +61,7 @@ export function BoardProvider({ children }) {
     const tersimpan = bacaAngka("kedalaman", 13);
     return Math.min(20, Math.max(6, Math.round(tersimpan)));
   });
-  const [tampilan, setTampilan] = useState(TAMPILAN_ANALISA.AKUN);
+  const [tampilan, setTampilan] = useState(TAMPILAN_ANALISA.PAPAN);
   const moveNumberRef = useRef(moveNumber);
   const customLineRef = useRef(customLine);
   const gameLengthRef = useRef(game.length);

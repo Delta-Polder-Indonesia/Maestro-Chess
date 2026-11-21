@@ -6,6 +6,7 @@ import { createContext } from "react";
  * bilah navigasi untuk menandai menu yang sedang aktif.
  */
 export const TAMPILAN_ANALISA = Object.freeze({
+  PAPAN: "papan",
   BERMAIN: "bermain",
   AKUN: "akun",
   DETEKSI_ENGINE: "deteksi-engine",

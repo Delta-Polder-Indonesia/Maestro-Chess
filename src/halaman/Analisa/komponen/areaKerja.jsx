@@ -59,6 +59,7 @@ import { ambilPgnTitipan } from "../../../lib/titipanAnalisa.js";
  * mengeluarkan vendor-chart dari jalur kritis halaman (temuan "reduce
  * unused JavaScript" Lighthouse ±80 KiB).
  */
+const LayarPapan = lazy(() => import("./nav/layarPapan.jsx"));
 const LayarAkun = lazy(() => import("./nav/layarAkun.jsx"));
 const LayarDatabase = lazy(() => import("./nav/layarDatabase.jsx"));
 const LayarImpor = lazy(() => import("./nav/layarImpor.jsx"));
@@ -120,7 +121,15 @@ function PenitipPgn() {
  * ImportContext (lewat `onAnalisa`/`onImpor`). Saat papan aktif ia
  * mengembalikan null — persis seperti `{papanAktif ? null : …}` sebelumnya.
  */
-function LapisanLayar({ tampilan, papanAktif, lapisanRef, kePapan, keAkun }) {
+function LapisanLayar({
+  tampilan,
+  papanAktif,
+  lapisanRef,
+  kePapan,
+  keAkun,
+  keImpor,
+  keDatabase,
+}) {
   const muatPartai = useMuatPartai();
   if (papanAktif) return null;
   return (
@@ -131,6 +140,15 @@ function LapisanLayar({ tampilan, papanAktif, lapisanRef, kePapan, keAkun }) {
       data-layar={tampilan}
       className="absolute inset-0 z-[900] min-h-0 overflow-y-auto overflow-x-hidden bg-backgroundBoxDarker"
     >
+      {tampilan === TAMPILAN_ANALISA.PAPAN ? (
+        <Suspense fallback={<div className="h-full min-h-0 w-full bg-backgroundBox" />}>
+          <LayarPapan
+            onAnalisa={muatPartai}
+            onImpor={keImpor}
+            onDatabase={keDatabase}
+          />
+        </Suspense>
+      ) : null}
       {tampilan === TAMPILAN_ANALISA.AKUN ? (
         <Suspense fallback={<div className="h-full min-h-0 w-full bg-backgroundBox" />}>
           <LayarAkun onTutup={kePapan} />
@@ -179,6 +197,16 @@ export default function AreaKerja() {
 
   const keAkun = useCallback(
     () => setTampilan(TAMPILAN_ANALISA.AKUN),
+    [setTampilan],
+  );
+
+  const keImpor = useCallback(
+    () => setTampilan(TAMPILAN_ANALISA.IMPOR),
+    [setTampilan],
+  );
+
+  const keDatabase = useCallback(
+    () => setTampilan(TAMPILAN_ANALISA.BASIS_DATA),
     [setTampilan],
   );
 
@@ -245,6 +273,8 @@ export default function AreaKerja() {
         lapisanRef={lapisanRef}
         kePapan={kePapan}
         keAkun={keAkun}
+        keImpor={keImpor}
+        keDatabase={keDatabase}
       />
     </div>
   );

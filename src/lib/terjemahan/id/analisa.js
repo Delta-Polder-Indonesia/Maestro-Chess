@@ -347,6 +347,8 @@ export const analisa = {
     papan: { balik: "Balik papan", pengaturan: "Pengaturan", promosi: "Pilih bidak promosi" },
     nav: {
       pengaturan: "Pengaturan",
+      papan: "Papan",
+      papanKeterangan: "Beranda Papan — semua fitur",
       play: "Report Analisa",
       playKeterangan: "Kembali ke papan analisis",
       baru: "Baru",
@@ -362,6 +364,46 @@ export const analisa = {
       beranda: "Ke beranda Blunder Skuad",
       tutupBilah: "Sembunyikan bilah",
       bukaBilah: "Tampilkan bilah",
+    },
+    papan: {
+      judul: "Papan",
+      subjudul: "Semua fitur Maestro Chess dalam satu tempat.",
+      segera: "Segera hadir",
+      kartu: {
+        main: {
+          judul: "Main Catur",
+          deskripsi: "Bermain melawan mesin atau teman",
+          tombol: "Main",
+        },
+        analisa: {
+          judul: "Papan Analisis",
+          deskripsi: "Analisis satu partai atau posisi",
+          tombol: "Buka",
+        },
+        repertoar: {
+          judul: "Repertoar Baru",
+          deskripsi: "Bangun dan latih repertoire pembukaanmu",
+          tombol: "Buat",
+        },
+        impor: {
+          judul: "Impor Permainan",
+          deskripsi: "Impor partai dari PGN, tautan, atau FEN",
+          tombol: "Impor",
+        },
+        puzzle: {
+          judul: "Teka-Teki",
+          deskripsi: "Latih kemampuan taktikmu",
+          tombol: "Latih",
+        },
+      },
+      terbaru: {
+        judul: "File Terbaru",
+        keDatabase: "Lihat semua",
+        memuat: "Memuat file terbaru…",
+        kosong: "Belum ada file yang dibuka",
+        tanpaNama: "Tanpa nama",
+        buka: "Buka partai {putih} vs {hitam}",
+      },
     },
     pemain: { putih: "Putih", hitam: "Hitam", anonim: "Tanpa nama" },
     waktu: { jam: "{n} jam", menit: "{n} menit", hari: "{n} hari" },

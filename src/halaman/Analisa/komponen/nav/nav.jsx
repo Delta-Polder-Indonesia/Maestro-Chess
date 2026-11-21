@@ -2,7 +2,8 @@
  * Port dari Brilliant-Chess (MIT, © 2025 Delo) — src/components/nav/nav.tsx.
  *
  * Bilah navigasi kiri: logo + wordmark di atas, lalu menu area kerja
- * (Bermain / Akun / Basis Data / Impor), diikuti tautan Source Code
+ * (Papan / Akun / Basis Data / Impor / Deteksi Engine / Wawasan /
+ * Pengaturan), diikuti tautan Source Code
  * dan Atribusi di dasar bilah.
  *
  * PERUBAHAN BESAR dari upstream (dan dari versi port sebelumnya):
@@ -53,7 +54,7 @@ import Lisensi from "../svg/license.jsx";
 import Profile from "../svg/profile.jsx";
 import ShieldAlert from "../svg/shield-alert.jsx";
 import { Settings, BarChart3 } from "lucide-react";
-import { MagnifierCheckerIcon } from "../../../../components/icons.jsx";import { TAMPILAN_ANALISA } from "../../konteks/analyzeKonteks.js";
+import { TAMPILAN_ANALISA } from "../../konteks/analyzeKonteks.js";
 import { useBoard } from "../../konteks/boardKonteks.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { TooltipLabel } from "../../../../components/ui/tooltip.jsx";
@@ -68,6 +69,19 @@ function IkonImpor({ className }) {
       <path
         className={className}
         d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm1 2.5L18.5 8H15V4.5zM8 11h8v2H8v-2zm0 4h8v2H8v-2zm4-10v5h5v.5h-5V5h.75L12.5 5.5z"
+      />
+    </svg>
+  );
+}
+
+/** Ikon "Papan" — papan catur 8x8 (monokrom, ikut warna kelas fill). */
+function IkonPapan({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" width={18} height={18} aria-hidden="true">
+      <path
+        className={className}
+        fillRule="evenodd"
+        d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm1 3v2h2V6H5zm4 0v2h2V6H9zm4 0v2h2V6h-2zm4 0v2h2V6h-2zM5 10v2h2v-2H5zm4 0v2h2v-2H9zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zM5 14v2h2v-2H5zm4 0v2h2v-2H9zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z"
       />
     </svg>
   );
@@ -114,10 +128,10 @@ export default function Nav() {
    */
   const menu = [
     {
-      label: t("analisa.nav.play"),
-      tampilan: TAMPILAN_ANALISA.BERMAIN,
-      icon: () => <MagnifierCheckerIcon className="h-[18px] w-[18px] shrink-0" />,
-      kunci: "play",
+      label: t("analisa.nav.papan"),
+      tampilan: TAMPILAN_ANALISA.PAPAN,
+      icon: (props) => <IkonPapan className={props.className} />,
+      kunci: "papan",
     },
     {
       label: t("analisa.nav.akun"),
@@ -183,15 +197,6 @@ export default function Nav() {
     navTerbuka ? "navTop:max-w-[140px] navTop:opacity-100" : "navTop:max-w-0 navTop:opacity-0"
   }`;
 
-  /**
-   * Tombol "Bermain" = memilih layar papan. Ia TIDAK mengosongkan
-   * `data`, `akun`, dan `pageState`: karena papan tidak pernah dilepas,
-   * berpindah layar tidak boleh membuang analisis yang sedang direview.
-   */
-  function kePapan() {
-    setTampilan(TAMPILAN_ANALISA.BERMAIN);
-  }
-
   return (
     <nav className={`flex flex-col navTop:h-full w-full relative ${navTerbuka ? "navTop:w-[210px]" : "navTop:w-12"} navTop:shrink-0 navTop:will-change-[width] navTop:transition-[width] navTop:duration-300 navTop:ease-[cubic-bezier(0.22,1,0.36,1)]`}>
       {/*
@@ -255,10 +260,11 @@ export default function Nav() {
               // Layar yang sedang tampil ditandai di bilah, persis seperti
               // sidebar dashboard Pengurus menandai tab aktifnya.
               const aktif = Boolean(item.tampilan) && tampilan === item.tampilan;
-              const keterangan =
-                item.kunci === "play" ? t("analisa.nav.playKeterangan") : item.label;
-              const aksi =
-                item.kunci === "play" ? kePapan : () => setTampilan(item.tampilan);
+              // Setiap tombol memilih layarnya. Berpindah layar TIDAK
+              // mengosongkan `data`, `akun`, dan `pageState`: karena papan
+              // tidak pernah dilepas, analisis yang sedang direview tetap utuh.
+              const keterangan = item.label;
+              const aksi = () => setTampilan(item.tampilan);
               return (
                 <TooltipLabel key={item.kunci} label={navTerbuka ? undefined : keterangan} side="right">
                   <button
