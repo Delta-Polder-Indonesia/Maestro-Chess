@@ -11,12 +11,30 @@
  * analisis (dibatalkan/diganti saat analisis baru), bukan sepanjang
  * navigasi papan.
  */
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { adaPgnTitipan } from "../../../lib/titipanAnalisa.js";
+import { buatIdPekerjaan, pekerjaan, simpanLaporanAktif } from "../pekerjaan.js";
 import { ImportContext } from "./importKonteks.js";
 
 export function ImportProvider({ children }) {
-  const [data, setData] = useState({ format: "fen", string: "" });
+  const [data, setDataState] = useState(() => ({
+    format: "fen", string: "", pekerjaanId: buatIdPekerjaan(), awalPekerjaan: true,
+  }));
+  // Muatan baru mendapat id baru; pemulihan membawa id lama. Papan "Mulai
+  // baru" yang benar-benar masih kosong dipakai ulang saat pertama diisi,
+  // agar tidak meninggalkan entri kosong setiap kali pengguna mengimpor PGN.
+  const setData = useCallback((berikut) => {
+    simpanLaporanAktif();
+    const idBaru = buatIdPekerjaan();
+    const keadaan = pekerjaan.snapshot();
+    const papanKosong = keadaan.daftar.find((item) => item.id === keadaan.aktif.id && item.status === "baru");
+    setDataState((sebelum) => {
+      const nilai = typeof berikut === "function" ? berikut(sebelum) : berikut;
+      if (!nilai || nilai === sebelum) return sebelum;
+      const id = nilai.pekerjaanId ?? (papanKosong?.id === sebelum.pekerjaanId ? papanKosong.id : idBaru);
+      return { ...nilai, pekerjaanId: id };
+    });
+  }, []);
   /*
    * Bila halaman dibuka dengan PGN titipan dari teka-teki (tombol "Analisa"),
    * mulai dalam keadaan `loading`. Tanpa ini render PERTAMA papan memakai

@@ -41,10 +41,20 @@
  * Dengan begitu `progress` hanya me-render ulang dua komponen kecil tadi,
  * tidak lagi papan catur beserta menu dan bilah tombolnya.
  */
-import { lazy, Suspense, useCallback, useEffect, useRef } from "react";
+import { lazy, Suspense, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { TAMPILAN_ANALISA } from "../konteks/analyzeKonteks.js";
 import { useBoard } from "../konteks/boardKonteks.js";
 import { useImport } from "../konteks/importKonteks.js";
+import { ErrorsContext } from "../konteks/errorsKonteks.js";
+import { pekerjaan, snapshotLaporanAman } from "../pekerjaan.js";
+import { catatFitur, KUNCI_FITUR } from "../riwayatFitur.js";
+import { usePekerjaan } from "../usePekerjaan.js";
+import { useI18n } from "../../../lib/i18n.jsx";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "../../../components/ui/alert-dialog.jsx";
+import { pushPageError } from "./errors/pushPageError.js";
 import Game from "./game/game.jsx";
 import BoardMenu from "./boardMenu/boardMenu.jsx";
 import Menu from "./menu/menu.jsx";
@@ -114,6 +124,28 @@ function PenitipPgn() {
   return null;
 }
 
+/** Catat layar yang benar-benar dibuka tanpa mengubah tampilan navigasi. */
+function PencatatFitur({ tampilan }) {
+  const [data] = useImport().data;
+  const { terakhirDrafId } = usePekerjaan();
+  const targetId = tampilan === TAMPILAN_ANALISA.BERMAIN ? data?.pekerjaanId
+    : tampilan === TAMPILAN_ANALISA.IMPOR ? terakhirDrafId : null;
+  useEffect(() => { catatFitur(tampilan, targetId); }, [tampilan, targetId]);
+  return null;
+}
+
+/** Peringatan tidak hilang saat pengguna berpindah layar. */
+function PeringatanPenyimpanan() {
+  const { t } = useI18n();
+  const { siap, tersedia } = usePekerjaan();
+  if (!siap || tersedia) return null;
+  return (
+    <div data-uji="penyimpanan-gagal" role="alert" className="shrink-0 border-b border-[#a56c25] bg-[#50391b] px-3 py-2 text-xs leading-5 text-[#ffe3ae] sm:px-5">
+      <strong>{t("analisa.pekerjaan.gagalJudul")}</strong> {t("analisa.pekerjaan.gagalIsi")}
+    </div>
+  );
+}
+
 /**
  * Lapisan layar non-papan (Akun, Pengaturan, Basis Data, Impor, …).
  *
@@ -128,10 +160,112 @@ function LapisanLayar({
   kePapan,
   keAkun,
   keImpor,
-  keDatabase,
 }) {
   const muatPartai = useMuatPartai();
+  const [data, setData] = useImport().data;
+  const setTampilan = useBoard().tampilan[1];
+  const setErrors = useContext(ErrorsContext).errors[1];
+  const { t } = useI18n();
+  const [dialog, setDialog] = useState(null);
+  const permintaanRef = useRef(0);
+  const tampilanRef = useRef(tampilan);
+  tampilanRef.current = tampilan;
+  useEffect(() => {
+    if (tampilan !== TAMPILAN_ANALISA.PAPAN) {
+      permintaanRef.current += 1;
+      setDialog(null);
+    }
+  }, [tampilan]);
+
+  async function jalankan(aksi, nomor) {
+    const masihDipilih = () => nomor === permintaanRef.current && tampilanRef.current === TAMPILAN_ANALISA.PAPAN;
+    if (!masihDipilih()) return;
+    if (aksi.jenis === "aktif") {
+      await pekerjaan.init();
+      if (!masihDipilih()) return;
+      const keadaan = pekerjaan.snapshot();
+      if (keadaan.aktif.digunakan) {
+        const item = keadaan.daftar.find((entry) => entry.id === keadaan.aktif.id);
+        if (!item || ["selesai", "baru"].includes(item.status) || keadaan.aktif.berjalan) {
+          kePapan();
+          return;
+        }
+        await jalankan({ jenis: "buka", item }, nomor);
+        return;
+      }
+      const item = keadaan.daftar.find((entry) => entry.jenis === "laporan" && entry.id === keadaan.terakhirId) ??
+        keadaan.daftar.find((entry) => entry.jenis === "laporan");
+      if (item) await jalankan({ jenis: "buka", item }, nomor);
+      else {
+        pekerjaan.tetapkanAktif({ id: data.pekerjaanId, digunakan: true, berjalan: false });
+        kePapan();
+      }
+      return;
+    }
+    if (aksi.item?.jenis === "draf") {
+      pekerjaan.tetapkanDrafAktif(aksi.item.id);
+      keImpor();
+      return;
+    }
+    const keadaan = pekerjaan.snapshot();
+    if (!aksi.ulang && aksi.item?.id === keadaan.aktif.id && keadaan.aktif.digunakan &&
+      (keadaan.aktif.berjalan || ["selesai", "baru"].includes(aksi.item.status))) {
+      kePapan();
+      return;
+    }
+    const record = await pekerjaan.ambil(aksi.item?.id);
+    if (!masihDipilih()) return;
+    if (!record || record.jenis !== "laporan" || !["pgn", "fen"].includes(record.sumber?.format) || typeof record.sumber?.string !== "string") {
+      pushPageError(setErrors, t("analisa.pekerjaan.rusakJudul"), t("analisa.pekerjaan.rusakIsi"));
+      return;
+    }
+    const snapshot = snapshotLaporanAman(record.snapshot);
+    if (!aksi.ulang && !snapshot) {
+      setDialog({ jenis: record.snapshot ? "rusak" : "ulang", aksi: { ...aksi, ulang: true } });
+      return;
+    }
+    if (aksi.ulang && !record.sumber.string.trim()) {
+      pushPageError(setErrors, t("analisa.pekerjaan.rusakJudul"), t("analisa.pekerjaan.rusakIsi"));
+      return;
+    }
+    setData({
+      ...record.sumber,
+      pekerjaanId: record.id,
+      ...(aksi.ulang ? { rekamAwal: record } : { pemulihan: { ...record, snapshot } }),
+    });
+    kePapan();
+  }
+
+  function minta(aksi) {
+    const nomor = ++permintaanRef.current;
+    const aktif = pekerjaan.snapshot().aktif;
+    const berganti = aksi.jenis === "buka" && aksi.item?.jenis === "laporan" && (aksi.ulang || aksi.item.id !== aktif.id);
+    if (aktif.berjalan && berganti) {
+      setDialog({ jenis: "hentikan", aksi });
+      return;
+    }
+    jalankan(aksi, nomor);
+  }
+
+  function bukaRiwayat(item) {
+    if (item.jenis !== "fitur") {
+      minta({ jenis: "buka", item });
+      return;
+    }
+    if (!Object.hasOwn(KUNCI_FITUR, item.fitur)) return;
+    if (item.fitur === TAMPILAN_ANALISA.BERMAIN) {
+      const laporan = pekerjaan.snapshot().daftar.find((entry) => entry.jenis === "laporan" && entry.id === item.targetId);
+      minta(laporan ? { jenis: "buka", item: laporan } : { jenis: "aktif" });
+    } else if (item.fitur === TAMPILAN_ANALISA.IMPOR) {
+      if (item.targetId) pekerjaan.tetapkanDrafAktif(item.targetId);
+      keImpor();
+    } else {
+      setTampilan(item.fitur);
+    }
+  }
+
   if (papanAktif) return null;
+  const wadahDialog = typeof document === "undefined" ? undefined : document.querySelector(".analisa-root") ?? undefined;
   return (
     <div
       ref={lapisanRef}
@@ -143,9 +277,9 @@ function LapisanLayar({
       {tampilan === TAMPILAN_ANALISA.PAPAN ? (
         <Suspense fallback={<div className="h-full min-h-0 w-full bg-backgroundBox" />}>
           <LayarPapan
-            onAnalisa={muatPartai}
+            onReport={() => minta({ jenis: "aktif" })}
             onImpor={keImpor}
-            onDatabase={keDatabase}
+            onBukaPekerjaan={bukaRiwayat}
           />
         </Suspense>
       ) : null}
@@ -179,6 +313,32 @@ function LapisanLayar({
           <LayarImpor onTutup={kePapan} onImpor={muatPartai} />
         </Suspense>
       ) : null}
+      <AlertDialog open={Boolean(dialog)} onOpenChange={(terbuka) => { if (!terbuka) setDialog(null); }}>
+        <AlertDialogContent container={wadahDialog} className="border-[#5d5d5d] bg-[#1e1d1c] text-[#dedede] shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">
+              {t(dialog?.jenis === "hentikan" ? "analisa.pekerjaan.hentikanJudul" : dialog?.jenis === "rusak" ? "analisa.pekerjaan.rusakJudul" : "analisa.pekerjaan.terputusJudul")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[#aaa]">
+              {t(dialog?.jenis === "hentikan" ? "analisa.pekerjaan.hentikanIsi" : dialog?.jenis === "rusak" ? "analisa.pekerjaan.rusakUlang" : "analisa.pekerjaan.ulangIsi")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-[#5d5d5d] bg-[#2a2a2a] text-[#dedede] hover:bg-[#3a3a3a] hover:text-white">{t("analisa.akun.batal")}</AlertDialogCancel>
+            <AlertDialogAction
+              data-uji="pekerjaan-konfirmasi"
+              onClick={() => {
+                const aksi = dialog?.aksi;
+                setDialog(null);
+                if (aksi) jalankan(aksi, ++permintaanRef.current);
+              }}
+              className="bg-[#81b64c] font-bold text-black hover:bg-[#8bc550]"
+            >
+              {t(dialog?.jenis === "hentikan" ? "analisa.pekerjaan.hentikanLanjut" : "analisa.pekerjaan.ulang")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -205,11 +365,6 @@ export default function AreaKerja() {
     [setTampilan],
   );
 
-  const keDatabase = useCallback(
-    () => setTampilan(TAMPILAN_ANALISA.BASIS_DATA),
-    [setTampilan],
-  );
-
   const papanAktif = tampilan === TAMPILAN_ANALISA.BERMAIN;
 
   /*
@@ -231,7 +386,7 @@ export default function AreaKerja() {
   useEffect(() => {
     if (papanAktif) return undefined;
     const tekan = (e) => {
-      if (e.key === "Escape") kePapan();
+      if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector('[role="alertdialog"][data-state="open"]')) kePapan();
     };
     document.addEventListener("keydown", tekan);
     return () => document.removeEventListener("keydown", tekan);
@@ -239,6 +394,8 @@ export default function AreaKerja() {
 
   return (
     <div className="relative flex h-full min-h-0 min-w-0 w-full flex-1 flex-col">
+      <PeringatanPenyimpanan />
+      <div className="relative flex min-h-0 w-full flex-1 flex-col">
       <main
         ref={wadahRef}
         aria-hidden={papanAktif ? undefined : true}
@@ -266,6 +423,7 @@ export default function AreaKerja() {
        * tampil sebelum PGN titipan dipasang.
        */}
       <PenitipPgn />
+      <PencatatFitur tampilan={tampilan} />
 
       <LapisanLayar
         tampilan={tampilan}
@@ -274,8 +432,8 @@ export default function AreaKerja() {
         kePapan={kePapan}
         keAkun={keAkun}
         keImpor={keImpor}
-        keDatabase={keDatabase}
       />
+      </div>
     </div>
   );
 }
