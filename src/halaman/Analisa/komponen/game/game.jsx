@@ -1,5 +1,5 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef, useContext } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef, useContext } from "react";
 import Board from "./board.jsx";
 import Clock from "./clock.jsx";
 import Name from "./name.jsx";
@@ -15,23 +15,20 @@ import { ErrorsContext } from "../../konteks/errorsKonteks.js";
 import { maxVertical, navTop } from "../../konstanta.js";
 import { ConfigContext } from "../../konteks/configKonteks.js";
 import GameButtons from "../menu/analysis/gameButtons.jsx";
-import { getMoves, getArrows, getCustomResult, formatPlayerLabel } from "./getMoves.js";
+import { getMoves, getArrows, getCapturedPieces, getCustomResult, formatPlayerLabel } from "./getMoves.js";
 import { useMuatPartai } from "./useMuatPartai.js";
 import { useAnalisisPapan } from "./useAnalisisPapan.js";
 import { usePekerjaanLaporan } from "./usePekerjaanLaporan.js";
-import { buatHandleKeyDown } from "./keyboardPapan.js";
+import PendengarKeyboard from "./pendengarKeyboard.jsx";
 
-function Game({ wadah }) {
+const IsiGame = memo(function IsiGame({ wadah, boardSoundsRef, didukung, siapkan, ambilMesin, setErrors }) {
   const [boardSize, setBoardSize] = useState(750);
   const [gameHeight, setGameHeight] = useState(850);
-  const [captured, setCaptured] = useState({ white: [], black: [] });
   const [arrows, setArrows] = useState({ 0: [] });
   const [gap, setGap] = useState(10);
   const [drag2, setDrag] = useState({ is: false, id: "" });
   const [isNavTop, setIsNavTop] = useState(false);
   const analyzeContext = useContext(AnalyzeContext);
-  const errorsContext = useContext(ErrorsContext);
-  const configContext = useContext(ConfigContext);
   const [players, setPlayers] = analyzeContext.players;
   const [time, setTime] = analyzeContext.time;
   const [moveNumber, setMoveNumber] = analyzeContext.moveNumber;
@@ -52,22 +49,23 @@ function Game({ wadah }) {
   const [returnedToNormalGame, setReturnedToNormalGame] = analyzeContext.returnedToNormalGame;
   const [analyzingMove, setAnalyzingMove] = analyzeContext.analyzingMove;
   const [depth] = analyzeContext.depth;
-  const [tampilan] = analyzeContext.tampilan;
   const setMaterialAdvantage = analyzeContext.materialAdvantage[1];
   const gameController = analyzeContext.gameController;
-  const setErrors = errorsContext.errors[1];
-  const [boardSounds] = configContext.boardSounds;
   const componentRef = useRef(null);
   const gameRef = useRef(null);
   const { t } = useI18n();
-  const { didukung, siapkan, ambilMesin } = useMesin();
   const intervalRef = useRef();
   const tabRef = useRef(tab);
   const dragRef = useRef(drag2);
   const pageStateRef = useRef(pageState);
-  const tampilanRef = useRef(tampilan);
   const { previousMove, move: move2, nextMove } = getMoves(game, moveNumber, customLine, returnedToNormalGame);
   const shownResult = customLine.moveNumber < 0 ? result2 : getCustomResult(move2);
+  // Turunan murni dari posisi: tidak perlu setState dan render kedua setiap
+  // kali pemain menavigasi langkah (termasuk saat tidak ada tangkapan).
+  const captured = useMemo(
+    () => getCapturedPieces(game, moveNumber, customLine),
+    [game, moveNumber, customLine]
+  );
   const pekerjaanLaporan = usePekerjaanLaporan({
     data, game, moveNumber, white, time, result: result2, tab, customLine, arrows, pageState, depth,
   });
@@ -83,7 +81,7 @@ function Game({ wadah }) {
     depth,
     pekerjaanLaporan,
     analyzeController,
-    boardSounds,
+    boardSoundsRef,
     siapkan,
     t,
     setErrors,
@@ -132,9 +130,6 @@ function Game({ wadah }) {
   useEffect(() => {
     pageStateRef.current = pageState;
   }, [pageState]);
-  useEffect(() => {
-    tampilanRef.current = tampilan;
-  }, [tampilan]);
   // Engine TIDAK lagi dimuat di sini: worker dimiliki <MesinProvider> dan
   // baru diunduh ketika pengguna benar-benar meminta analisis (lihat
   // src/halaman/Analisa/konteks/mesin.jsx). Yang tersisa hanya peringatan
@@ -245,21 +240,6 @@ function Game({ wadah }) {
     }
   }, [arrows, customLine.arrows, customLine.moveNumber, moveNumber, setArrows, setCustomLine]);
   const arrowsMemo = useMemo(() => getArrows(arrows, moveNumber, customLine), [arrows, moveNumber, customLine]);
-  useEffect(() => {
-    const handleKeyDown = buatHandleKeyDown({
-      tampilanRef,
-      pageStateRef,
-      dragRef,
-      analyzingMoveRef,
-      gameController,
-    });
-    document.addEventListener("keydown", handleKeyDown);
-    // Dulu dilepas dari `window` padahal dipasang di `document`, sehingga
-    // pendengar menumpuk setiap kali halaman dibuka ulang dan tombol panah
-    // memicu beberapa langkah sekaligus.
-    return () => document.removeEventListener("keydown", handleKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once: listener keyboard global hanya dipasang sekali; ref dipakai agar nilai selalu segar
-  }, []);
   /**
    * Ukuran papan = sisi terkecil wadah halaman, dikurangi lajur bilah
    * evaluasi, menu papan, dan panel kanan bila panel masih sejajar.
@@ -346,18 +326,6 @@ function Game({ wadah }) {
     // pageState ikut jadi dependensi: panel kanan baru muncul setelah
     // analisis berjalan, dan itu mengubah lebar yang tersedia untuk papan.
   }, [wadah, pageState]);
-  useEffect(() => {
-    const newCaptured = { white: [], black: [] };
-    for (let i = 0; i <= moveNumber && i < game.length; i++) {
-      const move3 = game[i];
-      if (move3.capture) newCaptured[move3.color === "w" ? "black" : "white"].push(move3.capture);
-    }
-    for (let i = 0; i <= customLine.moveNumber; i++) {
-      const move3 = customLine.moves[i];
-      if (move3.capture) newCaptured[move3.color === "w" ? "black" : "white"].push(move3.capture);
-    }
-    setCaptured(newCaptured);
-  }, [moveNumber, customLine.moveNumber, customLine.moves, game]);
   function roundBoardSize(boardSize2) {
     // Papan boleh melebar sampai batas ini (kelipatan 8) supaya tetap rapi.
     return Math.min(1000, Math.round(boardSize2 / 8) * 8);
@@ -409,6 +377,7 @@ function Game({ wadah }) {
   const currentBlackTime = move2?.clock?.black !== undefined ? move2.clock.black : (time || null);
 
   return <div className="flex flex-col gap-[6px]">
+        <PendengarKeyboard pageStateRef={pageStateRef} dragRef={dragRef} analyzingMoveRef={analyzingMoveRef} gameController={gameController} />
         <div ref={gameRef} tabIndex={0} style={{ gap }} className="h-full flex navTop:flex-row flex-col outline-none">
             <div style={{ [isNavTop ? "width" : "height"]: gameHeight }} className="flex navTop:flex-row flex-col items-center">
                 <Evaluation size={boardSize} navTop={isNavTop} white={white} advantage={analyzingMove ? previousMove?.previousStaticEvals?.[0] ?? ["cp", "0"] : move2?.previousStaticEvals?.[0] ?? ["cp", "0"]} whiteMoving={(analyzingMove ? previousMove?.color ?? WHITE : move2?.color ?? WHITE) === WHITE} />
@@ -480,5 +449,17 @@ function Game({ wadah }) {
             </div>
         </div>
     </div>;
+});
+
+// Konteks konfigurasi/engine/errors memiliki banyak field; pilih hanya nilai
+// yang benar-benar dipakai IsiGame sebelum melewati batas memo.
+function Game({ wadah }) {
+  const [boardSounds] = useContext(ConfigContext).boardSounds;
+  const boardSoundsRef = useRef(boardSounds);
+  useLayoutEffect(() => { boardSoundsRef.current = boardSounds; }, [boardSounds]);
+  const setErrors = useContext(ErrorsContext).errors[1];
+  const { didukung, siapkan, ambilMesin } = useMesin();
+  return <IsiGame wadah={wadah} boardSoundsRef={boardSoundsRef} didukung={didukung} siapkan={siapkan} ambilMesin={ambilMesin} setErrors={setErrors} />;
 }
-export default Game;
+
+export default memo(Game);

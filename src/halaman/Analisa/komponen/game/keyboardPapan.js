@@ -32,8 +32,8 @@ export function isDialogAktif() {
     try {
       const style = window.getComputedStyle?.(el);
       if (style && (style.display === "none" || style.visibility === "hidden")) continue;
-    } catch (_e) {
-      /* getComputedStyle tidak tersedia di env tanpa window */
+    } catch (error) {
+      console.error("Gagal memeriksa dialog aktif:", error);
     }
     return true;
   }

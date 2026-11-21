@@ -19,7 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../../../lib/i18n.jsx";
 import { bacaAngka } from "../penyimpanan.js";
 import { normalisasiPemain, TAMPILAN_ANALISA } from "./analyzeKonteks.js";
-import { BoardContext } from "./boardKonteks.js";
+import { BoardContext, SetTampilanContext, TampilanContext } from "./boardKonteks.js";
 
 export function BoardProvider({ children }) {
   const { t } = useI18n();
@@ -169,7 +169,6 @@ export function BoardProvider({ children }) {
       customLine: [customLine, setCustomLine],
       returnedToNormalGame: [returnedToNormalGame, setReturnedToNormalGame],
       depth: [depth, setDepth],
-      tampilan: [tampilan, setTampilan],
       gameController,
     }),
     [
@@ -187,9 +186,14 @@ export function BoardProvider({ children }) {
       customLine,
       returnedToNormalGame,
       depth,
-      tampilan,
       gameController,
     ]
   );
-  return <BoardContext.Provider value={nilai}>{children}</BoardContext.Provider>;
+  return (
+    <TampilanContext.Provider value={tampilan}>
+      <SetTampilanContext.Provider value={setTampilan}>
+        <BoardContext.Provider value={nilai}>{children}</BoardContext.Provider>
+      </SetTampilanContext.Provider>
+    </TampilanContext.Provider>
+  );
 }

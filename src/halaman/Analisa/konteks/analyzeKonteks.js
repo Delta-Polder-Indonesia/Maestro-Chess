@@ -83,14 +83,6 @@ export const AnalyzeContext = createContext({
   }],
   depth: [13, () => {
   }],
-  /*
-   * Layar yang sedang tampil di area kerja. Nilainya salah satu dari
-   * TAMPILAN_ANALISA. Papan catur TIDAK pernah dilepas — hanya ditutupi
-   * lapisan lain — sehingga analisis yang sedang berjalan dan panah yang
-   * sudah digambar tetap utuh saat pengguna berpindah layar.
-   */
-  tampilan: ["akun", () => {
-  }],
   gameController: { back: () => {
   }, forward: () => {
   }, last: () => {

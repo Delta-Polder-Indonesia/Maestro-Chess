@@ -370,7 +370,7 @@ export const analisa = {
       impor: "Impor permainan",
       kodeSumber: "Kode Sumber",
       atribusi: "Atribusi",
-      beranda: "Ke beranda Blunder Skuad",
+      beranda: "Maestro Chess — Beranda",
       tutupBilah: "Sembunyikan bilah",
       bukaBilah: "Tampilkan bilah",
     },

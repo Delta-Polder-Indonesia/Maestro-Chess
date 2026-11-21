@@ -1,5 +1,5 @@
 import { Plus, X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { useI18n } from "../../../lib/i18n.jsx";
 import { KUNCI_FITUR } from "../riwayatFitur.js";
 import { usePekerjaan } from "../usePekerjaan.js";
@@ -15,6 +15,7 @@ function tampilkanTabAktif(daftar) {
 export default function TabBar({ daftar, aktifId, sibuk, onPilih, onTutup, onTambah }) {
   const { t } = useI18n();
   const { daftar: pekerjaan } = usePekerjaan();
+  const idDaftar = useId();
   const gulirRef = useRef(null);
   const fokusSetelahTutupRef = useRef(false);
 
@@ -60,14 +61,19 @@ export default function TabBar({ daftar, aktifId, sibuk, onPilih, onTutup, onTam
 
   return (
     <div data-uji="tab-kerja-bar" className="flex h-9 w-full min-w-0 shrink-0 border-b border-border bg-backgroundBoxDarker">
+      {/* Tablist hanya memiliki tab; tombol tutup tetap terpisah bagi pembaca layar. */}
       <div
-        ref={gulirRef}
         role="tablist"
         aria-label={t("analisa.tabKerja.daftar")}
+        aria-owns={daftar.length ? daftar.map((_, indeks) => `${idDaftar}-${indeks}`).join(" ") : undefined}
+        className="h-0 w-0 shrink-0"
+      />
+      <div
+        ref={gulirRef}
         onKeyDown={tekanPanah}
         className="flex min-w-0 max-w-full overflow-x-auto overflow-y-hidden"
       >
-        {daftar.map((tab) => {
+        {daftar.map((tab, indeks) => {
           const aktif = tab.id === aktifId;
           const nama = namaTab(tab);
           return (
@@ -78,21 +84,23 @@ export default function TabBar({ daftar, aktifId, sibuk, onPilih, onTutup, onTam
               data-tab-fitur={tab.tampilan}
               className={`flex h-9 max-w-[220px] min-w-[118px] shrink-0 items-center border-r border-border ${aktif ? "border-t-2 border-t-backgroundBoxBoxHighlighted bg-backgroundBoxBox" : "border-t-2 border-t-transparent hover:bg-backgroundBoxBoxHover"}`}
             >
-              <button
-                id={`tab-kerja-${tab.id}`}
-                type="button"
-                role="tab"
-                aria-controls="konten-tab-kerja"
-                aria-selected={aktif}
-                tabIndex={aktif ? 0 : -1}
-                data-uji="tab-kerja-pilih"
-                disabled={sibuk}
-                onClick={() => { fokusSetelahTutupRef.current = false; onPilih(tab.id); }}
-                title={nama}
-                className={`min-w-0 flex-1 cursor-pointer truncate px-3 text-left text-[13px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-backgroundBoxBoxHighlighted ${aktif ? "text-foreground" : "text-foregroundGrey"}`}
-              >
-                {nama}
-              </button>
+              <span id={`${idDaftar}-${indeks}`} role="presentation" className="flex min-w-0 flex-1">
+                <button
+                  id={`tab-kerja-${tab.id}`}
+                  type="button"
+                  role="tab"
+                  aria-controls="konten-tab-kerja"
+                  aria-selected={aktif}
+                  tabIndex={aktif ? 0 : -1}
+                  data-uji="tab-kerja-pilih"
+                  disabled={sibuk}
+                  onClick={() => { fokusSetelahTutupRef.current = false; onPilih(tab.id); }}
+                  title={nama}
+                  className={`min-w-0 flex-1 cursor-pointer truncate px-3 text-left text-[13px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-backgroundBoxBoxHighlighted ${aktif ? "text-foreground" : "text-foregroundGrey"}`}
+                >
+                  {nama}
+                </button>
+              </span>
               <button
                 type="button"
                 data-uji="tab-kerja-tutup"

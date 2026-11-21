@@ -28,6 +28,20 @@ export function getMoves(game, moveNumber, customLine, returnedToNormalGame) {
   return { previousMove, move: move2, nextMove };
 }
 
+/** Bidak tertangkap pada posisi partai dan jalur kustom yang sedang terlihat. */
+export function getCapturedPieces(game, moveNumber, customLine) {
+  const captured = { white: [], black: [] };
+  for (let i = 0; i <= moveNumber && i < game.length; i++) {
+    const move = game[i];
+    if (move.capture) captured[move.color === WHITE ? "black" : "white"].push(move.capture);
+  }
+  for (let i = 0; i <= customLine.moveNumber; i++) {
+    const move = customLine.moves[i];
+    if (move.capture) captured[move.color === WHITE ? "black" : "white"].push(move.capture);
+  }
+  return captured;
+}
+
 export function getArrows(arrows, moveNumber, customLine) {
   if (customLine.moveNumber < 0) {
     return arrows[moveNumber];
@@ -40,7 +54,8 @@ export function getCustomResult(move2) {
   let chess;
   try {
     chess = new Chess(move2.fen);
-  } catch {
+  } catch (error) {
+    console.error("Gagal membaca posisi untuk hasil papan:", error);
     return "";
   }
   const color = move2.color;

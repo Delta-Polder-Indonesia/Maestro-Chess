@@ -38,7 +38,7 @@ export function useMuatPartai({
   depth,
   pekerjaanLaporan,
   analyzeController,
-  boardSounds,
+  boardSoundsRef,
   siapkan,
   t,
   setErrors,
@@ -76,8 +76,8 @@ export function useMuatPartai({
    */
   const controllerRef = useRef(analyzeController);
   controllerRef.current = analyzeController;
-  const boardSoundsRef = useRef(boardSounds);
-  boardSoundsRef.current = boardSounds;
+  // `boardSoundsRef` disinkronkan oleh pemanggil tanpa me-render ulang papan.
+  // Baca nilainya saat bunyi benar-benar diputar, termasuk di timer tertunda.
   // Label "langkah buku": tabel nama pembukaan milik situs ini sendiri
   // (dibangun oleh scripts/generasi-buku-analisa.mjs). Bentuknya fungsi
   // pencarian (fen) => nama, bukan peta mentah, agar penghitung langkah di
@@ -176,9 +176,12 @@ export function useMuatPartai({
       // Buku pembukaan diunduh bersamaan dengan penyiapan engine.
       const janjiBuku = openingsRef.current
         ? Promise.resolve(openingsRef.current)
-        : cariNamaPembukaan().catch(() => ({}));
-      const mesin = await siapkan().catch(() => {
-        throw new Error(signal.aborted ? "canceled" : "mesin");
+        : cariNamaPembukaan().catch((error) => {
+            console.error("Gagal menyiapkan buku pembukaan:", error);
+            return {};
+          });
+      const mesin = await siapkan().catch((error) => {
+        throw new Error(signal.aborted ? "canceled" : "mesin", { cause: error });
       });
       if (signal.aborted || !terkini()) return;
       const buku = await janjiBuku;
@@ -229,6 +232,9 @@ export function useMuatPartai({
       setPageState("analyze");
       pekerjaanLaporan?.selesai({ id: muatan.pekerjaanId, metadata, moves, pageState: "analyze", depth: depth2, pertahankan });
     } catch (e) {
+      if ((e?.kunci ?? e?.message) !== "canceled" && !signal.aborted) {
+        console.error("Gagal memuat atau menganalisis PGN:", e);
+      }
       if (!terkini()) return;
       pekerjaanLaporan?.gagal(muatan.pekerjaanId);
       switch (e?.kunci ?? e?.message) {
@@ -253,7 +259,7 @@ export function useMuatPartai({
         if (!pertahankan) setMoveNumber(0);
       }
     }
-  }, [t, siapkan, pekerjaanLaporan, setErrors, setAnalyzeController, setPageState, setPlaying, setTab, setProgress, setLangkahSementara, setTime, setPlayers, setGame, setResult, setAnimation, setArrows, setCustomLine, setAnalyzingMove, setMoveNumber]);
+  }, [t, siapkan, pekerjaanLaporan, boardSoundsRef, setErrors, setAnalyzeController, setPageState, setPlaying, setTab, setProgress, setLangkahSementara, setTime, setPlayers, setGame, setResult, setAnimation, setArrows, setCustomLine, setAnalyzingMove, setMoveNumber]);
   const handleFEN = useCallback(async (fen, terkini, sinyal, muatan, pertahankan) => {
     /*
      * Halaman dibuka dengan PGN titipan dari teka-teki (lihat
@@ -302,7 +308,10 @@ export function useMuatPartai({
             pekerjaanLaporan?.siapKosong(muatan.pekerjaanId, game);
             return null;
           }
-          const mesin = await siapkan().catch(() => null);
+          const mesin = await siapkan().catch((error) => {
+            if (!sinyal.aborted) console.error("Gagal menyiapkan engine untuk FEN:", error);
+            return null;
+          });
           if (sinyal.aborted || !terkini()) return null;
           if (!mesin) {
             pushPageError(setErrors, t("analisa.galat.engineJudul"), t("analisa.galat.engineIsi"));
@@ -311,8 +320,8 @@ export function useMuatPartai({
           let chess;
           try {
             chess = new Chess(fen);
-          } catch {
-            throw new Error("fen");
+          } catch (error) {
+            throw new Error("fen", { cause: error });
           }
           const signal = sinyal;
           function handleAbort() {
@@ -323,6 +332,9 @@ export function useMuatPartai({
         })().then(resolve, reject);
       });
     } catch (e) {
+      if ((e?.kunci ?? e?.message) !== "canceled" && !sinyal.aborted) {
+        console.error("Gagal memuat atau menganalisis FEN:", e);
+      }
       // Muatan lama yang dibatalkan tidak boleh menimpa muatan baru.
       if (!terkini()) return;
       pekerjaanLaporan?.gagal(muatan.pekerjaanId);

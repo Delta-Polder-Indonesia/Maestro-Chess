@@ -22,7 +22,7 @@
  *     ULANG seluruh partai dari nol;
  *   - `visibility:hidden` juga membuat isi papan tidak bisa difokus, jadi
  *     tombol Tab tidak menyelinap ke balik lapisan, dan pintasan papan
- *     dimatikan lewat `tampilanRef` di game.jsx.
+ *     dimatikan oleh pendengar keyboard saat layar lain aktif.
  *
  * z-[900] sengaja dipilih di bawah `PageErrors` (z-[999]) supaya pesan
  * galat analisis tetap tampil di atas layar mana pun.
@@ -38,12 +38,13 @@
  *   - <LapisanLayar> memegang `data` yang sama untuk operan `onAnalisa` /
  *     `onImpor` milik layar Basis Data dan Impor.
  *
- * Dengan begitu `progress` hanya me-render ulang dua komponen kecil tadi,
- * tidak lagi papan catur beserta menu dan bilah tombolnya.
+ * IsiPapan bermemo agar render lapisan sendiri tidak membangun ulang papan.
+ * Anak yang berlangganan konteks papan/impor tetap menerima perubahan state
+ * yang relevan, termasuk progres dan langkah sementara selama analisis.
  */
-import { lazy, Suspense, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { lazy, memo, Suspense, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { TAMPILAN_ANALISA } from "../konteks/analyzeKonteks.js";
-import { useBoard } from "../konteks/boardKonteks.js";
+import { useSetTampilan, useTampilan } from "../konteks/boardKonteks.js";
 import { useImport } from "../konteks/importKonteks.js";
 import { useTabKerja } from "../konteks/tabKerja.jsx";
 import { PanelAktifContext } from "../konteks/panelAktif.js";
@@ -95,7 +96,7 @@ function tampilkanBilahTab(tampilan) {
  */
 function useMuatPartai() {
   const setData = useImport().data[1];
-  const setTampilan = useBoard().tampilan[1];
+  const setTampilan = useSetTampilan();
   return useCallback(
     (dataPartai) => {
       setData(dataPartai);
@@ -119,7 +120,8 @@ function PenitipPgn() {
     try {
       validasiPgn(pgnTitipan);
       muatPartai({ format: "pgn", string: pgnTitipan });
-    } catch {
+    } catch (error) {
+      console.error("Gagal membuka PGN titipan:", error);
       /*
        * PGN tidak sah: papan tetap normal. Provider mungkin memulai dalam
        * `loading` karena titipan tadi (lihat analyze.jsx) — lepaskan supaya
@@ -183,7 +185,7 @@ function LapisanLayar({
 }) {
   const muatPartai = useMuatPartai();
   const [data, setData] = useImport().data;
-  const setTampilan = useBoard().tampilan[1];
+  const setTampilan = useSetTampilan();
   const setErrors = useContext(ErrorsContext).errors[1];
   const { t } = useI18n();
   const {
@@ -277,7 +279,8 @@ function LapisanLayar({
         } else {
           setTampilan(target?.tampilan ?? TAMPILAN_ANALISA.PAPAN);
         }
-      } catch {
+      } catch (error) {
+        console.error("Gagal memulihkan tab Analisa:", error);
         if (masihDipilih()) {
           tambah();
           setTampilan(TAMPILAN_ANALISA.PAPAN);
@@ -541,11 +544,14 @@ function LapisanLayar({
           return panel.map((layar) => {
             const aktif = tab.id === aktifId && tampilan === layar;
             const masihAktif = () => tabAktifRef.current === tab.id && tampilanRef.current === layar;
+            // `hidden` sudah mencegah fokus saat panel tidak aktif. Jangan
+            // melepas tabindex dari elemen yang sedang fokus: peramban
+            // melakukan kerja fokus/tata letak sinkron saat Escape.
             return (
               <div
                 key={`${tab.id}:${layar}`}
                 ref={aktif ? lapisanRef : null}
-                tabIndex={aktif ? -1 : undefined}
+                tabIndex={-1}
                 hidden={!aktif}
                 data-uji={`layar-${layar}`}
                 data-layar={layar}
@@ -625,8 +631,27 @@ function LapisanLayar({
   );
 }
 
+// Lapisan bisa berganti tanpa membangun ulang seluruh pohon papan yang tetap
+// mounted. Pembaruan konteks papan/analisis tetap menembus batas memo ini.
+const IsiPapan = memo(function IsiPapan({ wadahRef }) {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-start gap-4 overflow-y-auto p-2 vertical:flex-row vertical:justify-start vertical:gap-2 vertical:overflow-visible vertical:p-4">
+      <div className="flex h-full w-min flex-col navTop:flex-row vertical:gap-[10px] gap-[6px]">
+        <Game wadah={wadahRef} />
+        <BoardMenu />
+        <div className="bg-backgroundBox flex-row justify-center rounded-borderRoundness w-full navTop:hidden flex h-12">
+          <div className="max-w-[500px] w-full flex flex-row justify-center scale-75">
+            <GameButtons />
+          </div>
+        </div>
+      </div>
+      <Menu />
+    </div>
+  );
+});
+
 export default function AreaKerja() {
-  const [tampilan, setTampilan] = useBoard().tampilan;
+  const [tampilan, setTampilan] = useTampilan();
   const { bukaImpor, aktifId, perluPulih } = useTabKerja();
 
   const wadahRef = useRef(null);
@@ -695,18 +720,7 @@ export default function AreaKerja() {
           aria-hidden={papanAktif && !perluPulih ? undefined : true}
           className={`relative h-full min-w-0 w-full overflow-y-auto overflow-x-hidden ${papanAktif && !perluPulih ? "" : "invisible"}`}
         >
-          <div className="flex h-full w-full flex-col items-center justify-start gap-4 overflow-y-auto p-2 vertical:flex-row vertical:justify-start vertical:gap-2 vertical:overflow-visible vertical:p-4">
-            <div className="flex h-full w-min flex-col navTop:flex-row vertical:gap-[10px] gap-[6px]">
-              <Game wadah={wadahRef} />
-              <BoardMenu />
-              <div className="bg-backgroundBox flex-row justify-center rounded-borderRoundness w-full navTop:hidden flex h-12">
-                <div className="max-w-[500px] w-full flex flex-row justify-center scale-75">
-                  <GameButtons />
-                </div>
-              </div>
-            </div>
-            <Menu />
-          </div>
+          <IsiPapan wadahRef={wadahRef} />
         </main>
 
         {/*

@@ -1,5 +1,5 @@
 /* Bagian pengaturan fitur Analisa — ditulis untuk ChessClub (bukan port). */
-import { useContext, useEffect, useId, useState } from "react";
+import { memo, useContext, useEffect, useId, useState } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { DAFTAR_ENGINE, cariEngine } from "../../../../lib/engineCatur.js";
 import { gambar } from "../../../../lib/asets.js";
@@ -27,12 +27,9 @@ import Gambar from "../Gambar.jsx";
  * pengguna menekan tombol atau benar-benar membutuhkan analisis.
  */
 
-function PengaturanMesin() {
+const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, gantiEngine, status, galat, siapkan, setop, didukung, depth, setDepth, analyzeController, setAnalyzeController }) {
   const { t } = useI18n();
   const depthId = useId();
-  const { idEngine, gantiEngine, status, galat, siapkan, setop, didukung } = useMesin();
-  const analyzeContext = useContext(AnalyzeContext);
-  const [depth, setDepth] = analyzeContext.depth;
 
   const aktif = cariEngine(idEngine) ?? cariEngine(undefined);
   const siapDipakai = status === "siap";
@@ -66,9 +63,8 @@ function PengaturanMesin() {
     // Ganti engine = batalkan analisis yang sedang berjalan. Kalau tidak,
     // engine lama yang ditamat di tengah pencarian dianggap galat dan
     // memunculkan pesan "galat.engine" yang menyesatkan.
-    const [kkontrol, setKontrol] = analyzeContext.analyzeController;
-    kkontrol.abort();
-    setKontrol(new AbortController());
+    analyzeController.abort();
+    setAnalyzeController(new AbortController());
     setop();
     gantiEngine(id);
   }
@@ -141,8 +137,8 @@ function PengaturanMesin() {
                 <button
                   type="button"
                   onClick={() => {
-                    siapkan().catch(() => {
-                      /* pesan galat sudah ditampilkan lewat status/galat */
+                    siapkan().catch((error) => {
+                      console.error("Gagal menyiapkan engine analisis:", error);
                     });
                   }}
                   className="w-full h-9 rounded-borderRoundness bg-backgroundBoxBox hover:bg-backgroundBoxBoxHover font-bold text-sm transition-colors"
@@ -216,6 +212,16 @@ function PengaturanMesin() {
       </div>
     </section>
   );
+});
+
+// Progress/gerakan papan tidak boleh membangun ulang kartu engine. Pilih
+// kedalaman dan controller saja sebelum melewati batas memo.
+function PengaturanMesin() {
+  const { idEngine, gantiEngine, status, galat, siapkan, setop, didukung } = useMesin();
+  const analyzeContext = useContext(AnalyzeContext);
+  const [depth, setDepth] = analyzeContext.depth;
+  const [analyzeController, setAnalyzeController] = analyzeContext.analyzeController;
+  return <IsiPengaturanMesin idEngine={idEngine} gantiEngine={gantiEngine} status={status} galat={galat} siapkan={siapkan} setop={setop} didukung={didukung} depth={depth} setDepth={setDepth} analyzeController={analyzeController} setAnalyzeController={setAnalyzeController} />;
 }
 
-export { PengaturanMesin as default };
+export default memo(PengaturanMesin);

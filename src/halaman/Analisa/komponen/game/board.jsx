@@ -1,6 +1,6 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 import { deformatSquare, formatSquare } from "../../mesin/engine.js";
-import { memo, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BISHOP, BLACK, Chess, KING, KNIGHT, PAWN, QUEEN, ROOK, WHITE } from "chess.js";
 import { buatSuara } from "../suaraPapan.js";
 import { ConfigContext } from "../../konteks/configKonteks.js";
@@ -359,15 +359,7 @@ function Piece(props) {
 function Board(props) {
   const [hoverDrag, setHoverDrag] = useState("");
   const [coronation, setCoronation] = useState({ choosing: false, movement: [] });
-  const configContext = useContext(ConfigContext);
-  const [boardTheme] = configContext.boardTheme;
-  const [usedRatings] = configContext.usedRatings;
-  const [highlightByRating] = configContext.highlightByRating;
-  const [showArrows] = configContext.showArrows;
-  const [arrowAfterMove] = configContext.arrowAfterMove;
-  const [showLegalMoves] = configContext.showLegalMoves;
-  const [animateMoves] = configContext.animateMoves;
-  const [boardSounds] = configContext.boardSounds;
+  const { boardTheme, usedRatings, highlightByRating, showArrows, arrowAfterMove, showLegalMoves, animateMoves, boardSoundsRef } = props;
   const boardRef = useRef(null);
   const pieceRef = useRef(null);
   const castleRookRef = useRef(null);
@@ -395,13 +387,16 @@ function Board(props) {
    * utama halaman — melempar seluruh halaman Analisa ke layar putih.
    * Posisi awal dipakai sebagai cadangan agar papan tetap tampil.
    */
-  const chess = (() => {
+  // Posisi chess.js hanya berganti saat FEN berubah. Mempertahankannya juga
+  // membuat cache langkah sah tetap berguna selama hover/seret di papan.
+  const chess = useMemo(() => {
     try {
       return new Chess(fen);
-    } catch {
+    } catch (error) {
+      console.error("Gagal membaca posisi papan:", error);
       return new Chess();
     }
-  })();
+  }, [fen]);
   const board = chess.board();
   if (!white) flipBoard(board);
   const whiteMoving = !(chess.turn() === "w");
@@ -424,28 +419,25 @@ function Board(props) {
   const filteredHighlightStyle = filterHighlightStyle(HIGHLIGHT_COLORS);
   const highlightColor = highlightByRating ? filteredHighlightStyle[moveRating2]?.color || boardThemes[boardTheme].highlight : boardThemes[boardTheme].highlight;
   const highlightRating = filteredHighlightStyle[moveRating2]?.rating;
-  // Sama seperti `chess` di atas: nextFen bisa kosong di langkah terakhir.
-  //
-  // Hanya TURUNAN PRIMITIF (boolean/string) yang boleh masuk dependensi efek
-  // suara di bawah. Instance Chess dibuat ulang tiap render — dulu ia ikut
-  // menjadi dependensi sehingga efek suara berjalan SETIAP render dan bunyi
-  // langkah terulang-ulang tanpa ada langkah baru ("langkah terdengar 2x").
-  const soundChessInstance = forward
-    ? chess
-    : (() => {
-        try {
-          return new Chess(nextFen);
-        } catch {
-          return chess;
-        }
-      })();
+  // nextFen bisa kosong di langkah terakhir. Suara tetap bergantung pada
+  // turunan primitif di bawah, bukan identitas objek Chess.
+  const soundChessInstance = useMemo(() => {
+    if (forward) return chess;
+    try {
+      return new Chess(nextFen);
+    } catch (error) {
+      console.error("Gagal membaca posisi untuk suara papan:", error);
+      return chess;
+    }
+  }, [chess, forward, nextFen]);
   const soundCaptureInstance = forward ? capture : nextCapture;
   const soundCastleInstance = forward ? castle : nextCastle;
   const selfTurn = !(soundChessInstance.turn() === "w" ? white : !white);
   const skakSekarang = (() => {
     try {
       return soundChessInstance.isCheck();
-    } catch {
+    } catch (error) {
+      console.error("Gagal memeriksa skak pada papan:", error);
       return false;
     }
   })();
@@ -461,10 +453,7 @@ function Board(props) {
       setDrag({ is: false, id: "" });
       return;
     }
-    // `chess` sengaja tidak dijadikan dependensi: ia objek baru tiap render,
-    // sedangkan nilainya murni turunan `fen` (sudah ada di daftar dependensi).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fen, drag.id, drag.is, setDrag]);
+  }, [chess, drag.id, drag.is, setDrag]);
   useEffect(() => {
     if (!props.fen) return;
     // Pratinjau (selagi partai dianalisis) hanya menggambar posisi awal: tidak
@@ -486,7 +475,7 @@ function Board(props) {
     // creating an AudioContext (or a fake move sound) before any gesture.
     const posisiPertama = kunciSuaraRef.current === null;
     kunciSuaraRef.current = fen;
-    if (posisiPertama || !boardSounds) return;
+    if (posisiPertama || !boardSoundsRef.current) return;
     if (soundCastleInstance) {
       castleSound.play();
     } else if (soundCaptureInstance) {
@@ -503,11 +492,9 @@ function Board(props) {
     if (gameEnded) {
       gameEndSound.play();
     }
-    // Dependensi WAJIB primitif semua. `soundChessInstance` (objek Chess baru
-    // tiap render) pernah berada di sini sehingga efek ini berjalan setiap
-    // render — bunyi langkah berulang untuk satu langkah yang sama. Cukup
-    // `fen`/`props.fen` yang menggerakkan: satu perubahan posisi = satu bunyi.
-  }, [fen, boardSounds, gameEnded, props.fen, props.pratinjau, selfTurn, soundCaptureInstance, soundCastleInstance, skakSekarang]);
+    // Gunakan turunan primitif, bukan objek Chess: satu perubahan posisi
+    // menghasilkan paling banyak satu bunyi.
+  }, [fen, boardSoundsRef, gameEnded, props.fen, props.pratinjau, selfTurn, soundCaptureInstance, soundCastleInstance, skakSekarang]);
   useEffect(() => {
     if (!animation || !animateMoves) {
       // Animasi tidak aktif — transisi berikutnya (mis. kembali ke langkah ini
@@ -667,12 +654,14 @@ function Board(props) {
       element.style.zIndex = "";
       element.style.willChange = "";
     };
-    animation2.finished.then(resetElements).catch(resetElements);
+    animation2.finished.then(resetElements).catch((error) => {
+      // Pembatalan animasi lama saat berpindah langkah adalah hal normal.
+      if (error?.name !== "AbortError") console.error("Gagal menganimasikan langkah:", error);
+      resetElements();
+    });
     animation2.oncancel = resetElements;
   }
   // Langkah sah hanya berubah saat kotak yang diseret atau posisinya berubah.
-  // `chess` dibuat baru setiap render, jadi tanpa `useMemo` daftar langkah sah
-  // dihitung ulang pada setiap render saat menyeret (berat & memuat busuk).
   const legalMoves = useMemo(() => {
     if (!drag.id) return [];
     return chess.moves({ square: drag.id, verbose: true }).map((move2) => move2.to);
@@ -826,4 +815,28 @@ function Board(props) {
         </div>;
 }
 const BoardMemo = memo(Board);
-export { Arrow, BoardMemo as default };
+
+// Hanya pengaturan yang memengaruhi papan diteruskan ke pohon 64 petak.
+// Perubahan ConfigContext lain (misalnya menu terbuka) berhenti di sini.
+function BoardDenganConfig(props) {
+  const config = useContext(ConfigContext);
+  const boardSounds = config.boardSounds[0];
+  const boardSoundsRef = useRef(boardSounds);
+  // Suara hanya dibaca saat posisi berubah; sakelarnya sendiri tidak perlu
+  // membangun ulang 64 petak. Sinkron sebelum efek suara berikutnya berjalan.
+  useLayoutEffect(() => { boardSoundsRef.current = boardSounds; }, [boardSounds]);
+  return <BoardMemo
+    {...props}
+    boardTheme={config.boardTheme[0]}
+    usedRatings={config.usedRatings[0]}
+    highlightByRating={config.highlightByRating[0]}
+    showArrows={config.showArrows[0]}
+    arrowAfterMove={config.arrowAfterMove[0]}
+    showLegalMoves={config.showLegalMoves[0]}
+    animateMoves={config.animateMoves[0]}
+    boardSoundsRef={boardSoundsRef}
+  />;
+}
+
+export { Arrow };
+export default memo(BoardDenganConfig);

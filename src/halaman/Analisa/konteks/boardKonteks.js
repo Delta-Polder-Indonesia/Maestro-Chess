@@ -3,19 +3,17 @@
  *
  * Konteks ini memuat state yang berubah karena interaksi papan (klik langkah,
  * play/pause, balik papan, garis kustom) plus preferensi yang menempel pada
- * papan (kedalaman analisis, tampilan area kerja). Yang SENGAJA tidak ada di
- * sini: `progress`, `pageState`, `analyzingMove`, `langkahSementara`,
- * `data`, dan `analyzeController` — itu milik `ImportContext` karena berubah
- * jauh lebih sering (per langkah analisis / per muatan PGN).
+ * papan (termasuk kedalaman analisis). Navigasi layar dipisahkan ke
+ * TampilanContext agar perubahan layar tidak me-render ulang papan/analisis.
+ * `progress`, `pageState`, `analyzingMove`, `langkahSementara`, `data`, dan
+ * `analyzeController` tetap milik `ImportContext` karena berubah lebih sering.
  *
  * Bentuk nilai mengikuti konvensi lama: setiap field adalah pasangan
  * `[nilai, setter]`, satu-satunya pengecualian `gameController` yang berupa
  * objek stabil berisi `back/forward/first/last/togglePlay/play/pause`.
  *
- * CATATAN FASE 2: konteks ini belum dipakai komponen mana pun. Seluruh
- * komponen lama tetap membaca `AnalyzeContext` (lapisan kompatibilitas),
- * sehingga tidak ada perubahan perilaku. Migrasi konsumen ke `useBoard()`
- * dikerjakan bertahap pada fase berikutnya.
+ * Gunakan `useTampilan()` untuk membaca layar dan `useSetTampilan()` bila
+ * hanya membutuhkan setter navigasi yang stabil.
  */
 import { createContext, useContext } from "react";
 
@@ -45,7 +43,6 @@ export const BoardContext = createContext({
   customLine: [{ moveNumber: -1, moves: [], arrows: {} }, TIDAK_ADA],
   returnedToNormalGame: [null, TIDAK_ADA],
   depth: [13, TIDAK_ADA],
-  tampilan: ["bermain", TIDAK_ADA],
   gameController: {
     back: TIDAK_ADA,
     forward: TIDAK_ADA,
@@ -57,7 +54,21 @@ export const BoardContext = createContext({
   },
 });
 
+/** State dan setter layar dipisah agar pemanggil setter tidak ikut render. */
+export const TampilanContext = createContext("papan");
+export const SetTampilanContext = createContext(TIDAK_ADA);
+
 /** Baca BoardContext. Setara `useContext(BoardContext)` dengan nama pendek. */
 export function useBoard() {
   return useContext(BoardContext);
+}
+
+export function useTampilan() {
+  const tampilan = useContext(TampilanContext);
+  const setTampilan = useContext(SetTampilanContext);
+  return [tampilan, setTampilan];
+}
+
+export function useSetTampilan() {
+  return useContext(SetTampilanContext);
 }

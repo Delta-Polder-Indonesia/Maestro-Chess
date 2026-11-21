@@ -370,7 +370,7 @@ export const analisa = {
       impor: "Import game",
       kodeSumber: "Source Code",
       atribusi: "Attributions",
-      beranda: "Go to the Blunder Skuad home page",
+      beranda: "Maestro Chess — Home",
       tutupBilah: "Collapse panel",
       bukaBilah: "Expand panel",
     },

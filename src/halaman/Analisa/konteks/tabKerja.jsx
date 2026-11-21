@@ -3,12 +3,17 @@ import { adaPgnTitipan } from "../../../lib/titipanAnalisa.js";
 import { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan } from "../pekerjaan.js";
 import { aktifkanTab, bacaSesiTab, hapusPilihanAkun, hapusTabLain, normalisasiAkunTab, perbaruiTab, sesiBaru, simpanSesiTab, tabBaru, tambahTab } from "../tabKerja.js";
 import { TAMPILAN_ANALISA } from "./analyzeKonteks.js";
-import { useBoard } from "./boardKonteks.js";
+import { useTampilan } from "./boardKonteks.js";
 
 const KonteksTabKerja = createContext(null);
 
 function storageSesi() {
-  try { return globalThis.sessionStorage ?? null; } catch { return null; }
+  try {
+    return globalThis.sessionStorage ?? null;
+  } catch (error) {
+    console.error("Gagal mengakses penyimpanan sesi tab:", error);
+    return null;
+  }
 }
 
 export function TabKerjaProvider({ children }) {
@@ -27,7 +32,7 @@ export function TabKerjaProvider({ children }) {
   const [sesiTersedia, setSesiTersedia] = useState(true);
   const sesiRef = useRef(sesi);
   sesiRef.current = sesi;
-  const [tampilan, setTampilan] = useBoard().tampilan;
+  const [tampilan, setTampilan] = useTampilan();
   const tampilanRef = useRef(tampilan);
   tampilanRef.current = tampilan;
   const navigasiRef = useRef({ tabId: sesi.aktifId, tampilan, versi: 0 });

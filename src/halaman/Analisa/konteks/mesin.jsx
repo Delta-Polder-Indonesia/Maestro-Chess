@@ -60,6 +60,7 @@ export function MesinProvider({ children }) {
       threads: opsiRef.current.threads,
       onError: (error) => {
         if (generasiRef.current !== generasi || mesinRef.current !== mesin) return;
+        console.error("Engine analisis gagal:", error);
         setStatus("gagal");
         setGalat(error?.message ?? String(error));
       },
@@ -105,6 +106,10 @@ export function MesinProvider({ children }) {
     mesinRef.current?.setop();
   }, []);
 
+  // Identitas stabil: perubahan status worker tidak perlu membangun ulang
+  // papan yang hanya memerlukan akses ke instance terkini.
+  const ambilMesin = useCallback(() => mesinRef.current, []);
+
   useEffect(() => {
     return () => {
       generasiRef.current += 1;
@@ -125,7 +130,7 @@ export function MesinProvider({ children }) {
     /** Ubah opsi UCI — langsung disetel ke worker bila sudah ada. */
     ubahOpsi,
     /** Instance engine aktif, atau null bila belum pernah dimuat. */
-    ambilMesin: () => mesinRef.current,
+    ambilMesin,
     didukung,
   };
 

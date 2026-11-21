@@ -10,6 +10,7 @@ import { KUNCI_FITUR } from "../src/halaman/Analisa/riwayatFitur.js";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
+const KELAS_GULIR = "flex min-w-0 max-w-full overflow-x-auto overflow-y-hidden";
 
 function komponenTab() {
   const terjemahan = {
@@ -69,6 +70,45 @@ test("tab bar labels features and reports, and exposes select, close and add con
   act(() => renderer.unmount());
 });
 
+test("tab list owns only tab controls, while close buttons remain available next to them", () => {
+  const TabBar = komponenTab();
+  const daftar = [
+    { id: "tab:1", tampilan: "papan" },
+    { id: "tab with space", tampilan: "impor" },
+    { id: "tab:3", tampilan: "akun" },
+  ];
+  const props = { daftar, aktifId: "tab:1", sibuk: false, onPilih() {}, onTutup() {}, onTambah() {} };
+  let renderer;
+  act(() => { renderer = TestRenderer.create(React.createElement(TabBar, props)); });
+
+  function periksa(diharapkan) {
+    const tablist = renderer.root.findByProps({ role: "tablist" });
+    const item = renderer.root.findAllByProps({ "data-uji": "tab-kerja-item" });
+    const pemilik = (tablist.props["aria-owns"] ?? "").split(/\s+/).filter(Boolean);
+    assert.deepEqual(item.map((node) => [node.props["data-tab-id"], node.props["data-tab-fitur"]]), diharapkan.map((tab) => [tab.id, tab.tampilan]));
+    assert.equal(pemilik.length, diharapkan.length);
+    assert.equal(new Set(pemilik).size, diharapkan.length);
+    assert.equal(tablist.props["aria-hidden"], undefined);
+    assert.equal(tablist.findAllByProps({ "data-uji": "tab-kerja-tutup" }).length, 0);
+    pemilik.forEach((id, indeks) => {
+      const wadah = renderer.root.findByProps({ id });
+      const tutup = item[indeks].findByProps({ "data-uji": "tab-kerja-tutup" });
+      assert.equal(wadah.props.role, "presentation");
+      assert.equal(wadah.findByProps({ role: "tab" }), item[indeks].findByProps({ "data-uji": "tab-kerja-pilih" }));
+      assert.equal(wadah.findAllByProps({ "data-uji": "tab-kerja-tutup" }).length, 0);
+      assert.equal(tutup.parent, item[indeks]);
+      assert.equal(tutup.props.role, undefined);
+      assert.equal(tutup.props["aria-hidden"], undefined);
+    });
+    assert.equal(renderer.root.findByProps({ "data-uji": "tab-kerja-tambah" }).parent, tablist.parent);
+  }
+
+  periksa(daftar);
+  act(() => renderer.update(React.createElement(TabBar, { ...props, daftar: daftar.slice(1), aktifId: daftar[1].id })));
+  periksa(daftar.slice(1));
+  act(() => renderer.unmount());
+});
+
 test("arrow, Home and End keys move focus within the tab list", (t) => {
   const previous = globalThis.document;
   const document = { activeElement: null };
@@ -80,10 +120,10 @@ test("arrow, Home and End keys move focus within the tab list", (t) => {
   const renderer = TestRenderer.create(React.createElement(TabBar, {
     daftar: [{ id: "tab:1", tampilan: "papan" }], aktifId: "tab:1", onPilih() {}, onTutup() {}, onTambah() {},
   }));
-  const tablist = renderer.root.findByProps({ role: "tablist" });
+  const gulir = renderer.root.findByProps({ className: KELAS_GULIR });
   function tekan(key) {
     let dicegah = false;
-    tablist.props.onKeyDown({ key, currentTarget: { querySelectorAll: () => buttons }, preventDefault: () => { dicegah = true; } });
+    gulir.props.onKeyDown({ key, currentTarget: { querySelectorAll: () => buttons }, preventDefault: () => { dicegah = true; } });
     assert.equal(dicegah, true);
   }
   tekan("ArrowLeft");
@@ -116,7 +156,7 @@ test("active tab and its close button stay visible on resize and focus returns a
   const TabBar = komponenTab();
   const props = { daftar: [{ id: "tab:1", tampilan: "papan" }, { id: "tab:2", tampilan: "akun" }], aktifId: "tab:1", onPilih() {}, onTutup() {}, onTambah() {} };
   let renderer;
-  act(() => { renderer = TestRenderer.create(React.createElement(TabBar, props), { createNodeMock: (element) => element.props.role === "tablist" ? list : null }); });
+  act(() => { renderer = TestRenderer.create(React.createElement(TabBar, props), { createNodeMock: (element) => element.props.className === KELAS_GULIR ? list : null }); });
   assert.equal(diamati, list);
   assert.equal(digulir, 1);
   act(() => onResize());

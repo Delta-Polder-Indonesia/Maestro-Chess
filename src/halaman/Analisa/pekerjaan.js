@@ -38,7 +38,12 @@ export function buatAdapterPekerjaan(indexedDB, batasBukaMs = 8000) {
     if (koneksi) return Promise.resolve(koneksi);
     if (membuka) return membuka;
     let sumber;
-    try { sumber = indexedDB ?? globalThis.indexedDB; } catch { sumber = null; }
+    try {
+      sumber = indexedDB ?? globalThis.indexedDB;
+    } catch (error) {
+      console.error("Gagal mengakses IndexedDB pekerjaan:", error);
+      sumber = null;
+    }
     if (!sumber) return Promise.reject(new Error("IndexedDB tidak tersedia"));
     membuka = new Promise((resolve, reject) => {
       let selesai = false;
@@ -90,7 +95,9 @@ export function buatAdapterPekerjaan(indexedDB, batasBukaMs = 8000) {
       } catch (error) {
         // Misalnya `put` kedua melempar DataCloneError secara sinkron: abort
         // transaksi agar metadata pertama tidak tersimpan tanpa isi laporan.
-        try { tx?.abort(); } catch { /* transaksi mungkin sudah berakhir */ }
+        try { tx?.abort(); } catch (abortError) {
+          console.error("Gagal membatalkan transaksi pekerjaan:", abortError);
+        }
         reject(error);
       }
     });
@@ -154,7 +161,10 @@ export function buatPenyimpananPekerjaan(adapter = buatAdapterPekerjaan()) {
       daftar: Array.from(metadata.values()).sort((a, b) => (b.waktu ?? 0) - (a.waktu ?? 0)),
     };
     for (const callback of Array.from(pendengar)) {
-      try { callback(); } catch { /* Satu pelanggan tidak boleh menggagalkan penyimpanan. */ }
+      try { callback(); } catch (error) {
+        // Satu pelanggan tidak boleh menggagalkan penyimpanan lain.
+        console.error("Pelanggan penyimpanan pekerjaan gagal:", error);
+      }
     }
   }
 
@@ -174,7 +184,8 @@ export function buatPenyimpananPekerjaan(adapter = buatAdapterPekerjaan()) {
           else if (item?.id === ID_DRAF_AKTIF && !disentuh.has(ID_DRAF_AKTIF)) terakhirDrafId = item.drafId ?? null;
           else if (item?.id && ["laporan", "draf", "fitur"].includes(item.jenis) && !disentuh.has(item.id)) metadata.set(item.id, item);
         }
-      } catch {
+      } catch (error) {
+        console.error("Gagal membaca daftar pekerjaan Analisa:", error);
         tersedia = false;
         terakhirId = nilai.terakhirId;
         terakhirDrafId = nilai.terakhirDrafId;
@@ -192,7 +203,8 @@ export function buatPenyimpananPekerjaan(adapter = buatAdapterPekerjaan()) {
       try {
         if (operasi.hapus) await adapter.hapus(id);
         else await adapter.simpan(operasi.record, operasi.metadata);
-      } catch {
+      } catch (error) {
+        console.error("Gagal menyimpan atau menghapus pekerjaan Analisa:", error);
         // Jangan buang salinan memori; UI harus memberi tahu bahwa tab belum
         // aman ditutup. Status tetap gagal sampai halaman dibuka ulang.
         terbitkan({ tersedia: false });
@@ -251,7 +263,8 @@ export function buatPenyimpananPekerjaan(adapter = buatAdapterPekerjaan()) {
       if (cache.has(id)) return cache.get(id);
       cache.set(id, record ?? null);
       return record ?? null;
-    } catch {
+    } catch (error) {
+      console.error("Gagal membaca pekerjaan Analisa:", error);
       terbitkan({ tersedia: false });
       return null;
     }

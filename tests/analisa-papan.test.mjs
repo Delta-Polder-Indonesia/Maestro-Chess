@@ -46,6 +46,24 @@ function renderPapan(dictionary, handlers = {}, work = { siap: true, tersedia: t
   return TestRenderer.create(React.createElement(Papan, handlers));
 }
 
+function renderNav(dictionary) {
+  const translate = (key) => key.split(".").reduce((value, part) => value?.[part], { analisa: dictionary }) ?? key;
+  const svg = { default: () => React.createElement("svg") };
+  const Nav = compile("../src/halaman/Analisa/komponen/nav/nav.jsx", {
+    "next/link": { default: (props) => React.createElement("a", props) },
+    "../svg/github.jsx": svg,
+    "../svg/license.jsx": svg,
+    "../svg/profile.jsx": svg,
+    "../svg/shield-alert.jsx": svg,
+    "../../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA: { PAPAN: "papan", AKUN: "akun", BASIS_DATA: "database", IMPOR: "impor", DETEKSI_ENGINE: "deteksi-engine", WAWASAN: "wawasan", PENGATURAN: "pengaturan" } },
+    "../../konteks/boardKonteks.js": { useTampilan: () => ["papan", () => {}] },
+    "../../konteks/tabKerja.jsx": { useTabKerja: () => ({ bukaImpor() {}, perluPulih: false }) },
+    "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
+    "../../../../components/ui/tooltip.jsx": { TooltipLabel: ({ children }) => children },
+  });
+  return TestRenderer.create(React.createElement(Nav));
+}
+
 function byTestId(renderer, id) {
   return renderer.root.find((node) => node.props["data-uji"] === id);
 }
@@ -57,6 +75,28 @@ function item(renderer, id) {
 function text(node) {
   return node.children.map((child) => typeof child === "string" ? child : text(child)).join(" ");
 }
+
+function description(row, button) {
+  const id = button.props["aria-describedby"];
+  assert.ok(id, "the detailed information must describe its button");
+  const matches = row.findAll((node) => node.props.id === id);
+  assert.equal(matches.length, 1);
+  return matches[0];
+}
+
+test("navigation wordmark keeps the visible brand in its accessible name in both languages", () => {
+  for (const [dictionary, name] of [[indonesia, "Maestro Chess — Beranda"], [english, "Maestro Chess — Home"]]) {
+    const renderer = renderNav(dictionary);
+    const link = renderer.root.findAllByType("a").find((node) => node.props.href === "/");
+    assert.ok(link);
+    assert.equal(link.props["aria-label"], name);
+    assert.match(text(link), /Maestro\s+Chess/);
+    assert.match(link.findByType("span").props.className, /hidden navTop:block/);
+    TestRenderer.act(() => byTestId(renderer, "nav-tutup").props.onClick());
+    assert.equal(link.props["aria-label"], name);
+    renderer.unmount();
+  }
+});
 
 test("dashboard has one report button and opens recent features or saved work", () => {
   const calls = [];
@@ -86,8 +126,9 @@ test("dashboard has one report button and opens recent features or saved work", 
   assert.match(text(item(renderer, "fitur:akun")), /Akun/);
   assert.match(text(item(renderer, "interrupted")), /Terputus/);
   assert.match(text(item(renderer, "previous")), /Terputus/);
-  const previousOpen = item(renderer, "previous").find((node) => node.props["data-uji"] === "pekerjaan-buka");
-  assert.match(previousOpen.props["aria-label"], /hasil sebelumnya tersedia/);
+  const previousRow = item(renderer, "previous");
+  const previousOpen = previousRow.find((node) => node.props["data-uji"] === "pekerjaan-buka");
+  assert.match(text(description(previousRow, previousOpen)), /hasil sebelumnya tersedia/);
   assert.match(text(item(renderer, "running")), /Proses/);
   assert.equal(item(renderer, "previous").findAllByType("button").length, 1);
 
@@ -164,6 +205,74 @@ test("recent files retain the same height and scroll vertically when populated",
   populated.unmount();
 });
 
+test("recent-file names come from their visible content and details use unique descriptions", () => {
+  const waktu = Date.now() - 9 * 60 * 1000;
+  const work = {
+    siap: true, tersedia: true, menyimpan: false, aktif: {},
+    daftar: [
+      { id: "fitur:pengaturan", jenis: "fitur", fitur: "pengaturan", waktu },
+      { id: "fitur:wawasan", jenis: "fitur", fitur: "wawasan", waktu },
+      { id: "fitur:akun", jenis: "fitur", fitur: "akun", waktu: 0 },
+      { id: "laporan:tanpa-waktu", jenis: "laporan", status: "baru", waktu: 0 },
+    ],
+  };
+  for (const [dictionary, prefix, judul] of [
+    [indonesia, "Buka: ", ["Pengaturan", "Wawasan"]],
+    [english, "Open: ", ["Settings", "Insights"]],
+  ]) {
+    const renderer = renderPapan(dictionary, {}, work);
+    const ids = [];
+    for (const [index, key] of ["fitur:pengaturan", "fitur:wawasan"].entries()) {
+      const row = item(renderer, key);
+      const open = row.findByProps({ "data-uji": "pekerjaan-buka" });
+      assert.equal(open.props["aria-label"], undefined);
+      assert.equal(open.findByProps({ className: "sr-only" }).children.join(""), prefix);
+      assert.match(text(open), new RegExp(judul[index]));
+      const detail = description(row, open);
+      assert.equal(detail.props.className, "sr-only");
+      assert.equal(detail.findByProps({ className: "sm:hidden" }).children.join(""), dictionary === indonesia ? "9 menit yang lalu" : "9 minutes ago");
+      ids.push(detail.props.id);
+    }
+    assert.equal(new Set(ids).size, ids.length);
+    const noTime = item(renderer, "fitur:akun").findByProps({ "data-uji": "pekerjaan-buka" });
+    assert.equal(noTime.props["aria-describedby"], undefined);
+    const statusOnlyRow = item(renderer, "laporan:tanpa-waktu");
+    const statusOnly = statusOnlyRow.findByProps({ "data-uji": "pekerjaan-buka" });
+    assert.equal(text(description(statusOnlyRow, statusOnly)), dictionary.pekerjaan.statusBaru);
+    renderer.unmount();
+  }
+});
+
+test("recent-file status badges and their full descriptions remain available in both languages", () => {
+  const waktu = Date.now() - 5 * 60 * 1000;
+  const work = {
+    siap: true, tersedia: true, menyimpan: false, aktif: { id: "running", berjalan: true },
+    daftar: [
+      { id: "draft", jenis: "draf", status: "draf", waktu },
+      { id: "done", jenis: "laporan", status: "selesai", waktu },
+      { id: "interrupted", jenis: "laporan", status: "terputus", adaHasil: false, waktu },
+      { id: "previous", jenis: "laporan", status: "terputus", adaHasil: true, waktu },
+      { id: "running", jenis: "laporan", status: "berjalan", waktu },
+      { id: "new", jenis: "laporan", status: "baru", waktu },
+    ],
+  };
+  const cases = [
+    ["draft", "statusDraf", "singkatDraf"], ["done", "statusSelesai", "singkatSelesai"],
+    ["interrupted", "statusTerputus", "singkatTerputus"], ["previous", "statusHasilLama", "singkatTerputus"],
+    ["running", "statusBerjalan", "singkatBerjalan"], ["new", "statusBaru", "singkatBaru"],
+  ];
+  for (const dictionary of [indonesia, english]) {
+    const renderer = renderPapan(dictionary, {}, work);
+    for (const [id, full, short] of cases) {
+      const row = item(renderer, id);
+      const open = row.findByProps({ "data-uji": "pekerjaan-buka" });
+      assert.equal(open.findByProps({ title: dictionary.pekerjaan[full] }).children.join(""), dictionary.pekerjaan[short]);
+      assert.ok(text(description(row, open)).includes(dictionary.pekerjaan[full]));
+    }
+    renderer.unmount();
+  }
+});
+
 test("compact timestamps keep the full relative time accessible in both languages", () => {
   const waktu = Date.now() - 2 * 60 * 60 * 1000;
   const work = {
@@ -177,8 +286,11 @@ test("compact timestamps keep the full relative time accessible in both language
     const renderer = renderPapan(dictionary, {}, work);
     const row = item(renderer, "previous");
     const open = row.find((node) => node.props["data-uji"] === "pekerjaan-buka");
-    assert.ok(open.props["aria-label"].includes(status));
-    assert.ok(open.props["aria-label"].includes(lengkap));
+    const detail = description(row, open);
+    assert.equal(detail.props.className, "sr-only");
+    assert.match(text(detail), new RegExp(status));
+    const fullMobileTime = detail.find((node) => node.props.className === "sm:hidden");
+    assert.equal(fullMobileTime.children.join(""), `. ${lengkap}`);
     const time = row.findByType("time");
     assert.equal(time.props.dateTime, new Date(waktu).toISOString());
     const [mobile, desktop] = time.findAllByType("span");
@@ -187,6 +299,35 @@ test("compact timestamps keep the full relative time accessible in both language
     assert.equal(desktop.children.join(""), lengkap);
     assert.match(desktop.props.className, /hidden sm:inline/);
     renderer.unmount();
+  }
+});
+
+test("recent-file timestamps reuse Intl formatters across rows and rerenders", () => {
+  const tanggalAsli = Intl.DateTimeFormat;
+  const relatifAsli = Intl.RelativeTimeFormat;
+  let tanggalDibuat = 0;
+  let relatifDibuat = 0;
+  Intl.DateTimeFormat = function (...args) { tanggalDibuat++; return new tanggalAsli(...args); };
+  Intl.RelativeTimeFormat = function (...args) { relatifDibuat++; return new relatifAsli(...args); };
+  let renderer;
+  try {
+    const work = {
+      siap: true, tersedia: true, menyimpan: false, aktif: {},
+      daftar: Array.from({ length: 12 }, (_, n) => ({
+        id: `draf-${n}`, jenis: "draf", status: "draf", waktu: Date.now() - n * 60000,
+      })),
+    };
+    renderer = renderPapan(indonesia, {}, work);
+    assert.equal(tanggalDibuat, 1);
+    assert.equal(relatifDibuat, 1);
+    TestRenderer.act(() => byTestId(renderer, "pekerjaan-lihat-semua").props.onClick());
+    TestRenderer.act(() => byTestId(renderer, "pekerjaan-lihat-semua").props.onClick());
+    assert.equal(tanggalDibuat, 1);
+    assert.equal(relatifDibuat, 1);
+  } finally {
+    renderer?.unmount();
+    Intl.DateTimeFormat = tanggalAsli;
+    Intl.RelativeTimeFormat = relatifAsli;
   }
 });
 

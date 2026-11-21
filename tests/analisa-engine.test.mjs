@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
+import { Chess } from "chess.js";
 import { DAFTAR_ENGINE, EngineCatur, cariEngine } from "../src/lib/engineCatur.js";
-import { EngineAnalisis } from "../src/halaman/Analisa/mesin/engine.js";
+import { EngineAnalisis, parseMove, parsePosition } from "../src/halaman/Analisa/mesin/engine.js";
 
 function installWorker(t) {
   const previous = globalThis.Worker;
@@ -27,6 +28,16 @@ function installWorker(t) {
   });
   return instances;
 }
+
+test("analysis errors retain the original worker failure as their cause", async () => {
+  const gagal = new Error("worker crashed");
+  const mesin = { async cari() { throw gagal; } };
+  const periksa = (error) => error.kunci === "mesin" && error.cause === gagal;
+  await assert.rejects(parsePosition(mesin, new Chess(), 6), periksa);
+  const chess = new Chess();
+  const langkah = chess.move("e4");
+  await assert.rejects(parseMove(mesin, 6, langkah, chess, [["cp", "0"]]), periksa);
+});
 
 test("only the verified Stockfish 18 Lite single-thread binary is shipped", () => {
   assert.deepEqual(DAFTAR_ENGINE.map(({ id }) => id), ["stockfish-18-lite"]);

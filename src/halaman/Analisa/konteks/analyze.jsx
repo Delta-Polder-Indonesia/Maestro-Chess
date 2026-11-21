@@ -7,24 +7,22 @@
  *   BoardProvider  — state papan & navigasi (game, players, moveNumber,
  *                    forward, animation, white, playing, time,
  *                    materialAdvantage, result, tab, customLine,
- *                    returnedToNormalGame, depth, tampilan, gameController)
+ *                    returnedToNormalGame, depth, gameController). Tampilan
+ *                    layar disediakan lewat konteks navigasi terpisah.
  *   ImportProvider — state muatan PGN & analisis (data, pageState, progress,
  *                    analyzeController, analyzingMove, langkahSementara)
  *
  * Berkas ini menyusun keduanya kembali menjadi SATU nilai `AnalyzeContext`
- * dengan bentuk yang persis sama seperti sebelumnya (22 slot `[nilai,
- * setter]` + `gameController`, `players` sudah dinormalisasi). Karena itu
- * SELURUH komponen lama — dan seluruh uji UI yang menyuntik nilai lewat
- * `AnalyzeContext.Provider` — tetap berjalan tanpa disentuh.
+ * dengan pasangan `[nilai, setter]` dan `gameController` seperti sebelumnya;
+ * `players` sudah dinormalisasi. Navigasi layar dibaca terpisah lewat
+ * `useTampilan()` supaya perpindahan layar tidak menyebar ke semua konsumen.
  *
  * `akun` sengaja tetap di sini: ia bukan state papan maupun state impor, dan
  * pemecahan konteks akun di luar lingkup fase ini.
  *
- * Efek samping yang perlu diketahui: nilai gabungan tetap dibuat ulang
- * setiap kali salah satu dari 22 slot berubah — itu yang membuat perilaku
- * identik. Pengurangan render baru terasa ketika komponen memakai
- * `useBoard()` / `useImport()` langsung (fase berikutnya), karena saat itu
- * perubahan `progress` tidak lagi me-render konsumen papan.
+ * Nilai gabungan tetap dibuat ulang saat state papan atau impor berubah.
+ * Konsumen yang hanya memerlukan salah satunya dapat memakai `useBoard()`
+ * atau `useImport()` langsung.
  */
 import { useMemo, useState } from "react";
 import { AnalyzeContext } from "./analyzeKonteks.js";
@@ -70,7 +68,6 @@ function PenyambungKonteks({ children }) {
       analyzingMove: imp.analyzingMove,
       akun: [akun, setAkun],
       depth: board.depth,
-      tampilan: board.tampilan,
       gameController: board.gameController,
     }),
     [board, imp, akun]

@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Chess } from "chess.js";
 import TestRenderer from "react-test-renderer";
 import test from "node:test";
 import { useMuatPartai } from "../src/halaman/Analisa/komponen/game/useMuatPartai.js";
+import { gameStartSound } from "../src/halaman/Analisa/komponen/game/gameStartSound.js";
 
 const { act } = TestRenderer;
 const noop = () => {};
@@ -24,8 +25,10 @@ function Harness({ data, depth, boardSounds, t, siapkan, snapshot, pekerjaanLapo
   const [arrows, setArrows] = useState({ 0: [] });
   const [time, setTime] = useState(0);
   const [result, setResult] = useState("");
+  const boardSoundsRef = useRef(boardSounds);
+  boardSoundsRef.current = boardSounds;
   useMuatPartai({
-    data, depth, boardSounds, t, siapkan, pekerjaanLaporan, analyzeController: controller,
+    data, depth, boardSoundsRef, t, siapkan, pekerjaanLaporan, analyzeController: controller,
     setAnalyzeController: setController, setPageState, setPlayers, setGame, setErrors,
     setTab, setProgress: noop, setLangkahSementara: noop, setTime,
     setResult, setAnimation: noop, setArrows, setCustomLine,
@@ -87,6 +90,36 @@ test("language and sound changes do not restart analysis, while depth and new ga
   await act(async () => { renderer.update(React.createElement(Harness, props)); await flush(); });
   assert.equal(engine.calls.length, 9);
   assert.deepEqual(snapshot.current.players.map((p) => p.name), ["Carol", "Dan"]);
+});
+
+test("the latest sound setting is respected while an analysis is loading", async (t) => {
+  mockBook(t);
+  // A previous completed analysis may still have its 100 ms sound timer.
+  await new Promise((resolve) => setTimeout(resolve, 150));
+  const engine = fakeEngine();
+  const suaraAsli = gameStartSound.play;
+  let bunyi = 0;
+  gameStartSound.play = () => { bunyi++; };
+  t.after(() => { gameStartSound.play = suaraAsli; });
+  let release;
+  const siapkan = () => new Promise((resolve) => { release = () => resolve(engine); });
+  const snapshot = {};
+  let props = { data: pgn("Alice", "Bob", "e4 e5"), depth: 6, boardSounds: true, t: translateId, siapkan, snapshot };
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(Harness, props)); await flush(); });
+  assert.equal(snapshot.current.pageState, "loading");
+  props = { ...props, boardSounds: false };
+  await act(async () => { renderer.update(React.createElement(Harness, props)); release(); await flush(); });
+  assert.equal(snapshot.current.pageState, "analyze");
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 120)); });
+  assert.equal(bunyi, 0);
+
+  props = { ...props, boardSounds: true, data: pgn("Carol", "Dan", "d4 d5"), siapkan: async () => engine };
+  await act(async () => { renderer.update(React.createElement(Harness, props)); await flush(); });
+  assert.equal(snapshot.current.pageState, "analyze");
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 120)); });
+  assert.equal(bunyi, 1);
+  await act(async () => { renderer.unmount(); });
 });
 
 test("canceling while the engine loads prevents a late analysis", async (t) => {
