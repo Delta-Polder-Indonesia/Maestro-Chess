@@ -13,7 +13,7 @@ import { daftarRiwayat, KUNCI_FITUR } from "../src/halaman/Analisa/riwayatFitur.
 // Node's test runner cannot import JSX directly. Compile the two UI components
 // and substitute only the storage/i18n boundaries.
 const nodeRequire = createRequire(import.meta.url);
-function compile(path, dependencies) {
+function compile(path, dependencies, exportName = "default") {
   const filename = new URL(path, import.meta.url);
   const source = readFileSync(filename, "utf8");
   const compiled = ts.transpileModule(source, {
@@ -27,7 +27,7 @@ function compile(path, dependencies) {
     if (id in dependencies) return dependencies[id];
     throw new Error(`Unexpected dashboard dependency: ${id}`);
   }, compiledModule, compiledModule.exports);
-  return compiledModule.exports.default;
+  return compiledModule.exports[exportName];
 }
 
 function renderPapan(dictionary, handlers = {}, work = { siap: true, tersedia: true, menyimpan: false, daftar: [], aktif: {} }) {
@@ -46,7 +46,7 @@ function renderPapan(dictionary, handlers = {}, work = { siap: true, tersedia: t
   return TestRenderer.create(React.createElement(Papan, handlers));
 }
 
-function renderNav(dictionary) {
+function renderNav(dictionary, penyimpanan = { bacaBoolean: (_key, fallback) => fallback, tulisBoolean: () => {} }) {
   const translate = (key) => key.split(".").reduce((value, part) => value?.[part], { analisa: dictionary }) ?? key;
   const svg = { default: () => React.createElement("svg") };
   const Nav = compile("../src/halaman/Analisa/komponen/nav/nav.jsx", {
@@ -60,6 +60,8 @@ function renderNav(dictionary) {
     "../../konteks/tabKerja.jsx": { useTabKerja: () => ({ bukaImpor() {}, perluPulih: false }) },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
     "../../../../components/ui/tooltip.jsx": { TooltipLabel: ({ children }) => children },
+    "../../konstanta.js": { navTop: 516 },
+    "../../penyimpanan.js": penyimpanan,
   });
   return TestRenderer.create(React.createElement(Nav));
 }
@@ -96,6 +98,93 @@ test("navigation wordmark keeps the visible brand in its accessible name in both
     assert.equal(link.props["aria-label"], name);
     renderer.unmount();
   }
+});
+
+test("navigation saves the user's choice and exposes clear toggle labels in both languages", () => {
+  for (const [dictionary, tutup, buka] of [
+    [indonesia, "Perkecil bilah navigasi", "Perluas bilah navigasi"],
+    [english, "Collapse navigation", "Expand navigation"],
+  ]) {
+    let tersimpan;
+    const storage = {
+      bacaBoolean: (_key, fallback) => tersimpan ?? fallback,
+      tulisBoolean: (key, value) => { assert.equal(key, "navTerbuka"); tersimpan = value; },
+    };
+    let renderer;
+    TestRenderer.act(() => { renderer = renderNav(dictionary, storage); });
+    const toggle = () => byTestId(renderer, "nav-tutup");
+    assert.equal(toggle().props["aria-label"], tutup);
+    assert.equal(toggle().props["aria-expanded"], true);
+    TestRenderer.act(() => { toggle().props.onClick(); });
+    assert.equal(toggle().props["aria-label"], buka);
+    assert.equal(toggle().props["aria-expanded"], false);
+    assert.equal(tersimpan, false);
+    assert.match(byTestId(renderer, "nav-akun").props.className, /navTop:gap-0/);
+    assert.match(byTestId(renderer, "nav-akun").props.className, /navTop:px-\[7px\]/);
+    TestRenderer.act(() => { renderer.unmount(); renderer = renderNav(dictionary, storage); });
+    assert.equal(toggle().props["aria-expanded"], false, "the collapsed choice survives remount");
+    TestRenderer.act(() => { toggle().props.onClick(); toggle().props.onClick(); toggle().props.onClick(); });
+    assert.equal(toggle().props["aria-expanded"], true, "batched clicks use the latest state");
+    assert.equal(tersimpan, true);
+    TestRenderer.act(() => renderer.unmount());
+  }
+});
+
+test("a stable tooltip keeps its trigger mounted and only describes a visible label", () => {
+  const pembungkus = ({ children }) => children;
+  const Root = ({ children }) => children;
+  const Trigger = ({ children }) => children;
+  const TooltipLabel = compile("../src/components/ui/tooltip.jsx", {
+    "@radix-ui/react-tooltip": {
+      Provider: pembungkus, Root, Trigger,
+      Portal: pembungkus, Content: pembungkus, Arrow: () => null,
+    },
+    "@/lib/utils": { cn: (...values) => values.filter(Boolean).join(" ") },
+  }, "TooltipLabel");
+  let mounts = 0;
+  let unmounts = 0;
+  function Tombol() {
+    React.useEffect(() => { mounts++; return () => { unmounts++; }; }, []);
+    return React.createElement("button", { "data-uji": "tooltip-trigger-test" });
+  }
+  const buat = (label) => React.createElement(TooltipLabel, { label, stabil: true }, React.createElement(Tombol));
+  let renderer;
+  TestRenderer.act(() => { renderer = TestRenderer.create(buat(undefined)); });
+  const tombol = byTestId(renderer, "tooltip-trigger-test");
+  const root = () => renderer.root.findByType(Root);
+  assert.equal(root().props.open, false);
+  TestRenderer.act(() => renderer.root.findByType(Trigger).props.onFocus());
+  TestRenderer.act(() => renderer.update(buat("Akun")));
+  assert.equal(byTestId(renderer, "tooltip-trigger-test"), tombol);
+  assert.equal(root().props.open, true, "a newly visible label describes the still-focused control");
+  TestRenderer.act(() => root().props.onOpenChange(false));
+  assert.equal(root().props.open, false, "Escape may close the tooltip without moving focus");
+  TestRenderer.act(() => renderer.update(buat(undefined)));
+  assert.equal(root().props.open, false);
+  assert.equal(byTestId(renderer, "tooltip-trigger-test"), tombol);
+  assert.equal(mounts, 1);
+  assert.equal(unmounts, 0);
+  TestRenderer.act(() => renderer.unmount());
+  assert.equal(unmounts, 1);
+});
+
+test("tooltips remain usable without ResizeObserver by omitting the measured arrow", (t) => {
+  const sebelumnya = globalThis.ResizeObserver;
+  t.after(() => { if (sebelumnya === undefined) delete globalThis.ResizeObserver; else globalThis.ResizeObserver = sebelumnya; });
+  const pembungkus = ({ children }) => children;
+  const Arrow = () => null;
+  const TooltipContent = compile("../src/components/ui/tooltip.jsx", {
+    "@radix-ui/react-tooltip": { Portal: pembungkus, Content: pembungkus, Arrow },
+    "@/lib/utils": { cn: (...values) => values.filter(Boolean).join(" ") },
+  }, "TooltipContent");
+  globalThis.ResizeObserver = undefined;
+  let renderer;
+  TestRenderer.act(() => { renderer = TestRenderer.create(React.createElement(TooltipContent, null, "Akun")); });
+  assert.equal(renderer.root.findAllByType(Arrow).length, 0);
+  globalThis.ResizeObserver = class {};
+  TestRenderer.act(() => renderer.update(React.createElement(TooltipContent, null, "Akun")));
+  assert.equal(renderer.root.findAllByType(Arrow).length, 1);
+  TestRenderer.act(() => renderer.unmount());
 });
 
 test("dashboard has one report button and opens recent features or saved work", () => {

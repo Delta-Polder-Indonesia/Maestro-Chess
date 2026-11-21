@@ -65,6 +65,7 @@ import Menu from "./menu/menu.jsx";
 import GameButtons from "./menu/analysis/gameButtons.jsx";
 import { validasiPgn } from "./nav/validasiImpor.js";
 import { ambilPgnTitipan } from "../../../lib/titipanAnalisa.js";
+import { useUkuranArea } from "./useUkuranArea.js";
 
 /*
  * LayarAkun (via DashboardAkun) mengimpor recharts ±97 KiB — bundle grafik
@@ -632,13 +633,14 @@ function LapisanLayar({
 }
 
 // Lapisan bisa berganti tanpa membangun ulang seluruh pohon papan yang tetap
-// mounted. Pembaruan konteks papan/analisis tetap menembus batas memo ini.
-// Di desktop, safe center membagi sisa ruang tanpa memotong sisi kiri saat meluap.
+// mounted. Mode sejajar mengikuti ruang <main>, bukan lebar viewport.
 const IsiPapan = memo(function IsiPapan({ wadahRef }) {
+  const isiRef = useRef(null);
+  const ukuran = useUkuranArea(wadahRef, isiRef);
   return (
-    <div className="flex h-full w-full flex-col items-center justify-start gap-4 overflow-y-auto p-2 vertical:flex-row vertical:[justify-content:safe_center] vertical:gap-2 vertical:overflow-visible vertical:p-4">
-      <div className="flex h-full w-min flex-col navTop:flex-row vertical:gap-[10px] gap-[6px]">
-        <Game wadah={wadahRef} />
+    <div ref={isiRef} data-panel-sejajar={Boolean(ukuran?.sejajar)} className="group/papan flex h-full w-full flex-col items-center justify-start gap-4 overflow-y-auto p-2 data-[panel-sejajar=true]:flex-row data-[panel-sejajar=true]:[justify-content:safe_center] data-[panel-sejajar=true]:gap-2 data-[panel-sejajar=true]:overflow-visible data-[panel-sejajar=true]:p-4">
+      <div className="flex h-full min-h-fit w-min flex-col navTop:flex-row group-data-[panel-sejajar=true]/papan:gap-[10px] gap-[6px]">
+        <Game wadah={wadahRef} ukuranWadah={ukuran} />
         <BoardMenu />
         <div className="bg-backgroundBox flex-row justify-center rounded-borderRoundness w-full navTop:hidden flex h-12">
           <div className="max-w-[500px] w-full flex flex-row justify-center scale-75">

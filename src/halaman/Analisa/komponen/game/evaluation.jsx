@@ -26,9 +26,9 @@ function Evaluation(props) {
   } else {
     displayAdvantage = (Math.abs(advantageAmount) / 100).toFixed(1);
   }
-  return <div style={{ [navTop ? "width" : "height"]: size }} className={`vertical:w-9 navTop:w-7 h-7 bg-evaluationBarBlack overflow-hidden flex navTop:flex-col flex-row relative ${white ? "navTop:justify-end justify-start" : "navTop:justify-start justify-end"}`}>
+  return <div style={{ [navTop ? "width" : "height"]: size }} className={`group-data-[panel-sejajar=true]/papan:w-9 navTop:w-7 h-7 bg-evaluationBarBlack overflow-hidden flex navTop:flex-col flex-row relative ${white ? "navTop:justify-end justify-start" : "navTop:justify-start justify-end"}`}>
             <div style={{ [navTop ? "width" : "height"]: `${percent}%`, transition: "height 0.4s", willChange: "height" }} className="w-full bg-evaluationBarWhite" />
-            <div className="absolute h-full flex navTop:flex-col flex-row-reverse items-center justify-between w-full vertical:py-2 navTop:py-1 navTop:px-0 px-1 vertical:text-xs navTop:text-[9px] text-[11px] font-bold">
+            <div className="absolute h-full flex navTop:flex-col flex-row-reverse items-center justify-between w-full group-data-[panel-sejajar=true]/papan:py-2 navTop:py-1 navTop:px-0 px-1 group-data-[panel-sejajar=true]/papan:text-xs navTop:text-[9px] text-[11px] font-bold">
                 <div style={{ opacity: !winning ? 100 : 0 }} className={`${white ? "text-foreground" : "text-background"}`}>{displayAdvantage}</div>
                 <div style={{ opacity: winning ? 100 : 0 }} className={`${!white ? "text-foreground" : "text-background"}`}>{displayAdvantage}</div>
             </div>

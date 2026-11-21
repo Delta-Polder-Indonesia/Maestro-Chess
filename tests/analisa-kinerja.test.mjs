@@ -14,6 +14,7 @@ import { boardThemes } from "../src/halaman/Analisa/komponen/pengaturan/boardThe
 import { buatHandleKeyDown } from "../src/halaman/Analisa/komponen/game/keyboardPapan.js";
 import { getCapturedPieces } from "../src/halaman/Analisa/komponen/game/getMoves.js";
 import { useAnalisisPapan } from "../src/halaman/Analisa/komponen/game/useAnalisisPapan.js";
+import { useUkuranArea } from "../src/halaman/Analisa/komponen/useUkuranArea.js";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -274,7 +275,7 @@ test("the board observes its workspace from the first mount and resizes when the
   const sebelumnya = { window: globalThis.window, ResizeObserver: globalThis.ResizeObserver };
   const pendengar = new Map();
   globalThis.window = {
-    innerWidth: 1100, innerHeight: 800,
+    innerWidth: 1440, innerHeight: 900,
     addEventListener: (jenis, fn) => pendengar.set(jenis, fn),
     removeEventListener: (jenis) => pendengar.delete(jenis),
   };
@@ -290,12 +291,14 @@ test("the board observes its workspace from the first mount and resizes when the
     }
   });
 
-  const main = { clientWidth: 890, clientHeight: 764 };
+  const main = { clientWidth: 1230, clientHeight: 864 };
   let refWadah;
   let fallbackSaatRefKosong = false;
+  let tinggiStatus = 28;
+  const isi = { closest: (selector) => selector === "main" ? main : null };
   const component = {
-    offsetHeight: 732,
-    getElementsByTagName: () => [{ offsetHeight: 44 }],
+    get offsetHeight() { return 832; },
+    getElementsByTagName: () => [{ offsetHeight: tinggiStatus }],
     closest: (selector) => {
       assert.equal(selector, "main");
       if (!refWadah.current) fallbackSaatRefKosong = true;
@@ -316,7 +319,7 @@ test("the board observes its workspace from the first mount and resizes when the
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
     "../../../../lib/pemainCatur.js": { useKartuPemain: () => null },
     "../../konteks/errorsKonteks.js": { ErrorsContext: React.createContext({ errors: [[], noop] }) },
-    "../../konstanta.js": { maxVertical: 1100, navTop: 516 },
+    "../../konstanta.js": { maxSisiPapan: 1000, minSisiPapan: 160, navTop: 516 },
     "../../konteks/configKonteks.js": configContext,
     "../menu/analysis/gameButtons.jsx": { default: kosong },
     "./getMoves.js": {
@@ -339,25 +342,32 @@ test("the board observes its workspace from the first mount and resizes when the
   const nilai = { ...Object.fromEntries(Object.entries(state).map(([key, value]) => [key, [value, noop]])), gameController: {} };
   function Harness() {
     refWadah = React.useRef(null);
-    return React.createElement("main", { ref: refWadah }, React.createElement(Game, { wadah: refWadah }));
+    const refIsi = React.useRef(null);
+    const ukuranWadah = useUkuranArea(refWadah, refIsi);
+    tinggiStatus = ukuranWadah?.sejajar ? 44 : 28;
+    return React.createElement("main", { ref: refWadah },
+      React.createElement("div", { ref: refIsi, "data-uji": "isi-area-test" }, React.createElement(Game, { wadah: refWadah, ukuranWadah })));
   }
   let renderer;
   await act(async () => {
     renderer = TestRenderer.create(React.createElement(analyzeContext.AnalyzeContext.Provider, { value: nilai }, React.createElement(Harness)), {
-      createNodeMock: (element) => element.type === "main" ? main : element.props.className === "h-full flex flex-col justify-start" ? component : null,
+      createNodeMock: (element) => element.type === "main" ? main : element.props["data-uji"] === "isi-area-test" ? isi : element.props.className === "h-full flex flex-col justify-start" ? component : null,
     });
   });
   assert.equal(fallbackSaatRefKosong, true, "the child layout effect runs before the parent main ref is attached");
   assert.equal(observers.length, 1);
   assert.equal(observers[0].elemen, main);
   const ukuran = () => renderer.root.findByProps({ "data-uji": "ukuran-papan-test" }).props["data-size"];
-  assert.equal(ukuran(), 296);
-  main.clientWidth = 1052;
+  assert.equal(ukuran(), 704, "the board stays large while the panel is below it");
+  main.clientWidth = 1392;
   await act(async () => { observers[0].callback(); });
-  assert.equal(ukuran(), 464, "closing the sidebar must recalculate the board from the workspace width");
-  main.clientWidth = 890;
+  assert.equal(ukuran(), 728, "closing the sidebar can move the panel alongside without shrinking the board");
+  main.clientWidth = 1230;
   await act(async () => { observers[0].callback(); });
-  assert.equal(ukuran(), 296, "reopening the sidebar must shrink the board again");
+  assert.equal(ukuran(), 704, "reopening the sidebar restores the column and its board size");
+  main.clientHeight = 224;
+  await act(async () => { observers[0].callback(); });
+  assert.equal(ukuran(), 160, "a very short viewport keeps a usable board instead of a negative size");
   await act(async () => { renderer.unmount(); });
   assert.equal(observers[0].terputus, true);
   assert.equal(pendengar.has("resize"), false);

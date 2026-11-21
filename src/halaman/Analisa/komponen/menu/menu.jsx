@@ -81,7 +81,7 @@ function Menu() {
   ].filter((x) => x.show);
 
   return (
-    <div ref={menuRef} className="vertical:h-full w-full max-w-[600px] pb-8 vertical:pb-0 vertical:min-h-0 min-h-[600px] select-text bg-backgroundBox rounded-borderRoundness flex-grow vertical:max-w-[600px] vertical:min-w-[400px] flex flex-col gap-4 overflow-hidden">
+    <div ref={menuRef} className="group-data-[panel-sejajar=true]/papan:h-full w-full max-w-[600px] pb-8 group-data-[panel-sejajar=true]/papan:pb-0 group-data-[panel-sejajar=true]/papan:min-h-0 min-h-[600px] select-text bg-backgroundBox rounded-borderRoundness flex-grow group-data-[panel-sejajar=true]/papan:max-w-[600px] group-data-[panel-sejajar=true]/papan:min-w-[400px] flex flex-col gap-4 overflow-hidden">
       {tabs.length > 0 ? (
         <menu className="flex flex-row relative select-none">
           {tabs.map((t2, i) => {
@@ -151,7 +151,7 @@ function Menu() {
       </div>
 
       {modeAnalisis ? (
-        <div className="flex-col gap-1 pb-1 items-center hidden vertical:flex">
+        <div className="flex-col gap-1 pb-1 items-center hidden group-data-[panel-sejajar=true]/papan:flex">
           <hr className="border-neutral-600 w-[85%]" />
           <GameButtons />
         </div>
