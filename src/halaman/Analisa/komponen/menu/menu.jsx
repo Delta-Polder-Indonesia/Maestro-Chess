@@ -1,0 +1,162 @@
+/* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
+import { useContext, useEffect, useRef, useState } from "react";
+import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
+import { useI18n } from "../../../../lib/i18n.jsx";
+import Loading from "./loading/loading.jsx";
+import GrafikMuat from "./loading/grafikMuat.jsx";
+import GameButtons from "./analysis/gameButtons.jsx";
+import Star from "../svg/star.jsx";
+import BoardIcon from "../svg/boardIcon.jsx";
+import Summary from "./analysis/summary/summary.jsx";
+import Moves from "./analysis/moves/moves.jsx";
+import getOverallGameComment from "./analysis/moves/overallGameComment.jsx";
+import Profile from "../svg/profile.jsx";
+import Files from "../svg/files.jsx";
+
+/*
+ * Panel samping hanyalah "etalase data":
+ *  - saat belum ada apa-apa: ajakan memakai tombol Akun / Impor di bilah kiri;
+ *  - saat partai dimuat lewat Akun/Impor: Ringkasan / Langkah hasil analisis.
+ * Layar akun (daftar + statistik) bukan lagi bagian panel ini — ia salah satu
+ * layar area kerja yang dipilih dari tombol "Akun" di Nav (lihat
+ * komponen/nav/layarAkun.jsx dan komponen/areaKerja.jsx).
+ * Tidak ada lagi form "Laporan Analisa" di panel ini — kedalaman analisis
+ * dipindah ke Pengaturan (tombol roda gigi BoardMenu).
+ */
+function Menu() {
+  const { t } = useI18n();
+  const [overallGameComment, setOverallGameComment] = useState("");
+  const analyzeContext = useContext(AnalyzeContext);
+  const [tab, setTab] = analyzeContext.tab;
+  const [pageState] = analyzeContext.pageState;
+  const [data] = analyzeContext.data;
+  const [game] = analyzeContext.game;
+  const [langkahSementara] = analyzeContext.langkahSementara;
+  const [players] = analyzeContext.players;
+  const [result] = analyzeContext.result;
+  const [moveNumber, setMoveNumber] = analyzeContext.moveNumber;
+  const [analyzeController] = analyzeContext.analyzeController;
+  const [analyzingMove] = analyzeContext.analyzingMove;
+  const setAnimation = analyzeContext.animation[1];
+  const setForward = analyzeContext.forward[1];
+  const [customLine, setCustomLine] = analyzeContext.customLine;
+  const [returnedToNormalGame] = analyzeContext.returnedToNormalGame;
+  const menuRef = useRef(null);
+
+  const modeAnalisis = pageState === "analyze" || pageState === "analyzeCustom";
+  const memuatPartai = pageState === "loading";
+  const grafikPartai = (memuatPartai && data?.format === "pgn") ||
+    (pageState === "analyze" && tab === "summary");
+  const kosong = pageState === "default";
+
+  /* Saat masuk mode analisis, buka tab Ringkasan lebih dulu. */
+  useEffect(() => {
+    if (pageState === "analyze") setTab("summary");
+  }, [pageState, setTab]);
+
+  /* Melompat ke langkah tertentu (dari grafik/dll) → tampilkan tab Langkah. */
+  const pageStateSebelumnya = useRef(pageState);
+  useEffect(() => {
+    const sudahMenganalisis = pageStateSebelumnya.current === "analyze";
+    pageStateSebelumnya.current = pageState;
+    // Saat PERTAMA masuk "analyze", commit yang sama menjalankan efek di atas
+    // (buka Ringkasan) DAN efek ini (pageState ikut jadi dependensi) — tanpa
+    // penjagaan ini efek yang lebih akhir menang dan tab Ringkasan tidak
+    // sempat terlihat. Efek ini hanya boleh merespons lompatan langkah yang
+    // terjadi SAAT SUDAH berada di mode analisis.
+    if (pageState !== "analyze" || !sudahMenganalisis) return;
+    setTab("moves");
+  }, [moveNumber, pageState, setTab]);
+
+  useEffect(() => {
+    const playerNames = players.map((player, i) => player.name || t(i === 0 ? "analisa.pemain.putih" : "analisa.pemain.hitam"));
+    setOverallGameComment(getOverallGameComment(playerNames, result, t));
+  }, [players, result, t]);
+
+  const tabs = [
+    { label: t("analisa.tab.ringkasan"), state: "summary", icon: (className) => <Star class={className} size={20} />, show: pageState === "analyze" || (memuatPartai && data?.format === "pgn") },
+    { label: t("analisa.tab.langkah"), state: "moves", icon: (className) => <BoardIcon class={className} size={20} />, show: modeAnalisis },
+  ].filter((x) => x.show);
+
+  return (
+    <div ref={menuRef} className="vertical:h-full w-full max-w-[600px] pb-8 vertical:pb-0 vertical:min-h-0 min-h-[600px] select-text bg-backgroundBox rounded-borderRoundness flex-grow vertical:max-w-[600px] vertical:min-w-[400px] flex flex-col gap-4 overflow-hidden">
+      {tabs.length > 0 ? (
+        <menu className="flex flex-row relative select-none">
+          {tabs.map((t2, i) => {
+            const isSelected = tab === t2.state;
+            return (
+              <button
+                role="tab"
+                key={i}
+                onClick={() => setTab(t2.state)}
+                className={`w-full flex flex-row gap-2 group items-center justify-center py-2 text-sm outline-none ${isSelected ? "text-foreground" : "bg-backgroundBoxBoxDisabled text-foregroundGrey cursor-pointer transition-colors hover:text-foregroundHighlighted"}`}
+              >
+                {t2.icon(isSelected ? "fill-foreground" : "fill-foregroundGrey transition-colors group-hover:fill-foregroundHighlighted")}
+                {t2.label}
+              </button>
+            );
+          })}
+        </menu>
+      ) : null}
+
+      <div className="overflow-y-auto h-full flex flex-col">
+        {memuatPartai ? <Loading format={data?.format} analyzeController={analyzeController} /> : ""}
+
+        {grafikPartai ? (
+          <div data-uji="grafik-analisa" className="flex w-full justify-center py-3">
+            <GrafikMuat
+              moves={memuatPartai ? langkahSementara : game}
+              label={t(memuatPartai ? "analisa.muat.grafik" : "analisa.grafik.judul")}
+              container={menuRef.current}
+              moveNumber={moveNumber}
+              setMoveNumber={setMoveNumber}
+              setAnimation={setAnimation}
+              setForward={setForward}
+              interaktif={!memuatPartai}
+            />
+          </div>
+        ) : null}
+
+        {modeAnalisis && tab === "summary" ? (
+          <Summary players={players} moves={game} />
+        ) : ""}
+        {modeAnalisis && tab === "moves" && pageState === "analyze" ? (
+          <Moves container={menuRef.current} moves={game} overallGameComment={overallGameComment} moveNumber={moveNumber} setMoveNumber={setMoveNumber} analyzingMove={analyzingMove} setAnimation={setAnimation} setForward={setForward} customLine={customLine} returnedToNormalGame={returnedToNormalGame} />
+        ) : ""}
+        {pageState === "analyzeCustom" && tab === "moves" ? (
+          <Moves container={menuRef.current} moves={[game[0], ...customLine.moves]} overallGameComment={overallGameComment} moveNumber={customLine.moveNumber + 1} setMoveNumber={(moveNumber2) => setCustomLine((prev) => ({ ...prev, moveNumber: moveNumber2 - 1 }))} analyzingMove={analyzingMove} setAnimation={setAnimation} setForward={setForward} customLine={customLine} returnedToNormalGame={returnedToNormalGame} />
+        ) : ""}
+
+        {kosong ? (
+          <div className="flex flex-col items-center justify-center gap-4 px-8 py-14 text-center">
+            <div className="grid h-16 w-16 place-items-center rounded-full bg-backgroundBoxBox">
+              <Files className="scale-x-[-1] fill-backgroundBoxBoxHighlighted" size={32} />
+            </div>
+            <p className="text-base font-bold text-foreground">{t("analisa.panel.kosongJudul")}</p>
+            <p className="max-w-xs text-sm leading-5 text-foregroundGrey">{t("analisa.panel.kosongIsi")}</p>
+            <div className="flex flex-row items-center gap-2 text-xs text-foregroundGrey">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-backgroundBoxBox px-2.5 py-1 text-foreground">
+                <Profile width={13} height={13} class="fill-foreground" />
+                {t("analisa.nav.akun")}
+              </span>
+              <span>{t("analisa.panel.atau")}</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-backgroundBoxBox px-2.5 py-1 text-foreground">
+                {t("analisa.nav.impor")}
+              </span>
+            </div>
+          </div>
+        ) : ""}
+      </div>
+
+      {modeAnalisis ? (
+        <div className="flex-col gap-1 pb-1 items-center hidden vertical:flex">
+          <hr className="border-neutral-600 w-[85%]" />
+          <GameButtons />
+        </div>
+      ) : ""}
+    </div>
+  );
+}
+export {
+  Menu as default
+};

@@ -1,31 +1,20 @@
-import type { Metadata } from "next"
-import "./globals.css"
-
-import { Roboto } from 'next/font/google'
-
-const roboto = Roboto({
-  subsets: ['latin'],
-  weight: ['400', '700', '900'],
-})
+import type { Metadata } from "next";
+import "@fontsource-variable/geist";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Maestro Chess - Free Chess Analyzer",
-  description: "Analyze your chess games and improve your skills completely free.",
-  keywords: ["chess", "chess analysis", "free chess analyzer", "free chess.com analyzer", "analyze chess for free", "analyze chess games", "brilliant move chess", "maestro chess", "maestro-chess"],
-  authors: [{ name: 'Delo', url: "https://github.com/wdeloo" }],
+  title: "Maestro Chess — Analisa Catur",
+  description: "Analisis PGN dan FEN dengan Stockfish Lite lokal, laporan langkah, grafik evaluasi, dan basis data partai di peramban.",
+  keywords: ["catur", "analisa catur", "chess analysis", "Stockfish", "PGN", "FEN", "Maestro Chess"],
+  authors: [{ name: "Delta-Polder-Indonesia", url: "https://github.com/Delta-Polder-Indonesia" }],
   applicationName: "Maestro Chess",
-
-  icons: {
-    icon: "favicon.ico"
-  },
-}
+  icons: { icon: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/favicon.ico` },
+};
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html>
-      <body className={`flex navTop:flex-row flex-col items-center justify-start h-screen w-screen overflow-x-hidden ${roboto.className}`}>
-        {children}
-      </body>
+    <html lang="id">
+      <body className="flex h-screen w-full flex-col overflow-hidden font-sans">{children}</body>
     </html>
-  )
+  );
 }

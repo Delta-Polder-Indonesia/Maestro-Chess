@@ -1,0 +1,2 @@
+# Preserve the upstream Stockfish GPL text, which uses CRLF line endings.
+public/engine/source/COPYING.txt -text whitespace=cr-at-eol
