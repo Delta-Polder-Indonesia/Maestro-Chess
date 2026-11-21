@@ -11,7 +11,7 @@
  * setiap menu memilih LAYAR yang mengisi area kerja — pola yang sama dengan
  * halaman Pengurus (`src/halaman/Pengurus/Dashboard.jsx`): `Sidebar`
  * menyetel `tab`, `<main>` merender panel sesuai `tab`. Di sini `tab`-nya
- * bernama `tampilan` dan hidup di AnalyzeContext, bilah ini hanya
+ * bernama `tampilan` dan hidup di konteks navigasi, bilah ini hanya
  * menyetelnya. Tidak ada lagi modal: tidak ada latar digelapkan, tidak ada
  * tombol tutup, tidak ada pembajakan tombol Escape (Escape tetap milik
  * pintasan pemutar partai di papan).
@@ -38,9 +38,8 @@
  *  - setiap tombol menu (dan burger) menjadi kotak 2rem (`w-8 h-8`) dengan
  *    bantalan 8px yang TETAP di kedua keadaan (pola `group-data-
  *    [collapsible=icon]:size-8 p-2` di komponen sidebar), sehingga ikon
- *    duduk tepat di tengah lajur dan tidak bergeser saat burger ditekan —
- *    yang menyusut hanya lebar tombol, gap, dan labelnya (max-width +
- *    opacity);
+ *    duduk tepat di tengah lajur dan tidak bergeser saat burger ditekan;
+ *    lebar rail berubah sekali dan label memakai transisi opacity saja;
  *  - burger duduk di baris kepala bersama wordmark; saat bilah menciut,
  *    wordmark ikut menyusut habis sehingga tidak ada teks terpotong dan
  *    burger tinggal sendiri di tengah lajur;
@@ -55,7 +54,7 @@ import Profile from "../svg/profile.jsx";
 import ShieldAlert from "../svg/shield-alert.jsx";
 import { Settings, BarChart3 } from "lucide-react";
 import { TAMPILAN_ANALISA } from "../../konteks/analyzeKonteks.js";
-import { useBoard } from "../../konteks/boardKonteks.js";
+import { useTampilan } from "../../konteks/boardKonteks.js";
 import { useTabKerja } from "../../konteks/tabKerja.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { TooltipLabel } from "../../../../components/ui/tooltip.jsx";
@@ -103,11 +102,9 @@ function IkonDatabase({ className }) {
 export default function Nav() {
   const { t } = useI18n();
   /*
-   * Bilah navigasi hanya butuh `tampilan` (state papan). Ia sengaja tidak
-   * berlangganan AnalyzeContext supaya tidak di-render ulang setiap
-   * `progress` analisis berubah.
+   * Bilah hanya berlangganan layar, bukan state papan maupun progres engine.
    */
-  const [tampilan, setTampilan] = useBoard().tampilan;
+  const [tampilan, setTampilan] = useTampilan();
   const { bukaImpor, perluPulih } = useTabKerja();
   const [navTerbuka, setNavTerbuka] = useState(true);
 
@@ -180,36 +177,29 @@ export default function Nav() {
    * tanpa label (`h-full`, label memang `hidden` di lebar ini).
    *
    * Mode bilah tegak: tombol SELALU `navTop:w-full` — lebarnya mengikuti
-   * bilah tanpa transisi sendiri, sama seperti Sidebar Pengurus. Saat bilah
-   * menciut, kontainer yang berukuran 3rem membuat tombol ikut 2rem secara
-   * otomatis (8 + 2rem + 8), jadi ikon diam total; yang beranimasi hanya
-   * lebar bilah dan labelnya. Menganimasikan lebar tombol (w-full ↔ w-8)
-   * justru membuat ikon berkedip: di tengah transisi tombol melebihi
-   * lebar bilah yang sedang menyusut dan sesaat terpotong overflow.
+   * bilah, sama seperti Sidebar Pengurus. Saat bilah menciut, kontainer
+   * 3rem membuat tombol ikut 2rem (8 + 2rem + 8), jadi ikon tetap di tempat.
+   * Lebar tidak dianimasikan: setiap frame sebelumnya memicu pengukuran dan
+   * perubahan ukuran papan lewat ResizeObserver.
    */
   // min-h-10 (40px) hanya di mode ponsel: target sentuh minimum yang nyaman
   // (audit Lighthouse "touch targets"); di bilah tegak desktop tinggi tetap h-9.
   const kelasTombol = `flex flex-row gap-2.5 h-full min-h-10 navTop:min-h-0 navTop:h-9 navTop:px-2 navTop:justify-start justify-center items-center navTop:py-0 p-2 group hover:bg-backgroundBoxHover text-foregroundGrey hover:text-foregroundHighlighted transition-colors cursor-pointer navTop:w-full`;
 
-  /**
-   * Label menu yang bisa menciut (max-width/opacity) saat bilah ditutup —
-   * persis perilaku sidebar Pengurus: ikon diam, label menyusut.
-   */
-  const kelasLabelNav = `overflow-hidden whitespace-nowrap transform-gpu transition-[max-width,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hidden navTop:block text-[15px] leading-5 font-bold ${
+  /** Perubahan lebar label seketika; hanya opacity yang ditransisikan. */
+  const kelasLabelNav = `overflow-hidden whitespace-nowrap transition-opacity duration-150 motion-reduce:transition-none hidden navTop:block text-[15px] leading-5 font-bold ${
     navTerbuka ? "navTop:max-w-[140px] navTop:opacity-100" : "navTop:max-w-0 navTop:opacity-0"
   }`;
 
   return (
-    <nav className={`flex flex-col navTop:h-full w-full relative ${navTerbuka ? "navTop:w-[210px]" : "navTop:w-12"} navTop:shrink-0 navTop:will-change-[width] navTop:transition-[width] navTop:duration-300 navTop:ease-[cubic-bezier(0.22,1,0.36,1)]`}>
+    <nav className={`flex flex-col navTop:h-full w-full relative ${navTerbuka ? "navTop:w-[210px]" : "navTop:w-12"} navTop:shrink-0`}>
       {/*
         `navTop:px-2` = bantalan 8px lajur: 3rem rail = 8 + 2rem + 8
         (sama dengan bantalan SidebarContent + SidebarMenuButton di
         `components/ui/sidebar.jsx`).
         `navTop:overflow-x-hidden`: `overflow-y-auto` menurut spesifikasi
-        memaksa overflow-x jadi auto juga, sehingga overflow pecahan piksel
-        selama animasi lebar memunculkan scrollbar horizontal — yang
-        menggeser tata letak dan membuat ikon berkedip. Sidebar Pengurus
-        memakai `overflow-hidden` untuk alasan yang sama.
+        memaksa overflow-x jadi auto juga. Sembunyikan limpahan agar label
+        yang panjang tidak memunculkan scrollbar horizontal pada rail kecil.
       */}
       <div className="navTop:pt-1 navTop:pb-6 navTop:px-2 navTop:h-full w-full overflow-y-auto navTop:overflow-x-hidden bg-backgroundBox flex navTop:flex-col flex-row justify-between select-none navTop:items-start items-stretch">
         <div className="flex navTop:flex-col flex-row">
@@ -248,7 +238,7 @@ export default function Nav() {
               }`}
             >
               <span
-                className={`hidden navTop:block leading-none font-bold text-[17px] tracking-tight text-foreground overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                className={`hidden navTop:block leading-none font-bold text-[17px] tracking-tight text-foreground overflow-hidden whitespace-nowrap transition-opacity duration-150 motion-reduce:transition-none ${
                   navTerbuka ? "max-w-[140px] opacity-100" : "max-w-0 opacity-0"
                 }`}
               >

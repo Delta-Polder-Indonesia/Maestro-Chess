@@ -190,6 +190,35 @@ test("compact timestamps keep the full relative time accessible in both language
   }
 });
 
+test("recent-file timestamps reuse Intl formatters across rows and rerenders", () => {
+  const tanggalAsli = Intl.DateTimeFormat;
+  const relatifAsli = Intl.RelativeTimeFormat;
+  let tanggalDibuat = 0;
+  let relatifDibuat = 0;
+  Intl.DateTimeFormat = function (...args) { tanggalDibuat++; return new tanggalAsli(...args); };
+  Intl.RelativeTimeFormat = function (...args) { relatifDibuat++; return new relatifAsli(...args); };
+  let renderer;
+  try {
+    const work = {
+      siap: true, tersedia: true, menyimpan: false, aktif: {},
+      daftar: Array.from({ length: 12 }, (_, n) => ({
+        id: `draf-${n}`, jenis: "draf", status: "draf", waktu: Date.now() - n * 60000,
+      })),
+    };
+    renderer = renderPapan(indonesia, {}, work);
+    assert.equal(tanggalDibuat, 1);
+    assert.equal(relatifDibuat, 1);
+    TestRenderer.act(() => byTestId(renderer, "pekerjaan-lihat-semua").props.onClick());
+    TestRenderer.act(() => byTestId(renderer, "pekerjaan-lihat-semua").props.onClick());
+    assert.equal(tanggalDibuat, 1);
+    assert.equal(relatifDibuat, 1);
+  } finally {
+    renderer?.unmount();
+    Intl.DateTimeFormat = tanggalAsli;
+    Intl.RelativeTimeFormat = relatifAsli;
+  }
+});
+
 test("see all expands only the work history, including entries beyond the first ten", () => {
   const work = {
     siap: true, tersedia: true, menyimpan: false, aktif: {},

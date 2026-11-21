@@ -24,7 +24,9 @@ export default function Analisa() {
     ukur();
     window.addEventListener("resize", ukur);
     window.addEventListener("orientationchange", ukur);
-    document.fonts?.ready.then(ukur).catch(() => {});
+    document.fonts?.ready.then(ukur).catch((error) => {
+      console.error("Gagal menyiapkan font Analisa:", error);
+    });
     return () => {
       aktif = false;
       window.removeEventListener("resize", ukur);

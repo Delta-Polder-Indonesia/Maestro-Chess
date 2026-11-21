@@ -2,7 +2,7 @@
 /* Tombol gear membuka layar Pengaturan penuh (TAMPILAN_ANALISA.PENGATURAN),
    bukan popup — sama seperti tombol gear di Papan Interaktif. */
 import { TAMPILAN_ANALISA } from "../../konteks/analyzeKonteks.js";
-import { useBoard } from "../../konteks/boardKonteks.js";
+import { useBoard, useSetTampilan } from "../../konteks/boardKonteks.js";
 import Image from "../Gambar.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { berkasPublik } from "../../../../lib/asets.js";
@@ -11,14 +11,13 @@ import { TooltipLabel } from "../../../../components/ui/tooltip.jsx";
 function BoardMenu() {
   const { t } = useI18n();
   /*
-   * Hanya memakai state papan (white/animation/tampilan), jadi ia berlangganan
-   * BoardContext — bukan AnalyzeContext. Dengan begitu tombol balik papan &
-   * gear tidak ikut di-render setiap `progress` analisis berubah.
+   * Tombol balik memakai setter papan; gear hanya perlu setter navigasi,
+   * sehingga perubahan layar sendiri tidak memicu render BoardMenu.
    */
   const papan = useBoard();
   const setWhite = papan.white[1];
   const setAnimation = papan.animation[1];
-  const setTampilan = papan.tampilan[1];
+  const setTampilan = useSetTampilan();
 
   function flipBoard() {
     setAnimation(false);

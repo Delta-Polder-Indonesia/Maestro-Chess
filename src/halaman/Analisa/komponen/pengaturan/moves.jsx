@@ -1,6 +1,6 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 import { ConfigContext } from "../../konteks/configKonteks.js";
-import { useContext, useEffect, useState } from "react";
+import { memo, useContext, useEffect, useState } from "react";
 import { boardThemes } from "./boardThemes.js";
 import { BISHOP, ROOK, WHITE } from "chess.js";
 import PieceSVG from "../svg/piece.jsx";
@@ -9,14 +9,9 @@ import SoundMute from "../svg/sound-mute.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { bacaTeks, tulis } from "../../penyimpanan.js";
 import { Switch } from "../../../../components/ui/switch.jsx";
-function Moves({ aktif = true }) {
+const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, setShowLegalMoves, animateMoves, setAnimateMoves, boardSounds, setBoardSounds }) {
   const { t } = useI18n();
   const [animateMovesMoved, setAnimateMovesMoved] = useState(false);
-  const configContext = useContext(ConfigContext);
-  const [boardTheme] = configContext.boardTheme;
-  const [showLegalMoves, setShowLegalMoves] = configContext.showLegalMoves;
-  const [animateMoves, setAnimateMoves] = configContext.animateMoves;
-  const [boardSounds, setBoardSounds] = configContext.boardSounds;
   useEffect(() => {
     // Panel yang tersembunyi tetap terpasang, tetapi animasinya tidak perlu
     // berjalan di belakang tab lain.
@@ -128,7 +123,14 @@ function Moves({ aktif = true }) {
                 </div>
             </section>
         </div>;
+});
+
+function Moves({ aktif = true }) {
+  const config = useContext(ConfigContext);
+  const [boardTheme] = config.boardTheme;
+  const [showLegalMoves, setShowLegalMoves] = config.showLegalMoves;
+  const [animateMoves, setAnimateMoves] = config.animateMoves;
+  const [boardSounds, setBoardSounds] = config.boardSounds;
+  return <IsiMoves aktif={aktif} boardTheme={boardTheme} showLegalMoves={showLegalMoves} setShowLegalMoves={setShowLegalMoves} animateMoves={animateMoves} setAnimateMoves={setAnimateMoves} boardSounds={boardSounds} setBoardSounds={setBoardSounds} />;
 }
-export {
-  Moves as default
-};
+export default memo(Moves);

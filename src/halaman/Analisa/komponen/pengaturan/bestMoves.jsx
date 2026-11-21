@@ -1,6 +1,6 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 import { ConfigContext } from "../../konteks/configKonteks.js";
-import { useContext, useEffect } from "react";
+import { memo, useContext, useEffect } from "react";
 import { boardThemes } from "./boardThemes.js";
 import { Arrow } from "../game/board.jsx";
 import PieceSVG from "../svg/piece.jsx";
@@ -8,12 +8,8 @@ import { QUEEN, WHITE } from "chess.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { bacaTeks, tulis } from "../../penyimpanan.js";
 import { Switch } from "../../../../components/ui/switch.jsx";
-function BestMoves() {
+const IsiBestMoves = memo(function IsiBestMoves({ boardTheme, showArrows, setShowArrows, arrowAfterMove, setArrowAfterMove }) {
   const { t } = useI18n();
-  const configContext = useContext(ConfigContext);
-  const [boardTheme] = configContext.boardTheme;
-  const [showArrows, setShowArrows] = configContext.showArrows;
-  const [arrowAfterMove, setArrowAfterMove] = configContext.arrowAfterMove;
   useEffect(() => {
     const showArrows2 = bacaTeks("showArrows");
     if (!showArrows2) return;
@@ -84,7 +80,13 @@ function BestMoves() {
                 <Switch size="sm" checked={arrowAfterMove} onCheckedChange={toggleArrowAfterMove} aria-label={t("analisa.pengaturan.panahSetelahLangkah")} />
             </div>
         </section>;
+});
+
+function BestMoves() {
+  const config = useContext(ConfigContext);
+  const [boardTheme] = config.boardTheme;
+  const [showArrows, setShowArrows] = config.showArrows;
+  const [arrowAfterMove, setArrowAfterMove] = config.arrowAfterMove;
+  return <IsiBestMoves boardTheme={boardTheme} showArrows={showArrows} setShowArrows={setShowArrows} arrowAfterMove={arrowAfterMove} setArrowAfterMove={setArrowAfterMove} />;
 }
-export {
-  BestMoves as default
-};
+export default memo(BestMoves);

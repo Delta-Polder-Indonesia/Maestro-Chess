@@ -49,7 +49,8 @@ export function bacaSesiTab(storage) {
     }
     if (!daftar.length || !daftar.some((tab) => tab.id === nilai.aktifId)) return null;
     return { daftar, aktifId: nilai.aktifId };
-  } catch {
+  } catch (error) {
+    console.error("Gagal membaca sesi tab Analisa:", error);
     return null;
   }
 }
@@ -59,7 +60,8 @@ export function simpanSesiTab(storage, sesi) {
     if (!storage || typeof storage.setItem !== "function") return false;
     storage.setItem(KUNCI_SESI_TAB, JSON.stringify({ versi: 1, daftar: sesi.daftar, aktifId: sesi.aktifId }));
     return true;
-  } catch {
+  } catch (error) {
+    console.error("Gagal menyimpan sesi tab Analisa:", error);
     return false; // tab tetap bekerja dalam memori
   }
 }

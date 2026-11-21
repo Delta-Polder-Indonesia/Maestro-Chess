@@ -1,5 +1,5 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
-import { useContext, useEffect, useRef, useState } from "react";
+import { startTransition, useContext, useEffect, useRef, useState } from "react";
 import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import Loading from "./loading/loading.jsx";
@@ -65,7 +65,9 @@ function Menu() {
     // sempat terlihat. Efek ini hanya boleh merespons lompatan langkah yang
     // terjadi SAAT SUDAH berada di mode analisis.
     if (pageState !== "analyze" || !sudahMenganalisis) return;
-    setTab("moves");
+    // Utamakan cat posisi papan; membangun daftar langkah/grafik dapat
+    // berlangsung setelah frame itu. Klik tab langsung tetap berprioritas biasa.
+    startTransition(() => setTab("moves"));
   }, [moveNumber, pageState, setTab]);
 
   useEffect(() => {

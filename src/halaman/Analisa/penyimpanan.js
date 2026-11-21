@@ -23,7 +23,8 @@ const KUNCI_LAMA = {
 function gudang() {
   try {
     return typeof localStorage === "undefined" ? null : localStorage;
-  } catch {
+  } catch (error) {
+    console.error("Gagal mengakses penyimpanan pengaturan Analisa:", error);
     return null;
   }
 }
@@ -40,17 +41,20 @@ export function bacaTeks(kunci, bawaan = null) {
       lama = lama.slice(0, 3) + lama[2] + lama.slice(3);
     }
     return lama ?? bawaan;
-  } catch {
+  } catch (error) {
+    console.error("Gagal membaca pengaturan Analisa:", error);
     return bawaan;
   }
 }
 
-/** Tulis nilai; diam-diam diabaikan bila penyimpanan tidak bisa ditulis. */
+/** Tulis nilai; bila gagal, pilihan tetap berlaku di state halaman saat ini. */
 export function tulis(kunci, nilai) {
   try {
     gudang()?.setItem(AWALAN + kunci, String(nilai));
-  } catch {
-    /* mode pribadi / kuota penuh — pilihan tidak tersimpan, tidak fatal */
+  } catch (error) {
+    // Mode pribadi / kuota penuh tidak boleh merobohkan halaman, tetapi
+    // penyebab pilihan tidak tersimpan harus terlihat di console.
+    console.error("Gagal menyimpan pengaturan Analisa:", error);
   }
 }
 

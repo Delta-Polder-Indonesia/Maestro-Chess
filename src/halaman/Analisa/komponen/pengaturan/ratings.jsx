@@ -1,7 +1,7 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 import { capitalizeFirst } from "../menu/analyze/selectChessComData.js";
 import { ConfigContext, defaultUsedRatings } from "../../konteks/configKonteks.js";
-import { useContext, useEffect } from "react";
+import { memo, useContext, useEffect } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { boardThemes } from "./boardThemes.js";
 import { QUEEN, WHITE } from "chess.js";
@@ -42,19 +42,16 @@ function unserializeRatings(serializedUsedRatings) {
   }
   return unserializedRatings;
 }
-function Ratings() {
+const IsiRatings = memo(function IsiRatings({ usedRatings2, setUsedRatings, boardTheme, highlightByRating, setHighlightByRating }) {
   const { t } = useI18n();
-  const configContext = useContext(ConfigContext);
-  const [usedRatings2, setUsedRatings] = configContext.usedRatings;
-  const [boardTheme] = configContext.boardTheme;
-  const [highlightByRating, setHighlightByRating] = configContext.highlightByRating;
   useEffect(() => {
     const serializedUsedRatings = bacaTeks("usedRatings");
     if (!serializedUsedRatings) return;
     try {
       const usedRatings3 = unserializeRatings(serializedUsedRatings);
       setUsedRatings(usedRatings3);
-    } catch {
+    } catch (error) {
+      console.error("Gagal membaca pengaturan penilaian:", error);
       tulis("usedRatings", serializeRatings(defaultUsedRatings));
       setUsedRatings(defaultUsedRatings);
     }
@@ -118,7 +115,13 @@ function Ratings() {
                     </div>;
   })}
         </section>;
+});
+
+function Ratings() {
+  const config = useContext(ConfigContext);
+  const [usedRatings2, setUsedRatings] = config.usedRatings;
+  const [boardTheme] = config.boardTheme;
+  const [highlightByRating, setHighlightByRating] = config.highlightByRating;
+  return <IsiRatings usedRatings2={usedRatings2} setUsedRatings={setUsedRatings} boardTheme={boardTheme} highlightByRating={highlightByRating} setHighlightByRating={setHighlightByRating} />;
 }
-export {
-  Ratings as default
-};
+export default memo(Ratings);

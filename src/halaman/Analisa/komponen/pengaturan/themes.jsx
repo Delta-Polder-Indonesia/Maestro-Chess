@@ -1,15 +1,13 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 import { ConfigContext } from "../../konteks/configKonteks.js";
-import { useContext, useEffect } from "react";
+import { memo, useContext, useEffect } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { bacaTeks, tulis } from "../../penyimpanan.js";
 import { Switch } from "../../../../components/ui/switch.jsx";
 import { boardThemes } from "./boardThemes.js";
 
-function Themes() {
+const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme }) {
   const { t } = useI18n();
-  const configContext = useContext(ConfigContext);
-  const [boardTheme, setBoardTheme] = configContext.boardTheme;
   useEffect(() => {
     const boardTheme2 = Number(bacaTeks("boardTheme"));
     if (boardThemes[boardTheme2] != null) {
@@ -46,5 +44,10 @@ function Themes() {
                     </div>;
   })}
         </section>;
+});
+
+function Themes() {
+  const [boardTheme, setBoardTheme] = useContext(ConfigContext).boardTheme;
+  return <IsiThemes boardTheme={boardTheme} setBoardTheme={setBoardTheme} />;
 }
-export default Themes;
+export default memo(Themes);

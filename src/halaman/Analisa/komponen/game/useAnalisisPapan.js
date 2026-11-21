@@ -12,12 +12,18 @@
  * diabaikan. Lupa melepasnya di salah satu jalur keluar membuat papan terkunci
  * selamanya — itu sebabnya pembersihannya ada di `finally`.
  */
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Chess } from "chess.js";
 import { formatSquare, getCastle, invertColor, parseMove } from "../../mesin/engine.js";
 import { STATUS_EVALUASI } from "../../mesin/evaluasi.js";
 import { cariNamaPembukaan } from "../../mesin/buku.js";
 import { pushPageError } from "../errors/pushPageError.js";
+
+function sliceCustomArrows(arrows, moveNumber) {
+  const hasil = {};
+  for (let i = 0; i <= moveNumber; i++) hasil[i] = arrows[i] || [];
+  return hasil;
+}
 
 export function useAnalisisPapan({
   controllerRef,
@@ -43,20 +49,13 @@ export function useAnalisisPapan({
   useEffect(() => {
     analyzingMoveRef.current = analyzingMove;
   }, [analyzingMove]);
-  function sliceCustomArrows(arrows2, moveNumber2) {
-    const newArrows = {};
-    for (let i = 0; i <= moveNumber2; i++) {
-      if (!arrows2[i]) newArrows[i] = [];
-      else newArrows[i] = arrows2[i];
-    }
-    return newArrows;
-  }
   /*
    * `previousKandidat` ditambahkan paling belakang supaya pemanggil lama
    * (uji dan jalur lain) tetap sah: tanpanya label "kritis" tidak muncul,
-   * perilaku lainnya identik.
+   * perilaku lainnya identik. Identitas callback dijaga agar papan yang
+   * di-memo tidak ikut render ketika hanya panel navigasi yang berubah.
    */
-  async function analyzeMove(previousFen, movement, previousSacrifice, previousStaticEvals, animation2, previousBestMoveSan, previousKandidat) {
+  const analyzeMove = useCallback(async function analyzeMove(previousFen, movement, previousSacrifice, previousStaticEvals, animation2, previousBestMoveSan, previousKandidat) {
     // Baca-SAJA: dipakai untuk mendeteksi muatan baru yang dimulai selama
     // analisis berjalan — TIDAK PERNAH ditambah. Menambahkannya di sini akan
     // membuang muatan yang sedang berjalan dan memacetkannya pada "memuat".
@@ -103,8 +102,14 @@ export function useAnalisisPapan({
       // tabel buku yang sama (berselang dengan penyiapan engine) sebelum dinilai.
       const janjiBuku = openingsRef.current
         ? Promise.resolve(openingsRef.current)
-        : cariNamaPembukaan().catch(() => ({}));
-      const mesin = ambilMesin() ?? (await siapkan().catch(() => null));
+        : cariNamaPembukaan().catch((error) => {
+            console.error("Gagal menyiapkan buku pembukaan:", error);
+            return {};
+          });
+      const mesin = ambilMesin() ?? (await siapkan().catch((error) => {
+        if (!signal.aborted) console.error("Gagal menyiapkan engine untuk langkah:", error);
+        return null;
+      }));
       const buku = await janjiBuku;
       // Muatan baru dimulai saat menunggu → hasil analisis ini pasti basi;
       // berhenti di sini (`finally` tetap melepas kunci papan).
@@ -141,6 +146,7 @@ export function useAnalisisPapan({
       const kunci = e?.kunci ?? e?.message;
       const batal = kunci === "canceled" || kunci === "pencarian dibatalkan" || kunci === "permintaan digantikan";
       if (!batal) {
+        console.error("Gagal menganalisis langkah papan:", e);
         pushPageError(setErrors, t("analisa.galat.analisisJudul"), String(e?.message ?? e));
       } else {
         dibatalkan = true;
@@ -187,7 +193,11 @@ export function useAnalisisPapan({
       return;
     }
     setCustomLine((prev) => ({ ...prev, moveNumber: prev.moveNumber, moves: [...prev.moves.slice(0, prev.moveNumber), { ...move3, clock: unanalyzedMove.clock }] }));
-  }
+  }, [
+    controllerRef, muatSeqRef, openingsRef, data.format, depth, time, move2,
+    siapkan, ambilMesin, t, setErrors, setAnalyzeController, setPageState,
+    setAnimation, setForward, setCustomLine, setAnalyzingMove,
+  ]);
 
   return { analyzeMove, analyzingMoveRef };
 }

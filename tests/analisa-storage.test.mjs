@@ -31,13 +31,22 @@ test("legacy settings are read without overwriting them; new preferences take pr
   assert.equal(bacaAngka("kedalaman", 13), 13);
 });
 
-test("storage access failures fall back without crashing", (t) => {
+test("storage access failures are logged and fall back without crashing", (t) => {
   const previous = globalThis.localStorage;
+  const consoleAsli = console.error;
+  const tercatat = [];
+  const blocked = new Error("blocked");
+  const full = new Error("full");
+  console.error = (...args) => {
+    tercatat.push(args);
+    if (args[1] !== blocked && args[1] !== full) consoleAsli(...args);
+  };
   globalThis.localStorage = {
-    getItem() { throw new Error("blocked"); },
-    setItem() { throw new Error("full"); },
+    getItem() { throw blocked; },
+    setItem() { throw full; },
   };
   t.after(() => {
+    console.error = consoleAsli;
     if (previous === undefined) delete globalThis.localStorage;
     else globalThis.localStorage = previous;
   });
@@ -45,4 +54,6 @@ test("storage access failures fall back without crashing", (t) => {
   assert.equal(bacaAngka("kedalaman", 13), 13);
   assert.equal(bacaBoolean("boardSounds", true), true);
   assert.doesNotThrow(() => tulisBoolean("boardSounds", false));
+  assert.equal(tercatat.filter((args) => args[1] === blocked).length, 3);
+  assert.equal(tercatat.filter((args) => args[1] === full).length, 1);
 });

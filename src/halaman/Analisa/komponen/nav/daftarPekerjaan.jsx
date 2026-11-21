@@ -4,6 +4,11 @@ import { daftarRiwayat, KUNCI_FITUR } from "../../riwayatFitur.js";
 import { usePekerjaan } from "../../usePekerjaan.js";
 
 const BATAS_TERBARU = 10;
+// Formatter Intl mahal dibuat berulang untuk tiap baris saat riwayat berubah.
+// Hanya ada dua locale UI; gunakan kembali formatter, bukan hasil tanggalnya
+// (waktu relatif tetap dihitung ulang saat daftar di-render).
+const formatTanggal = new Map();
+const formatRelatif = new Map();
 
 function IkonFile({ className = "h-5 w-5" }) {
   return (
@@ -30,7 +35,10 @@ function formatWaktu(timestamp, bahasa) {
   const tanggal = new Date(timestamp);
   if (Number.isNaN(tanggal.getTime())) return null;
   const locale = bahasa === "en" ? "en-US" : "id-ID";
-  const lengkap = tanggal.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
+  if (!formatTanggal.has(locale)) {
+    formatTanggal.set(locale, new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric" }));
+  }
+  const lengkap = formatTanggal.get(locale).format(tanggal);
   const detik = Math.round((tanggal.getTime() - Date.now()) / 1000);
   const satuan = [["year", 31536000], ["month", 2592000], ["week", 604800], ["day", 86400], ["hour", 3600], ["minute", 60]];
   const [unit, ukuran] = satuan.find(([, nilai]) => Math.abs(detik) >= nilai) ?? ["second", 1];
@@ -40,9 +48,13 @@ function formatWaktu(timestamp, bahasa) {
   const ringkas = unit === "second" ? (bahasa === "en" ? "now" : "baru")
     : `${detik > 0 ? "+" : ""}${Math.abs(Math.round(detik / ukuran))}${singkatan[unit]}`;
   try {
-    const rtf = new Intl.RelativeTimeFormat(bahasa === "en" ? "en" : "id", { numeric: "auto" });
-    return { lengkap, ringkas, relatif: rtf.format(Math.round(detik / ukuran), unit), iso: tanggal.toISOString() };
-  } catch {
+    const localeRelatif = bahasa === "en" ? "en" : "id";
+    if (!formatRelatif.has(localeRelatif)) {
+      formatRelatif.set(localeRelatif, new Intl.RelativeTimeFormat(localeRelatif, { numeric: "auto" }));
+    }
+    return { lengkap, ringkas, relatif: formatRelatif.get(localeRelatif).format(Math.round(detik / ukuran), unit), iso: tanggal.toISOString() };
+  } catch (error) {
+    console.error("Gagal memformat waktu relatif pekerjaan:", error);
     return { lengkap, ringkas, relatif: lengkap, iso: tanggal.toISOString() };
   }
 }

@@ -6,8 +6,8 @@
  *
  * Dipuat sekali per kunjungan halaman dan di-cache di modul ini (bukan di
  * komponen) agar berpindah tab di panel kanan tidak memicu fetch ulang.
- * Bila berkasnya gagal diunduh, analisis tetap jalan — hanya label "book"
- * yang tidak muncul, jadi kegagalan sengaja ditelan diam-diam.
+ * Bila berkasnya gagal diunduh, analisis tetap jalan tanpa label "book";
+ * penyebab kegagalan tetap dilaporkan di console.
  */
 
 import { kunciFen } from "./kunciFen.js";
@@ -25,8 +25,14 @@ const VERSI_BUKU = "2026-09-22";
 
 function unduh() {
   return fetch(`${berkasPublik("data/buku-analisa.json")}?v=${VERSI_BUKU}`)
-    .then((respon) => (respon.ok ? respon.json() : {}))
-    .catch(() => ({}));
+    .then((respon) => {
+      if (!respon.ok) throw new Error(`HTTP ${respon.status} saat memuat buku pembukaan`);
+      return respon.json();
+    })
+    .catch((error) => {
+      console.error("Gagal memuat buku pembukaan:", error);
+      return {};
+    });
 }
 
 /** Muat tabel buku (janji yang sama dikembalikan untuk panggilan berikutnya). */

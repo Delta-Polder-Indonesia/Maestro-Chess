@@ -35,8 +35,8 @@ export const GALAT_FEN = "fen";
 /** Engine mati / worker gagal di tengah analisis (bukan pembatalan pengguna). */
 export const GALAT_MESIN = "mesin";
 
-export function galat(pesan) {
-  const e = new Error(pesan);
+export function galat(pesan, sebab) {
+  const e = new Error(pesan, sebab === undefined ? undefined : { cause: sebab });
   e.kunci = pesan;
   return e;
 }
@@ -410,7 +410,7 @@ export async function parsePosition(mesin, chess, depth, sinyal, handleAbort, mu
       handleAbort?.();
       hasil = { staticEval: [], bestMove: undefined, bestMoveCoronation: undefined, daftarKandidat: [] };
     } else {
-      throw galat(GALAT_MESIN);
+      throw galat(GALAT_MESIN, e);
     }
   }
 
@@ -487,7 +487,7 @@ export async function parseMove(mesin, depth, move, chess, previousStaticEvals, 
         staticEval = [];
         kandidat = [];
       } else {
-        throw galat(GALAT_MESIN);
+        throw galat(GALAT_MESIN, e);
       }
     }
 

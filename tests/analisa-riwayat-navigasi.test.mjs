@@ -53,7 +53,7 @@ function siapkanAreaKerja(store, navigasi) {
     "../pekerjaan.js": { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan: store },
     "../tabKerja.js": modelTab,
     "./analyzeKonteks.js": { TAMPILAN_ANALISA },
-    "./boardKonteks.js": { useBoard: () => React.useContext(Board) },
+    "./boardKonteks.js": { useTampilan: () => React.useContext(Board).tampilan },
   });
   let waktu = 0;
   const kosong = () => null;
@@ -61,6 +61,14 @@ function siapkanAreaKerja(store, navigasi) {
   const pembungkus = ({ children }) => React.createElement(React.Fragment, null, children);
   const layarPapan = (props) => { navigasi.papan = props; return null; };
   const layarImpor = (props) => { navigasi.impor = props; return null; };
+  function GameMock() {
+    navigasi.gameRenders = (navigasi.gameRenders ?? 0) + 1;
+    React.useEffect(() => {
+      navigasi.gameMounts = (navigasi.gameMounts ?? 0) + 1;
+      return () => { navigasi.gameUnmounts = (navigasi.gameUnmounts ?? 0) + 1; };
+    }, []);
+    return React.createElement("div", { "data-uji": "game-tetap-terpasang" });
+  }
   const LayarDatabaseMock = ({ aktif }) => {
     const [cari, setCari] = React.useState("");
     return React.createElement("input", { "data-uji": "database-cari-test", "data-tab-aktif": aktif, value: cari, onChange: (e) => setCari(e.target.value) });
@@ -77,7 +85,10 @@ function siapkanAreaKerja(store, navigasi) {
   layar["./nav/layarPengaturan.jsx"] = { default: kosong };
   const dependencies = {
     "../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA },
-    "../konteks/boardKonteks.js": { useBoard: () => React.useContext(Board) },
+    "../konteks/boardKonteks.js": {
+      useTampilan: () => React.useContext(Board).tampilan,
+      useSetTampilan: () => React.useContext(Board).tampilan[1],
+    },
     "../konteks/importKonteks.js": { useImport: () => React.useContext(Import) },
     "../konteks/tabKerja.jsx": tab,
     "../konteks/panelAktif.js": { PanelAktifContext: React.createContext(true) },
@@ -95,7 +106,7 @@ function siapkanAreaKerja(store, navigasi) {
       AlertDialogAction: ({ children, ...props }) => React.createElement("button", props, children),
     },
     "./errors/pushPageError.js": { pushPageError: () => {}, pushPageWarning: () => {} },
-    "./game/game.jsx": { default: kosong },
+    "./game/game.jsx": { default: GameMock },
     "./tabBar.jsx": { default: TabBarMock },
     "./boardMenu/boardMenu.jsx": { default: kosong },
     "./menu/menu.jsx": { default: kosong },
@@ -154,6 +165,33 @@ function pasangSession(t, awal = null) {
   t.after(() => { if (sebelumnya === undefined) delete globalThis.sessionStorage; else globalThis.sessionStorage = sebelumnya; });
   return nilai;
 }
+
+test("screen changes and Escape keep the board mounted without rebuilding it", async (t) => {
+  const pendengar = pasangDocument(t);
+  pasangSession(t);
+  const store = buatPenyimpananPekerjaan(adapterMemori());
+  await store.init();
+  const navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); });
+  const awal = navigasi.gameRenders;
+  assert.equal(navigasi.gameMounts, 1);
+  for (const layar of ["pengaturan", "database", "papan", "bermain", "pengaturan"]) {
+    await act(async () => { navigasi.setTampilan(layar); await flush(); });
+    assert.equal(navigasi.gameRenders, awal, `papan unexpectedly rebuilt for ${layar}`);
+    assert.equal(renderer.root.findAllByProps({ "data-uji": "game-tetap-terpasang" }).length, 1);
+  }
+  await act(async () => {
+    for (const fn of pendengar.get("keydown") ?? []) fn({ key: "Escape", defaultPrevented: false });
+    await flush();
+  });
+  assert.equal(navigasi.tampilan, "bermain");
+  assert.equal(navigasi.gameRenders, awal);
+  assert.equal(navigasi.gameMounts, 1);
+  assert.equal(navigasi.gameUnmounts ?? 0, 0);
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+  assert.equal(navigasi.gameUnmounts, 1);
+});
 
 test("opened screens enter history and their rows return to the corresponding feature or saved target", async (t) => {
   pasangDocument(t);
@@ -377,9 +415,11 @@ test("independent feature panels retain their local state while another tab is s
   const tab1 = navigasi.tab.aktifId;
   await act(async () => { navigasi.setTampilan("database"); await flush(); });
   const panel = () => renderer.root.findAll((node) => node.props["data-layar"] === "database");
+  assert.equal(panel()[0].props.tabIndex, -1);
   await act(async () => { panel()[0].findByProps({ "data-uji": "database-cari-test" }).props.onChange({ target: { value: "one" } }); });
   await act(async () => { navigasi.setTampilan("papan"); await flush(); });
   assert.equal(panel()[0].props.hidden, true);
+  assert.equal(panel()[0].props.tabIndex, -1, "a hidden panel must retain its programmatic focus target");
   await act(async () => { navigasi.tabBar.onTambah(); await flush(); });
   const tab2 = navigasi.tab.aktifId;
   await act(async () => { navigasi.setTampilan("database"); await flush(); });
