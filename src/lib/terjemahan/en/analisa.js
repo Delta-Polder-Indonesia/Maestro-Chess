@@ -344,7 +344,6 @@ export const analisa = {
       putar: "Play automatically",
       jeda: "Pause",
     },
-    papan: { balik: "Flip board", pengaturan: "Settings", promosi: "Choose promotion piece" },
     nav: {
       pengaturan: "Settings",
       papan: "Board",
@@ -366,6 +365,9 @@ export const analisa = {
       bukaBilah: "Expand panel",
     },
     papan: {
+      balik: "Flip board",
+      pengaturan: "Settings",
+      promosi: "Choose promotion piece",
       judul: "Board",
       subjudul: "Every Maestro Chess feature in one place.",
       segera: "Coming soon",
@@ -379,6 +381,11 @@ export const analisa = {
           judul: "Analysis Board",
           deskripsi: "Analyze a game or a position",
           tombol: "Open",
+        },
+        report: {
+          judul: "Analysis Report",
+          deskripsi: "Review your game analysis and results",
+          tombol: "View report",
         },
         repertoar: {
           judul: "New Repertoire",
@@ -395,14 +402,6 @@ export const analisa = {
           deskripsi: "Train your tactical skills",
           tombol: "Train",
         },
-      },
-      terbaru: {
-        judul: "Recent Files",
-        keDatabase: "See all",
-        memuat: "Loading recent files…",
-        kosong: "No files open recently",
-        tanpaNama: "Unknown",
-        buka: "Open {putih} vs {hitam}",
       },
     },
     pemain: { putih: "White", hitam: "Black", anonim: "Unknown" },

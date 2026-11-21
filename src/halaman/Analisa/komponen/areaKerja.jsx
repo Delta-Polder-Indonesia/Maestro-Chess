@@ -128,7 +128,6 @@ function LapisanLayar({
   kePapan,
   keAkun,
   keImpor,
-  keDatabase,
 }) {
   const muatPartai = useMuatPartai();
   if (papanAktif) return null;
@@ -142,11 +141,7 @@ function LapisanLayar({
     >
       {tampilan === TAMPILAN_ANALISA.PAPAN ? (
         <Suspense fallback={<div className="h-full min-h-0 w-full bg-backgroundBox" />}>
-          <LayarPapan
-            onAnalisa={muatPartai}
-            onImpor={keImpor}
-            onDatabase={keDatabase}
-          />
+          <LayarPapan onReport={kePapan} onImpor={keImpor} />
         </Suspense>
       ) : null}
       {tampilan === TAMPILAN_ANALISA.AKUN ? (
@@ -202,11 +197,6 @@ export default function AreaKerja() {
 
   const keImpor = useCallback(
     () => setTampilan(TAMPILAN_ANALISA.IMPOR),
-    [setTampilan],
-  );
-
-  const keDatabase = useCallback(
-    () => setTampilan(TAMPILAN_ANALISA.BASIS_DATA),
     [setTampilan],
   );
 
@@ -274,7 +264,6 @@ export default function AreaKerja() {
         kePapan={kePapan}
         keAkun={keAkun}
         keImpor={keImpor}
-        keDatabase={keDatabase}
       />
     </div>
   );

@@ -344,7 +344,6 @@ export const analisa = {
       putar: "Putar otomatis",
       jeda: "Jeda",
     },
-    papan: { balik: "Balik papan", pengaturan: "Pengaturan", promosi: "Pilih bidak promosi" },
     nav: {
       pengaturan: "Pengaturan",
       papan: "Papan",
@@ -366,6 +365,9 @@ export const analisa = {
       bukaBilah: "Tampilkan bilah",
     },
     papan: {
+      balik: "Balik papan",
+      pengaturan: "Pengaturan",
+      promosi: "Pilih bidak promosi",
       judul: "Papan",
       subjudul: "Semua fitur Maestro Chess dalam satu tempat.",
       segera: "Segera hadir",
@@ -379,6 +381,11 @@ export const analisa = {
           judul: "Papan Analisis",
           deskripsi: "Analisis satu partai atau posisi",
           tombol: "Buka",
+        },
+        report: {
+          judul: "Report Analisa",
+          deskripsi: "Tinjau laporan dan hasil analisis permainan",
+          tombol: "Buka laporan",
         },
         repertoar: {
           judul: "Repertoar Baru",
@@ -395,14 +402,6 @@ export const analisa = {
           deskripsi: "Latih kemampuan taktikmu",
           tombol: "Latih",
         },
-      },
-      terbaru: {
-        judul: "File Terbaru",
-        keDatabase: "Lihat semua",
-        memuat: "Memuat file terbaru…",
-        kosong: "Belum ada file yang dibuka",
-        tanpaNama: "Tanpa nama",
-        buka: "Buka partai {putih} vs {hitam}",
       },
     },
     pemain: { putih: "Putih", hitam: "Hitam", anonim: "Tanpa nama" },
