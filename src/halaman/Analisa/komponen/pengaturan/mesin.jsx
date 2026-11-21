@@ -1,5 +1,5 @@
 /* Bagian pengaturan fitur Analisa — ditulis untuk ChessClub (bukan port). */
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useId, useState } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { DAFTAR_ENGINE, cariEngine } from "../../../../lib/engineCatur.js";
 import { gambar } from "../../../../lib/asets.js";
@@ -29,6 +29,7 @@ import Gambar from "../Gambar.jsx";
 
 function PengaturanMesin() {
   const { t } = useI18n();
+  const depthId = useId();
   const { idEngine, gantiEngine, status, galat, siapkan, setop, didukung } = useMesin();
   const analyzeContext = useContext(AnalyzeContext);
   const [depth, setDepth] = analyzeContext.depth;
@@ -157,9 +158,9 @@ function PengaturanMesin() {
 
             <div className="flex flex-row gap-2">
               <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <label htmlFor="mesin-depth" className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.kedalaman")}</label>
+                <label htmlFor={depthId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.kedalaman")}</label>
                 <input
-                  id="mesin-depth"
+                  id={depthId}
                   type="number"
                   min={MIN_D}
                   max={MAX_D}

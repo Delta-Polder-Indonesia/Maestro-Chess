@@ -7,6 +7,7 @@ import ConfigContextProvider from "./konteks/config.jsx";
 import ErrorsContextProvider from "./konteks/errors.jsx";
 import AnalyzeContextProvider from "./konteks/analyze.jsx";
 import { MesinProvider } from "./konteks/mesin.jsx";
+import { TabKerjaProvider } from "./konteks/tabKerja.jsx";
 import PageErrors from "./komponen/errors/pageErrors.jsx";
 import AreaKerja from "./komponen/areaKerja.jsx";
 import Nav from "./komponen/nav/nav.jsx";
@@ -41,9 +42,11 @@ export default function Analisa() {
               className="analisa-root relative flex w-full select-none flex-col overflow-hidden navTop:flex-row"
             >
               <AnalyzeContextProvider>
-                <PageErrors />
-                <Nav />
-                <AreaKerja />
+                <TabKerjaProvider>
+                  <PageErrors />
+                  <Nav />
+                  <AreaKerja />
+                </TabKerjaProvider>
               </AnalyzeContextProvider>
             </div>
           </MesinProvider>

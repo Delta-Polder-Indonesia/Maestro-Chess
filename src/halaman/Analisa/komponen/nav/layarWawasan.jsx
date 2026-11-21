@@ -12,8 +12,8 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "r
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { hashPgn } from "../../../../lib/pgnRingan.js";
 import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
-import { ambilDaftarPartai, ambilSemuaKoleksi } from "../../basisData.js";
-import { bacaDaftarAkun } from "../../akun/daftarAkun.js";
+import { ambilDaftarPartai, langgananRevisi } from "../../basisData.js";
+import { useAkunKoleksi } from "../../akun/useAkunKoleksi.js";
 import DashboardAkun from "../../akun/DashboardAkun.jsx";
 import { agregasiWawasan, filterPartaiWawasan, hitungPembukaanTeratas } from "../../mesin/wawasan.js";
 import { ambilPetaAnalisis, langgananAnalisis } from "../../mesin/analisisTersimpan.js";
@@ -29,15 +29,14 @@ import KartuAkurasiPartai from "./wawasan/kartuAkurasi.jsx";
 
 const TAB_RINGKASAN_PERINGKAT_AKUN = ["overview", "ratings"];
 
-export default function LayarWawasan() {
+export default function LayarWawasan({ akunTab, aktif = true }) {
   const { t, bahasa: locale } = useI18n();
   const analyzeContext = useContext(AnalyzeContext);
-  const [akun] = analyzeContext.akun;
+  const [akun, setAkun] = akunTab ?? analyzeContext.akun;
   const platform = akun?.platform === "lichessOrg" ? "lichessOrg" : "chessCom";
   const username = String(akun?.username || "").trim();
 
-  const [akunTersimpan] = useState(bacaDaftarAkun);
-  const [koleksi, setKoleksi] = useState([]);
+  const { akunTersimpan, koleksi } = useAkunKoleksi(aktif);
   const [semuaPartai, setSemuaPartai] = useState([]);
   const [filterWaktu, setFilterWaktu] = useState("all");
   const [filterWarna, setFilterWarna] = useState("all");
@@ -47,16 +46,6 @@ export default function LayarWawasan() {
   const permintaanPartai = useRef(0);
 
   const partai = semuaPartai;
-
-  useEffect(() => {
-    let hidup = true;
-    ambilSemuaKoleksi().then((list) => {
-      if (hidup) setKoleksi(list);
-    }).catch(() => {
-      if (hidup) setKoleksi([]);
-    });
-    return () => { hidup = false; };
-  }, []);
 
   const muatPartai = useCallback(async () => {
     const idPermintaan = ++permintaanPartai.current;
@@ -70,7 +59,7 @@ export default function LayarWawasan() {
     setMuat(true);
     setGalatMuat(false);
     try {
-      const { partai: daftar } = await ambilDaftarPartai({
+      const hasil = await ambilDaftarPartai({
         koleksiId: `${platform}:${username.toLowerCase()}`,
         // Daily mencakup juga "correspondence" dari Lichess, jadi
         // kueri IndexedDB tidak boleh memangkasnya sebelum filter domain berjalan.
@@ -81,7 +70,8 @@ export default function LayarWawasan() {
         arah: "desc",
       });
       if (idPermintaan === permintaanPartai.current) {
-        setSemuaPartai(Array.isArray(daftar) ? daftar : []);
+        if (hasil?.galat) setGalatMuat(true);
+        else setSemuaPartai(Array.isArray(hasil?.partai) ? hasil.partai : []);
       }
     } catch {
       if (idPermintaan === permintaanPartai.current) setGalatMuat(true);
@@ -91,8 +81,14 @@ export default function LayarWawasan() {
   }, [username, platform, filterWaktu]);
 
   useEffect(() => {
+    if (!aktif) return undefined;
     muatPartai();
-  }, [muatPartai]);
+    const berhenti = langgananRevisi(muatPartai);
+    return () => {
+      permintaanPartai.current += 1;
+      berhenti();
+    };
+  }, [aktif, muatPartai]);
 
   /*
    * Hasil analisis engine sesi ini (padanan prop `analysisMap` di acuan:
@@ -220,13 +216,13 @@ export default function LayarWawasan() {
 
   function pilihSitus(situsBaru) {
     const pertama = daftarAkun.find((a) => a.platform === situsBaru);
-    analyzeContext.akun[1]({ platform: situsBaru, username: pertama?.username || "" });
+    setAkun({ platform: situsBaru, username: pertama?.username || "" });
   }
 
   function pilihAkun(kunci) {
     const kunciKecil = String(kunci || "").toLowerCase();
     const pilihan = akunSitus.find((a) => a.username.toLowerCase() === kunciKecil);
-    analyzeContext.akun[1]({ platform, username: pilihan?.username || "" });
+    setAkun({ platform, username: pilihan?.username || "" });
   }
 
   return (

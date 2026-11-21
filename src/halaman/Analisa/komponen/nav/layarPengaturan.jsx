@@ -24,7 +24,7 @@ function Pemisah({ teks }) {
   );
 }
 
-export default function LayarPengaturan() {
+export default function LayarPengaturan({ aktif = true }) {
   const { t, bahasa, setBahasa } = useI18n();
 
   return (
@@ -57,7 +57,7 @@ export default function LayarPengaturan() {
               <Pemisah teks={t("analisa.pengaturan.penilaian")} />
               <Ratings />
               <Pemisah teks={t("analisa.pengaturan.langkah")} />
-              <Moves />
+              <Moves aktif={aktif} />
               <Pemisah teks={t("analisa.pengaturan.langkahTerbaik")} />
               <BestMoves />
             </div>

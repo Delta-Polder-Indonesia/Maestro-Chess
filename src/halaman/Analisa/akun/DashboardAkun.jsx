@@ -3,7 +3,7 @@
  * UPDATE: tombol tarik data dihapus — tarik data dipindah ke Database
  * dengan filter periode (mingguan/bulanan/tahunan/semua).
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import { useI18n } from "../../../lib/i18n.jsx";
 import { ambilDaftarPartai, bacaRevisiBasis } from "../basisData.js";
@@ -64,6 +64,7 @@ function GrafikBulanan({ data }) {
 }
 
 function GrafikRiwayat({ poin }) {
+  const warnaId = useId();
   if (!poin || poin.length < 2) {
     return <div className="grid h-48 place-items-center text-sm text-foregroundGrey">—</div>;
   }
@@ -85,7 +86,7 @@ function GrafikRiwayat({ poin }) {
         style={{ width: "100%", height: "100%" }}
       >
         <defs>
-          <linearGradient id="colorRating" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={warnaId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor={BIRU} stopOpacity={0.4} />
             <stop offset="95%" stopColor={BIRU} stopOpacity={0} />
           </linearGradient>
@@ -119,7 +120,7 @@ function GrafikRiwayat({ poin }) {
             );
           }}
         />
-        <Area type="monotone" dataKey="rating" stroke={BIRU} strokeWidth={2.5} fillOpacity={1} fill="url(#colorRating)" />
+        <Area type="monotone" dataKey="rating" stroke={BIRU} strokeWidth={2.5} fillOpacity={1} fill={`url(#${warnaId})`} />
       </AreaChart>
     </div>
   );

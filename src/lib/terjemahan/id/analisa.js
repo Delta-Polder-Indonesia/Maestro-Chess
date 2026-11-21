@@ -46,6 +46,15 @@ export const analisa = {
       judul: "Ulasan Game",
       petunjuk: "Engine diambil dari berkas lokal situs dan berjalan sepenuhnya di perangkat Anda.",
     },
+    tabKerja: {
+      daftar: "Tab area kerja",
+      baru: "New Tab",
+      tambah: "Tambah tab",
+      tutup: "Tutup tab {nama}",
+      memulihkan: "Memulihkan tab…",
+      gagalJudul: "Sesi tab tidak dapat disimpan.",
+      gagalIsi: "Tab dan pilihan akun mungkin hilang saat halaman dimuat ulang. Periksa izin atau ruang penyimpanan; draf dan laporan yang tersimpan dapat dibuka dari File Terbaru.",
+    },
     tab: {
       analisa: "Analisis permainan",
       analisaBaru: "Analisis permainan baru",
