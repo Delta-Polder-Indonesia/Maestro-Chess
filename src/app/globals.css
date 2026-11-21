@@ -81,6 +81,28 @@ body {
 }
 
 * {
-  scrollbar-width: var(--scrollbarSize);
+  scrollbar-width: thin;
   scrollbar-color: var(--scrollbarColor) transparent;
+}
+
+/* Radix tooltips are portaled outside the analysis root. */
+.aegov-tooltip {
+  --tooltip-bg: #2e333a;
+  max-width: min(24rem, calc(100vw - 1.5rem));
+  padding: 0.625rem 1.5rem;
+  overflow-wrap: anywhere;
+  border-radius: 4px;
+  background: var(--tooltip-bg);
+  color: #f8fafc;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+.aegov-tooltip [data-slot="tooltip-arrow"] { fill: var(--tooltip-bg); }
+.aegov-tooltip-arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  background: var(--tooltip-bg);
 }

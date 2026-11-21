@@ -16,6 +16,20 @@ const eslintConfig = [
       "react-hooks/exhaustive-deps": "off",
     },
   },
+  {
+    files: ["src/halaman/Analisa/**/*.{js,jsx}"],
+    rules: {
+      // Static export has no Next image optimizer; player avatars and local
+      // flags deliberately use native images, as in the source workspace.
+      "@next/next/no-img-element": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+        ignoreRestSiblings: true,
+      }],
+    },
+  },
 ];
 
 export default eslintConfig;

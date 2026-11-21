@@ -1,0 +1,632 @@
+/**
+ * Pengambilan partai sebuah akun dari API publik chess.com / lichess.org,
+ * lalu menyimpannya ke basis data lokal (basisData).
+ *
+ * Mendukung filter periode (mingguan/bulanan/tahunan/semua) untuk mencegah
+ * browser stag saat akun punya 1jt partai.
+ *
+ * Pengaman unduhan:
+ *  - `sedangMengunduh` — satu akun yang sama hanya boleh satu unduhan dalam
+ *    satu waktu.
+ *  - `kegagalanTerakhir` — bila unduhan gagal, jangan tembak ulang otomatis
+ *    dalam jeda singkat.
+ *
+ * Kunci pengaman mencakup platform (`chessCom:…` / `lichessOrg:…`) karena
+ * nama pengguna yang sama bisa ada di kedua situs dan keduanya harus bisa
+ * ditarik berurutan tanpa saling mengunci.
+ */
+import { hitungPlyPgn } from "../../../lib/pgnRingan.js";
+import { hasilChessCom, hasilLichess } from "../../../lib/hasilPartai.js";
+import { pastikanTidakDibatalkan } from "../../../lib/pembatalan.js";
+import { simpanBanyakPartai } from "../basisData.js";
+
+const ANTREAN_ARSIP = 4;
+const JEDE_GAGAL_MS = 60_000;
+/*
+ * Batas partai per sekali tarik Lichess. API Lichess mengembalikan satu
+ * aliran NDJSON raksasa — tanpa batas, akun dengan ratusan ribu partai
+ * membuat tab membeku saat mengurai teksnya. Chess.com tidak butuh batas
+ * ini karena datanya sudah terpotong per bulan arsip.
+ */
+const MAKS_PARTAI_LICHESS = 5000;
+
+const sedangMengunduh = new Map(); // `${platform}:${username}` → Promise
+const kegagalanTerakhir = new Map(); // `${platform}:${username}` → timestamp
+
+function kunciUnduh(platform, username, { periode, tanggal, dari, sampai, maks, waktu, warna, rated } = {}) {
+  const dasar = `${platform}:${String(username || "").trim().toLowerCase()}`;
+  // Periode/tanggal ikut dalam kunci: dua pemanggil untuk akun yang sama
+  // dengan rentang berbeda tidak boleh berbagi janji yang sama — hasil untuk
+  // rentang yang satu akan meleset untuk yang lain.
+  if (tanggal) return `${dasar}:d:${tanggal}`;
+  const rentang = dari || sampai ? `r:${dari || ""}:${sampai || ""}` : `p:${String(periode || "semua").toLowerCase()}`;
+  const saring = [rentang, maks, (waktu || []).join(","), (warna || []).join(","), rated]
+    .filter((x) => x !== undefined && x !== null && x !== "")
+    .join(":");
+  return `${dasar}:${saring || "semua"}`;
+}
+
+/* Periode filter untuk tarik data — mencegah 1jt partai langsung diunduh */
+export const PERIODE_TARIK_MS = {
+  mingguan: 7 * 24 * 3600 * 1000,
+  bulanan: 31 * 24 * 3600 * 1000,
+  tahunan: 366 * 24 * 3600 * 1000,
+  semua: Infinity,
+  // alias dari UI Database lama
+  "7d": 7 * 24 * 3600 * 1000,
+  "30d": 30 * 24 * 3600 * 1000,
+  "90d": 90 * 24 * 3600 * 1000,
+  "1y": 365 * 24 * 3600 * 1000,
+  all: Infinity,
+};
+
+function cutoffDariPeriode(periode) {
+  const key = String(periode || "semua").toLowerCase();
+  const ms = PERIODE_TARIK_MS[key] ?? PERIODE_TARIK_MS.semua;
+  if (!Number.isFinite(ms)) return 0; // semua = 0 artinya tidak ada cutoff
+  return Date.now() - ms;
+}
+
+/* Cek apakah arsip bulan/tahun masih relevan dengan cutoff */
+function arsipRelevan(tahunStr, bulanStr, cutoffMs) {
+  if (!cutoffMs) return true; // semua
+  const t = Number(tahunStr);
+  const b = Number(bulanStr);
+  if (!Number.isFinite(t) || !Number.isFinite(b)) return true;
+  // akhir bulan arsip: new Date(t, b, 0) -> b 1-12, day 0 = last day of month b
+  const akhirBulan = new Date(t, b, 0).getTime();
+  return akhirBulan >= cutoffMs;
+}
+
+/* Rentang tanggal eksplisit (YYYY-MM-DD, inklusif, UTC) → batas milidetik. */
+function batasRentang(dari, sampai) {
+  const sah = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+  if (!sah(dari) && !sah(sampai)) return null;
+  return {
+    mulai: sah(dari) ? Date.parse(`${dari}T00:00:00Z`) : 0,
+    akhir: sah(sampai) ? Date.parse(`${sampai}T00:00:00Z`) + 86400000 : Infinity,
+  };
+}
+
+function arsipDalamRentang(tahunStr, bulanStr, rentang) {
+  const t = Number(tahunStr);
+  const b = Number(bulanStr);
+  if (!Number.isFinite(t) || !Number.isFinite(b)) return true;
+  const awal = Date.UTC(t, b - 1, 1);
+  const akhir = Date.UTC(t, b, 1) - 1;
+  return akhir >= rentang.mulai && awal < rentang.akhir;
+}
+
+/* Filter lanjutan yang tidak disediakan API sebagai parameter. */
+function saringLanjutan(daftar, { waktu, warna, rated, username } = {}) {
+  const kelas = (Array.isArray(waktu) ? waktu : []).map((x) => String(x).toLowerCase()).filter(Boolean);
+  const pilihanWarna = (Array.isArray(warna) ? warna : warna ? [warna] : [])
+    .map((x) => String(x).toLowerCase())
+    .filter(Boolean);
+  const nama = String(username || "").trim().toLowerCase();
+  return daftar.filter((g) => {
+    if (kelas.length && !kelas.includes(String(g.timeClass || "").toLowerCase())) return false;
+    if (pilihanWarna.length) {
+      const putih = String(g.whiteName || "").toLowerCase() === nama;
+      const hitam = String(g.blackName || "").toLowerCase() === nama;
+      const cocok =
+        (pilihanWarna.includes("putih") && putih) || (pilihanWarna.includes("hitam") && hitam);
+      if (!cocok) return false;
+    }
+    if (rated === "rated" && !g.rated) return false;
+    if (rated === "unrated" && g.rated) return false;
+    return true;
+  });
+}
+
+/** Ubah satu objek partai mentah chess.com → baris metadata basisData. */
+export function olahPartaiChessCom(game) {
+  const pgn = typeof game?.pgn === "string" ? game.pgn : "";
+  if (!pgn) return null;
+  const putih = game.white ?? {};
+  const hitam = game.black ?? {};
+  const hasil = hasilChessCom(game);
+  return {
+    pgn,
+    whiteName: putih.username ?? "",
+    blackName: hitam.username ?? "",
+    whiteElo: putih.rating ?? 0,
+    blackElo: hitam.rating ?? 0,
+    result: hasil,
+    timestamp: (Number(game.end_time) || 0) * 1e3,
+    timeClass: game.time_class ?? "unknown",
+    plyCount: hitungPlyPgn(pgn),
+    rated: Boolean(game.rated),
+    url: game.url ?? "",
+    /*
+     * Akurasi TERBITAN CHESS.COM. Arsip bulanan
+     * (`/pub/player/{u}/games/{YYYY}/{MM}`) sudah mengirim
+     * `accuracies: { white, black }` untuk partai yang pernah dihitung
+     * chess.com — sebelumnya field ini dibuang di sini, sehingga kartu Akurasi
+     * di layar Wawasan selalu "N/A" walau datanya sudah ditarik.
+     *
+     * Cara menyimpannya menyalin repo acuan ChessGameReviewer
+     * (`lib/api/chesscomSchemas.ts` → `cleanGame.accuracies`, lalu
+     * `features/ingestion/ingestionService.ts` → `...(raw.accuracies ? …)`):
+     * hanya angka yang finite yang diangkat, dan field-nya dihilangkan
+     * seluruhnya bila tidak ada, bukan diisi null.
+     */
+    ...(akurasiTerbitan(game) ? { accuracies: akurasiTerbitan(game) } : {}),
+  };
+}
+
+/**
+ * Angkat `accuracies` mentah API menjadi `{ white, black }` berisi angka sah
+ * saja — SALINAN blok validasi `chesscomSchemas.ts` acuan. Mengembalikan
+ * `undefined` bila tidak ada satu pun angka yang bisa dipakai.
+ */
+export function akurasiTerbitan(game) {
+  const mentah = game?.accuracies;
+  if (typeof mentah !== "object" || mentah === null || Array.isArray(mentah)) return undefined;
+  const putih =
+    typeof mentah.white === "number" && Number.isFinite(mentah.white) ? mentah.white : undefined;
+  const hitam =
+    typeof mentah.black === "number" && Number.isFinite(mentah.black) ? mentah.black : undefined;
+  if (putih === undefined && hitam === undefined) return undefined;
+  return {
+    ...(putih !== undefined ? { white: putih } : {}),
+    ...(hitam !== undefined ? { black: hitam } : {}),
+  };
+}
+
+/**
+ * Angkat akurasi terbitan Lichess (`players.white.accuracy` /
+ * `players.black.accuracy`, hanya ada bila partai itu pernah dianalisis
+ * lichess dan permintaan memakai `accuracy=true`) ke bentuk `{ white, black }`
+ * yang sama dengan Chess.com.
+ */
+export function akurasiTerbitanLichess(json) {
+  const putih = json?.players?.white?.accuracy;
+  const hitam = json?.players?.black?.accuracy;
+  // null/"" bukan 0%: hanya angka yang memang dikirim API yang disimpan.
+  const adaPutih = typeof putih === "number" && Number.isFinite(putih);
+  const adaHitam = typeof hitam === "number" && Number.isFinite(hitam);
+  if (!adaPutih && !adaHitam) return undefined;
+  return {
+    ...(adaPutih ? { white: putih } : {}),
+    ...(adaHitam ? { black: hitam } : {}),
+  };
+}
+
+/**
+ * Ubah satu baris NDJSON lichess (`pgnInJson=true`) → baris metadata
+ * basisData. Pemain anonim/bot tidak punya `user.name` — disimpan kosong
+ * agar label tampil dapat mengikuti bahasa antarmuka.
+ */
+export function olahPartaiLichess(json) {
+  const pgn = typeof json?.pgn === "string" ? json.pgn : "";
+  if (!pgn) return null;
+  const putih = json.players?.white ?? {};
+  const hitam = json.players?.black ?? {};
+  const hasil = hasilLichess(json);
+  const id = typeof json.id === "string" && json.id ? json.id : "";
+  const akurasi = akurasiTerbitanLichess(json);
+  return {
+    pgn,
+    whiteName: putih.user?.name ?? "",
+    blackName: hitam.user?.name ?? "",
+    whiteElo: putih.rating ?? 0,
+    blackElo: hitam.rating ?? 0,
+    result: hasil,
+    timestamp: Number(json.createdAt) || 0,
+    timeClass: json.speed ?? "unknown",
+    plyCount: hitungPlyPgn(pgn),
+    rated: Boolean(json.rated),
+    url: id ? `https://lichess.org/${id}` : "",
+    // Akurasi terbitan lichess; hanya ada untuk partai yang sudah dianalisis
+    // di sana. Bentuknya disamakan dengan Chess.com (`{ white, black }`).
+    ...(akurasi ? { accuracies: akurasi } : {}),
+  };
+}
+
+/**
+ * Ambil partai akun chess.com dan simpan ke basisData, dengan filter periode.
+ *
+ * @param {object} [opsi]
+ * @param {boolean} [opsi.paksa=false] abaikan jeda kegagalan & unduhan berjalan
+ * @param {string} [opsi.periode="semua"] "mingguan" | "bulanan" | "tahunan" | "semua"
+ * @param {string} [opsi.tanggal] "YYYY-MM-DD" — hanya partai di hari itu yang diambil
+ * @param {string} [opsi.dari] "YYYY-MM-DD" — awal rentang inklusif (UTC)
+ * @param {string} [opsi.sampai] "YYYY-MM-DD" — akhir rentang inklusif (UTC)
+ * @param {number} [opsi.maks] batas partai yang disimpan per sekali tarik
+ * @param {string[]} [opsi.waktu] kelas waktu yang dipertahankan, mis. ["blitz"]
+ * @param {string[]} [opsi.warna] "putih" / "hitam" relatif terhadap pemilik akun
+ * @param {string} [opsi.rated] "rated" | "unrated" — kosong berarti keduanya
+ * @returns {Promise<object[]>} daftar partai urut terbaru
+ */
+export async function muatPartaiChessCom(
+  username,
+  {
+    onProgress,
+    signal,
+    paksa = false,
+    periode = "semua",
+    tanggal,
+    dari,
+    sampai,
+    maks,
+    waktu,
+    warna,
+    rated,
+  } = {},
+) {
+  const user = String(username || "").trim();
+  const kunci = kunciUnduh("chessCom", user, { periode, tanggal, dari, sampai, maks, waktu, warna, rated });
+
+  const berjalan = sedangMengunduh.get(kunci);
+  if (berjalan && !paksa) return berjalan.janji;
+
+  if (!paksa) {
+    const gagalPada = kegagalanTerakhir.get(kunci) || 0;
+    if (gagalPada && Date.now() - gagalPada < JEDE_GAGAL_MS) {
+      throw Object.assign(new Error("cooldown"), { cooldown: true });
+    }
+  }
+
+  const janji = muatPartaiChessComInti(user, {
+    onProgress,
+    signal,
+    periode,
+    tanggal,
+    dari,
+    sampai,
+    maks,
+    waktu,
+    warna,
+    rated,
+  });
+  const entri = { janji };
+  sedangMengunduh.set(kunci, entri);
+  try {
+    const hasil = await janji;
+    kegagalanTerakhir.delete(kunci);
+    return hasil;
+  } catch (e) {
+    if (!signal?.aborted) kegagalanTerakhir.set(kunci, Date.now());
+    throw e;
+  } finally {
+    if (sedangMengunduh.get(kunci) === entri) sedangMengunduh.delete(kunci);
+  }
+}
+
+async function muatPartaiChessComInti(
+  user,
+  { onProgress, signal, periode = "semua", tanggal, dari, sampai, maks, waktu, warna, rated } = {},
+) {
+  const cutoffMs = cutoffDariPeriode(periode);
+  const rentang = batasRentang(dari, sampai);
+  // Mode satu hari ("Kustom"): hanya arsip bulan itu, per partai startOfDay ≤ ts < endOfDay
+  const kunciBulan = typeof tanggal === "string" && /^\d{4}-\d{2}-\d{2}$/.test(tanggal)
+    ? tanggal.slice(0, 7).replace("-", "/")
+    : "";
+  const mulaiHari = kunciBulan ? new Date(`${tanggal}T00:00:00`).getTime() : 0;
+  const akhirHari = kunciBulan ? mulaiHari + 24 * 3600 * 1000 : 0;
+
+  const res = await fetch(`https://api.chess.com/pub/player/${encodeURIComponent(user.toLowerCase())}/games/archives`, { signal });
+  if (!res.ok) throw Object.assign(new Error(String(res.status)), { status: res.status });
+  const json = await res.json();
+  let arsip = (Array.isArray(json?.archives) ? json.archives : [])
+    .map((alamat) => {
+      const pecahan = alamat.split("/");
+      return { tahun: pecahan.at(-2), bulan: pecahan.at(-1), url: alamat };
+    })
+    .toReversed();
+
+  // Filter arsip berdasarkan periode — ini yang mencegah 1jt partai langsung diunduh
+  if (rentang) {
+    arsip = arsip.filter((a) => arsipDalamRentang(a.tahun, a.bulan, rentang));
+  } else if (kunciBulan) {
+    arsip = arsip.filter((a) => `${a.tahun}/${a.bulan}` === kunciBulan);
+  } else if (cutoffMs) {
+    arsip = arsip.filter((a) => arsipRelevan(a.tahun, a.bulan, cutoffMs));
+  }
+
+  const semua = [];
+  let dicoba = 0;
+  let berhasil = 0;
+  for (let i = 0; i < arsip.length; i += ANTREAN_ARSIP) {
+    const potongan = arsip.slice(i, i + ANTREAN_ARSIP);
+    const hasil = await Promise.all(
+      potongan.map(async (bulan) => {
+        onProgress?.(i + 1, arsip.length, bulan);
+        dicoba++;
+        try {
+          const jawaban = await fetch(bulan.url, { signal });
+          if (!jawaban.ok) return [];
+          const isi = await jawaban.json();
+          let daftar = (Array.isArray(isi?.games) ? isi.games : []).map(olahPartaiChessCom).filter(Boolean);
+          // Filter per game juga, untuk kasus bulan yang sebagian di luar periode/hari target
+          if (rentang) {
+            daftar = daftar.filter((g) => {
+              const ts = g.timestamp || 0;
+              return ts >= rentang.mulai && ts < rentang.akhir;
+            });
+          } else if (kunciBulan) {
+            daftar = daftar.filter((g) => {
+              const ts = g.timestamp || 0;
+              return ts >= mulaiHari && ts < akhirHari;
+            });
+          } else if (cutoffMs) {
+            daftar = daftar.filter((g) => (g.timestamp || 0) >= cutoffMs);
+          }
+          berhasil++;
+          return daftar;
+        } catch (e) {
+          if (e?.name === "AbortError") throw e;
+          return [];
+        }
+      })
+    );
+    for (const bagian of hasil) semua.push(...bagian);
+  }
+
+  // Galat yang SELURUHNYA ditelan membuat tab "Database" tampak kosong tanpa
+  // alasan. Bila tidak ada satu pun arsip yang berhasil (dan bukan karena
+  // dibatalkan), laporkan.
+  if (dicoba > 0 && berhasil === 0 && !signal?.aborted) {
+    throw Object.assign(new Error("unduhan arsip gagal"), { status: 0 });
+  }
+
+  semua.sort((a, b) => b.timestamp - a.timestamp);
+  let terpilih = saringLanjutan(semua, { waktu, warna, rated, username: user });
+  const batas = Number(maks);
+  if (Number.isFinite(batas) && batas > 0 && terpilih.length > batas) {
+    terpilih = terpilih.slice(0, batas);
+  }
+
+  pastikanTidakDibatalkan(signal);
+  if (terpilih.length > 0) {
+    await simpanBanyakPartai(terpilih, { platform: "chessCom", username: user, signal }).catch((e) => {
+      if (signal?.aborted || e?.name === "AbortError") throw e;
+      console.error("[muatPartaiAkun] gagal menyimpan partai Chess.com:", e);
+    });
+  }
+  pastikanTidakDibatalkan(signal);
+
+  return terpilih;
+}
+
+/* ── Lichess ─────────────────────────────────────────────────────────── */
+
+/**
+ * Baca aliran NDJSON lichess baris per baris (streaming) supaya progres
+ * "N partai…" bisa tampil dan unduhan bisa dihentikan tepat saat batas
+ * tercapai — tanpa menunggu seluruh teks raksasa selesai diunduh.
+ * Lingkungan tanpa ReadableStream (uji node lama) memakai jalur `text()`.
+ */
+async function bacaNdjsonLichess(res, { signal, onProgress, maks }) {
+  const semua = [];
+  const olahBaris = (baris) => {
+    const teks = String(baris || "").trim();
+    if (!teks) return true;
+    let obj;
+    try {
+      obj = JSON.parse(teks);
+    } catch {
+      return true;
+    }
+    const barisData = olahPartaiLichess(obj);
+    if (barisData) {
+      semua.push(barisData);
+      onProgress?.(semua.length, 0, null);
+    }
+    return semua.length < maks;
+  };
+
+  if (!res.body || typeof res.body.getReader !== "function") {
+    const teks = await res.text();
+    for (const baris of String(teks || "").split("\n")) {
+      if (!olahBaris(baris)) break;
+    }
+    return semua;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let sisa = "";
+  try {
+    for (;;) {
+      if (signal?.aborted) {
+        try {
+          await reader.cancel();
+        } catch {
+          /* abaikan */
+        }
+        const batal = new Error("dibatalkan");
+        batal.name = "AbortError";
+        throw batal;
+      }
+      const { done, value } = await reader.read();
+      sisa += decoder.decode(value || new Uint8Array(), { stream: !done });
+      let idx = -1;
+      let lanjut = true;
+      while ((idx = sisa.indexOf("\n")) >= 0) {
+        const baris = sisa.slice(0, idx);
+        sisa = sisa.slice(idx + 1);
+        if (!olahBaris(baris)) {
+          lanjut = false;
+          break;
+        }
+      }
+      if (!lanjut) {
+        try {
+          await reader.cancel();
+        } catch {
+          /* abaikan */
+        }
+        break;
+      }
+      if (done) {
+        if (sisa.trim()) olahBaris(sisa);
+        break;
+      }
+    }
+  } finally {
+    try {
+      reader.releaseLock();
+    } catch {
+      /* abaikan */
+    }
+  }
+  return semua;
+}
+
+/**
+ * Ambil partai akun lichess.org dan simpan ke basisData, dengan filter
+ * periode yang sama seperti chess.com. `since`/`until` dikirim ke API
+ * sehingga server yang memotong rentang — klien hanya menyaring ulang
+ * sebagai pengaman.
+ *
+ * @param {object} [opsi]
+ * @param {boolean} [opsi.paksa=false] abaikan jeda kegagalan & unduhan berjalan
+ * @param {string} [opsi.periode="semua"] "mingguan" | "bulanan" | "tahunan" | "semua"
+ * @param {string} [opsi.tanggal] "YYYY-MM-DD" — hanya partai di hari itu yang diambil
+ * @param {string} [opsi.dari] "YYYY-MM-DD" — awal rentang inklusif (UTC)
+ * @param {string} [opsi.sampai] "YYYY-MM-DD" — akhir rentang inklusif (UTC)
+ * @param {number} [opsi.maks=5000] batas partai per sekali tarik (anti-stag)
+ * @param {string[]} [opsi.waktu] kelas waktu yang dipertahankan, mis. ["blitz"]
+ * @param {string[]} [opsi.warna] "putih" / "hitam" relatif terhadap pemilik akun
+ * @param {string} [opsi.rated] "rated" | "unrated" — kosong berarti keduanya
+ * @returns {Promise<object[]>} daftar partai urut terbaru
+ */
+export async function muatPartaiLichess(
+  username,
+  {
+    onProgress,
+    signal,
+    paksa = false,
+    periode = "semua",
+    tanggal,
+    dari,
+    sampai,
+    maks = MAKS_PARTAI_LICHESS,
+    waktu,
+    warna,
+    rated,
+  } = {},
+) {
+  const user = String(username || "").trim();
+  const kunci = kunciUnduh("lichessOrg", user, { periode, tanggal, dari, sampai, maks, waktu, warna, rated });
+
+  const berjalan = sedangMengunduh.get(kunci);
+  if (berjalan && !paksa) return berjalan.janji;
+
+  if (!paksa) {
+    const gagalPada = kegagalanTerakhir.get(kunci) || 0;
+    if (gagalPada && Date.now() - gagalPada < JEDE_GAGAL_MS) {
+      throw Object.assign(new Error("cooldown"), { cooldown: true });
+    }
+  }
+
+  const janji = muatPartaiLichessInti(user, {
+    onProgress,
+    signal,
+    periode,
+    tanggal,
+    dari,
+    sampai,
+    maks,
+    waktu,
+    warna,
+    rated,
+  });
+  const entri = { janji };
+  sedangMengunduh.set(kunci, entri);
+  try {
+    const hasil = await janji;
+    kegagalanTerakhir.delete(kunci);
+    return hasil;
+  } catch (e) {
+    if (!signal?.aborted) kegagalanTerakhir.set(kunci, Date.now());
+    throw e;
+  } finally {
+    if (sedangMengunduh.get(kunci) === entri) sedangMengunduh.delete(kunci);
+  }
+}
+
+async function muatPartaiLichessInti(
+  user,
+  { onProgress, signal, periode = "semua", tanggal, dari, sampai, maks, waktu, warna, rated },
+) {
+  const cutoffMs = cutoffDariPeriode(periode);
+  const rentang = batasRentang(dari, sampai);
+  const kustom = typeof tanggal === "string" && /^\d{4}-\d{2}-\d{2}$/.test(tanggal);
+  const mulaiHari = kustom ? new Date(`${tanggal}T00:00:00`).getTime() : 0;
+  const akhirHari = kustom ? mulaiHari + 24 * 3600 * 1000 : 0;
+
+  const params = new URLSearchParams({
+    pgnInJson: "true",
+    opening: "true",
+    /*
+     * `accuracy=true` meminta persentase akurasi tiap pemain
+     * (`players.<warna>.accuracy`). Tanpa parameter ini lichess tidak
+     * mengirim angka akurasi sama sekali, sehingga kartu Akurasi di layar
+     * Wawasan tidak punya sumber untuk partai Lichess. Hanya partai yang
+     * pernah dianalisis di lichess yang punya nilainya — sisanya tetap
+     * kosong dan memang harus tampil kosong, bukan 0.
+     */
+    accuracy: "true",
+    sort: "dateDesc",
+    max: String(Math.max(1, Number(maks) || MAKS_PARTAI_LICHESS)),
+  });
+  if (rentang) {
+    if (rentang.mulai > 0) params.set("since", String(rentang.mulai));
+    if (Number.isFinite(rentang.akhir)) params.set("until", String(rentang.akhir - 1));
+  } else if (kustom) {
+    params.set("since", String(mulaiHari));
+    params.set("until", String(akhirHari - 1));
+  } else if (cutoffMs) {
+    params.set("since", String(cutoffMs));
+  }
+
+  onProgress?.(0, 0, null);
+  const res = await fetch(`https://lichess.org/api/games/user/${encodeURIComponent(user)}?${params.toString()}`, {
+    headers: { Accept: "application/x-ndjson" },
+    signal,
+  });
+  if (!res.ok) throw Object.assign(new Error(String(res.status)), { status: res.status });
+
+  let semua = await bacaNdjsonLichess(res, {
+    signal,
+    onProgress,
+    maks: Math.max(1, Number(maks) || MAKS_PARTAI_LICHESS),
+  });
+
+  // Saring ulang di klien sebagai pengaman (server sudah memotong via since/until).
+  if (rentang) {
+    semua = semua.filter((g) => {
+      const ts = g.timestamp || 0;
+      return ts >= rentang.mulai && ts < rentang.akhir;
+    });
+  } else if (kustom) {
+    semua = semua.filter((g) => {
+      const ts = g.timestamp || 0;
+      return ts >= mulaiHari && ts < akhirHari;
+    });
+  } else if (cutoffMs) {
+    semua = semua.filter((g) => (g.timestamp || 0) >= cutoffMs);
+  }
+
+  semua.sort((a, b) => b.timestamp - a.timestamp);
+  let terpilih = saringLanjutan(semua, { waktu, warna, rated, username: user });
+  const batas = Number(maks);
+  if (Number.isFinite(batas) && batas > 0 && terpilih.length > batas) {
+    terpilih = terpilih.slice(0, batas);
+  }
+
+  pastikanTidakDibatalkan(signal);
+  if (terpilih.length > 0) {
+    await simpanBanyakPartai(terpilih, { platform: "lichessOrg", username: user, signal }).catch((e) => {
+      if (signal?.aborted || e?.name === "AbortError") throw e;
+      console.error("[muatPartaiAkun] gagal menyimpan partai Lichess:", e);
+    });
+  }
+  pastikanTidakDibatalkan(signal);
+
+  return terpilih;
+}

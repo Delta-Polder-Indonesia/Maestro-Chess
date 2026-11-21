@@ -4,14 +4,31 @@ import { join } from "node:path";
 const exportDirectory = process.argv[2] ?? "dist";
 const requiredFiles = [
   "index.html",
+  "index.txt",
   "404.html",
-  "attributions.html",
-  "openings/openings.json",
-  "engine/stockfish.js",
-  "engine/stockfish-single.js",
-  "engine/stockfish-asm.js",
-  ...Array.from({ length: 6 }, (_, index) => `engine/stockfish-part-${index}.wasm`),
-  ...Array.from({ length: 6 }, (_, index) => `engine/stockfish-single-part-${index}.wasm`),
+  "attributions/index.html",
+  "attributions/index.txt",
+  "favicon.ico",
+  "data/buku-analisa.json",
+  "images/analisa/settings.svg",
+  "images/analisa/flip.svg",
+  "images/stockfish.webp",
+  "flags/id.svg",
+  "sounds/move-self.mp3",
+  "sounds/capture.mp3",
+  "licenses/chessclub-MIT.txt",
+  "licenses/brilliant-chess-MIT.txt",
+  "licenses/chess-game-reviewer-MIT.txt",
+  "licenses/chess-openings-CC0.txt",
+  "licenses/flag-icons-MIT.txt",
+  "licenses/geist-OFL-1.1.txt",
+  "licenses/lichess-AGPL-3.0.txt",
+  "engine/stockfish-18-lite-single.js",
+  "engine/stockfish-18-lite-single.wasm",
+  "engine/source/COPYING.txt",
+  "engine/source/AUTHORS.txt",
+  "engine/source/stockfish.js-082eeba46b0c5f8f8065e5386750aa0ecfa2062c.tar.gz",
+  "engine/source/nn-9067e33176e8.nnue",
 ];
 
 let failed = false;
@@ -29,7 +46,7 @@ for (const file of requiredFiles) {
   }
 }
 
-for (const file of ["index.html", "404.html", "attributions.html"]) {
+for (const file of ["index.html", "404.html", "attributions/index.html"]) {
   const path = join(exportDirectory, file);
   try {
     const html = readFileSync(path, "utf8");

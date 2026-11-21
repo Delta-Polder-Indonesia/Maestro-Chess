@@ -11,10 +11,10 @@ test("ESLint keeps the existing rules and ignores generated or bundled files", a
   ]) {
     assert.equal(await eslint.isPathIgnored(path), true, path);
   }
-  assert.equal(await eslint.isPathIgnored("src/engine/stockfish.ts"), false);
+  assert.equal(await eslint.isPathIgnored("src/app/page.tsx"), false);
   assert.equal(await eslint.isPathIgnored("src/public/engine/file.js"), false);
 
-  const config = await eslint.calculateConfigForFile("src/engine/stockfish.ts");
+  const config = await eslint.calculateConfigForFile("src/app/page.tsx");
   assert.equal(config.rules["@typescript-eslint/no-explicit-any"][0], 0);
   assert.equal(config.rules["react-hooks/exhaustive-deps"][0], 0);
   assert.equal(config.rules["react-hooks/rules-of-hooks"][0], 2);

@@ -1,0 +1,155 @@
+/* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
+import { useContext, useEffect, useRef, useState } from "react";
+import Arrow from "../../svg/arrow.jsx";
+import { useImport } from "../../../konteks/importKonteks.js";
+import { pushPageError, pushPageWarning } from "../../errors/pushPageError.js";
+import { olahPartaiLichess } from "../../../akun/muatPartaiAkun.js";
+import { GamesUI, Loading } from "./selectChessCom.jsx";
+import { API_BLOCKING_ERROR, GAMES_ERROR, getMonthName, USER_ERROR } from "./selectChessComData.js";
+import { ErrorsContext } from "../../../konteks/errorsKonteks.js";
+import { useI18n } from "../../../../../lib/i18n.jsx";
+import { TooltipLabel } from "../../../../../components/ui/tooltip.jsx";
+import { simpanBanyakPartai } from "../../../basisData.js";
+const PLAYER_URL = "https://lichess.org/@/";
+const PLATFORM = "Lichess.org";
+function Games(props) {
+  const { t } = useI18n();
+  const { url, username, depth, unSelect } = props;
+  const [gamesInfo, setGamesInfo] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const errorsContext = useContext(ErrorsContext);
+  const setData = useImport().data[1];
+  const setErrors = errorsContext.errors[1];
+  const callbacksRef = useRef({ t, unSelect });
+  callbacksRef.current = { t, unSelect };
+  useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(url, { headers: { Accept: "application/x-ndjson" }, signal });
+        if (signal.aborted) return;
+        if (!res.ok) throw new Error(String(res.status));
+        const text = await res.text();
+        if (signal.aborted) return;
+        const jsonArr = text.split("\n").map((text2) => {
+          try {
+            return JSON.parse(text2);
+          } catch {
+            return null;
+          }
+        }).filter((obj) => obj);
+        // Konversi yang sama dengan layar Akun: hasil belum diketahui tidak
+        // dianggap remis dan nama anonim diterjemahkan saat render, bukan
+        // disimpan dalam bahasa saat data diambil.
+        const newGamesInfo = jsonArr.map(olahPartaiLichess).filter(
+          (gameInfo) => gameInfo && Number.isFinite(gameInfo.plyCount) && gameInfo.plyCount > 0,
+        );
+        if (signal.aborted) return;
+        setLoading(false);
+        setGamesInfo(newGamesInfo);
+        if (newGamesInfo.length > 0) {
+          simpanBanyakPartai(newGamesInfo, { platform: "lichessOrg", username }).catch(() => {});
+        }
+      } catch {
+        if (signal.aborted) return;
+        setLoading(false);
+        setGamesInfo([]);
+        callbacksRef.current.unSelect();
+        await pushPageError(setErrors, callbacksRef.current.t(GAMES_ERROR[0]), callbacksRef.current.t(GAMES_ERROR[1]));
+        if (!signal.aborted) await pushPageWarning(setErrors, callbacksRef.current.t(API_BLOCKING_ERROR[0]), callbacksRef.current.t(API_BLOCKING_ERROR[1]));
+      }
+    })();
+    // URL/username menentukan arsip yang dimuat. Callback dan bahasa dibaca
+    // lewat ref agar perubahan identitas fungsi tidak memulai fetch ulang.
+    return () => controller.abort();
+  }, [url, username, setErrors]);
+  if (gamesInfo.length === 0 && !loading) {
+    return <div className="text-center text-sm text-foregroundGrey py-8">{t("analisa.partai.tidakAda")}</div>;
+  }
+  return <GamesUI gamesInfo={gamesInfo} loading={loading} username={username} depth={depth} setData={setData} />;
+}
+function SelectLichessOrgGame(props) {
+  const { t, bahasa: locale } = useI18n();
+  const { username, depth, stopSelecting } = props;
+  const [dates, setDates] = useState([]);
+  const [hovered, setHovered] = useState(NaN);
+  const [selected, setSelected] = useState(NaN);
+  const [loading, setLoading] = useState(true);
+  const errorsContext = useContext(ErrorsContext);
+  const setErrors = errorsContext.errors[1];
+  const callbacksRef = useRef({ t, stopSelecting });
+  callbacksRef.current = { t, stopSelecting };
+  const toggleSelected = (number) => {
+    setSelected((prev) => prev === number ? NaN : number);
+  };
+  useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+    (async () => {
+      try {
+        setLoading(true);
+        const resFirstGame = await fetch(`https://lichess.org/api/games/user/${username}?sort=dateAsc&max=1`, { headers: { Accept: "application/x-ndjson" }, signal });
+        if (signal.aborted) return;
+        if (!resFirstGame.ok) throw new Error(String(resFirstGame.status));
+        const jsonFirstGame = await resFirstGame.json();
+        if (signal.aborted) return;
+        const dateFirstGame = new Date(jsonFirstGame.createdAt);
+        const resLastGame = await fetch(`https://lichess.org/api/games/user/${username}?sort=dateDesc&max=1`, { headers: { Accept: "application/x-ndjson" }, signal });
+        if (signal.aborted) return;
+        if (!resLastGame.ok) throw new Error(String(resLastGame.status));
+        const jsonLastGame = await resLastGame.json();
+        if (signal.aborted) return;
+        const dateLastGame = new Date(jsonLastGame.createdAt);
+        const currentDate = new Date(dateFirstGame);
+        const newDates = [];
+        while (currentDate <= dateLastGame) {
+          const sinceDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1, 0, 0, 0, 0);
+          const untilDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1, 0, 0, 0, 0);
+          untilDate.setMilliseconds(untilDate.getMilliseconds() - 1);
+          const month = currentDate.getMonth();
+          const year = currentDate.getFullYear();
+          newDates.push({ month: month + 1, year, url: `https://lichess.org/api/games/user/${username}?since=${sinceDate.getTime()}&until=${untilDate.getTime()}&pgnInJson=true` });
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+        if (signal.aborted) return;
+        setLoading(false);
+        setDates(newDates.toReversed());
+      } catch {
+        if (signal.aborted) return;
+        setLoading(false);
+        callbacksRef.current.stopSelecting();
+        await pushPageError(setErrors, callbacksRef.current.t(USER_ERROR[0]), callbacksRef.current.t(USER_ERROR[1]));
+        if (!signal.aborted) await pushPageWarning(setErrors, callbacksRef.current.t(API_BLOCKING_ERROR[0]), callbacksRef.current.t(API_BLOCKING_ERROR[1]));
+      }
+    })();
+    // Akun menentukan daftar bulan; callback dan bahasa dibaca lewat ref agar
+    // perubahan locale/fungsi induk tidak memulai ulang permintaan.
+    return () => controller.abort();
+  }, [username, setErrors]);
+  return <div className={`overflow-x-hidden overflow-y-auto ${loading ? " flex flex-col justify-center flex-grow" : ""}`}>
+            <div style={{ display: loading ? "none" : "" }} className="py-3 px-8 sticky top-0 bg-backgroundBox z-10 flex flex-row items-center justify-between gap-3">
+              <h1 className="text-lg text-foreground min-w-0"><a target="_blank" href={`${PLAYER_URL}${username}`} className="hover:underline text-foregroundHighlighted text-xl font-bold">{username}</a> <span className="text-foregroundGrey">&middot; {t("analisa.partai.judul", { platform: PLATFORM })}</span></h1>
+              <TooltipLabel label={t("analisa.partai.kembali")}>
+                <button type="button" onClick={stopSelecting} aria-label={t("analisa.partai.kembali")} className="grid h-7 w-7 shrink-0 cursor-pointer place-items-center rounded-borderRoundness text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-foregroundHighlighted">✕</button>
+              </TooltipLabel>
+            </div>
+            <hr style={{ display: loading ? "none" : "" }} className="border-border" />
+            <div className="flex flex-col w-full">
+                {loading ? <Loading whatIsLoading={t("analisa.tab.pilihPartai")} abort={stopSelecting} /> : null}
+                {dates.map((date, i) => {
+    return <div key={i}>
+                            <button onClick={() => toggleSelected(i)} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(NaN)} type="button" className={`${hovered === i || selected === i ? "text-foregroundHighlighted" : "text-foregroundGrey"} hover:bg-backgroundBoxHover w-full transition-colors text-sm px-8 py-2.5 flex flex-row justify-between items-center`}>
+                                <span><b>{date.year}</b> {getMonthName(date.month, locale)}</span>
+                                <div style={{ opacity: hovered === i || selected === i ? "100" : "0", transform: `rotate(${selected !== i ? "180deg" : "0"})` }} className="transition-opacity"><Arrow class="fill-foregroundHighlighted" /></div>
+                            </button>
+                            {selected === i ? <Games url={date.url} username={username} depth={depth} unSelect={() => setSelected(NaN)} /> : ""}
+                        </div>;
+  })}
+            </div>
+        </div>;
+}
+export {
+  SelectLichessOrgGame as default
+};

@@ -1,11 +1,77 @@
-Chess Pieces Images
-Created by: Cburnett https://en.wikipedia.org/wiki/User:Cburnett
-License: CC-BY-SA-3.0 https://creativecommons.org/licenses/by-sa/3.0/
+Maestro Chess — third-party notices
+==================================
 
-Board Sounds
-Created by: Lichess https://github.com/lichess-org
-License: AGPL-3.0 https://github.com/lichess-org/lila/blob/master/LICENSE
+Analysis workspace
+------------------
+The standalone analysis interface and supporting code are adapted from
+ChessClub, copyright (c) 2025–2026 Delta-Polder-Indonesia (Bintang Toba),
+MIT: https://github.com/Delta-Polder-Indonesia/ChessClub
+Reference revision: 7871f2415ab60c78765f358bc6d44df003456883.
+The original MIT notice is in public/licenses/chessclub-MIT.txt.
 
-Stockfish.js
-Created by: Nmrugg https://github.com/nmrugg
-License: GPL-3.0 https://github.com/nmrugg/stockfish.js/blob/master/license.txt
+The ChessClub analysis interface in turn adapts Brilliant-Chess,
+copyright (c) 2025 Delo, MIT:
+https://github.com/wdeloo/Brilliant-Chess
+Full notice: public/licenses/brilliant-chess-MIT.txt (also LICENSE).
+
+Some analysis and insights components are adapted from ChessGameReviewer,
+copyright (c) 2026 Chess Game Reviewer contributors, MIT:
+https://github.com/SheyBoiCarti/ChessGameReviewer
+Full notice: public/licenses/chess-game-reviewer-MIT.txt.
+
+Chess pieces
+------------
+Cburnett chess pieces, https://en.wikipedia.org/wiki/User:Cburnett,
+Creative Commons Attribution-ShareAlike 3.0 Unported:
+https://creativecommons.org/licenses/by-sa/3.0/ .
+The pieces have been adapted into SVG/React components in this project.
+
+Opening book
+------------
+public/data/buku-analisa.json is the ChessClub analysis table derived from
+lichess-org/chess-openings, CC0 1.0:
+https://github.com/lichess-org/chess-openings
+License: public/licenses/chess-openings-CC0.txt.
+
+Flags
+-----
+Flag SVGs are from flag-icons 7.6.0, copyright (c) 2013 Panayiotis Lipiridis,
+MIT: https://github.com/lipis/flag-icons
+License: public/licenses/flag-icons-MIT.txt.
+
+Board sounds
+------------
+The MP3 files in public/sounds/ are from the Lichess standard sound set,
+https://github.com/lichess-org/lila/tree/master/public/sound/standard,
+AGPL-3.0. Some filenames reuse the same upstream sound. Full license:
+public/licenses/lichess-AGPL-3.0.txt.
+
+Font
+----
+Geist Variable, copyright 2024 The Geist Project Authors, SIL OFL 1.1:
+https://github.com/vercel/geist-font
+Full license: public/licenses/geist-OFL-1.1.txt.
+
+Stockfish 18 Lite
+-----------------
+Stockfish and stockfish.js are GPL-3.0 software by the Stockfish authors and
+contributors, with the JavaScript/WebAssembly distribution by Nathan Rugg and
+contributors: https://github.com/nmrugg/stockfish.js .
+
+The unmodified Lite single-thread JS and WASM are from the v18.0.0 release:
+https://github.com/nmrugg/stockfish.js/releases/tag/v18.0.0
+  JS SHA-256:    2278005057f381491f1c9bb3e44c9f5920b3a00bef9759e33cc6582769a1f1fe
+  WASM SHA-256:  a8fbc05ec6920b56d7485826dcb02c5ffd2826bcbf751cf973046f237a9096f1
+
+The corresponding stockfish.js source archive (revision
+082eeba46b0c5f8f8065e5386750aa0ecfa2062c), Lite NNUE network, GPL text,
+and author list are distributed in public/engine/source/. Source:
+https://github.com/nmrugg/stockfish.js/tree/082eeba46b0c5f8f8065e5386750aa0ecfa2062c
+The matching Lite network is nn-9067e33176e8.nnue (SHA-256
+9067e33176e8c5edb7aa8db6a3aedd012f84a1f39872e86357c6c2d0993f314d).
+The source/build provenance is also documented at:
+https://github.com/ThuyTran735/MeowlChess/tree/main/third-party-source
+
+Chess.com and Lichess names and logos are trademarks of their respective
+owners. Their inclusion identifies supported public services and does not
+imply endorsement.
