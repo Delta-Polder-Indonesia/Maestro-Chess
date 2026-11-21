@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import Check from "../svg/check.jsx";
+import { useDropdown } from "./useDropdown.js";
 
 /**
  * Dropdown daftar bergaya panel Analisa (dipakai layar Deteksi Engine dan
@@ -16,24 +16,7 @@ import Check from "../svg/check.jsx";
  * @param {boolean} [p.disabled]
  */
 export default function SelectDaftar({ labelTeks, dataUji, nilai, opsi, onPilih, disabled }) {
-  const [terbuka, setTerbuka] = useState(false);
-  const wadahRef = useRef(null);
-
-  useEffect(() => {
-    if (!terbuka) return undefined;
-    function klikLuar(e) {
-      if (!wadahRef.current?.contains(e.target)) setTerbuka(false);
-    }
-    function tekanEsc(e) {
-      if (e.key === "Escape") setTerbuka(false);
-    }
-    document.addEventListener("mousedown", klikLuar);
-    document.addEventListener("keydown", tekanEsc);
-    return () => {
-      document.removeEventListener("mousedown", klikLuar);
-      document.removeEventListener("keydown", tekanEsc);
-    };
-  }, [terbuka]);
+  const { terbuka, setTerbuka, wadahRef } = useDropdown();
 
   const kini = String(nilai ?? "");
   const aktif = opsi.find((o) => String(o.nilai) === kini) ?? opsi[0];

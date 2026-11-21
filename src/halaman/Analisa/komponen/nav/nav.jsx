@@ -56,6 +56,7 @@ import ShieldAlert from "../svg/shield-alert.jsx";
 import { Settings, BarChart3 } from "lucide-react";
 import { TAMPILAN_ANALISA } from "../../konteks/analyzeKonteks.js";
 import { useBoard } from "../../konteks/boardKonteks.js";
+import { useTabKerja } from "../../konteks/tabKerja.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { TooltipLabel } from "../../../../components/ui/tooltip.jsx";
 
@@ -107,6 +108,7 @@ export default function Nav() {
    * `progress` analisis berubah.
    */
   const [tampilan, setTampilan] = useBoard().tampilan;
+  const { bukaImpor, perluPulih } = useTabKerja();
   const [navTerbuka, setNavTerbuka] = useState(true);
 
   const botLinks = [
@@ -264,7 +266,10 @@ export default function Nav() {
               // mengosongkan `data`, `akun`, dan `pageState`: karena papan
               // tidak pernah dilepas, analisis yang sedang direview tetap utuh.
               const keterangan = item.label;
-              const aksi = () => setTampilan(item.tampilan);
+              const aksi = () => {
+                if (item.tampilan === TAMPILAN_ANALISA.IMPOR) void bukaImpor();
+                else setTampilan(item.tampilan);
+              };
               return (
                 <TooltipLabel key={item.kunci} label={navTerbuka ? undefined : keterangan} side="right">
                   <button
@@ -272,8 +277,9 @@ export default function Nav() {
                     data-uji={`nav-${item.kunci}`}
                     aria-label={keterangan}
                     aria-current={aktif ? "true" : undefined}
+                    disabled={perluPulih}
                     onClick={aksi}
-                    className={`${kelasTombol}${aktif ? " bg-backgroundBoxHover text-foregroundHighlighted" : ""}`}
+                    className={`${kelasTombol} disabled:cursor-wait disabled:opacity-50${aktif ? " bg-backgroundBoxHover text-foregroundHighlighted" : ""}`}
                   >
                     {/*
                       Ikon dibungkus span `shrink-0`: UA stylesheet menyetel

@@ -11,7 +11,7 @@
  * Nama yang pernah dipakai disimpan ke penyimpanan lokal per platform dan
  * ditawarkan lagi lewat <datalist> (maksimal MAKS_RIWAYAT nama terakhir).
  */
-import { useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import Gambar from "../komponen/Gambar.jsx";
 import LichessLogo from "../komponen/svg/LichessLogo.jsx";
 import ChessComLogo from "../komponen/svg/ChessComLogo.jsx";
@@ -62,6 +62,7 @@ export default function FormulirAkun({ onTambah, onBatal, judul, subjudul }) {
   const [nama, setNama] = useState("");
   const [galat, setGalat] = useState(null);
   const inputRef = useRef(null);
+  const riwayatId = useId();
 
   const situs = SITUS.find((s) => s.kunci === kunci) ?? SITUS[0];
   const riwayat = useMemo(() => {
@@ -115,7 +116,7 @@ export default function FormulirAkun({ onTambah, onBatal, judul, subjudul }) {
         ref={inputRef}
         type="text"
         autoComplete="off"
-        list="analisa-akun-riwayat"
+        list={riwayatId}
         value={nama}
         onChange={(e) => {
           setNama(e.currentTarget.value);
@@ -132,7 +133,7 @@ export default function FormulirAkun({ onTambah, onBatal, judul, subjudul }) {
         aria-label={t("analisa.akun.nama")}
         className="w-full rounded-borderRoundness border border-border bg-backgroundBoxBox px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-foregroundGrey hover:border-borderHighlighted focus:border-borderHighlighted"
       />
-      <datalist id="analisa-akun-riwayat">
+      <datalist id={riwayatId}>
         {riwayat.map((namaLama) => (
           <option key={namaLama} value={namaLama} />
         ))}

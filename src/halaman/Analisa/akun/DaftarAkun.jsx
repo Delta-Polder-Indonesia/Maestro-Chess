@@ -7,7 +7,7 @@ import KartuAkun from "./KartuAkun.jsx";
 import FormulirAkun from "./FormulirAkun.jsx";
 import Profile from "../komponen/svg/profile.jsx";
 
-export default function DaftarAkun({ daftar, aktif, revisi = 0, onPilih, onHapus, onTambah }) {
+export default function DaftarAkun({ daftar, aktif, tabAktif = true, revisi = 0, onPilih, onHapus, onTambah }) {
   const { t } = useI18n();
   const [buka, setBuka] = useState(false);
   const list = daftar || [];
@@ -57,11 +57,13 @@ export default function DaftarAkun({ daftar, aktif, revisi = 0, onPilih, onHapus
               menyisakan ruang kosong di kanan. */}
           <div className="grid min-h-0 flex-1 grid-cols-1 sm:grid-cols-2 content-start gap-2 sm:gap-3 overflow-y-auto pb-1">
             {list.map((a) => (
-              <div key={`${a.platform}:${a.username}:${revisi}`} className="min-w-0">
+              <div key={`${a.platform}:${a.username}`} className="min-w-0">
                 <KartuAkun
                   platform={a.platform}
                   username={a.username}
                   aktif={aktif?.platform === a.platform && String(aktif?.username || "").toLowerCase() === String(a.username || "").toLowerCase()}
+                  tabAktif={tabAktif}
+                  revisi={revisi}
                   onPilih={() => onPilih(a.platform, a.username)}
                   onHapus={() => onHapus(a.platform, a.username)}
                 />

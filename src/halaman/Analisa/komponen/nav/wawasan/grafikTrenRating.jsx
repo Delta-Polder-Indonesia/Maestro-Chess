@@ -1,7 +1,9 @@
 /** Grafik garis tren rating sepanjang riwayat partai. */
+import { useId } from "react";
 import { TooltipLabel } from "../../../../../components/ui/tooltip.jsx";
 
 function GrafikTrenRating({ points, t }) {
+  const warnaId = useId();
   if (!points || points.length === 0) {
     return (
       <div className="wawasan-card flex h-[300px] min-h-[300px] flex-col">
@@ -59,7 +61,7 @@ function GrafikTrenRating({ points, t }) {
       <div className="flex min-h-0 flex-1 items-center overflow-hidden pt-3">
         <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" role="img" aria-label={`${firstRating} to ${lastRating}`}>
           <defs>
-            <linearGradient id="wawasanAreaGradient" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={warnaId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#81b64c" stopOpacity="0.35" />
               <stop offset="100%" stopColor="#81b64c" stopOpacity="0.02" />
             </linearGradient>
@@ -72,7 +74,7 @@ function GrafikTrenRating({ points, t }) {
           <line x1={padLeft} y1={padTop + plotH} x2={width - padRight} y2={padTop + plotH} className="wawasan-grid" />
           <text x={padLeft - 8} y={padTop + plotH + 4} textAnchor="end" className="wawasan-axis-text">{yMin}</text>
           {/* Area fill */}
-          <polygon points={areaPoints} fill="url(#wawasanAreaGradient)" />
+          <polygon points={areaPoints} fill={`url(#${warnaId})`} />
           {/* Trend line */}
           <polyline points={polylinePoints} fill="none" stroke="#81b64c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           {/* Data points */}

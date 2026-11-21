@@ -76,6 +76,7 @@ export default function LayarDatabase({
   onTutup,
   onAnalisa,
   onBukaAkun,
+  aktif = true,
 }) {
   const { t, bahasa: locale } = useI18n();
 
@@ -106,6 +107,20 @@ export default function LayarDatabase({
   const [targetHapusPartai, setTargetHapusPartai] = useState(null);
   const [dialogHapusKoleksi, setDialogHapusKoleksi] = useState(null);
   const [dialogKosongkanSemua, setDialogKosongkanSemua] = useState(false);
+  const aktivitasRef = useRef({ aktif, versi: 0 });
+  if (aktivitasRef.current.aktif !== aktif) {
+    aktivitasRef.current = { aktif, versi: aktivitasRef.current.versi + 1 };
+  }
+  const masihPadaKunjungan = (versi) => aktivitasRef.current.aktif && aktivitasRef.current.versi === versi;
+  useEffect(() => {
+    if (aktif) return;
+    // Konten dialog di-portal ke luar panel yang disembunyikan.
+    setDialogEksporKosong(false);
+    setDialogHapusPartai(false);
+    setTargetHapusPartai(null);
+    setDialogHapusKoleksi(null);
+    setDialogKosongkanSemua(false);
+  }, [aktif]);
 
   // Mode panel kanan: "data" (ringkasan + tools) atau "tabel" (browse/analisa).
   const [mode, setMode] = useState(modeTersimpan);
@@ -182,15 +197,22 @@ export default function LayarDatabase({
     }
     // Pembacaan yang sama sedang berjalan → ikut menunggu, jangan dobel.
     if (janjiRingkasan.current) {
+      let gagal = false;
       try {
         await janjiRingkasan.current;
       } catch {
-        /* abaikan */
+        gagal = true;
       }
-      if (token === tokenMetadata.current && cacheRingkasan?.revisi === bacaRevisiBasis()) {
-        setKoleksiList(cacheRingkasan.koleksi);
-        setStats(cacheRingkasan.stats);
-        setStatMap(cacheRingkasan.statMap);
+      if (token === tokenMetadata.current) {
+        if (cacheRingkasan?.revisi === bacaRevisiBasis()) {
+          setKoleksiList(cacheRingkasan.koleksi);
+          setStats(cacheRingkasan.stats);
+          setStatMap(cacheRingkasan.statMap);
+        } else if (!gagal) {
+          // Revisi berubah selagi pembacaan bersama berjalan; hasilnya tidak
+          // dapat memenuhi permintaan terbaru, jadi baca lagi revisi terkini.
+          void muatMetadata();
+        }
       }
       return;
     }
@@ -215,19 +237,25 @@ export default function LayarDatabase({
       return { revisi, koleksi: semuaKoleksi, stats: st, statMap: map };
     })();
     janjiRingkasan.current = pekerjaan;
+    let ulang = false;
     try {
       const ringkasan = await pekerjaan;
-      cacheRingkasan = ringkasan;
-      if (token === tokenMetadata.current) {
-        setKoleksiList(ringkasan.koleksi);
-        setStats(ringkasan.stats);
-        setStatMap(ringkasan.statMap);
+      if (ringkasan.revisi !== bacaRevisiBasis()) {
+        ulang = token === tokenMetadata.current;
+      } else {
+        cacheRingkasan = ringkasan;
+        if (token === tokenMetadata.current) {
+          setKoleksiList(ringkasan.koleksi);
+          setStats(ringkasan.stats);
+          setStatMap(ringkasan.statMap);
+        }
       }
     } catch {
       /* abaikan */
     } finally {
       janjiRingkasan.current = null;
     }
+    if (ulang && token === tokenMetadata.current) void muatMetadata();
   }
 
   async function muatPartai() {
@@ -455,7 +483,7 @@ export default function LayarDatabase({
     return () => {
       hidup = false;
     };
-  }, [tampilan, koleksiTerpilih, koleksiList.length]);
+  }, [tampilan, koleksiTerpilih, koleksiList.length, revisiRingkasan]);
 
   useEffect(() => {
     if (tampilan !== "event") return undefined;
@@ -537,7 +565,7 @@ export default function LayarDatabase({
     return () => {
       hidup = false;
     };
-  }, [tampilan, koleksiTerpilih, koleksiList.length]);
+  }, [tampilan, koleksiTerpilih, koleksiList.length, revisiRingkasan]);
 
   // Bila belum ada koleksi yang dipilih, pilih koleksi pertama otomatis (satu kali saja).
   useEffect(() => {
@@ -569,13 +597,18 @@ export default function LayarDatabase({
   }
 
   async function tanganiAnalisa(game) {
+    const versi = aktivitasRef.current.versi;
     const pgn = await pgnPartai(game);
+    // Pembacaan dari tab yang ditinggalkan tidak boleh membuka laporan
+    // belakangan, bahkan jika pengguna sudah kembali ke tab yang sama.
+    if (!masihPadaKunjungan(versi)) return;
     if (!pgn) {
       tampilkanNotif(t("analisa.basisData.pgnTidakAda"), "gagal");
       return;
     }
-    onAnalisa({ format: "pgn", string: pgn });
-    onTutup();
+    // Area kerja bisa meminta konfirmasi sebelum mengganti analisis berjalan.
+    // Dalam hal itu ia sendiri akan pindah ke papan setelah disetujui.
+    if (onAnalisa({ format: "pgn", string: pgn }) !== false) onTutup();
   }
 
   async function _tanganiSalinPgn(game) {
@@ -597,6 +630,7 @@ export default function LayarDatabase({
   }
 
   async function tanganiEksporPgn(id) {
+    const versi = aktivitasRef.current.versi;
     try {
       const koleksiId = id ?? koleksiTerpilih;
       let plat = "";
@@ -617,7 +651,7 @@ export default function LayarDatabase({
       });
 
       if (!pgnString) {
-        setDialogEksporKosong(true);
+        if (masihPadaKunjungan(versi)) setDialogEksporKosong(true);
         return;
       }
 
@@ -877,7 +911,7 @@ export default function LayarDatabase({
       </div>
       </div>
 
-      <DialogDatabase
+      {aktif ? <DialogDatabase
         wadahDialog={wadahDialog}
         dialogEksporKosong={dialogEksporKosong}
         setDialogEksporKosong={setDialogEksporKosong}
@@ -893,7 +927,7 @@ export default function LayarDatabase({
         dialogKosongkanSemua={dialogKosongkanSemua}
         setDialogKosongkanSemua={setDialogKosongkanSemua}
         konfirmasiKosongkanSemua={konfirmasiKosongkanSemua}
-      />
+      /> : null}
     </PanelLayar>
   );
 }
