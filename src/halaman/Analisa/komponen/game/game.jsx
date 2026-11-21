@@ -18,6 +18,7 @@ import GameButtons from "../menu/analysis/gameButtons.jsx";
 import { getMoves, getArrows, getCustomResult, formatPlayerLabel } from "./getMoves.js";
 import { useMuatPartai } from "./useMuatPartai.js";
 import { useAnalisisPapan } from "./useAnalisisPapan.js";
+import { usePekerjaanLaporan } from "./usePekerjaanLaporan.js";
 import { buatHandleKeyDown } from "./keyboardPapan.js";
 
 function Game({ wadah }) {
@@ -48,7 +49,7 @@ function Game({ wadah }) {
   const [tab, setTab] = analyzeContext.tab;
   const [analyzeController, setAnalyzeController] = analyzeContext.analyzeController;
   const [customLine, setCustomLine] = analyzeContext.customLine;
-  const [returnedToNormalGame] = analyzeContext.returnedToNormalGame;
+  const [returnedToNormalGame, setReturnedToNormalGame] = analyzeContext.returnedToNormalGame;
   const [analyzingMove, setAnalyzingMove] = analyzeContext.analyzingMove;
   const [depth] = analyzeContext.depth;
   const [tampilan] = analyzeContext.tampilan;
@@ -67,6 +68,9 @@ function Game({ wadah }) {
   const tampilanRef = useRef(tampilan);
   const { previousMove, move: move2, nextMove } = getMoves(game, moveNumber, customLine, returnedToNormalGame);
   const shownResult = customLine.moveNumber < 0 ? result2 : getCustomResult(move2);
+  const pekerjaanLaporan = usePekerjaanLaporan({
+    data, game, moveNumber, white, time, result: result2, tab, customLine, arrows, pageState, depth,
+  });
   /*
    * Dua alur besar dipisah ke hook (Fase 3): memuat partai (`useMuatPartai`)
    * dan menilai langkah manual (`useAnalisisPapan`). Keduanya berbagi ref
@@ -77,6 +81,7 @@ function Game({ wadah }) {
   const muatPartai = useMuatPartai({
     data,
     depth,
+    pekerjaanLaporan,
     analyzeController,
     boardSounds,
     siapkan,
@@ -98,6 +103,8 @@ function Game({ wadah }) {
     setMoveNumber,
     setWhite,
     setPlaying,
+    setForward,
+    setReturnedToNormalGame,
   });
   const { analyzeMove, analyzingMoveRef } = useAnalisisPapan({
     controllerRef: muatPartai.controllerRef,

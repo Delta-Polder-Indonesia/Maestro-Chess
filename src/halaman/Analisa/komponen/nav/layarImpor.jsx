@@ -14,6 +14,8 @@ import ChessComLogo from "../svg/ChessComLogo.jsx";
 import LichessLogo from "../svg/LichessLogo.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { imporPgnKeBasisData } from "../../basisData.js";
+import { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan, simpanDrafImpor } from "../../pekerjaan.js";
+import { usePekerjaan } from "../../usePekerjaan.js";
 import { BATAS_IMPOR, KODE_GALAT, ambilPgn, galatImpor, validasiFen, validasiPgn } from "./validasiImpor.js";
 
 const TIPE = [
@@ -73,14 +75,74 @@ function GambarIkon({ ikon }) {
 
 export default function LayarImpor({ onTutup, onImpor }) {
   const { t } = useI18n();
-  const [tipe, setTipe] = useState("pgn");
-  const [pgn, setPgn] = useState("");
-  const [tautan, setTautan] = useState("");
-  const [fen, setFen] = useState("");
+  const penyimpanan = usePekerjaan();
+  const [draf, setDraf] = useState({ tipe: "pgn", pgn: "", tautan: "", fen: "" });
+  const drafRef = useRef(draf);
+  const drafIdRef = useRef(null);
+  const [siapDraf, setSiapDraf] = useState(false);
+  const { tipe, pgn, tautan, fen } = draf;
   const [galat, setGalat] = useState(null);
+  const [galatDraf, setGalatDraf] = useState(false);
   const [memuat, setMemuat] = useState(false);
   const controllerRef = useRef(null);
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    let hidup = true;
+    async function pulihkanDraf() {
+      await pekerjaan.init();
+      if (!hidup) return;
+      const keadaan = pekerjaan.snapshot();
+      // Draf awal versi sebelumnya tetap bisa dibuka. Jika pengguna memilih
+      // draf baru yang masih kosong, penunjuknya sengaja tidak jatuh kembali
+      // ke draf lama hanya karena belum ada isinya.
+      let id = keadaan.terakhirDrafId ?? keadaan.daftar.find((item) => item.jenis === "draf")?.id ?? ID_DRAF_IMPOR;
+      const record = await pekerjaan.ambil(id);
+      if (!hidup) return;
+      const sah = record?.jenis === "draf" && record.isi && typeof record.isi === "object" && !Array.isArray(record.isi);
+      const dikenal = keadaan.daftar.some((item) => item.jenis === "draf" && item.id === id);
+      const gagalBaca = record ? !sah : dikenal || !pekerjaan.snapshot().tersedia;
+      if (gagalBaca) {
+        // Jika isi tidak bisa dibaca, jangan menulis ke id lama: storage
+        // mungkin pulih setelah pengguna mulai mengetik di formulir kosong.
+        id = buatIdDrafImpor();
+        setGalatDraf(Boolean(dikenal || record));
+      }
+      pekerjaan.tetapkanDrafAktif(id);
+      const isi = sah ? record.isi : null;
+      const dipulihkan = {
+        tipe: ["pgn", "fen", "online"].includes(isi?.tipe) ? isi.tipe : "pgn",
+        pgn: String(isi?.pgn ?? ""),
+        tautan: String(isi?.tautan ?? ""),
+        fen: String(isi?.fen ?? ""),
+      };
+      drafIdRef.current = id;
+      drafRef.current = dipulihkan;
+      setDraf(dipulihkan);
+      setSiapDraf(true);
+    }
+    pulihkanDraf();
+    return () => { hidup = false; };
+  }, []);
+
+  function ubahDraf(perubahan) {
+    const berikut = { ...drafRef.current, ...perubahan };
+    drafRef.current = berikut;
+    setDraf(berikut);
+    // Langsung antrekan tulisan pada input: unmount sesudah mengetik tidak
+    // membuang perubahan yang masih menunggu efek React.
+    simpanDrafImpor(berikut, drafIdRef.current);
+  }
+
+  function mulaiDrafBaru() {
+    const kosong = { tipe: "pgn", pgn: "", tautan: "", fen: "" };
+    drafIdRef.current = buatIdDrafImpor();
+    pekerjaan.tetapkanDrafAktif(drafIdRef.current);
+    drafRef.current = kosong;
+    setDraf(kosong);
+    setGalat(null);
+    setGalatDraf(false);
+  }
 
   useEffect(() => () => {
     window.clearTimeout(timerRef.current);
@@ -165,6 +227,7 @@ export default function LayarImpor({ onTutup, onImpor }) {
   }
 
   const kosong =
+    !siapDraf ||
     (tipe === "pgn" && !pgn.trim()) ||
     (tipe === "online" && !tautan.trim()) ||
     (tipe === "fen" && !fen.trim());
@@ -175,6 +238,17 @@ export default function LayarImpor({ onTutup, onImpor }) {
     <PanelLayar
       judul={t("analisa.impor.judul")}
       subjudul={t("analisa.impor.tipe")}
+      headerKanan={(
+        <button
+          type="button"
+          data-uji="impor-draf-baru"
+          onClick={mulaiDrafBaru}
+          disabled={!siapDraf || memuat}
+          className="rounded-borderRoundness border border-border bg-backgroundBoxBox px-3 py-2 text-sm font-medium text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-foreground disabled:cursor-default disabled:opacity-40"
+        >
+          {t("analisa.impor.drafBaru")}
+        </button>
+      )}
       lebarMaks="max-w-[720px]"
     >
       <div className="grid grid-cols-3 gap-2">
@@ -184,10 +258,10 @@ export default function LayarImpor({ onTutup, onImpor }) {
             aktif={tipe === ti.kunci}
             ikon={ti.ikon}
             tanpaLabel={false}
-            disabled={memuat}
+            disabled={memuat || !siapDraf}
             label={ti.kunci === "online" ? t("analisa.impor.online") : ti.kunci.toUpperCase()}
             onClick={() => {
-              setTipe(ti.kunci);
+              ubahDraf({ tipe: ti.kunci });
               setGalat(null);
             }}
           />
@@ -204,7 +278,8 @@ export default function LayarImpor({ onTutup, onImpor }) {
             spellCheck={false}
             rows={8}
             value={pgn}
-            onChange={(e) => setPgn(e.currentTarget.value)}
+            disabled={!siapDraf}
+            onChange={(e) => ubahDraf({ pgn: e.currentTarget.value })}
             data-uji="impor-pgn"
             aria-label="PGN"
             className="w-full resize-y rounded-borderRoundness border border-border bg-backgroundBoxBox px-3 py-2 font-mono text-xs leading-5 text-foreground outline-none transition-colors hover:border-borderHighlighted focus:border-borderHighlighted"
@@ -219,8 +294,8 @@ export default function LayarImpor({ onTutup, onImpor }) {
             id="impor-online"
             type="url"
             value={tautan}
-            disabled={memuat}
-            onChange={(e) => setTautan(e.currentTarget.value)}
+            disabled={memuat || !siapDraf}
+            onChange={(e) => ubahDraf({ tautan: e.currentTarget.value })}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !kosong && !memuat) {
                 e.preventDefault();
@@ -242,7 +317,8 @@ export default function LayarImpor({ onTutup, onImpor }) {
             spellCheck={false}
             rows={2}
             value={fen}
-            onChange={(e) => setFen(e.currentTarget.value)}
+            disabled={!siapDraf}
+            onChange={(e) => ubahDraf({ fen: e.currentTarget.value })}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -256,6 +332,13 @@ export default function LayarImpor({ onTutup, onImpor }) {
         </div>
       )}
 
+      <p className="mt-3 text-xs leading-5 text-foregroundGrey">{t("analisa.impor.drafLokal")}</p>
+      {penyimpanan.siap && penyimpanan.tersedia ? (
+        <p role="status" className="text-xs text-foregroundGrey">{t(penyimpanan.menyimpan ? "analisa.pekerjaan.menyimpan" : "analisa.pekerjaan.tersimpan")}</p>
+      ) : null}
+      {galatDraf ? (
+        <p data-uji="galat-draf" role="alert" className="mt-2 text-xs text-lossRed">{t("analisa.impor.drafRusak")}</p>
+      ) : null}
       {galat ? (
         <p data-uji="galat-impor" role="alert" aria-live="assertive" className="mt-2 text-xs text-lossRed">{galat}</p>
       ) : null}

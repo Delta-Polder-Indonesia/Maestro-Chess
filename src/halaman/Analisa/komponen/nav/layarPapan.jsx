@@ -15,6 +15,7 @@
  * dikerjakan diberi lencana "Segera hadir" dan tombolnya dinonaktifkan.
  */
 import PanelLayar from "./PanelLayar.jsx";
+import DaftarPekerjaan from "./daftarPekerjaan.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 
 /* ── Ikon kartu (monokrom, ikut warna teks kartu) ───────────────────── */
@@ -105,7 +106,7 @@ function Ikon({ nama }) {
 
 /* ── Kartu fitur ────────────────────────────────────────────────────── */
 
-function Kartu({ kunci, ikon, judul, deskripsi, labelTombol, segera, onClick, t }) {
+function Kartu({ kunci, ikon, judul, deskripsi, labelTombol, segera, onClick, onBaru, t }) {
   return (
     <div
       data-uji={`papan-kartu-${kunci}`}
@@ -126,26 +127,38 @@ function Kartu({ kunci, ikon, judul, deskripsi, labelTombol, segera, onClick, t 
         <p className="mt-1 text-sm leading-5 text-foregroundGrey">{deskripsi}</p>
       </div>
 
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={segera}
-        data-uji={`papan-tombol-${kunci}`}
-        className={`mt-4 h-[42px] w-full rounded-lg px-4 text-sm font-medium transition-colors ${
-          segera
-            ? "cursor-not-allowed bg-backgroundBoxBoxHover text-foregroundGrey opacity-60"
-            : "cursor-pointer bg-backgroundBoxBoxHighlighted/15 text-backgroundBoxBoxHighlighted hover:bg-backgroundBoxBoxHighlighted/25"
-        }`}
-      >
-        {labelTombol}
-      </button>
+      <div className="mt-4 flex w-full flex-col gap-2">
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={segera}
+          data-uji={`papan-tombol-${kunci}`}
+          className={`h-[42px] w-full rounded-lg px-4 text-sm font-medium transition-colors ${
+            segera
+              ? "cursor-not-allowed bg-backgroundBoxBoxHover text-foregroundGrey opacity-60"
+              : "cursor-pointer bg-backgroundBoxBoxHighlighted/15 text-backgroundBoxBoxHighlighted hover:bg-backgroundBoxBoxHighlighted/25"
+          }`}
+        >
+          {labelTombol}
+        </button>
+        {onBaru ? (
+          <button
+            type="button"
+            data-uji="papan-tombol-baru"
+            onClick={onBaru}
+            className="h-[38px] w-full rounded-lg border border-border px-3 text-sm font-medium text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-foreground"
+          >
+            {t("analisa.pekerjaan.mulaiBaru")}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
 
 /* ── Layar ──────────────────────────────────────────────────────────── */
 
-export default function LayarPapan({ onReport, onImpor }) {
+export default function LayarPapan({ onReport, onBaru, onImpor, onBukaPekerjaan, onUlangPekerjaan }) {
   const { t } = useI18n();
 
   const kartu = [
@@ -172,6 +185,7 @@ export default function LayarPapan({ onReport, onImpor }) {
       deskripsi: t("analisa.papan.kartu.report.deskripsi"),
       labelTombol: t("analisa.papan.kartu.report.tombol"),
       onClick: onReport,
+      onBaru,
     },
     {
       kunci: "repertoar",
@@ -207,6 +221,7 @@ export default function LayarPapan({ onReport, onImpor }) {
           <Kartu key={k.kunci} t={t} {...k} />
         ))}
       </div>
+      <DaftarPekerjaan onBuka={onBukaPekerjaan} onUlang={onUlangPekerjaan} />
     </PanelLayar>
   );
 }

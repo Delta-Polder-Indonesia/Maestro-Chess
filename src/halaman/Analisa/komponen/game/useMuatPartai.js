@@ -30,11 +30,13 @@ import { hashPgn } from "../../../../lib/pgnRingan.js";
 import { ringkasAnalisis } from "../../mesin/ringkasanAnalisis.js";
 import { catatAnalisis } from "../../mesin/analisisTersimpan.js";
 import { adaPgnTitipan } from "../../../../lib/titipanAnalisa.js";
+import { snapshotLaporanAman } from "../../pekerjaan.js";
 import { gameStartSound } from "./gameStartSound.js";
 
 export function useMuatPartai({
   data,
   depth,
+  pekerjaanLaporan,
   analyzeController,
   boardSounds,
   siapkan,
@@ -56,6 +58,8 @@ export function useMuatPartai({
   setMoveNumber,
   setWhite,
   setPlaying,
+  setForward,
+  setReturnedToNormalGame,
 }) {
   const openingsRef = useRef(null);
   // Nomor urut muatan partai: muatan yang lebih lama dibatalkan oleh yang
@@ -116,13 +120,35 @@ export function useMuatPartai({
   const cleanArrows = useCallback(() => {
     setArrows({ 0: [] });
   }, [setArrows]);
-  const handlePGN = useCallback(async (pgn, depth2, terkini, signal) => {
+  const terapkanSnapshot = useCallback((snapshot) => {
+    setGame(snapshot.game);
+    setPlayers(snapshot.players);
+    setTime(snapshot.time ?? 0);
+    setResult(snapshot.result ?? "");
+    setMoveNumber(snapshot.moveNumber);
+    setWhite(snapshot.white);
+    setTab(snapshot.tab);
+    setCustomLine(snapshot.customLine);
+    setArrows(snapshot.arrows);
+    setAnimation(false);
+    setForward?.(true);
+    setReturnedToNormalGame?.(null);
+    setPlaying(false);
+    setAnalyzingMove(false);
+    setProgress(0);
+    setLangkahSementara([]);
+    setPageState(snapshot.pageState);
+  }, [setGame, setPlayers, setTime, setResult, setMoveNumber, setWhite, setTab, setCustomLine, setArrows, setAnimation, setForward, setReturnedToNormalGame, setPlaying, setAnalyzingMove, setProgress, setLangkahSementara, setPageState]);
+
+  const handlePGN = useCallback(async (pgn, depth2, terkini, signal, muatan, pertahankan) => {
     setPageState("loading");
-    setTab("summary");
+    setPlaying(false);
+    if (!pertahankan) setTab("summary");
     setProgress(0);
     setLangkahSementara([]);
     if (!pgn?.trim()) {
       pushPageError(setErrors, t("analisa.galat.pgnJudul"), t("analisa.galat.pgnIsi"));
+      pekerjaanLaporan?.gagal(muatan.pekerjaanId);
       setPageState("default");
       return;
     }
@@ -139,6 +165,7 @@ export function useMuatPartai({
     try {
       const partai = bacaPartaiPGN(pgn);
       if (signal.aborted || !terkini()) return;
+      pekerjaanLaporan?.metadata(muatan.pekerjaanId, partai.metadata);
       // Berkas multi-partai: hanya partai pertama yang dianalisis — katakan,
       // jangan diam (pengguna menempel 100 partai lalu heran sisanya hilang).
       if ((partai.jumlahPartai ?? 1) > 1) {
@@ -191,15 +218,19 @@ export function useMuatPartai({
       catatAnalisis(hashPgn(pgn), ringkasAnalisis(moves));
       setResult(metadata.result);
       setAnimation(false);
-      setArrows(createArrowsObject(moves.length));
-      setCustomLine({ moveNumber: -1, moves: [], arrows: {} });
+      if (!pertahankan) {
+        setArrows(createArrowsObject(moves.length));
+        setCustomLine({ moveNumber: -1, moves: [], arrows: {} });
+      }
       setAnalyzingMove(false);
       if (boardSoundsRef.current) setTimeout(() => {
         if (boardSoundsRef.current) gameStartSound.play();
       }, 100);
       setPageState("analyze");
+      pekerjaanLaporan?.selesai({ id: muatan.pekerjaanId, metadata, moves, pageState: "analyze", depth: depth2, pertahankan });
     } catch (e) {
       if (!terkini()) return;
+      pekerjaanLaporan?.gagal(muatan.pekerjaanId);
       switch (e?.kunci ?? e?.message) {
         case "pgn":
           pushPageError(setErrors, t("analisa.galat.pgnJudul"), t("analisa.galat.pgnIsi"));
@@ -219,11 +250,11 @@ export function useMuatPartai({
       if (terkini()) {
         setProgress(0);
         setLangkahSementara([]);
-        setMoveNumber(0);
+        if (!pertahankan) setMoveNumber(0);
       }
     }
-  }, [t, siapkan, setErrors, setAnalyzeController, setPageState, setTab, setProgress, setLangkahSementara, setTime, setPlayers, setGame, setResult, setAnimation, setArrows, setCustomLine, setAnalyzingMove, setMoveNumber]);
-  const handleFEN = useCallback(async (fen, terkini, sinyal) => {
+  }, [t, siapkan, pekerjaanLaporan, setErrors, setAnalyzeController, setPageState, setPlaying, setTab, setProgress, setLangkahSementara, setTime, setPlayers, setGame, setResult, setAnimation, setArrows, setCustomLine, setAnalyzingMove, setMoveNumber]);
+  const handleFEN = useCallback(async (fen, terkini, sinyal, muatan, pertahankan) => {
     /*
      * Halaman dibuka dengan PGN titipan dari teka-teki (lihat
      * `src/lib/titipanAnalisa.js`): keadaan awal `data` masih `{fen, ""}`, jadi
@@ -238,16 +269,19 @@ export function useMuatPartai({
       move3 = await new Promise((resolve, reject) => {
         (async () => {
           setPageState("loading");
-          setTime(0);
-          setPlayers([{ name: "", elo: "?" }, { name: "", elo: "?" }]);
-          setWhite(true);
           setPlaying(false);
-          setMoveNumber(0);
-          setResult("");
           setProgress(0);
-          setCustomLine({ moveNumber: -1, moves: [], arrows: {} });
           setAnalyzingMove(false);
-          cleanArrows();
+          if (!pertahankan) {
+            setTime(0);
+            setPlayers([{ name: "", elo: "?" }, { name: "", elo: "?" }]);
+            setWhite(true);
+            setMoveNumber(0);
+            setResult("");
+            setTab("moves");
+            setCustomLine({ moveNumber: -1, moves: [], arrows: {} });
+            cleanArrows();
+          }
           if (!fen?.trim()) {
             // Tanpa FEN: papan bebas dari posisi awal, saran engine langsung
             // ditampilkan setelah engine siap (lihat efek di bawah).
@@ -262,8 +296,10 @@ export function useMuatPartai({
               previousStaticEvals: [["cp", "-30"]],
               clock: { white: null, black: null },
             };
-            setGame([move5]);
+            const game = [move5];
+            setGame(game);
             setPageState("default");
+            pekerjaanLaporan?.siapKosong(muatan.pekerjaanId, game);
             return null;
           }
           const mesin = await siapkan().catch(() => null);
@@ -289,6 +325,7 @@ export function useMuatPartai({
     } catch (e) {
       // Muatan lama yang dibatalkan tidak boleh menimpa muatan baru.
       if (!terkini()) return;
+      pekerjaanLaporan?.gagal(muatan.pekerjaanId);
       switch (e?.kunci ?? e?.message) {
         case "fen":
           pushPageError(setErrors, t("analisa.galat.fenJudul"), t("analisa.galat.fenIsi"));
@@ -306,45 +343,101 @@ export function useMuatPartai({
       return;
     }
     if (!move3) {
-      if (terkini()) setPageState("default");
+      if (terkini()) {
+        if (fen?.trim()) pekerjaanLaporan?.gagal(muatan.pekerjaanId);
+        setPageState("default");
+      }
       return;
     }
     if (!terkini()) return;
-    setGame([{ ...move3, clock: { white: null, black: null } }]);
+    const moves = [{ ...move3, clock: { white: null, black: null } }];
+    setGame(moves);
     setPageState("analyzeCustom");
-  }, [t, depth, siapkan, cleanArrows, setErrors, setAnalyzeController, setPageState, setTime, setPlayers, setWhite, setPlaying, setMoveNumber, setResult, setProgress, setCustomLine, setAnalyzingMove, setGame]);
+    pekerjaanLaporan?.selesai({
+      id: muatan.pekerjaanId, metadata: { players: [{ name: "", elo: "?" }, { name: "", elo: "?" }], time: 0, result: "" },
+      moves, pageState: "analyzeCustom", depth, pertahankan,
+    });
+  }, [t, depth, siapkan, cleanArrows, pekerjaanLaporan, setErrors, setAnalyzeController, setPageState, setTime, setPlayers, setWhite, setPlaying, setMoveNumber, setResult, setTab, setProgress, setCustomLine, setAnalyzingMove, setGame]);
 
-  // Callback identities also change when translations or preferences change.
-  // Only a new game or depth should restart the expensive engine analysis.
-  const penanganRef = useRef({ handlePGN, handleFEN });
-  penanganRef.current = { handlePGN, handleFEN };
+  // Bahasa/suara tidak boleh memulai ulang analisis. Snapshot yang dipulihkan
+  // adalah satu-satunya pengecualian saat data berganti: pasang hasilnya
+  // langsung tanpa memanggil engine. Perubahan depth berikutnya tetap dianalisis.
+  const penanganRef = useRef(null);
+  penanganRef.current = { handlePGN, handleFEN, terapkanSnapshot, pekerjaanLaporan, t };
+  const terakhirMuat = useRef(null);
   useEffect(() => {
+    const sebelumnya = terakhirMuat.current;
+    if (sebelumnya?.data === data && sebelumnya.depth === depth) return;
+    const dataBaru = sebelumnya?.data !== data;
+    terakhirMuat.current = { data, depth };
     const { format, string } = data;
-    /*
-     * Muatan baru membatalkan analisis yang masih berjalan — dua parsePGN
-     * sekaligus memakai signal yang sama saling menimpa hasil. Muatan baru
-     * memakai controller/signal miliknya sendiri; `terkini` mencegah muatan
-     * lama yang dibatalkan ikut menyetor state (langkah, progres, halaman).
-     */
+    // Mengganti depth pada papan bebas tidak boleh menghapus variasi manual.
+    if (!dataBaru && format === "fen" && !string?.trim()) return;
+
+    const penangan = penanganRef.current;
+    const snapshotAwal = dataBaru && data.rekamAwal?.snapshot
+      ? snapshotLaporanAman(data.rekamAwal.snapshot) : null;
+    const pertahankan = Boolean(snapshotAwal || (!dataBaru && penangan.pekerjaanLaporan?.punyaSnapshot(data.pekerjaanId)));
+
+    // Naikkan urutan SEBELUM abort: hasil proses lama tidak boleh menimpa baru.
     muatSeqRef.current += 1;
     const nomor = muatSeqRef.current;
     const terkini = () => muatSeqRef.current === nomor;
-    // Muatan baru = kanvas bersih: galat/peringatan muatan lama (termasuk
-    // "multi-partai") tidak boleh menghantui muatan ini.
     setErrors([]);
     controllerRef.current.abort();
     const baru = new AbortController();
     controllerRef.current = baru;
     setAnalyzeController(baru);
+
+    if (dataBaru && data.pemulihan) {
+      const record = data.pemulihan;
+      const snapshot = snapshotLaporanAman(record.snapshot);
+      if (!snapshot) {
+        pushPageError(setErrors, penangan.t("analisa.pekerjaan.rusakJudul"), penangan.t("analisa.pekerjaan.rusakIsi"));
+        return;
+      }
+      penangan.pekerjaanLaporan?.pulih(data, record, snapshot);
+      penangan.terapkanSnapshot(snapshot);
+      if (format === "pgn") catatAnalisis(hashPgn(string), ringkasAnalisis(snapshot.game));
+      if (!["selesai", "baru"].includes(record.status)) {
+        pushPageWarning(setErrors, penangan.t("analisa.pekerjaan.terputusJudul"), penangan.t("analisa.pekerjaan.hasilSebelumnya"));
+      }
+      if (snapshot.customLine.moves.some((langkah) => !langkah.previousStaticEvals || ["dibatalkan", "gagal"].includes(langkah.statusEvaluasi))) {
+        pushPageWarning(setErrors, penangan.t("analisa.pekerjaan.variasiJudul"), penangan.t("analisa.pekerjaan.variasiIsi"));
+      }
+      return;
+    }
+
+    // Analisis ulang hasil sebelumnya dimulai dari snapshot yang dipilih,
+    // bukan dari papan laporan lain yang kebetulan masih terlihat.
+    if (snapshotAwal) penangan.terapkanSnapshot(snapshotAwal);
+    penangan.pekerjaanLaporan?.mulai({ data, depth });
+    baru.signal.addEventListener("abort", () => {
+      if (terkini()) penangan.pekerjaanLaporan?.gagal(data.pekerjaanId);
+    }, { once: true });
     switch (format) {
       case "pgn":
-        penanganRef.current.handlePGN(string, depth, terkini, baru.signal);
+        penangan.handlePGN(string, depth, terkini, baru.signal, data, pertahankan);
         break;
       case "fen":
-        penanganRef.current.handleFEN(string, terkini, baru.signal);
+        penangan.handleFEN(string, terkini, baru.signal, data, pertahankan);
         break;
     }
   }, [data, depth, setAnalyzeController, setErrors]);
+
+  // Unmount sungguhan membatalkan pekerjaan, tetapi siklus cleanup/pasang
+  // ulang StrictMode pada mount tidak boleh membatalkan analisis yang sama.
+  const timerTutup = useRef(null);
+  useEffect(() => {
+    clearTimeout(timerTutup.current);
+    return () => {
+      timerTutup.current = setTimeout(() => {
+        muatSeqRef.current += 1;
+        controllerRef.current.abort();
+      }, 0);
+      timerTutup.current?.unref?.();
+    };
+  }, []);
 
   return { controllerRef, muatSeqRef, openingsRef };
 }
