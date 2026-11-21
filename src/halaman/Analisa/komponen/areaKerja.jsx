@@ -80,6 +80,11 @@ const LayarDeteksiEngine = lazy(() => import("./nav/layarDeteksiEngine.jsx"));
 const LayarWawasan = lazy(() => import("./nav/layarWawasan.jsx"));
 const LayarPengaturan = lazy(() => import("./nav/layarPengaturan.jsx"));
 
+/** Bilah tab hanya ditampilkan di beranda Papan dan papan laporan. */
+function tampilkanBilahTab(tampilan) {
+  return tampilan === TAMPILAN_ANALISA.PAPAN || tampilan === TAMPILAN_ANALISA.BERMAIN;
+}
+
 /**
  * Memuat partai yang dipilih dari layar Basis Data / Impor: PGN-nya
  * dilempar ke `data` (itu yang memicu Game menganalisis) lalu layar kembali
@@ -191,10 +196,18 @@ function LapisanLayar({
   const tabAktifRef = useRef(aktifId);
   const daftarTabRef = useRef(daftarTab);
   const dataRef = useRef(data);
-  const tabTerpasangRef = useRef(new Set());
-  // Panel fitur yang pernah dikunjungi tetap terpasang saat tab lain dibuka,
-  // agar filter dan inputnya tidak hilang. Papan tetap hanya satu instance.
-  tabTerpasangRef.current.add(aktifId);
+  const kembaliPapanRef = useRef(null);
+  const peralihanTabRef = useRef(null);
+  const panelTerpasangRef = useRef(new Map());
+  // Untuk kembali ke bilah tab dari fitur, pengguna lebih dulu membuka Papan.
+  // Pertahankan panel fitur yang pernah dikunjungi per tab agar input dan
+  // filternya tidak hilang pada perjalanan itu. Papan tetap satu instance;
+  // impor dibaca ulang dari draf supaya dua tab tidak saling menimpa.
+  useEffect(() => {
+    if (perluPulih || [TAMPILAN_ANALISA.PAPAN, TAMPILAN_ANALISA.BERMAIN, TAMPILAN_ANALISA.IMPOR].includes(tampilan)) return;
+    if (!panelTerpasangRef.current.has(aktifId)) panelTerpasangRef.current.set(aktifId, new Set());
+    panelTerpasangRef.current.get(aktifId).add(tampilan);
+  }, [aktifId, tampilan, perluPulih]);
   tampilanRef.current = tampilan;
   tabAktifRef.current = aktifId;
   daftarTabRef.current = daftarTab;
@@ -203,6 +216,15 @@ function LapisanLayar({
   // tetap dikaitkan dengan tab agar bisa dibuka lagi setelah berpindah tab.
   useEffect(() => {
     if (perluPulih) return;
+    const peralihan = peralihanTabRef.current;
+    if (peralihan) {
+      // Perubahan tab, layar, dan data dapat ter-render terpisah. Jangan
+      // mencatat papan tab lama sebagai laporan milik tab yang baru dipilih.
+      const tabBelumSiap = peralihan.asalId ? aktifId === peralihan.asalId : aktifId !== peralihan.aktifId;
+      const laporanBelumSiap = peralihan.laporanId && data?.pekerjaanId !== peralihan.laporanId;
+      if (tabBelumSiap || tampilan !== peralihan.tampilan || laporanBelumSiap) return;
+      peralihanTabRef.current = null;
+    }
     const perubahan = { tampilan };
     if (tampilan === TAMPILAN_ANALISA.BERMAIN) perubahan.laporanId = data?.pekerjaanId ?? null;
     catat(aktifId, perubahan);
@@ -275,10 +297,14 @@ function LapisanLayar({
   }, [tampilan, aktifId]);
 
   async function jalankan(aksi, nomor) {
-    const masihDipilih = () => nomor === permintaanRef.current && tampilanRef.current === aksi.asalTampilan && tabAktifRef.current === aksi.asalTabId;
+    const masihDipilih = () => nomor === permintaanRef.current && tampilanRef.current === aksi.asalTampilan && tabAktifRef.current === aksi.asalTabId &&
+      (!aksi.tabTujuan || daftarTabRef.current.some((tab) => tab.id === aksi.tabTujuan));
+    const tandaiTujuan = (layar, laporanId = null) => {
+      if (aksi.tabTujuan) peralihanTabRef.current = { aktifId: aksi.tabTujuan, tampilan: layar, laporanId };
+    };
     const pilihTujuan = () => {
       if (!aksi.tabTujuan) return;
-      if (aksi.hapusId) tabTerpasangRef.current.delete(aksi.hapusId);
+      if (aksi.hapusId) panelTerpasangRef.current.delete(aksi.hapusId);
       aktifkan(aksi.tabTujuan, aksi.hapusId);
     };
     if (!masihDipilih()) return;
@@ -289,6 +315,7 @@ function LapisanLayar({
       if (keadaan.aktif.digunakan) {
         const item = keadaan.daftar.find((entry) => entry.id === keadaan.aktif.id);
         if (!item || ["selesai", "baru"].includes(item.status) || keadaan.aktif.berjalan) {
+          tandaiTujuan(TAMPILAN_ANALISA.BERMAIN, dataRef.current?.pekerjaanId);
           pilihTujuan();
           kePapan();
           return;
@@ -301,12 +328,14 @@ function LapisanLayar({
       if (item) await jalankan({ ...aksi, jenis: "buka", item }, nomor);
       else {
         pekerjaan.tetapkanAktif({ id: data.pekerjaanId, digunakan: true, berjalan: false });
+        tandaiTujuan(TAMPILAN_ANALISA.BERMAIN, dataRef.current?.pekerjaanId);
         pilihTujuan();
         kePapan();
       }
       return;
     }
     if (aksi.jenis === "kosong") {
+      tandaiTujuan(TAMPILAN_ANALISA.BERMAIN, aksi.id);
       setData({ format: "fen", string: "", pekerjaanId: aksi.id });
       pilihTujuan();
       kePapan();
@@ -320,13 +349,15 @@ function LapisanLayar({
     if (aksi.item?.jenis === "draf") {
       const id = await siapkanImpor(aksi.tabTujuan ?? aksi.asalTabId, aksi.item.id, masihDipilih);
       if (!id || !masihDipilih()) return;
+      tandaiTujuan(TAMPILAN_ANALISA.IMPOR);
       pilihTujuan();
       setTampilan(TAMPILAN_ANALISA.IMPOR);
       return;
     }
     const keadaan = pekerjaan.snapshot();
-    if (!aksi.ulang && aksi.item?.id === keadaan.aktif.id && keadaan.aktif.digunakan &&
+    if (!aksi.ulang && aksi.item?.id === keadaan.aktif.id && aksi.item.id === dataRef.current?.pekerjaanId && keadaan.aktif.digunakan &&
       (keadaan.aktif.berjalan || ["selesai", "baru"].includes(aksi.item.status))) {
+      tandaiTujuan(TAMPILAN_ANALISA.BERMAIN, aksi.item.id);
       pilihTujuan();
       kePapan();
       return;
@@ -346,6 +377,7 @@ function LapisanLayar({
       pushPageError(setErrors, t("analisa.pekerjaan.rusakJudul"), t("analisa.pekerjaan.rusakIsi"));
       return;
     }
+    tandaiTujuan(TAMPILAN_ANALISA.BERMAIN, record.id);
     setData({
       ...record.sumber,
       pekerjaanId: record.id,
@@ -360,7 +392,7 @@ function LapisanLayar({
     const tindakan = { ...aksi, asalTampilan: tampilanRef.current, asalTabId: tabAktifRef.current };
     const aktif = pekerjaan.snapshot().aktif;
     const berganti = aksi.jenis === "muat" ||
-      (aksi.jenis === "buka" && aksi.item?.jenis === "laporan" && (aksi.ulang || aksi.item.id !== aktif.id)) ||
+      (aksi.jenis === "buka" && aksi.item?.jenis === "laporan" && (aksi.ulang || aksi.item.id !== aktif.id || aksi.item.id !== dataRef.current?.pekerjaanId)) ||
       (aksi.jenis === "kosong" && aksi.id !== aktif.id);
     if (aktif.berjalan && berganti) {
       setDialog({ jenis: "hentikan", aksi: tindakan });
@@ -385,6 +417,44 @@ function LapisanLayar({
     }
   }
 
+  async function mintaLaporanTab(id, nomor, asalTab, asalTampilan, tujuan = {}) {
+    const masihDipilih = () => nomor === permintaanRef.current && tabAktifRef.current === asalTab && tampilanRef.current === asalTampilan;
+    const keadaan = pekerjaan.snapshot();
+    let item = keadaan.daftar.find((entry) => entry.jenis === "laporan" && entry.id === id);
+    if (!item) {
+      // Metadata yang hilang bukan bukti bahwa isi juga kosong. Baca dulu
+      // agar kegagalan storage atau record yatim tidak tertimpa papan baru.
+      item = await pekerjaan.ambil(id);
+      if (!masihDipilih()) return;
+      if (!item && !pekerjaan.snapshot().tersedia) {
+        pushPageError(setErrors, t("analisa.pekerjaan.rusakJudul"), t("analisa.pekerjaan.rusakIsi"));
+        return;
+      }
+    }
+    if (item && item.jenis !== "laporan") {
+      pushPageError(setErrors, t("analisa.pekerjaan.rusakJudul"), t("analisa.pekerjaan.rusakIsi"));
+      return;
+    }
+    minta(item ? { jenis: "buka", item, ...tujuan } : { jenis: "kosong", id, ...tujuan });
+  }
+
+  async function bukaLaporanAktif() {
+    const nomor = ++permintaanRef.current;
+    const asalTab = tabAktifRef.current;
+    const asalTampilan = tampilanRef.current;
+    await pekerjaan.init();
+    if (nomor !== permintaanRef.current || tabAktifRef.current !== asalTab || tampilanRef.current !== asalTampilan) return;
+    const id = daftarTabRef.current.find((tab) => tab.id === asalTab)?.laporanId;
+    if (!id) {
+      minta({ jenis: "aktif" });
+    } else if (id === dataRef.current?.pekerjaanId) {
+      // Papan yang masih terpasang sudah milik tab ini; jangan muat ulang.
+      kePapan();
+    } else {
+      await mintaLaporanTab(id, nomor, asalTab, asalTampilan);
+    }
+  }
+
   async function pilihTab(id, hapusId = null) {
     const nomor = ++permintaanRef.current;
     const asalTab = tabAktifRef.current;
@@ -394,29 +464,12 @@ function LapisanLayar({
     const target = daftarTabRef.current.find((tab) => tab.id === id);
     if (!target || target.id === asalTab) return;
     if (target.tampilan === TAMPILAN_ANALISA.BERMAIN && target.laporanId && target.laporanId !== dataRef.current?.pekerjaanId) {
-      const keadaan = pekerjaan.snapshot();
-      let item = keadaan.daftar.find((entry) => entry.jenis === "laporan" && entry.id === target.laporanId);
-      if (!item) {
-        // Metadata yang hilang bukan bukti bahwa isi juga kosong. Baca dulu
-        // agar kegagalan storage atau record yatim tidak tertimpa papan baru.
-        item = await pekerjaan.ambil(target.laporanId);
-        if (nomor !== permintaanRef.current || tabAktifRef.current !== asalTab || tampilanRef.current !== asalTampilan) return;
-        if (!item && !pekerjaan.snapshot().tersedia) {
-          pushPageError(setErrors, t("analisa.pekerjaan.rusakJudul"), t("analisa.pekerjaan.rusakIsi"));
-          return;
-        }
-      }
-      if (item && item.jenis !== "laporan") {
-        pushPageError(setErrors, t("analisa.pekerjaan.rusakJudul"), t("analisa.pekerjaan.rusakIsi"));
-        return;
-      }
-      minta(item
-        ? { jenis: "buka", item, tabTujuan: id, hapusId }
-        : { jenis: "kosong", id: target.laporanId, tabTujuan: id, hapusId });
+      await mintaLaporanTab(target.laporanId, nomor, asalTab, asalTampilan, { tabTujuan: id, hapusId });
     } else if (target.tampilan === TAMPILAN_ANALISA.IMPOR) {
       minta({ jenis: "buka", item: { jenis: "draf", id: target.drafId }, tabTujuan: id, hapusId });
     } else {
-      if (hapusId) tabTerpasangRef.current.delete(hapusId);
+      if (hapusId) panelTerpasangRef.current.delete(hapusId);
+      peralihanTabRef.current = { aktifId: id, tampilan: target.tampilan };
       aktifkan(id, hapusId);
       setTampilan(target.tampilan);
     }
@@ -425,7 +478,8 @@ function LapisanLayar({
   function tambahTab(hapusId = null) {
     permintaanRef.current += 1;
     setDialog(null);
-    if (hapusId) tabTerpasangRef.current.delete(hapusId);
+    if (hapusId) panelTerpasangRef.current.delete(hapusId);
+    peralihanTabRef.current = { asalId: tabAktifRef.current, tampilan: TAMPILAN_ANALISA.PAPAN };
     tambah(hapusId);
     setTampilan(TAMPILAN_ANALISA.PAPAN);
   }
@@ -435,7 +489,7 @@ function LapisanLayar({
       // Pembacaan target yang baru ditutup tidak boleh selesai belakangan
       // lalu mengganti papan pada tab yang masih aktif.
       permintaanRef.current += 1;
-      tabTerpasangRef.current.delete(id);
+      panelTerpasangRef.current.delete(id);
       hapusLain(id);
       return;
     }
@@ -447,77 +501,98 @@ function LapisanLayar({
     const tujuan = daftarTabRef.current[indeks + 1] ?? daftarTabRef.current[indeks - 1];
     if (tujuan) pilihTab(tujuan.id, id);
   }
+
+  // Escape dan tombol kembali memakai laporan milik tab ini, bukan laporan
+  // global terakhir yang mungkin sedang ditampilkan oleh tab lain.
+  kembaliPapanRef.current = bukaLaporanAktif;
+  useEffect(() => {
+    if (tampilan === TAMPILAN_ANALISA.BERMAIN || perluPulih) return undefined;
+    const tekan = (e) => {
+      if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector('[role="alertdialog"][data-state="open"]')) {
+        void kembaliPapanRef.current?.();
+      }
+    };
+    document.addEventListener("keydown", tekan);
+    return () => document.removeEventListener("keydown", tekan);
+  }, [tampilan, perluPulih]);
+
   const wadahDialog = typeof document === "undefined" ? undefined : document.querySelector(".analisa-root") ?? undefined;
+  // Saat memulihkan sesi, layar awal masih Papan meski tab tersimpan mungkin
+  // menunjuk fitur. Ikuti tujuan tersimpan agar bilah tidak sempat berkedip.
+  const layarBilah = perluPulih ? daftarTab.find((tab) => tab.id === aktifId)?.tampilan ?? tampilan : tampilan;
+  const tabTerlihat = tampilkanBilahTab(layarBilah);
   return (
     <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col">
-      <TabBar daftar={daftarTab} aktifId={aktifId} sibuk={perluPulih} onPilih={pilihTab} onTutup={tutupTab} onTambah={() => tambahTab()} />
-      <div id="konten-tab-kerja" role="tabpanel" aria-labelledby={`tab-kerja-${aktifId}`} aria-busy={perluPulih || undefined} className="relative flex min-h-0 w-full flex-1 flex-col">
+      {tabTerlihat ? (
+        <TabBar daftar={daftarTab} aktifId={aktifId} sibuk={perluPulih} onPilih={pilihTab} onTutup={tutupTab} onTambah={() => tambahTab()} />
+      ) : null}
+      <div id="konten-tab-kerja" role={tabTerlihat ? "tabpanel" : undefined} aria-labelledby={tabTerlihat ? `tab-kerja-${aktifId}` : undefined} aria-busy={perluPulih || undefined} className="relative flex min-h-0 w-full flex-1 flex-col">
         {children}
         {perluPulih ? (
           <div role="status" className="absolute inset-0 z-[900] grid place-items-center bg-backgroundBoxDarker text-sm text-foregroundGrey">
             {t("analisa.tabKerja.memulihkan")}
           </div>
         ) : null}
-        {daftarTab.map((tab) => {
-          const aktif = tab.id === aktifId;
-          const layar = aktif ? tampilan : tab.tampilan;
-          // Beranda tidak menyimpan formulir; draf impor dibaca ulang agar
-          // dua tab yang menunjuk draf yang sama tidak saling menimpa.
-          if (perluPulih || !tabTerpasangRef.current.has(tab.id) || layar === TAMPILAN_ANALISA.BERMAIN ||
-            (!aktif && [TAMPILAN_ANALISA.PAPAN, TAMPILAN_ANALISA.IMPOR].includes(layar))) return null;
-          const masihAktif = () => tabAktifRef.current === tab.id && tampilanRef.current === layar;
+        {daftarTab.flatMap((tab) => {
+          if (perluPulih) return [];
+          const panel = [...(panelTerpasangRef.current.get(tab.id) ?? [])];
+          if (tab.id === aktifId && tampilan !== TAMPILAN_ANALISA.BERMAIN && !panel.includes(tampilan)) panel.push(tampilan);
           const akunTab = [tab.akun, (akun) => catat(tab.id, { akun })];
-          return (
-            <div
-              key={tab.id}
-              ref={aktif ? lapisanRef : null}
-              tabIndex={aktif ? -1 : undefined}
-              hidden={!aktif}
-              data-uji={`layar-${layar}`}
-              data-layar={layar}
-              className="absolute inset-0 z-[900] min-h-0 overflow-y-auto overflow-x-hidden bg-backgroundBoxDarker"
-            >
-              <PanelAktifContext.Provider value={aktif}>
-                <Suspense fallback={<div className="h-full min-h-0 w-full bg-backgroundBox" />}>
-                  {layar === TAMPILAN_ANALISA.PAPAN ? (
-                    <LayarPapan
-                      onReport={() => minta({ jenis: "aktif" })}
-                      onImpor={keImpor}
-                      onBukaPekerjaan={bukaRiwayat}
-                    />
-                  ) : null}
-                  {layar === TAMPILAN_ANALISA.AKUN ? (
-                    <LayarAkun aktif={aktif} akunTab={akunTab} onAkunDihapus={hapusAkunTerpilih} onTutup={() => { if (masihAktif()) kePapan(); }} />
-                  ) : null}
-                  {layar === TAMPILAN_ANALISA.PENGATURAN ? <LayarPengaturan aktif={aktif} /> : null}
-                  {layar === TAMPILAN_ANALISA.DETEKSI_ENGINE ? (
-                    <LayarDeteksiEngine aktif={aktif} akunTab={akunTab} onBukaAkun={() => { if (masihAktif()) keAkun(); }} />
-                  ) : null}
-                  {layar === TAMPILAN_ANALISA.WAWASAN ? <LayarWawasan aktif={aktif} akunTab={akunTab} /> : null}
-                  {layar === TAMPILAN_ANALISA.BASIS_DATA ? (
-                    <LayarDatabase
-                      aktif={aktif}
-                      onTutup={() => { if (masihAktif()) kePapan(); }}
-                      onBukaAkun={() => { if (masihAktif()) keAkun(); }}
-                      onAnalisa={(partai) => {
-                        if (masihAktif()) minta({ jenis: "muat", data: partai });
-                        return false;
-                      }}
-                    />
-                  ) : null}
-                  {layar === TAMPILAN_ANALISA.IMPOR ? (
-                    <LayarImpor
-                      onTutup={kePapan}
-                      onImpor={muatPartai}
-                      onSebelumImpor={(lanjut) => { if (masihAktif()) minta({ jenis: "muat", lanjut }); }}
-                      drafId={tab.drafId}
-                      onDrafId={(id) => catat(tab.id, { drafId: id })}
-                    />
-                  ) : null}
-                </Suspense>
-              </PanelAktifContext.Provider>
-            </div>
-          );
+          return panel.map((layar) => {
+            const aktif = tab.id === aktifId && tampilan === layar;
+            const masihAktif = () => tabAktifRef.current === tab.id && tampilanRef.current === layar;
+            return (
+              <div
+                key={`${tab.id}:${layar}`}
+                ref={aktif ? lapisanRef : null}
+                tabIndex={aktif ? -1 : undefined}
+                hidden={!aktif}
+                data-uji={`layar-${layar}`}
+                data-layar={layar}
+                className="absolute inset-0 z-[900] min-h-0 overflow-y-auto overflow-x-hidden bg-backgroundBoxDarker"
+              >
+                <PanelAktifContext.Provider value={aktif}>
+                  <Suspense fallback={<div className="h-full min-h-0 w-full bg-backgroundBox" />}>
+                    {layar === TAMPILAN_ANALISA.PAPAN ? (
+                      <LayarPapan
+                        onReport={() => { void bukaLaporanAktif(); }}
+                        onImpor={keImpor}
+                        onBukaPekerjaan={bukaRiwayat}
+                      />
+                    ) : null}
+                    {layar === TAMPILAN_ANALISA.AKUN ? (
+                      <LayarAkun aktif={aktif} akunTab={akunTab} onAkunDihapus={hapusAkunTerpilih} onTutup={() => { if (masihAktif()) void bukaLaporanAktif(); }} />
+                    ) : null}
+                    {layar === TAMPILAN_ANALISA.PENGATURAN ? <LayarPengaturan aktif={aktif} /> : null}
+                    {layar === TAMPILAN_ANALISA.DETEKSI_ENGINE ? (
+                      <LayarDeteksiEngine aktif={aktif} akunTab={akunTab} onBukaAkun={() => { if (masihAktif()) keAkun(); }} />
+                    ) : null}
+                    {layar === TAMPILAN_ANALISA.WAWASAN ? <LayarWawasan aktif={aktif} akunTab={akunTab} /> : null}
+                    {layar === TAMPILAN_ANALISA.BASIS_DATA ? (
+                      <LayarDatabase
+                        aktif={aktif}
+                        onTutup={() => { if (masihAktif()) void bukaLaporanAktif(); }}
+                        onBukaAkun={() => { if (masihAktif()) keAkun(); }}
+                        onAnalisa={(partai) => {
+                          if (masihAktif()) minta({ jenis: "muat", data: partai });
+                          return false;
+                        }}
+                      />
+                    ) : null}
+                    {layar === TAMPILAN_ANALISA.IMPOR ? (
+                      <LayarImpor
+                        onTutup={() => { if (masihAktif()) void bukaLaporanAktif(); }}
+                        onImpor={muatPartai}
+                        onSebelumImpor={(lanjut) => { if (masihAktif()) minta({ jenis: "muat", lanjut }); }}
+                        drafId={tab.drafId}
+                        onDrafId={(id) => catat(tab.id, { drafId: id })}
+                      />
+                    ) : null}
+                  </Suspense>
+                </PanelAktifContext.Provider>
+              </div>
+            );
+          });
         })}
         <AlertDialog open={Boolean(dialog)} onOpenChange={(terbuka) => { if (!terbuka) setDialog(null); }}>
           <AlertDialogContent container={wadahDialog} className="border-[#5d5d5d] bg-[#1e1d1c] text-[#dedede] shadow-2xl">
@@ -589,21 +664,20 @@ export default function AreaKerja() {
       awalRef.current = false;
       return;
     }
-    // Saat memilih tab, biarkan fokus di bilah agar tombol panah tetap bisa
-    // dipakai. Navigasi fitur di dalam satu tab tetap memfokuskan layarnya.
-    if (!papanAktif && !bergantiTab) lapisanRef.current?.focus({ preventScroll: true });
+    // Saat memilih tab Papan, fokus tetap di bilah untuk navigasi panah.
+    // Tab yang membuka fitur menyembunyikan bilah, jadi fokus perlu pindah
+    // ke layar fitur meskipun perpindahannya berasal dari pemilihan tab.
+    if (!papanAktif && (!bergantiTab || !tampilkanBilahTab(tampilan))) {
+      lapisanRef.current?.focus({ preventScroll: true });
+    } else if (papanAktif && !bergantiTab) {
+      // Kembali dari fitur (mis. Escape) menyembunyikan elemen yang fokus.
+      // Kembalikan fokus ke tab hanya bila tidak ada kontrol lain yang aktif.
+      const fokus = document.activeElement;
+      if (!fokus || fokus === document.body || fokus.closest?.("[data-layar][hidden]")) {
+        document.getElementById?.(`tab-kerja-${aktifId}`)?.focus({ preventScroll: true });
+      }
+    }
   }, [tampilan, papanAktif, aktifId]);
-
-  // Escape menutup lapisan kembali ke papan (pintasan papan sendiri sudah
-  // dimatikan lewat `tampilanRef` di game.jsx, jadi tak ada konflik).
-  useEffect(() => {
-    if (papanAktif || perluPulih) return undefined;
-    const tekan = (e) => {
-      if (e.key === "Escape" && !e.defaultPrevented && !document.querySelector('[role="alertdialog"][data-state="open"]')) kePapan();
-    };
-    document.addEventListener("keydown", tekan);
-    return () => document.removeEventListener("keydown", tekan);
-  }, [papanAktif, perluPulih, kePapan]);
 
   return (
     <div className="relative flex h-full min-h-0 min-w-0 w-full flex-1 flex-col">
