@@ -10,6 +10,9 @@
  *                                     Kosongkan bila isi boleh selebar area kerja
  *                                     (dipakai tabel basis data).
  * @param {boolean} [props.kepalaRapat] Naikkan garis pemisah di bawah kepala.
+ * @param {string}  [props.kepalaRapatPb] Bantalan bawah kepala saat `kepalaRapat`.
+ *                                      Dipakai layar yang ingin garisnya turun
+ *                                      sedikit tanpa mengubah layar lain.
  */
 export default function PanelLayar({
   judul,
@@ -20,6 +23,7 @@ export default function PanelLayar({
   className = "",
   lebarMaks = "",
   kepalaRapat = false,
+  kepalaRapatPb = "pb-0.5 sm:pb-1",
 }) {
   const adaKepala = Boolean(judul || subjudul || bawahJudul || headerKanan);
 
@@ -31,7 +35,7 @@ export default function PanelLayar({
         <div
           className={`flex shrink-0 justify-between gap-2 border-b border-border px-3 sm:px-5 sm:gap-3 ${
             kepalaRapat
-              ? "flex-row flex-nowrap items-start pt-3 sm:pt-3.5 pb-0.5 sm:pb-1"
+              ? `flex-row flex-nowrap items-start pt-3 sm:pt-3.5 ${kepalaRapatPb}`
               : "flex-col sm:flex-row sm:flex-wrap items-start sm:items-center py-3 sm:py-3.5"
           }`}
         >

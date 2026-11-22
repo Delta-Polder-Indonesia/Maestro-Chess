@@ -7,8 +7,9 @@ import PieceSVG from "../svg/piece.jsx";
 import { QUEEN, WHITE } from "chess.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { bacaTeks, tulis } from "../../penyimpanan.js";
-import { Switch } from "../../../../components/ui/switch.jsx";
-const IsiBestMoves = memo(function IsiBestMoves({ boardTheme, showArrows, setShowArrows, arrowAfterMove, setArrowAfterMove }) {
+import SakelarPengaturan from "./sakelarPengaturan.jsx";
+import BarisPengaturan from "./barisPengaturan.jsx";
+const IsiBestMoves = memo(function IsiBestMoves({ boardTheme, showArrows, setShowArrows, arrowAfterMove, setArrowAfterMove, cocok = () => true, deskripsi = () => null }) {
   const { t } = useI18n();
   useEffect(() => {
     const showArrows2 = bacaTeks("showArrows");
@@ -42,51 +43,57 @@ const IsiBestMoves = memo(function IsiBestMoves({ boardTheme, showArrows, setSho
     tulis("arrowAfterMove", String(Number(newArrowAfterMove)));
     setArrowAfterMove(newArrowAfterMove);
   }
+  const labelPanah = t("analisa.pengaturan.tampilPanah");
+  const labelSetelah = t("analisa.pengaturan.panahSetelahLangkah");
   return <section>
-            <div className="flex flex-row gap-2 items-center hover:text-foregroundHighlighted hover:bg-black transition-colors w-full p-2">
-                <button onClick={toggleShowArrows} type="button" className="flex flex-1 flex-row gap-2 items-center text-left">
-                    <div className="grid grid-cols-2 w-fit relative">
-                        {Array.from({ length: 4 }).map((_, i) => {
-    const isEvenCol = i % 2 === 0;
-    const isEvenRow = Math.floor(i / 2) % 2 === 0;
-    const squareColor = isEvenCol ? isEvenRow ? boardThemes[boardTheme].white : boardThemes[boardTheme].black : isEvenRow ? boardThemes[boardTheme].black : boardThemes[boardTheme].white;
-    return <div key={i} style={{ backgroundColor: squareColor }} className="h-5 w-5 relative">
-                                {i === 2 ? <PieceSVG className="absolute z-10 top-0 left-0" piece={QUEEN} size={20} color={WHITE} /> : null}
-                            </div>;
-  })}
-                        {showArrows ? <Arrow move={[{ col: 0, row: 1 }, { col: 1, row: 1 }]} squareSize={20} white class="fill-bestArrow stroke-bestArrow" /> : null}
-                    </div>
-                    <span className="font-bold text-sm">{t("analisa.pengaturan.tampilPanah")}</span>
-                </button>
-                <Switch size="sm" checked={showArrows} onCheckedChange={toggleShowArrows} aria-label={t("analisa.pengaturan.tampilPanah")} />
-            </div>
-            <div className="flex flex-row gap-2 items-center hover:text-foregroundHighlighted hover:bg-black transition-colors w-full p-2">
-                <button onClick={toggleArrowAfterMove} type="button" className="flex flex-1 flex-row gap-2 items-center text-left">
-                    <div className="grid grid-cols-2 w-fit relative">
-                        {Array.from({ length: 4 }).map((_, i) => {
-    const isEvenCol = i % 2 === 0;
-    const isEvenRow = Math.floor(i / 2) % 2 === 0;
-    const squareColor = isEvenCol ? isEvenRow ? boardThemes[boardTheme].white : boardThemes[boardTheme].black : isEvenRow ? boardThemes[boardTheme].black : boardThemes[boardTheme].white;
-    return <div key={i} style={{ backgroundColor: squareColor }} className="h-5 w-5 relative">
-                                {(i === 2 || i === 3) && arrowAfterMove ? <div className="w-full h-full absolute top-0 left-0 opacity-50" style={{ backgroundColor: "var(--highlightBoard)" }} /> : null}
-                                {i === 2 && !arrowAfterMove || i === 3 && arrowAfterMove ? <PieceSVG className="absolute z-10 top-0 left-0" piece={QUEEN} size={20} color={WHITE} /> : null}
-                                {(i === 2 || i === 3) && arrowAfterMove ? <div className="w-full h-full opacity-50 absolute top-0 left-0" style={{ backgroundColor: boardThemes[boardTheme].highlight }} /> : null}
-                            </div>;
-  })}
-                        <Arrow move={[{ col: 0, row: 1 }, { col: 1, row: 1 }]} squareSize={20} white class="fill-bestArrow stroke-bestArrow" />
-                    </div>
-                    <span className="font-bold text-sm">{t("analisa.pengaturan.panahSetelahLangkah")}</span>
-                </button>
-                <Switch size="sm" checked={arrowAfterMove} onCheckedChange={toggleArrowAfterMove} aria-label={t("analisa.pengaturan.panahSetelahLangkah")} />
-            </div>
+            {cocok("tampilPanah", labelPanah) ? <BarisPengaturan
+      judul={<button onClick={toggleShowArrows} type="button" className="flex flex-1 flex-row gap-2 items-center text-left font-medium text-foreground">
+        <div className="grid grid-cols-2 w-fit relative">
+          {Array.from({ length: 4 }).map((_, i) => {
+            const isEvenCol = i % 2 === 0;
+            const isEvenRow = Math.floor(i / 2) % 2 === 0;
+            const squareColor = isEvenCol ? isEvenRow ? boardThemes[boardTheme].white : boardThemes[boardTheme].black : isEvenRow ? boardThemes[boardTheme].black : boardThemes[boardTheme].white;
+            return <div key={i} style={{ backgroundColor: squareColor }} className="h-5 w-5 relative">
+              {i === 2 ? <PieceSVG className="absolute z-10 top-0 left-0" piece={QUEEN} size={20} color={WHITE} /> : null}
+            </div>;
+          })}
+          {showArrows ? <Arrow move={[{ col: 0, row: 1 }, { col: 1, row: 1 }]} squareSize={20} white class="fill-bestArrow stroke-bestArrow" /> : null}
+        </div>
+        <span className="text-[13.5px]">{labelPanah}</span>
+      </button>}
+      deskripsi={deskripsi("tampilPanah")}
+    >
+      <SakelarPengaturan checked={showArrows} onCheckedChange={toggleShowArrows} aria-label={labelPanah} />
+    </BarisPengaturan> : null}
+    {cocok("panahSetelahLangkah", labelSetelah) ? <BarisPengaturan
+      judul={<button onClick={toggleArrowAfterMove} type="button" className="flex flex-1 flex-row gap-2 items-center text-left font-medium text-foreground">
+        <div className="grid grid-cols-2 w-fit relative">
+          {Array.from({ length: 4 }).map((_, i) => {
+            const isEvenCol = i % 2 === 0;
+            const isEvenRow = Math.floor(i / 2) % 2 === 0;
+            const squareColor = isEvenCol ? isEvenRow ? boardThemes[boardTheme].white : boardThemes[boardTheme].black : isEvenRow ? boardThemes[boardTheme].black : boardThemes[boardTheme].white;
+            return <div key={i} style={{ backgroundColor: squareColor }} className="h-5 w-5 relative">
+              {(i === 2 || i === 3) && arrowAfterMove ? <div className="w-full h-full absolute top-0 left-0 opacity-50" style={{ backgroundColor: "var(--highlightBoard)" }} /> : null}
+              {i === 2 && !arrowAfterMove || i === 3 && arrowAfterMove ? <PieceSVG className="absolute z-10 top-0 left-0" piece={QUEEN} size={20} color={WHITE} /> : null}
+              {(i === 2 || i === 3) && arrowAfterMove ? <div className="w-full h-full opacity-50 absolute top-0 left-0" style={{ backgroundColor: boardThemes[boardTheme].highlight }} /> : null}
+            </div>;
+          })}
+          <Arrow move={[{ col: 0, row: 1 }, { col: 1, row: 1 }]} squareSize={20} white class="fill-bestArrow stroke-bestArrow" />
+        </div>
+        <span className="text-[13.5px]">{labelSetelah}</span>
+      </button>}
+      deskripsi={deskripsi("panahSetelahLangkah")}
+    >
+      <SakelarPengaturan checked={arrowAfterMove} onCheckedChange={toggleArrowAfterMove} aria-label={labelSetelah} />
+    </BarisPengaturan> : null}
         </section>;
 });
 
-function BestMoves() {
+function BestMoves({ cocok, deskripsi }) {
   const config = useContext(ConfigContext);
   const [boardTheme] = config.boardTheme;
   const [showArrows, setShowArrows] = config.showArrows;
   const [arrowAfterMove, setArrowAfterMove] = config.arrowAfterMove;
-  return <IsiBestMoves boardTheme={boardTheme} showArrows={showArrows} setShowArrows={setShowArrows} arrowAfterMove={arrowAfterMove} setArrowAfterMove={setArrowAfterMove} />;
+  return <IsiBestMoves boardTheme={boardTheme} showArrows={showArrows} setShowArrows={setShowArrows} arrowAfterMove={arrowAfterMove} setArrowAfterMove={setArrowAfterMove} cocok={cocok} deskripsi={deskripsi} />;
 }
 export default memo(BestMoves);

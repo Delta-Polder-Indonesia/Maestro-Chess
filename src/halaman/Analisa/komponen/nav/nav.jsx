@@ -2,8 +2,9 @@
  * Port dari Brilliant-Chess (MIT, © 2025 Delo) — src/components/nav/nav.tsx.
  *
  * Bilah navigasi kiri: logo + wordmark di atas, lalu menu area kerja
- * (Papan / Akun / Basis Data / Engine / Pengaturan), diikuti tautan Source Code
- * dan Atribusi di dasar bilah.
+ * (Papan / Akun / Basis Data / Engine / Pengaturan). Tautan Kode Sumber dan
+ * Atribusi kini berada di dalam Pengaturan → Dokumentasi, bukan lagi di dasar
+ * bilah ini.
  *
  * PERUBAHAN BESAR dari upstream (dan dari versi port sebelumnya):
  * menu-menu itu dulu membuka popup modal yang menutupi papan. Sekarang
@@ -25,9 +26,9 @@
  *  - `w-screen`         → `w-full`         (mode ponsel: selebar wadah,
  *    bukan selebar jendela, supaya tidak meluber keluar kontainer halaman)
  *
- * Tautan Source Code sengaja menunjuk ke repo upstream: sekaligus jadi
- * atribusi MIT port UI ini. Logo/wordmark juga dipertahankan sama seperti
- * aslinya.
+ * Logo/wordmark dipertahankan sama seperti aslinya. Tautan kode sumber dan
+ * atribusi dipindah ke tab Dokumentasi pada layar Pengaturan supaya semua
+ * informasi proyek berkumpul di satu tempat.
  *
  * TATA LETAK BURGER (bilah menciut) disamakan dengan blok sidebar contoh
  * (`src/components/ui/sidebar.jsx` + contoh prompt.md), tanpa memindahkan
@@ -43,8 +44,6 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-import GitHub from "../svg/github.jsx";
-import Lisensi from "../svg/license.jsx";
 import Profile from "../svg/profile.jsx";
 import { Settings } from "lucide-react";
 import { TAMPILAN_ANALISA } from "../../konteks/analyzeKonteks.js";
@@ -55,8 +54,8 @@ import { TooltipLabel } from "../../../../components/ui/tooltip.jsx";
 import { navTop } from "../../konstanta.js";
 import { bacaBoolean, tulisBoolean } from "../../penyimpanan.js";
 
-/** Kode sumber aplikasi mandiri ini. Atribusi hulu tersedia di halaman Atribusi. */
-export const URL_REPO = "https://github.com/Delta-Polder-Indonesia/Maestro-Chess";
+/** Dipakai ulang oleh tab Dokumentasi di layar Pengaturan. */
+export { URL_REPO } from "../../../../lib/repo.js";
 
 /** Ikon "Papan" — papan catur 8x8 (monokrom, ikut warna kelas fill). */
 function IkonPapan({ className }) {
@@ -135,19 +134,6 @@ export default function Nav() {
     }
   }
 
-  const botLinks = [
-    {
-      label: t("analisa.nav.kodeSumber"),
-      href: URL_REPO,
-      icon: (props) => <GitHub class={props.className} />,
-    },
-    {
-      label: t("analisa.nav.atribusi"),
-      to: "/attributions",
-      icon: (props) => <Lisensi class={props.className} />,
-    },
-  ];
-
   /*
    * `kunci` adalah penanda menu yang stabil (dipakai data-uji), sedangkan
    * `tampilan` adalah layar yang dipilihnya.
@@ -177,6 +163,10 @@ export default function Nav() {
       tampilan: TAMPILAN_ANALISA.ENGINE,
       kunci: "engine",
     },
+  ];
+
+  /* Pengaturan sengaja dipisah dari menu utama supaya duduk di dasar bilah. */
+  const menuBawah = [
     {
       label: t("analisa.nav.pengaturan"),
       icon: () => <Settings className="h-[18px] w-[18px] shrink-0" />,
@@ -185,17 +175,56 @@ export default function Nav() {
     },
   ];
 
-  /* Di rail 32px, ikon 18px + dua bantalan 7px pas tanpa gap label kosong.
-   * Mode ponsel tetap memakai target sentuh setinggi 40px. */
-  const kelasTombol = `flex flex-row gap-2.5 h-full min-h-10 navTop:min-h-0 navTop:h-9 navTop:min-w-0 navTop:justify-start justify-center items-center navTop:py-0 p-2 group hover:bg-backgroundBoxHover text-foregroundGrey hover:text-foregroundHighlighted transition-colors cursor-pointer navTop:w-full ${navTerbuka ? "navTop:px-2" : "navTop:px-[7px] navTop:gap-0"}`;
+  /*
+   * Posisi ikon sengaja DIKUNCI: bantalan kiri 7px tidak berubah antara
+   * bilah melebar dan menciut, sehingga ikon tidak bergeser saat burger
+   * ditekan. Yang berubah hanya lebar label (di kelasLabelNav) dan gap-nya;
+   * label memakai max-w-0 saat menciut, jadi tidak mendorong ikon.
+   * Di rail 32px: 7px + ikon 18px + 7px = 32px pas.
+   * Mode ponsel tetap memakai target sentuh setinggi 40px.
+   */
+  const kelasTombol = `flex flex-row gap-2.5 h-full min-h-10 navTop:min-h-0 navTop:h-9 navTop:min-w-0 navTop:justify-start justify-center items-center navTop:py-0 p-2 navTop:px-[7px] group hover:bg-backgroundBoxHover text-foregroundGrey hover:text-foregroundHighlighted transition-colors cursor-pointer navTop:w-full ${navTerbuka ? "" : "navTop:gap-0"}`;
 
   /** Perubahan lebar label seketika; hanya opacity yang ditransisikan. */
   const kelasLabelNav = `overflow-hidden whitespace-nowrap transition-opacity duration-150 motion-reduce:transition-none hidden navTop:block text-[15px] leading-5 font-bold ${
-    navTerbuka ? "navTop:max-w-[140px] navTop:opacity-100" : "navTop:max-w-0 navTop:opacity-0"
+    navTerbuka ? "navTop:max-w-[116px] navTop:opacity-100" : "navTop:max-w-0 navTop:opacity-0"
   }`;
 
+  /** Tombol menu dipakai ulang untuk grup atas dan grup bawah (Pengaturan). */
+  function tombolMenu(item) {
+    // Layar yang sedang tampil ditandai di bilah, persis seperti sidebar
+    // dashboard Pengurus menandai tab aktifnya.
+    const aktif = Boolean(item.tampilan) && tampilan === item.tampilan;
+    return (
+      <TooltipLabel key={item.kunci} stabil label={!navTerbuka || navDiAtas ? item.label : undefined} side="right">
+        <button
+          ref={item.kunci === "papan" ? papanRef : undefined}
+          type="button"
+          data-uji={`nav-${item.kunci}`}
+          aria-label={item.label}
+          aria-current={aktif ? "true" : undefined}
+          disabled={perluPulih}
+          onClick={() => setTampilan(item.tampilan)}
+          className={`${kelasTombol} disabled:cursor-wait disabled:opacity-50${aktif ? " bg-backgroundBoxHover text-foregroundHighlighted" : ""}`}
+        >
+          {/*
+            Ikon dibungkus slot tetap 18x18: SVG punya `overflow: hidden`
+            dari UA stylesheet sehingga bisa menyusut di flexbox saat rail
+            menciut. Slot ini juga mengunci posisi ikon agar tidak bergeser.
+          */}
+          <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center">
+            {item.icon({ className: `transition-colors group-hover:fill-foregroundHighlighted ${aktif ? "fill-foregroundHighlighted" : "fill-foregroundGrey"}` })}
+          </span>
+          <span className={kelasLabelNav}>{item.label}</span>
+        </button>
+      </TooltipLabel>
+    );
+  }
+
   return (
-    <nav className={`flex flex-col navTop:h-full w-full relative ${navTerbuka ? "navTop:w-[210px]" : "navTop:w-12"} navTop:shrink-0`}>
+    /* Lebar 188px membuat tepi kanan bilah (garis pemisah area kerja)
+       duduk dekat wordmark tanpa memotong huruf terakhir "Chess". */
+    <nav className={`flex flex-col navTop:h-full w-full relative ${navTerbuka ? "navTop:w-[188px]" : "navTop:w-12"} navTop:shrink-0`}>
       {/*
         `navTop:px-2` = bantalan 8px lajur: 3rem rail = 8 + 2rem + 8
         (sama dengan bantalan SidebarContent + SidebarMenuButton di
@@ -246,7 +275,7 @@ export default function Nav() {
             >
               <span
                 className={`hidden navTop:block leading-none font-bold text-[17px] tracking-tight text-foreground overflow-hidden whitespace-nowrap transition-opacity duration-150 motion-reduce:transition-none ${
-                  navTerbuka ? "max-w-[140px] opacity-100" : "max-w-0 opacity-0"
+                  navTerbuka ? "max-w-[124px] opacity-100" : "max-w-0 opacity-0"
                 }`}
               >
                 Maestro<span className="text-backgroundBoxBoxHighlighted"> Chess</span>
@@ -255,71 +284,11 @@ export default function Nav() {
           </div>
           <hr className="border-border mx-2 navTop:mx-0 my-1 navTop:block hidden" />
           <div className="flex navTop:flex-col flex-row navTop:gap-1 navTop:w-full navTop:min-w-0">
-            {menu.map((item) => {
-              // Layar yang sedang tampil ditandai di bilah, persis seperti
-              // sidebar dashboard Pengurus menandai tab aktifnya.
-              const aktif = Boolean(item.tampilan) && tampilan === item.tampilan;
-              // Setiap tombol memilih layarnya. Berpindah layar TIDAK
-              // mengosongkan `data`, `akun`, dan `pageState`: karena papan
-              // tidak pernah dilepas, analisis yang sedang direview tetap utuh.
-              const keterangan = item.label;
-              const aksi = () => setTampilan(item.tampilan);
-              return (
-                <TooltipLabel key={item.kunci} stabil label={!navTerbuka || navDiAtas ? keterangan : undefined} side="right">
-                  <button
-                    ref={item.kunci === "papan" ? papanRef : undefined}
-                    type="button"
-                    data-uji={`nav-${item.kunci}`}
-                    aria-label={keterangan}
-                    aria-current={aktif ? "true" : undefined}
-                    disabled={perluPulih}
-                    onClick={aksi}
-                    className={`${kelasTombol} disabled:cursor-wait disabled:opacity-50${aktif ? " bg-backgroundBoxHover text-foregroundHighlighted" : ""}`}
-                  >
-                    {/*
-                      Ikon dibungkus span `shrink-0`: UA stylesheet menyetel
-                      `overflow: hidden` pada svg, sehingga menurut spesifikasi
-                      flexbox ia kehilangan min-width:auto dan BISA menyusut
-                      di bawah 18px saat ruang tombol sempit (rail menciut).
-                    */}
-                    <span className="flex shrink-0">
-                      {item.icon({ className: `transition-colors group-hover:fill-foregroundHighlighted ${aktif ? "fill-foregroundHighlighted" : "fill-foregroundGrey"}` })}
-                    </span>
-                    <span className={kelasLabelNav}>{item.label}</span>
-                  </button>
-                </TooltipLabel>
-              );
-            })}
+            {menu.map(tombolMenu)}
           </div>
         </div>
-        <div className="flex navTop:flex-col flex-row text-sm font-bold navTop:w-full navTop:h-fit">
-          <div className="flex navTop:flex-col flex-row navTop:gap-1 navTop:w-full navTop:min-w-0">
-            {botLinks.map((link, i) => {
-              const kelas = kelasTombol;
-              // Label teksnya `hidden` di mode ponsel — aria-label wajib ada
-              // supaya tautan tetap bernama bagi pembaca layar (audit
-              // Lighthouse "links do not have a discernible name").
-              return link.to ? (
-                <TooltipLabel key={i} stabil label={!navTerbuka || navDiAtas ? link.label : undefined} side="right">
-                  <Link draggable={false} href={link.to} aria-label={link.label} className={kelas}>
-                    <span className="flex shrink-0">
-                      {link.icon({ className: "fill-foregroundGrey transition-colors group-hover:fill-foregroundHighlighted" })}
-                    </span>
-                    <span className={kelasLabelNav}>{link.label}</span>
-                  </Link>
-                </TooltipLabel>
-              ) : (
-                <TooltipLabel key={i} stabil label={!navTerbuka || navDiAtas ? link.label : undefined} side="right">
-                  <a draggable={false} target="_blank" rel="noreferrer noopener" href={link.href} aria-label={link.label} className={kelas}>
-                    <span className="flex shrink-0">
-                      {link.icon({ className: "fill-foregroundGrey transition-colors group-hover:fill-foregroundHighlighted" })}
-                    </span>
-                    <span className={kelasLabelNav}>{link.label}</span>
-                  </a>
-                </TooltipLabel>
-              );
-            })}
-          </div>
+        <div className="flex navTop:flex-col flex-row navTop:gap-1 navTop:w-full navTop:min-w-0 navTop:mt-auto">
+          {menuBawah.map(tombolMenu)}
         </div>
       </div>
     </nav>

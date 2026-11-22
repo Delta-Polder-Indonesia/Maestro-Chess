@@ -55,6 +55,7 @@ function renderNav(dictionary, penyimpanan = { bacaBoolean: (_key, fallback) => 
   const svg = { default: () => React.createElement("svg") };
   const Nav = compile("../src/halaman/Analisa/komponen/nav/nav.jsx", {
     "next/link": { default: TautanUji },
+    "../../../../lib/repo.js": { URL_REPO: "https://github.com/Delta-Polder-Indonesia/Maestro-Chess" },
     "../svg/github.jsx": svg,
     "../svg/license.jsx": svg,
     "../svg/profile.jsx": svg,
@@ -153,6 +154,13 @@ test("navigation places Engine between database and settings with the requested 
   );
   TestRenderer.act(() => engine.props.onClick());
   assert.deepEqual(lintas, ["engine"]);
+  renderer.unmount();
+});
+
+test("navigation keeps only the home link; source and attributions live in settings", () => {
+  const renderer = renderNav(english);
+  const href = renderer.root.findAllByType("a").map((node) => node.props.href);
+  assert.deepEqual(href, ["/"]);
   renderer.unmount();
 });
 

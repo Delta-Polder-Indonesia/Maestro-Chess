@@ -8,7 +8,8 @@ import { QUEEN, WHITE } from "chess.js";
 import PieceSVG from "../svg/piece.jsx";
 import RatingSVG from "../svg/rating.jsx";
 import { bacaTeks, tulis } from "../../penyimpanan.js";
-import { Switch } from "../../../../components/ui/switch.jsx";
+import SakelarPengaturan from "./sakelarPengaturan.jsx";
+import BarisPengaturan from "./barisPengaturan.jsx";
 const ratings = [
   "brilliant",
   "great",
@@ -23,6 +24,7 @@ const ratings = [
   "blunder",
   "forced"
 ];
+export { ratings as daftarRating };
 function serializeRatings(usedRatings2) {
   const serializedRatings = [];
   for (const rating of ratings) {
@@ -42,7 +44,7 @@ function unserializeRatings(serializedUsedRatings) {
   }
   return unserializedRatings;
 }
-const IsiRatings = memo(function IsiRatings({ usedRatings2, setUsedRatings, boardTheme, highlightByRating, setHighlightByRating }) {
+const IsiRatings = memo(function IsiRatings({ usedRatings2, setUsedRatings, boardTheme, highlightByRating, setHighlightByRating, cocok = () => true, deskripsi = () => null }) {
   const { t } = useI18n();
   useEffect(() => {
     const serializedUsedRatings = bacaTeks("usedRatings");
@@ -72,28 +74,33 @@ const IsiRatings = memo(function IsiRatings({ usedRatings2, setUsedRatings, boar
     tulis("highlightByRating", String(Number(newHighlightByRating)));
     setHighlightByRating(newHighlightByRating);
   }
+  const labelSorot = t("analisa.pengaturan.sorotLabel");
   return <section>
-            <div className="flex flex-row gap-2 items-center hover:text-foregroundHighlighted hover:bg-black transition-colors w-full p-2">
-                <button onClick={toggleHighlightByRating} type="button" className="flex flex-1 flex-row gap-2 items-center text-left">
-                    <div className="grid grid-cols-2 w-fit">
-                        {Array.from({ length: 4 }).map((_, i) => {
-    const isEvenCol = i % 2 === 0;
-    const isEvenRow = Math.floor(i / 2) % 2 === 0;
-    const squareColor = isEvenCol ? isEvenRow ? boardThemes[boardTheme].white : boardThemes[boardTheme].black : isEvenRow ? boardThemes[boardTheme].black : boardThemes[boardTheme].white;
-    return <div key={i} style={{ backgroundColor: squareColor }} className="h-5 w-5 relative">
-                                {i === 2 || i === 3 ? <div className="w-full h-full absolute top-0 left-0 opacity-50" style={{ backgroundColor: highlightByRating ? "var(--highlightGreat)" : boardThemes[boardTheme].highlight }} /> : null}
-                                {i === 3 ? <>
-                                        <PieceSVG className="absolute z-10 top-0 left-0" piece={QUEEN} size={20} color={WHITE} />
-                                        <RatingSVG rating="great" size={12} className="absolute top-0 right-0 translate-x-1/2 translate-y-[-50%]" />
-                                    </> : null}
-                            </div>;
-  })}
-                    </div>
-                    <span className="font-bold text-sm">{t("analisa.pengaturan.sorotLabel")}</span>
-                </button>
-                <Switch size="sm" checked={highlightByRating} onCheckedChange={toggleHighlightByRating} aria-label={t("analisa.pengaturan.sorotLabel")} />
-            </div>
-            {ratings.filter((rating) => rating !== "critical").map((rating, i) => {
+            {cocok("sorotLabel", labelSorot) ? <BarisPengaturan
+      judul={<button onClick={toggleHighlightByRating} type="button" className="flex flex-1 flex-row gap-2 items-center text-left font-medium text-foreground">
+        <div className="grid grid-cols-2 w-fit">
+          {Array.from({ length: 4 }).map((_, i) => {
+            const isEvenCol = i % 2 === 0;
+            const isEvenRow = Math.floor(i / 2) % 2 === 0;
+            const squareColor = isEvenCol ? isEvenRow ? boardThemes[boardTheme].white : boardThemes[boardTheme].black : isEvenRow ? boardThemes[boardTheme].black : boardThemes[boardTheme].white;
+            return <div key={i} style={{ backgroundColor: squareColor }} className="h-5 w-5 relative">
+              {i === 2 || i === 3 ? <div className="w-full h-full absolute top-0 left-0 opacity-50" style={{ backgroundColor: highlightByRating ? "var(--highlightGreat)" : boardThemes[boardTheme].highlight }} /> : null}
+              {i === 3 ? <>
+                <PieceSVG className="absolute z-10 top-0 left-0" piece={QUEEN} size={20} color={WHITE} />
+                <RatingSVG rating="great" size={12} className="absolute top-0 right-0 translate-x-1/2 translate-y-[-50%]" />
+              </> : null}
+            </div>;
+          })}
+        </div>
+        <span className="text-[13.5px]">{labelSorot}</span>
+      </button>}
+      deskripsi={deskripsi("sorotLabel")}
+    >
+      <SakelarPengaturan checked={highlightByRating} onCheckedChange={toggleHighlightByRating} aria-label={labelSorot} />
+    </BarisPengaturan> : null}
+    {ratings.filter((rating) => rating !== "critical").map((rating, i) => {
+    const label = capitalizeFirst(rating);
+    if (!cocok(`rating.${rating}`, label)) return null;
     function toggleRating() {
       const baru = !usedRatings2[rating];
       const newUsedRatings = {
@@ -106,22 +113,25 @@ const IsiRatings = memo(function IsiRatings({ usedRatings2, setUsedRatings, boar
       setUsedRatings(newUsedRatings);
       tulis("usedRatings", serializeRatings(newUsedRatings));
     }
-    return <div key={i} className="flex flex-row gap-2 items-center hover:text-foregroundHighlighted hover:bg-black transition-colors w-full p-2">
-                        <button onClick={toggleRating} type="button" className="flex flex-1 flex-row gap-2 items-center text-left">
-                            <RatingSVG rating={rating} size={35} className="w-[40px] h-[40px] flex justify-center items-center" />
-                            <span className="font-bold text-sm">{capitalizeFirst(rating)}</span>
-                        </button>
-                        <Switch size="sm" checked={usedRatings2[rating]} onCheckedChange={toggleRating} aria-label={capitalizeFirst(rating)} />
-                    </div>;
+    return <BarisPengaturan
+      key={i}
+      judul={<button onClick={toggleRating} type="button" className="flex flex-1 flex-row gap-2 items-center text-left font-medium text-foreground">
+        <RatingSVG rating={rating} size={35} className="w-[40px] h-[40px] flex justify-center items-center" />
+        <span className="text-[13.5px]">{label}</span>
+      </button>}
+      deskripsi={deskripsi("labelPenilaian")}
+    >
+      <SakelarPengaturan checked={usedRatings2[rating]} onCheckedChange={toggleRating} aria-label={label} />
+    </BarisPengaturan>;
   })}
         </section>;
 });
 
-function Ratings() {
+function Ratings({ cocok, deskripsi }) {
   const config = useContext(ConfigContext);
   const [usedRatings2, setUsedRatings] = config.usedRatings;
   const [boardTheme] = config.boardTheme;
   const [highlightByRating, setHighlightByRating] = config.highlightByRating;
-  return <IsiRatings usedRatings2={usedRatings2} setUsedRatings={setUsedRatings} boardTheme={boardTheme} highlightByRating={highlightByRating} setHighlightByRating={setHighlightByRating} />;
+  return <IsiRatings usedRatings2={usedRatings2} setUsedRatings={setUsedRatings} boardTheme={boardTheme} highlightByRating={highlightByRating} setHighlightByRating={setHighlightByRating} cocok={cocok} deskripsi={deskripsi} />;
 }
 export default memo(Ratings);
