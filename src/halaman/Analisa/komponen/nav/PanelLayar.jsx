@@ -40,7 +40,7 @@ export default function PanelLayar({
           }`}
         >
           <div className={`min-w-0 ${kepalaRapat ? "flex-1" : "w-full sm:w-auto"}`}>
-            <p className="text-sm sm:text-base font-extrabold text-foreground truncate">{judul}</p>
+            {judul ? <h1 className="text-sm sm:text-base font-extrabold text-foreground truncate">{judul}</h1> : null}
             {bawahJudul ? (
               <div className="mt-1 sm:mt-1.5 overflow-x-auto">{bawahJudul}</div>
             ) : subjudul ? (

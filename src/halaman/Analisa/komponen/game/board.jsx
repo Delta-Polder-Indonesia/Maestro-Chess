@@ -1,6 +1,6 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 import { deformatSquare, formatSquare } from "../../mesin/engine.js";
-import { memo, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { BISHOP, BLACK, Chess, KING, KNIGHT, PAWN, QUEEN, ROOK, WHITE } from "chess.js";
 import { buatSuara } from "../suaraPapan.js";
 import { ConfigContext } from "../../konteks/configKonteks.js";
@@ -174,7 +174,7 @@ function Arrow(props) {
         </svg>;
 }
 function Coronation(props) {
-  const { white, column, coroningWhite, squareSize, clearCoronation, coronate } = props;
+  const { white, column, coroningWhite, squareSize, clearCoronation, coronate, fokusKembali, t } = props;
   const coronationRef = useRef(null);
   const pieces = [
     QUEEN,
@@ -182,6 +182,9 @@ function Coronation(props) {
     ROOK,
     BISHOP
   ];
+  useEffect(() => {
+    coronationRef.current?.querySelector("button")?.focus();
+  }, []);
   useEffect(() => {
     function clickClearCoronation(e) {
       if (coronationRef.current?.contains(e.target)) return;
@@ -192,23 +195,34 @@ function Coronation(props) {
   }, [clearCoronation]);
   const color = coroningWhite ? WHITE : BLACK;
   const top = white && coroningWhite || !white && !coroningWhite;
-  return <div ref={coronationRef} className="flex absolute bg-white z-[90] shadow-lg shadow-black/50 cursor-pointer" style={{ flexDirection: top ? "column" : "column-reverse", top: top ? 0 : void 0, bottom: !top ? 0 : void 0, left: white ? column * squareSize : void 0, right: !white ? column * squareSize : void 0 }}>
-            {pieces.map((piece, i) => <div onClick={() => {
+  return <div ref={coronationRef} role="group" aria-label={t("analisa.papanKeyboard.promosi")} onKeyDown={(e) => {
+    if (e.key !== "Escape") return;
+    e.preventDefault();
+    e.stopPropagation();
+    clearCoronation();
+    fokusKembali();
+  }} className="flex absolute bg-white z-[90] shadow-lg shadow-black/50 cursor-pointer" style={{ flexDirection: top ? "column" : "column-reverse", top: top ? 0 : void 0, bottom: !top ? 0 : void 0, left: white ? column * squareSize : void 0, right: !white ? column * squareSize : void 0 }}>
+            {pieces.map((piece) => <button type="button" aria-label={t("analisa.papanKeyboard.pilihPromosi", { bidak: t(`analisa.papanKeyboard.${piece}`) })} onClick={() => {
     coronate(piece);
-  }} key={i}>
+    fokusKembali();
+  }} key={piece} className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-700">
                     <PieceSVG piece={piece} color={color} size={squareSize} />
-                </div>)}
-            <div onClick={clearCoronation} className="bg-neutral-200 w-full flex justify-center items-center" style={{ height: squareSize / 2 }}>
+                </button>)}
+            <button type="button" aria-label={t("analisa.papanKeyboard.batalPromosi")} onClick={() => { clearCoronation(); fokusKembali(); }} className="bg-neutral-200 w-full flex justify-center items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-700" style={{ height: squareSize / 2 }}>
                 <Image draggable={false} src={berkasPublik("images/analisa/cross.svg")} alt="" aria-hidden="true" width={squareSize / 4.5} height={squareSize / 4.5} />
-            </div>
+            </button>
         </div>;
 }
 function Piece(props) {
-  const { boardRef, pieceRef, castleRookRef, moved, isCastleRook, pieceColor, pieceSymbol, drag, setDrag, id, squareSize, setPlaying, isCoronating, bolehSeret, kotakDariKursor } = props;
+  const { boardRef, pieceRef, castleRookRef, moved, isCastleRook, pieceColor, pieceSymbol, drag, setDrag, id, squareSize, setPlaying, isCoronating, bolehSeret, kotakDariKursor, onLepasSentuh, cleanArrows } = props;
   const [movement, setMovement] = useState({ x: 0, y: 0 });
   const wasSelectedRef = useRef(false);
   const pindahKotakRef = useRef(false);
   const bersihRef = useRef(null);
+  // Document listeners survive renders: use the current board geometry and
+  // move callback rather than the position captured on pointerdown.
+  const sentuhRef = useRef({ kotakDariKursor, onLepasSentuh });
+  sentuhRef.current = { kotakDariKursor, onLepasSentuh };
   /*
    * Drag memasang tiga listener di `document` dan menulis kursor <body>.
    * Bila bidak ini dilepas di tengah drag (partai baru dimuat, komponen
@@ -317,7 +331,7 @@ function Piece(props) {
     setMovement(gerakIkutKursor(e.clientX, e.clientY, startPosition));
     // `keyHasChanged` ala chessground: gestur ini pernah meninggalkan kotak
     // asal, walau nanti kembali lagi.
-    if (kotakDariKursor?.(e.clientX, e.clientY) !== id) pindahKotakRef.current = true;
+    if (sentuhRef.current.kotakDariKursor?.(e.clientX, e.clientY) !== id) pindahKotakRef.current = true;
   }
   function handlePieceDragStop(e) {
     /*
@@ -340,18 +354,71 @@ function Piece(props) {
      * lepas di luar papan juga tidak pernah membatalkan pilihan. Membandingkan
      * KOTAK — bukan piksel — tidak bergantung pada rect bidak sama sekali.
      */
-    const kotakAkhir = kotakDariKursor ? kotakDariKursor(e.clientX, e.clientY) : id;
+    const kotakAkhir = sentuhRef.current.kotakDariKursor ? sentuhRef.current.kotakDariKursor(e.clientX, e.clientY) : id;
     const lepasDiAsal = kotakAkhir === id || kotakAkhir === "";
     const batalPilih = lepasDiAsal && (wasSelectedRef.current || pindahKotakRef.current);
     setMovement({ x: 0, y: 0 });
     setDrag({ is: false, id: batalPilih ? "" : id });
   }
+
+  function handlePointerStart(e) {
+    // Mouse keeps the existing drag/right-click implementation. Touch and pen
+    // use pointer capture so a release over another square (or outside the
+    // board) is still received even while the board ignores hit testing.
+    if (e.pointerType === "mouse" || e.button !== 0 || e.isPrimary === false || !bolehSeret || bersihRef.current) return;
+    e.preventDefault(); // suppress the synthetic mouse sequence for this gesture
+    const pointerId = e.pointerId;
+    const element = e.currentTarget;
+    const rect = element.getBoundingClientRect();
+    const startPosition = { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+    wasSelectedRef.current = drag.id === id;
+    pindahKotakRef.current = false;
+    const bersihkan = () => {
+      document.removeEventListener("pointermove", bergerak);
+      document.removeEventListener("pointerup", selesai);
+      document.removeEventListener("pointercancel", batal);
+      try { if (element.hasPointerCapture(pointerId)) element.releasePointerCapture(pointerId); } catch { /* already released */ }
+      bersihRef.current = null;
+    };
+    const bergerak = (event) => {
+      if (event.pointerId === pointerId) handlePieceDrag(event, startPosition);
+    };
+    const selesai = (event) => {
+      if (event.pointerId !== pointerId) return;
+      const tujuan = sentuhRef.current.kotakDariKursor?.(event.clientX, event.clientY);
+      const pindah = tujuan && tujuan !== id && sentuhRef.current.onLepasSentuh?.(id, tujuan);
+      if (pindah) {
+        setMovement({ x: 0, y: 0 });
+        setDrag({ is: false, id: "" });
+      } else {
+        handlePieceDragStop(event);
+      }
+      bersihkan();
+    };
+    const batal = (event) => {
+      if (event.pointerId !== pointerId) return;
+      setMovement({ x: 0, y: 0 });
+      setDrag({ is: false, id: "" });
+      bersihkan();
+    };
+    document.addEventListener("pointermove", bergerak);
+    document.addEventListener("pointerup", selesai);
+    document.addEventListener("pointercancel", batal);
+    bersihRef.current = bersihkan;
+    try { element.setPointerCapture(pointerId); } catch { /* document listeners still handle it */ }
+    cleanArrows();
+    setMovement(gerakIkutKursor(e.clientX, e.clientY, startPosition));
+    setPlaying(false);
+    setDrag({ is: true, id });
+  }
+
   return <div
     data-dontcleandrag={true}
     onMouseDown={handlePieceDragStart}
+    onPointerDown={handlePointerStart}
     ref={moved ? pieceRef : isCastleRook ? castleRookRef : null}
     className="w-full relative h-full z-[20] cursor-grab"
-    style={{ top: movement.y || "", left: movement.x || "", zIndex: drag.is && drag.id === id ? 100 : "" }}
+    style={{ top: movement.y || "", left: movement.x || "", zIndex: drag.is && drag.id === id ? 100 : "", touchAction: bolehSeret ? "none" : "auto" }}
   >
             <PieceSVG className="*:pointer-events-none" dataset={{ "dontcleandrag": true }} piece={pieceSymbol} color={pieceColor} size={squareSize} />
         </div>;
@@ -359,6 +426,9 @@ function Piece(props) {
 function Board(props) {
   const [hoverDrag, setHoverDrag] = useState("");
   const [coronation, setCoronation] = useState({ choosing: false, movement: [] });
+  const [kotakFokus, setKotakFokus] = useState("e2");
+  const idPetunjuk = useId();
+  const t = props.t || ((kunci) => kunci);
   const { boardTheme, usedRatings, highlightByRating, showArrows, arrowAfterMove, showLegalMoves, animateMoves, boardSoundsRef } = props;
   const boardRef = useRef(null);
   const pieceRef = useRef(null);
@@ -564,22 +634,29 @@ function Board(props) {
     }
     return filteredHighlightStyle2;
   }
-  async function handleMovePiece(e, toSquare) {
-    if (e.button !== 0) return;
-    if (!drag.id) return;
-    const animation2 = e.type === "mousedown" ? true : false;
+  function jalankanLangkah(from, to, animasi) {
     clearTimeout(dragTimerRef.current);
     dragTimerRef.current = setTimeout(() => setDrag({ is: false, id: "" }), 0);
-    if (analyzingMove) return;
-    const from = drag.id;
-    const to = toSquare;
+    if (analyzingMove) return false;
     const formattedFrom = formatSquare(from);
     const formattedTo = formatSquare(to);
     if (chess.get(from)?.type === PAWN && [0, 7].includes(formattedTo.row)) {
       setCoronation({ choosing: true, movement: [formattedFrom, formattedTo] });
     } else {
-      analyzeMove(fen, { from, to }, sacrifice ?? false, previousStaticEvals ?? [], animation2, bestMoveSan, kandidat ?? []);
+      analyzeMove(fen, { from, to }, sacrifice ?? false, previousStaticEvals ?? [], animasi, bestMoveSan, kandidat ?? []);
     }
+    return true;
+  }
+  function handleMovePiece(e, toSquare) {
+    if (e.button !== 0 || !drag.id) return;
+    jalankanLangkah(drag.id, toSquare, e.type === "mousedown");
+  }
+  function handleLepasSentuh(from, to) {
+    // Pointer capture bypasses the legal-move overlay used by the mouse.
+    // Validate against the CURRENT position before moving or promoting.
+    if (props.pratinjau || chess.get(from)?.color !== chess.turn() ||
+        !chess.moves({ square: from, verbose: true }).some((langkah) => langkah.to === to)) return false;
+    return jalankanLangkah(from, to, false);
   }
   function cleanDrag(target) {
     if (target.dataset.dontcleandrag) return;
@@ -666,9 +743,55 @@ function Board(props) {
     if (!drag.id) return [];
     return chess.moves({ square: drag.id, verbose: true }).map((move2) => move2.to);
   }, [drag.id, chess]);
+
+  function aktifkanKotak(id) {
+    if (props.pratinjau || analyzingMove || drag.is || coronation.choosing) return;
+    if (drag.id === id) {
+      setDrag({ is: false, id: "" });
+    } else if (drag.id && legalMoves.includes(id)) {
+      jalankanLangkah(drag.id, id, true);
+    } else if (chess.get(id)?.color === chess.turn()) {
+      cleanArrows();
+      setPlaying(false);
+      setDrag({ is: false, id });
+    } else {
+      setDrag({ is: false, id: "" });
+    }
+  }
+
+  function tekanKotak(e, id) {
+    const arah = {
+      ArrowLeft: [white ? -1 : 1, 0],
+      ArrowRight: [white ? 1 : -1, 0],
+      ArrowUp: [0, white ? 1 : -1],
+      ArrowDown: [0, white ? -1 : 1],
+    }[e.key];
+    if (arah) {
+      e.preventDefault();
+      e.stopPropagation();
+      const kolom = id.charCodeAt(0) - 97 + arah[0];
+      const baris = Number(id[1]) + arah[1];
+      if (kolom >= 0 && kolom < 8 && baris >= 1 && baris <= 8) {
+        boardRef.current?.querySelector(`[data-square="${String.fromCharCode(97 + kolom)}${baris}"]`)?.focus();
+      }
+      return;
+    }
+    if (e.key === "Escape" && drag.id) {
+      e.preventDefault();
+      e.stopPropagation();
+      setDrag({ is: false, id: "" });
+      return;
+    }
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    e.stopPropagation();
+    aktifkanKotak(id);
+  }
+
   const boardColors = [boardThemes[boardTheme].white, boardThemes[boardTheme].black];
   const adaptedCoronationSquare = coronation.movement[0] ? adaptSquare(coronation.movement[0]) : null;
-  return <div ref={boardRef} onContextMenu={(e) => e.preventDefault()} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} className="grid w-fit h-fit relative" style={{ gridTemplateColumns: `repeat(8, ${squareSize}px)`, pointerEvents: drag.is ? "none" : "unset" }}>
+  return <div ref={boardRef} role="group" aria-label={t("analisa.papanKeyboard.nama")} aria-describedby={idPetunjuk} onContextMenu={(e) => e.preventDefault()} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} className="grid w-fit h-fit relative" style={{ gridTemplateColumns: `repeat(8, ${squareSize}px)`, pointerEvents: drag.is ? "none" : "unset" }}>
+            <span id={idPetunjuk} className="sr-only">{t("analisa.papanKeyboard.petunjuk")}</span>
             {(() => {
     const squares = [];
     let rowNumber = white ? 0 : 7;
@@ -696,10 +819,10 @@ function Board(props) {
         }
         let squareNumGuide, squareLetterGuide;
         if (rowNumber === (white ? 7 : 0)) {
-          squareLetterGuide = <span style={{ right: rightSize, color: guideColor }} className={`absolute bottom-0`}>{squareId[0]}</span>;
+          squareLetterGuide = <span aria-hidden="true" style={{ right: rightSize, color: guideColor }} className={`absolute bottom-0`}>{squareId[0]}</span>;
         }
         if (columnNumber === (white ? 0 : 7)) {
-          squareNumGuide = <span style={{ left: leftSize, color: guideColor }} className={`absolute top-0`}>{squareId[1]}</span>;
+          squareNumGuide = <span aria-hidden="true" style={{ left: leftSize, color: guideColor }} className={`absolute top-0`}>{squareId[1]}</span>;
         }
         let rounded = "";
         if (rowNumber === 0 && columnNumber === 0) rounded = white ? "rounded-tl-borderRoundness" : "rounded-br-borderRoundness";
@@ -759,6 +882,8 @@ function Board(props) {
             boardRef={boardRef}
             bolehSeret={!props.pratinjau && pieceColor === chess.turn()}
             kotakDariKursor={kotakDariKursor}
+            onLepasSentuh={handleLepasSentuh}
+            cleanArrows={cleanArrows}
             isCoronating={coronation.choosing && adaptedCoronationSquare?.col === columnNumber && adaptedCoronationSquare?.row === rowNumber}
           />;
         }
@@ -772,7 +897,14 @@ function Board(props) {
               menghasilkan CSS apa pun) — diganti modifier `border-white/65`. */
         const hoverDragSquare = <div style={{ display: drag.is ? "" : "none", opacity: hoverDrag === squareId ? 1 : "", borderWidth: squareSize * 0.05 }} onMouseEnter={() => setHoverDrag(squareId)} onMouseLeave={() => setHoverDrag("")} className={`absolute top-0 z-[30] left-0 w-full h-full opacity-0 block border-white/65 pointer-events-auto ${rounded}`} />;
         const legalMove = legalMoves.includes(squareId) ? piece ? <div onMouseEnter={() => setHoverDrag(squareId)} onMouseLeave={() => setHoverDrag("")} onMouseDown={(e) => handleMovePiece(e, squareId)} onMouseUp={(e) => handleMovePiece(e, squareId)} className="absolute w-full h-full z-[40] top-0 left-0 cursor-grab pointer-events-auto"><div style={{ borderWidth: squareSize * 0.12 }} className="border-black opacity-[15%] w-full h-full rounded-full" /></div> : <div onMouseEnter={() => setHoverDrag(squareId)} onMouseLeave={() => setHoverDrag("")} onMouseDown={(e) => handleMovePiece(e, squareId)} onMouseUp={(e) => handleMovePiece(e, squareId)} style={{ opacity: showLegalMoves ? "" : 0 }} className="absolute w-full h-full z-[40] top-0 left-0 flex justify-center items-center pointer-events-auto"><div className="bg-black opacity-[15%] w-[30%] h-[30%] rounded-full" /></div> : null;
-        squares.push(<div data-square={squareId} key={squareId} style={{ height: squareSize + "px", width: squareSize + "px", fontSize: guideSize, backgroundColor: bgColor }} className={`font-bold relative ${rounded}`}>{squareNumGuide}{squareLetterGuide}{piece}{highlighted}{resultIcon ? null : highlightedIcon}{resultIcon}{hoverDragSquare}{legalMove}</div>);
+        const isiKotak = pieceColor && pieceType
+          ? `${t(`analisa.papanKeyboard.${pieceColor === WHITE ? "putih" : "hitam"}`)} ${t(`analisa.papanKeyboard.${pieceType}`)}`
+          : t("analisa.papanKeyboard.kosong");
+        // The visible rank/file guides are part of the control's visible
+        // label, including the two guides sharing a corner square.
+        const koordinatTepi = [squareNumGuide ? squareId[1] : "", squareLetterGuide ? squareId[0] : ""].filter(Boolean).join("");
+        const labelKotak = [koordinatTepi, squareId, isiKotak, drag.id === squareId ? t("analisa.papanKeyboard.terpilih") : "", legalMoves.includes(squareId) ? t("analisa.papanKeyboard.tujuan") : ""].filter(Boolean).join(", ");
+        squares.push(<div data-square={squareId} key={squareId} role="button" aria-label={labelKotak} aria-disabled={props.pratinjau || undefined} tabIndex={!props.pratinjau && kotakFokus === squareId ? 0 : -1} onFocus={() => setKotakFokus(squareId)} onKeyDown={(e) => tekanKotak(e, squareId)} onClick={(e) => { if (e.detail === 0 && e.target === e.currentTarget) aktifkanKotak(squareId); }} style={{ height: squareSize + "px", width: squareSize + "px", fontSize: guideSize, backgroundColor: bgColor }} className={`font-bold relative focus-visible:z-[80] focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-700 ${rounded}`}>{squareNumGuide}{squareLetterGuide}{piece}{highlighted}{resultIcon ? null : highlightedIcon}{resultIcon}{hoverDragSquare}{legalMove}</div>);
         if (square2) {
           if (square2?.color === WHITE) {
             newMaterialAdvantage += PIECES_VALUES[square2.type];
@@ -810,7 +942,7 @@ function Board(props) {
       setCoronation({ choosing: false, movement: [] });
     }
     const to = coronation.movement[1];
-    return <Coronation white={white} squareSize={squareSize} column={to.col} coroningWhite={!whiteMoving} clearCoronation={() => setCoronation({ choosing: false, movement: [] })} coronate={coronate} />;
+    return <Coronation white={white} squareSize={squareSize} column={to.col} coroningWhite={!whiteMoving} t={t} fokusKembali={() => boardRef.current?.querySelector(`[data-square="${deformatSquare(to)}"]`)?.focus()} clearCoronation={() => setCoronation({ choosing: false, movement: [] })} coronate={coronate} />;
   })()}
         </div>;
 }

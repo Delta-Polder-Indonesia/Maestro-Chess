@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Maestro Chess — Analisa Catur",
-  description: "Analisis PGN dan FEN dengan Stockfish Lite lokal, laporan langkah, grafik evaluasi, dan basis data partai di peramban.",
+  description: "Analisis PGN dan FEN dengan Stockfish lokal, laporan langkah, grafik evaluasi, dan basis data partai di peramban.",
   keywords: ["catur", "analisa catur", "chess analysis", "Stockfish", "PGN", "FEN", "Maestro Chess"],
   authors: [{ name: "Delta-Polder-Indonesia", url: "https://github.com/Delta-Polder-Indonesia" }],
   applicationName: "Maestro Chess",

@@ -29,7 +29,7 @@ const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, cocok = (
     return <BarisPengaturan
       key={i}
       judul={<button onClick={() => changeBoardTheme(i)} type="button" className="flex items-center gap-2 text-left font-medium text-foreground">
-        <div className="grid grid-cols-2 w-fit">
+        <div aria-hidden="true" className="grid shrink-0 grid-cols-2 w-fit">
           {Array.from({ length: 4 }).map((_, i2) => {
             const isEvenCol = i2 % 2 === 0;
             const isEvenRow = Math.floor(i2 / 2) % 2 === 0;

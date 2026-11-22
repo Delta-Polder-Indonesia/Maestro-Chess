@@ -192,8 +192,8 @@ export default function LayarPengaturan({ aktif = true }) {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 overflow-hidden pt-1">
-          <nav aria-label={t("analisa.pengaturan.kategori")} className="flex w-[145px] shrink-0 flex-col overflow-y-auto border-r border-border pl-1 pr-0">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-1 sm:flex-row">
+          <nav aria-label={t("analisa.pengaturan.kategori")} className="flex w-full shrink-0 flex-row overflow-x-auto border-b border-border sm:w-[145px] sm:flex-col sm:overflow-x-hidden sm:overflow-y-auto sm:border-b-0 sm:border-r sm:pl-1">
             {daftarTab.map((tab) => {
               const Dipilih = tab.id === tabAktif;
               const IkonTab = tab.Ikon;
@@ -204,7 +204,7 @@ export default function LayarPengaturan({ aktif = true }) {
                   title={tab.deskripsi}
                   aria-current={Dipilih ? "page" : undefined}
                   onClick={() => { setTabAktif(tab.id); setPencarian(""); }}
-                  className={`relative flex items-center gap-2.5 px-3 py-2.5 text-left text-[14px] font-semibold leading-5 transition-colors ${
+                  className={`relative flex shrink-0 items-center gap-2.5 px-3 py-2.5 text-left text-[14px] font-semibold leading-5 transition-colors ${
                     Dipilih
                       ? "bg-backgroundBoxBoxHighlighted/15 font-medium text-foreground"
                       : "text-foregroundGrey hover:bg-backgroundBoxBox hover:text-foreground"
@@ -212,13 +212,13 @@ export default function LayarPengaturan({ aktif = true }) {
                 >
                   <IkonTab />
                   <span className="truncate">{tab.judul}</span>
-                  {Dipilih ? <span aria-hidden="true" className="absolute bottom-0 right-0 top-0 w-[2px] bg-backgroundBoxBoxHighlighted" /> : null}
+                  {Dipilih ? <span aria-hidden="true" className="absolute bottom-0 left-0 right-0 h-[2px] bg-backgroundBoxBoxHighlighted sm:left-auto sm:top-0 sm:h-auto sm:w-[2px]" /> : null}
                 </button>
               );
             })}
           </nav>
 
-          <div className="min-w-0 flex-1 overflow-y-auto px-3 pb-4 sm:px-4">
+          <div className="min-w-0 flex-1 overflow-y-auto px-1 pb-4 pt-3 sm:px-4 sm:pt-0">
             {kueri && hasil.length === 0 ? (
               <p className="rounded-[6px] border-2 border-border bg-backgroundBox px-5 py-4 text-sm text-foregroundGrey">
                 {t("analisa.pengaturan.hasilKosong", { q: pencarian.trim() })}

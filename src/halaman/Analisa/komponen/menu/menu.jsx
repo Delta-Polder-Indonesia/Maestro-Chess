@@ -1,5 +1,5 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
-import { startTransition, useContext, useEffect, useRef, useState } from "react";
+import { startTransition, useContext, useEffect, useId, useRef, useState } from "react";
 import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import Loading from "./loading/loading.jsx";
@@ -12,6 +12,7 @@ import Moves from "./analysis/moves/moves.jsx";
 import getOverallGameComment from "./analysis/moves/overallGameComment.jsx";
 import Profile from "../svg/profile.jsx";
 import Files from "../svg/files.jsx";
+import { tekanPanahTab } from "../navigasiTab.js";
 
 /*
  * Panel samping hanyalah "etalase data":
@@ -42,6 +43,7 @@ function Menu() {
   const [customLine, setCustomLine] = analyzeContext.customLine;
   const [returnedToNormalGame] = analyzeContext.returnedToNormalGame;
   const menuRef = useRef(null);
+  const idTab = useId();
 
   const modeAnalisis = pageState === "analyze" || pageState === "analyzeCustom";
   const memuatPartai = pageState === "loading";
@@ -79,19 +81,25 @@ function Menu() {
     { label: t("analisa.tab.ringkasan"), state: "summary", icon: (className) => <Star class={className} size={20} />, show: pageState === "analyze" || (memuatPartai && data?.format === "pgn") },
     { label: t("analisa.tab.langkah"), state: "moves", icon: (className) => <BoardIcon class={className} size={20} />, show: modeAnalisis },
   ].filter((x) => x.show);
+  const tabTerpilih = tabs.find((item) => item.state === tab)?.state ?? tabs[0]?.state;
 
   return (
     <div ref={menuRef} className="group-data-[panel-sejajar=true]/papan:h-full w-full max-w-[600px] pb-8 group-data-[panel-sejajar=true]/papan:pb-0 group-data-[panel-sejajar=true]/papan:min-h-0 min-h-[600px] select-text bg-backgroundBox rounded-borderRoundness flex-grow group-data-[panel-sejajar=true]/papan:max-w-[600px] group-data-[panel-sejajar=true]/papan:min-w-[400px] flex flex-col gap-4 overflow-hidden">
       {tabs.length > 0 ? (
-        <menu className="flex flex-row relative select-none">
+        <menu role="tablist" aria-label={t("analisa.nav.play")} onKeyDown={tekanPanahTab} className="flex flex-row relative select-none">
           {tabs.map((t2, i) => {
-            const isSelected = tab === t2.state;
+            const isSelected = tabTerpilih === t2.state;
             return (
               <button
+                type="button"
                 role="tab"
                 key={i}
+                id={`${idTab}-${t2.state}`}
+                aria-selected={isSelected}
+                aria-controls={`${idTab}-panel`}
+                tabIndex={isSelected ? 0 : -1}
                 onClick={() => setTab(t2.state)}
-                className={`w-full flex flex-row gap-2 group items-center justify-center py-2 text-sm outline-none ${isSelected ? "text-foreground" : "bg-backgroundBoxBoxDisabled text-foregroundGrey cursor-pointer transition-colors hover:text-foregroundHighlighted"}`}
+                className={`w-full flex flex-row gap-2 group items-center justify-center py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-backgroundBoxBoxHighlighted ${isSelected ? "text-foreground" : "bg-backgroundBoxBoxDisabled text-foregroundGrey cursor-pointer transition-colors hover:text-foregroundHighlighted"}`}
               >
                 {t2.icon(isSelected ? "fill-foreground" : "fill-foregroundGrey transition-colors group-hover:fill-foregroundHighlighted")}
                 {t2.label}
@@ -101,7 +109,13 @@ function Menu() {
         </menu>
       ) : null}
 
-      <div className="overflow-y-auto h-full flex flex-col">
+      <div
+        id={tabs.length ? `${idTab}-panel` : undefined}
+        role={tabs.length ? "tabpanel" : undefined}
+        aria-labelledby={tabs.length ? `${idTab}-${tabTerpilih}` : undefined}
+        tabIndex={tabs.length ? 0 : undefined}
+        className="overflow-y-auto h-full flex flex-col"
+      >
         {memuatPartai ? <Loading format={data?.format} analyzeController={analyzeController} /> : ""}
 
         {grafikPartai ? (

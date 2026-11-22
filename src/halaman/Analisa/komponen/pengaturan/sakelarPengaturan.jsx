@@ -16,7 +16,7 @@ export default function SakelarPengaturan({ checked, onCheckedChange, "aria-labe
       }`}
     >
       <span className={`pointer-events-none text-[9.5px] font-bold tracking-tight transition-all duration-200 ${
-        checked ? "pl-[6px] text-white" : "pl-[21px] text-foregroundGrey"
+        checked ? "pl-[6px] text-foregroundBlackDark" : "pl-[21px] text-[#e5e5e5]"
       }`}>
         {checked ? "ON" : "OFF"}
       </span>

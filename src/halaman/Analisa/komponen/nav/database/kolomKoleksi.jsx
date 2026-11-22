@@ -88,27 +88,20 @@ export default function KolomKoleksi({
         return (
           <div
             key={k.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => {
-              setKoleksiTerpilih(k.id);
-              setMode("data");
-            }}
-            onKeyDown={(e) => {
-              if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
-                e.preventDefault();
-                setKoleksiTerpilih(k.id);
-                setMode("data");
-              }
-            }}
-            aria-pressed={aktif}
-            className={`flex cursor-pointer flex-col gap-2.5 rounded-[6px] border-2 p-3.5 transition-colors ${
+            className={`relative flex flex-col gap-2.5 rounded-[6px] border-2 p-3.5 transition-colors ${
               aktif
                 ? "border-[var(--analisa-backgroundBoxBoxHighlighted)] bg-backgroundBox ring-1 ring-[var(--analisa-backgroundBoxBoxHighlighted)]"
                 : "border-border bg-backgroundBox hover:border-borderHighlighted"
             }`}
           >
-            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label={k.label}
+              aria-pressed={aktif}
+              onClick={() => { setKoleksiTerpilih(k.id); setMode("data"); }}
+              className="absolute inset-0 w-full cursor-pointer rounded-[6px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-backgroundBoxBoxHighlighted"
+            />
+            <div className="pointer-events-none relative flex items-center gap-2">
               <Database
                 width={16}
                 height={16}
@@ -128,7 +121,7 @@ export default function KolomKoleksi({
                 />
               </svg>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="pointer-events-none relative grid grid-cols-2 gap-2">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wide text-foregroundGrey">
                   {t("analisa.basisData.dataGames")}
@@ -149,7 +142,7 @@ export default function KolomKoleksi({
 
             {/* Aksi per kartu — stopPropagation agar tidak ikut memilih koleksi */}
             <div
-              className="flex items-center gap-2"
+              className="relative flex items-center gap-2"
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
             >
@@ -170,7 +163,7 @@ export default function KolomKoleksi({
                   e.stopPropagation();
                   tanganiHapusKoleksi(k.id);
                 }}
-                className="inline-flex flex-1 items-center justify-center gap-1 rounded-borderRoundness border border-border bg-backgroundBoxBox px-2 py-1 text-[10px] font-semibold text-lossRed transition-colors hover:bg-backgroundBoxBoxHover cursor-pointer"
+                className="inline-flex flex-1 items-center justify-center gap-1 rounded-borderRoundness border border-border bg-backgroundBoxBox px-2 py-1 text-[10px] font-semibold text-[#ffaaa2] transition-colors hover:bg-backgroundBoxBoxHover cursor-pointer"
               >
                 <Trash className="h-3 w-3 shrink-0" />
                 <span>{t("analisa.basisData.hapusKoleksi")}</span>

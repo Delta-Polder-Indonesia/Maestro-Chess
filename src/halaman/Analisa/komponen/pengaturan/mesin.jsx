@@ -89,6 +89,7 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
           </div>
         </div>
       </div>
+      {aktif?.keterangan ? <p className="mt-2 text-xs leading-5 text-foregroundGrey">{t(aktif.keterangan)}</p> : null}
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">

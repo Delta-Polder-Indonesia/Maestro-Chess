@@ -7,7 +7,7 @@
  * tetap ada meski halaman dimuat ulang — persis seperti perilaku akun pada
  * halaman akun referensi.
  */
-import { bacaTeks, tulis } from "../penyimpanan.js";
+import { bacaTeks, cobaBacaTeks, tulis } from "../penyimpanan.js";
 
 const KEY = "daftar-akun";
 
@@ -24,7 +24,7 @@ export function bacaDaftarAkun() {
 
 /** Tulis daftar akun penuh. */
 export function simpanDaftarAkun(list) {
-  tulis(KEY, JSON.stringify(list));
+  return tulis(KEY, JSON.stringify(list));
 }
 
 /** Tambah akun bila belum ada; kembalikan daftar terbaru. */
@@ -40,15 +40,19 @@ export function tambahKeDaftar(akun) {
   return baru;
 }
 
-/** Hapus akun dari daftar; kembalikan daftar terbaru. */
+/** Hapus hanya bila daftar asli berhasil dibaca dan daftar baru disimpan. */
 export function hapusDariDaftar(platform, username) {
-  const list = bacaDaftarAkun().filter(
-    (a) =>
-      !(
-        a.platform === platform &&
-        String(a.username || "").toLowerCase() === String(username || "").toLowerCase()
-      ),
-  );
-  simpanDaftarAkun(list);
-  return list;
+  const dibaca = cobaBacaTeks(KEY);
+  if (!dibaca.berhasil) return { tersimpan: false, daftar: [] };
+  try {
+    const lama = JSON.parse(dibaca.nilai || "[]");
+    if (!Array.isArray(lama)) return { tersimpan: false, daftar: [] };
+    const daftar = lama.filter(
+      (a) => !(a.platform === platform &&
+        String(a.username || "").toLowerCase() === String(username || "").toLowerCase()),
+    );
+    return { tersimpan: simpanDaftarAkun(daftar), daftar };
+  } catch {
+    return { tersimpan: false, daftar: [] };
+  }
 }

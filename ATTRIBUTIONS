@@ -52,25 +52,78 @@ Geist Variable, copyright 2024 The Geist Project Authors, SIL OFL 1.1:
 https://github.com/vercel/geist-font
 Full license: public/licenses/geist-OFL-1.1.txt.
 
-Stockfish 18 Lite
+Stockfish engines
 -----------------
 Stockfish and stockfish.js are GPL-3.0 software by the Stockfish authors and
 contributors, with the JavaScript/WebAssembly distribution by Nathan Rugg and
 contributors: https://github.com/nmrugg/stockfish.js .
 
-The unmodified Lite single-thread JS and WASM are from the v18.0.0 release:
-https://github.com/nmrugg/stockfish.js/releases/tag/v18.0.0
-  JS SHA-256:    2278005057f381491f1c9bb3e44c9f5920b3a00bef9759e33cc6582769a1f1fe
-  WASM SHA-256:  a8fbc05ec6920b56d7485826dcb02c5ffd2826bcbf751cf973046f237a9096f1
+Stockfish 16's unmodified single-thread JS, WASM and NNUE network come from
+stockfish.js v16.0.0 (npm package stockfish@16.0.0), corresponding to:
+https://github.com/nmrugg/stockfish.js/tree/efc5758a1cf72ec7644fa771a1f17fcbfdae410e
+  JS SHA-256:      e2958bb89fc6ee0faedde87284bbb7e14da2ab224f06ca1bd82e62eaca87d00b
+  WASM SHA-256:    a7acf7f20cb81d755b39b3dd42a4bdfd6e8c8d3d203d9fbdc525e40e1f68df08
+  Network SHA-256: 5af11540bbfefcb54e38c5dd000cab4b469dfa7599a1d55be5d2722c20a8929b
+The corresponding v16 source is in public/engine/source/stockfish.js-
+efc5758a1cf72ec7644fa771a1f17fcbfdae410e-no-networks.tar.gz. This archive
+is repacked from that revision with *.nnue omitted to avoid duplicate large
+files; the required nn-5af11540bbfe.nnue is in public/engine/. Copy it into
+src/ after extracting the archive if rebuilding this engine. GPL text and
+Stockfish authors are in public/engine/source/.
 
-The corresponding stockfish.js source archive (revision
-082eeba46b0c5f8f8065e5386750aa0ecfa2062c), Lite NNUE network, GPL text,
-and author list are distributed in public/engine/source/. Source:
-https://github.com/nmrugg/stockfish.js/tree/082eeba46b0c5f8f8065e5386750aa0ecfa2062c
-The matching Lite network is nn-9067e33176e8.nnue (SHA-256
+The Lite single-thread builds are unmodified stockfish.js distributions:
+
+* Stockfish 16.1: tag v16.1.0, revision
+  215df8c6a72847e306644d399733de18fb8e0d6c.
+  https://github.com/nmrugg/stockfish.js/tree/215df8c6a72847e306644d399733de18fb8e0d6c
+  JS SHA-256:   8f43669b56239aaeb96c0fe0b9ac9cc033bcab2a1ce101ddeafdeae115df2b85
+  WASM SHA-256: 1313432744224014a1a98604f34ee71b34187af9980e2336fc2d4f5c6747ebfb
+* Stockfish 17.1: npm stockfish@17.1.0, gitHead
+  602fd7e1a571a2be71f242942db90483731f2a1f.
+  https://github.com/nmrugg/stockfish.js/tree/602fd7e1a571a2be71f242942db90483731f2a1f
+  JS SHA-256:   1c8265e52fdaef797684b4979b42c5dcfe0350df3e11a87e48e4ec5f86e0ca5c
+  WASM SHA-256: 7ca31bedd166148931a1cc84dbd8dd9cf001744e9994caf23a3c6ff4988d7086
+* Stockfish 18: npm stockfish@18.0.0 and release v18.0.0:
+  https://github.com/nmrugg/stockfish.js/releases/tag/v18.0.0
+  The source archive is revision 082eeba46b0c5f8f8065e5386750aa0ecfa2062c:
+  https://github.com/nmrugg/stockfish.js/tree/082eeba46b0c5f8f8065e5386750aa0ecfa2062c
+  That revision is later than the release tag (its package.json says 18.0.5),
+  but has the identical src/ Git tree and build.js blob as the tag and the
+  npm package's gitHead 3f5d4d17bee569cbec41d5f6abed23717eb17c01.
+  Additional provenance:
+  https://github.com/ThuyTran735/MeowlChess/tree/main/third-party-source
+  JS SHA-256:   2278005057f381491f1c9bb3e44c9f5920b3a00bef9759e33cc6582769a1f1fe
+  WASM SHA-256: a8fbc05ec6920b56d7485826dcb02c5ffd2826bcbf751cf973046f237a9096f1
+* Stockfish 18 (JS 18.0.8): npm stockfish@18.0.8, gitHead
+  93c994592dcf3b4b21052ab925e9b534df9c0918.
+  https://github.com/nmrugg/stockfish.js/tree/93c994592dcf3b4b21052ab925e9b534df9c0918
+  JS SHA-256:   5243fd9b276cab7dfe3ad1d43ab9ead73568fac76468c614242977a210c4a391
+  WASM SHA-256: a8fbc05ec6920b56d7485826dcb02c5ffd2826bcbf751cf973046f237a9096f1
+  The WASM is identical to the Stockfish 18 option; 18.0.8 identifies the
+  stockfish.js package/loader, not a distinct Stockfish engine version.
+* Stockfish 19: npm stockfish@19.0.1 and release v19.0.1; the JS and WASM
+  hashes below also match that release's published assets:
+  https://github.com/nmrugg/stockfish.js/releases/tag/v19.0.1
+  The release tag resolves to source revision
+  0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6. The npm metadata for 19.0.1
+  has no gitHead, so the source revision is identified by the release tag.
+  https://github.com/nmrugg/stockfish.js/tree/0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6
+  JS SHA-256:   ccb130d7ff29408531c47d859a49f91d59d4f482d05a53eb1a3231a4f624c91a
+  WASM SHA-256: ee4f115bdb2d32cadf96cada104a05b5ec257d7ad6f57582190b49bc71f096de
+
+The corresponding source archives, GPL text and author list are in
+public/engine/source/. The 16.1 and 17.1 source-only archives omit upstream
+prebuilt stockfish JS/WASM files, their convenience symlinks, and *.nnue;
+the relevant distributable JS/WASM is in public/engine/ and the required
+network is supplied separately. The other source archives are upstream
+snapshots. For Lite builds 16.1–18, copy nn-9067e33176e8.nnue from
+public/engine/source/ into src/ before building (SHA-256
 9067e33176e8c5edb7aa8db6a3aedd012f84a1f39872e86357c6c2d0993f314d).
-The source/build provenance is also documented at:
-https://github.com/ThuyTran735/MeowlChess/tree/main/third-party-source
+For Lite 19, copy nn-61e7af4bb97d.nnue into src/ (SHA-256
+61e7af4bb97d51eeeb25d322916f86513b5cd3a827ce189c98c6e31946f99e5b).
+That network was recovered from the distributed WASM's data segments and
+verified against the upstream Git LFS object ID:
+https://github.com/lichess-org/lila/blob/master/public/lifat/nnue/nn-61e7af4bb97d.nnue
 
 Chess.com and Lichess names and logos are trademarks of their respective
 owners. Their inclusion identifies supported public services and does not

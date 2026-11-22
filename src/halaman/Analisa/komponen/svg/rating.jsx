@@ -588,7 +588,6 @@ function Inaccuracy({ size }) {
             <g id="layer3" transform="matrix(1.0629456,0,0,1,-2.2030973,-5)">
             <g id="layer4" transform="matrix(0.94078192,0,0,1,2.0726341,5)">
                 <g
-    aria-label="?"
     id="text78741"
     style={{
       fontSize: "89.1793px",
@@ -765,7 +764,6 @@ function Mistake({ size }) {
             <g id="layer3" transform="matrix(1.0629456,0,0,1,-2.2030973,-5)">
             <g id="layer4" transform="matrix(0.94078192,0,0,1,2.0726341,5)">
                 <g
-    aria-label="?"
     id="text78741"
     style={{
       fontSize: "89.1793px",
@@ -939,7 +937,6 @@ function Blunder({ size }) {
             <g id="layer3" transform="matrix(1.0629456,0,0,1,-2.2030973,-5)">
             <g id="g17427" transform="translate(30.105023)">
                 <g
-    aria-label="?"
     id="g125666"
     style={{
       fontSize: "89.1793px",
@@ -1015,7 +1012,6 @@ function Blunder({ size }) {
             </g>
             <g id="layer2" transform="matrix(0.94078192,0,0,1,2.0726341,5)">
                 <g
-    aria-label="?"
     id="g362-3"
     style={{
       fontSize: "89.1793px",
@@ -1096,7 +1092,6 @@ function Blunder({ size }) {
   />
                 </g>
                 <g
-    aria-label="?"
     id="g362"
     style={{
       fontSize: "89.1793px",

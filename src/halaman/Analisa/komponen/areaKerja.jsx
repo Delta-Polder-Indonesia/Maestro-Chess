@@ -153,7 +153,16 @@ function PencatatFitur({ tampilan }) {
 function PeringatanPenyimpanan() {
   const { t } = useI18n();
   const { siap, tersedia } = usePekerjaan();
-  if (!siap || tersedia) return null;
+  const [aksesPengaturan, setAksesPengaturan] = useState(true);
+  useEffect(() => {
+    try {
+      if (typeof localStorage === "undefined") throw new Error("localStorage tidak tersedia");
+      localStorage.getItem("maestro-analisa-daftar-akun");
+    } catch {
+      setAksesPengaturan(false);
+    }
+  }, []);
+  if ((!siap || tersedia) && aksesPengaturan) return null;
   return (
     <div data-uji="penyimpanan-gagal" role="alert" className="shrink-0 border-b border-[#a56c25] bg-[#50391b] px-3 py-2 text-xs leading-5 text-[#ffe3ae] sm:px-5">
       <strong>{t("analisa.pekerjaan.gagalJudul")}</strong> {t("analisa.pekerjaan.gagalIsi")}
@@ -527,7 +536,7 @@ function LapisanLayar({
   const layarBilah = perluPulih ? daftarTab.find((tab) => tab.id === aktifId)?.tampilan ?? tampilan : tampilan;
   const tabTerlihat = tampilkanBilahTab(layarBilah);
   return (
-    <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col">
+    <main className="flex min-h-0 min-w-0 w-full flex-1 flex-col">
       {tabTerlihat ? (
         <TabBar daftar={daftarTab} aktifId={aktifId} sibuk={perluPulih} onPilih={pilihTab} onTutup={tutupTab} onTambah={() => tambahTab()} />
       ) : null}
@@ -632,7 +641,7 @@ function LapisanLayar({
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -658,6 +667,7 @@ const IsiPapan = memo(function IsiPapan({ wadahRef }) {
 });
 
 export default function AreaKerja() {
+  const { t } = useI18n();
   const [tampilan, setTampilan] = useTampilan();
   const { bukaImpor, aktifId, perluPulih } = useTabKerja();
 
@@ -722,13 +732,15 @@ export default function AreaKerja() {
         keAkun={keAkun}
         keImpor={keImpor}
       >
-        <main
+        <div
           ref={wadahRef}
+          data-wadah-papan=""
           aria-hidden={papanAktif && !perluPulih ? undefined : true}
           className={`relative h-full min-w-0 w-full overflow-y-auto overflow-x-hidden ${papanAktif && !perluPulih ? "" : "invisible"}`}
         >
+          <h1 className="sr-only">{t("analisa.nav.play")}</h1>
           <IsiPapan wadahRef={wadahRef} />
-        </main>
+        </div>
 
         {/*
          * Sengaja dipasang SETELAH <main>: efek anak berjalan sesuai urutan

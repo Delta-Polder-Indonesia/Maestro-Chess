@@ -19,6 +19,7 @@ import { hitungPlyPgn } from "../../../lib/pgnRingan.js";
 import { hasilChessCom, hasilLichess } from "../../../lib/hasilPartai.js";
 import { pastikanTidakDibatalkan } from "../../../lib/pembatalan.js";
 import { simpanBanyakPartai } from "../basisData.js";
+import { daftarkanOperasiAkun } from "./koordinasiAkun.js";
 
 const ANTREAN_ARSIP = 4;
 const JEDE_GAGAL_MS = 60_000;
@@ -117,6 +118,18 @@ function saringLanjutan(daftar, { waktu, warna, rated, username } = {}) {
     if (rated === "unrated" && g.rated) return false;
     return true;
   });
+}
+
+/** Bedakan unduhan sukses dari transaksi penyimpanan yang gagal. */
+async function simpanUnduhan(partai, opsi) {
+  if (!partai.length) return { tersimpan: 0, total: 0, sementara: 0, media: "tidak-ada" };
+  try {
+    return await simpanBanyakPartai(partai, opsi);
+  } catch (error) {
+    if (opsi.signal?.aborted || error?.name === "AbortError") throw error;
+    console.error("[muatPartaiAkun] gagal menyimpan partai:", error);
+    return { tersimpan: 0, total: 0, sementara: 0, media: "gagal" };
+  }
 }
 
 /** Ubah satu objek partai mentah chess.com → baris metadata basisData. */
@@ -237,9 +250,21 @@ export function olahPartaiLichess(json) {
  * @param {string[]} [opsi.waktu] kelas waktu yang dipertahankan, mis. ["blitz"]
  * @param {string[]} [opsi.warna] "putih" / "hitam" relatif terhadap pemilik akun
  * @param {string} [opsi.rated] "rated" | "unrated" — kosong berarti keduanya
- * @returns {Promise<object[]>} daftar partai urut terbaru
+ * @returns {Promise<{partai: object[], penyimpanan: object, arsipGagal: object[], totalArsip: number}>}
+ * Partai yang berhasil tetap disimpan; arsip yang gagal harus dilaporkan agar
+ * hasil parsial tidak disalahartikan sebagai unduhan lengkap.
  */
-export async function muatPartaiChessCom(
+export async function muatPartaiChessCom(username, opsi = {}) {
+  const operasi = daftarkanOperasiAkun("chessCom", username, opsi.signal);
+  try {
+    pastikanTidakDibatalkan(operasi.signal);
+    return await muatPartaiChessComTerkoordinasi(username, { ...opsi, signal: operasi.signal });
+  } finally {
+    operasi.selesai();
+  }
+}
+
+async function muatPartaiChessComTerkoordinasi(
   username,
   {
     onProgress,
@@ -310,7 +335,10 @@ async function muatPartaiChessComInti(
   const res = await fetch(`https://api.chess.com/pub/player/${encodeURIComponent(user.toLowerCase())}/games/archives`, { signal });
   if (!res.ok) throw Object.assign(new Error(String(res.status)), { status: res.status });
   const json = await res.json();
-  let arsip = (Array.isArray(json?.archives) ? json.archives : [])
+  if (!Array.isArray(json?.archives) || !json.archives.every((alamat) => typeof alamat === "string")) {
+    throw new Error("respons daftar arsip tidak valid");
+  }
+  let arsip = json.archives
     .map((alamat) => {
       const pecahan = alamat.split("/");
       return { tahun: pecahan.at(-2), bulan: pecahan.at(-1), url: alamat };
@@ -327,6 +355,7 @@ async function muatPartaiChessComInti(
   }
 
   const semua = [];
+  const arsipGagal = [];
   let dicoba = 0;
   let berhasil = 0;
   for (let i = 0; i < arsip.length; i += ANTREAN_ARSIP) {
@@ -337,9 +366,10 @@ async function muatPartaiChessComInti(
         dicoba++;
         try {
           const jawaban = await fetch(bulan.url, { signal });
-          if (!jawaban.ok) return [];
+          if (!jawaban.ok) throw Object.assign(new Error(String(jawaban.status)), { status: jawaban.status });
           const isi = await jawaban.json();
-          let daftar = (Array.isArray(isi?.games) ? isi.games : []).map(olahPartaiChessCom).filter(Boolean);
+          if (!Array.isArray(isi?.games)) throw new Error("respons arsip tidak valid");
+          let daftar = isi.games.map(olahPartaiChessCom).filter(Boolean);
           // Filter per game juga, untuk kasus bulan yang sebagian di luar periode/hari target
           if (rentang) {
             daftar = daftar.filter((g) => {
@@ -355,21 +385,22 @@ async function muatPartaiChessComInti(
             daftar = daftar.filter((g) => (g.timestamp || 0) >= cutoffMs);
           }
           berhasil++;
-          return daftar;
+          return { daftar };
         } catch (e) {
-          if (e?.name === "AbortError") throw e;
-          return [];
+          if (signal?.aborted || e?.name === "AbortError") throw e;
+          return { gagal: { tahun: bulan.tahun, bulan: bulan.bulan, status: Number(e?.status) || 0 } };
         }
       })
     );
-    for (const bagian of hasil) semua.push(...bagian);
+    // Promise.all preserves archive order even if responses arrive out of order.
+    for (const bagian of hasil) {
+      if (bagian.gagal) arsipGagal.push(bagian.gagal);
+      else semua.push(...bagian.daftar);
+    }
   }
 
-  // Galat yang SELURUHNYA ditelan membuat tab "Database" tampak kosong tanpa
-  // alasan. Bila tidak ada satu pun arsip yang berhasil (dan bukan karena
-  // dibatalkan), laporkan.
   if (dicoba > 0 && berhasil === 0 && !signal?.aborted) {
-    throw Object.assign(new Error("unduhan arsip gagal"), { status: 0 });
+    throw Object.assign(new Error("unduhan arsip gagal"), { status: 0, arsipGagal, totalArsip: dicoba });
   }
 
   semua.sort((a, b) => b.timestamp - a.timestamp);
@@ -380,15 +411,9 @@ async function muatPartaiChessComInti(
   }
 
   pastikanTidakDibatalkan(signal);
-  if (terpilih.length > 0) {
-    await simpanBanyakPartai(terpilih, { platform: "chessCom", username: user, signal }).catch((e) => {
-      if (signal?.aborted || e?.name === "AbortError") throw e;
-      console.error("[muatPartaiAkun] gagal menyimpan partai Chess.com:", e);
-    });
-  }
+  const penyimpanan = await simpanUnduhan(terpilih, { platform: "chessCom", username: user, signal });
   pastikanTidakDibatalkan(signal);
-
-  return terpilih;
+  return { partai: terpilih, penyimpanan, arsipGagal, totalArsip: dicoba };
 }
 
 /* ── Lichess ─────────────────────────────────────────────────────────── */
@@ -492,9 +517,19 @@ async function bacaNdjsonLichess(res, { signal, onProgress, maks }) {
  * @param {string[]} [opsi.waktu] kelas waktu yang dipertahankan, mis. ["blitz"]
  * @param {string[]} [opsi.warna] "putih" / "hitam" relatif terhadap pemilik akun
  * @param {string} [opsi.rated] "rated" | "unrated" — kosong berarti keduanya
- * @returns {Promise<object[]>} daftar partai urut terbaru
+ * @returns {Promise<{partai: object[], penyimpanan: object}>} unduhan dan hasil penyimpanan
  */
-export async function muatPartaiLichess(
+export async function muatPartaiLichess(username, opsi = {}) {
+  const operasi = daftarkanOperasiAkun("lichessOrg", username, opsi.signal);
+  try {
+    pastikanTidakDibatalkan(operasi.signal);
+    return await muatPartaiLichessTerkoordinasi(username, { ...opsi, signal: operasi.signal });
+  } finally {
+    operasi.selesai();
+  }
+}
+
+async function muatPartaiLichessTerkoordinasi(
   username,
   {
     onProgress,
@@ -620,13 +655,7 @@ async function muatPartaiLichessInti(
   }
 
   pastikanTidakDibatalkan(signal);
-  if (terpilih.length > 0) {
-    await simpanBanyakPartai(terpilih, { platform: "lichessOrg", username: user, signal }).catch((e) => {
-      if (signal?.aborted || e?.name === "AbortError") throw e;
-      console.error("[muatPartaiAkun] gagal menyimpan partai Lichess:", e);
-    });
-  }
+  const penyimpanan = await simpanUnduhan(terpilih, { platform: "lichessOrg", username: user, signal });
   pastikanTidakDibatalkan(signal);
-
-  return terpilih;
+  return { partai: terpilih, penyimpanan };
 }

@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import Check from "../svg/check.jsx";
-import { useDropdown } from "./useDropdown.js";
+import { tekanPanahOpsi, useDropdown } from "./useDropdown.js";
 
 /**
  * Dropdown daftar bergaya panel Analisa (dipakai layar Deteksi Engine dan
@@ -16,19 +16,22 @@ import { useDropdown } from "./useDropdown.js";
  * @param {boolean} [p.disabled]
  */
 export default function SelectDaftar({ labelTeks, dataUji, nilai, opsi, onPilih, disabled }) {
-  const { terbuka, setTerbuka, wadahRef } = useDropdown();
+  const { terbuka, wadahRef, pemicuRef, idDaftar, tekanPemicu, toggle, keluarFokus, tutupDanFokus } = useDropdown();
 
   const kini = String(nilai ?? "");
   const aktif = opsi.find((o) => String(o.nilai) === kini) ?? opsi[0];
 
   return (
-    <div ref={wadahRef} className="relative">
+    <div ref={wadahRef} onBlur={keluarFokus} className="relative">
       <button
         type="button"
+        ref={pemicuRef}
         disabled={disabled}
-        onClick={() => setTerbuka((b) => !b)}
-        aria-label={labelTeks}
+        onClick={toggle}
+        onKeyDown={tekanPemicu}
+        aria-label={`${labelTeks}: ${aktif?.label ?? ""}`}
         aria-haspopup="listbox"
+        aria-controls={terbuka ? idDaftar : undefined}
         aria-expanded={terbuka}
         className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-borderRoundness border border-border bg-[#272727] px-2 py-1 text-sm text-foreground outline-none transition-colors hover:border-borderHighlighted disabled:cursor-not-allowed disabled:opacity-50"
       >
@@ -37,18 +40,19 @@ export default function SelectDaftar({ labelTeks, dataUji, nilai, opsi, onPilih,
       </button>
 
       {terbuka ? (
-        <ul role="listbox" className="absolute left-0 top-full z-[1200] mt-1 w-max min-w-full max-w-[320px] rounded-borderRoundness border border-border bg-[#272727] py-1 shadow-2xl">
+        <ul id={idDaftar} role="listbox" aria-label={labelTeks} onKeyDown={tekanPanahOpsi} className="absolute left-0 top-full z-[1200] mt-1 w-max min-w-full max-w-[320px] rounded-borderRoundness border border-border bg-[#272727] py-1 shadow-2xl">
           {opsi.map((o) => {
             const dipilih = String(o.nilai) === kini;
             return (
-              <li key={o.nilai || "_kosong"}>
+              <li key={o.nilai || "_kosong"} role="presentation">
                 <button
                   type="button"
                   role="option"
+                  tabIndex={-1}
                   aria-selected={dipilih}
                   onClick={() => {
                     onPilih(o.nilai);
-                    setTerbuka(false);
+                    tutupDanFokus();
                   }}
                   className={`flex w-full cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-3 py-1.5 text-left text-sm transition-colors hover:bg-[#090909] hover:text-white ${dipilih ? "bg-[#090909] font-semibold text-white" : "text-foreground"}`}
                 >

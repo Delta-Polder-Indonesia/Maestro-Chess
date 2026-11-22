@@ -77,6 +77,8 @@ test("verified single-thread Stockfish 16–19 binaries are shipped", () => {
   const expected = {
     "public/engine/stockfish-nnue-16-single.js": "e2958bb89fc6ee0faedde87284bbb7e14da2ab224f06ca1bd82e62eaca87d00b",
     "public/engine/stockfish-nnue-16-single.wasm": "a7acf7f20cb81d755b39b3dd42a4bdfd6e8c8d3d203d9fbdc525e40e1f68df08",
+    "public/engine/nn-5af11540bbfe.nnue": "5af11540bbfefcb54e38c5dd000cab4b469dfa7599a1d55be5d2722c20a8929b",
+    "public/engine/source/stockfish.js-efc5758a1cf72ec7644fa771a1f17fcbfdae410e-no-networks.tar.gz": "9fddb8876aba9ca6a0e0c47ea40e29f8376c023b1c110a68cd54734eef0a3c0f",
     "public/engine/stockfish-16.1-lite-single.js": "8f43669b56239aaeb96c0fe0b9ac9cc033bcab2a1ce101ddeafdeae115df2b85",
     "public/engine/stockfish-16.1-lite-single.wasm": "1313432744224014a1a98604f34ee71b34187af9980e2336fc2d4f5c6747ebfb",
     "public/engine/stockfish-17-lite-single.js": "1c8265e52fdaef797684b4979b42c5dcfe0350df3e11a87e48e4ec5f86e0ca5c",
@@ -88,11 +90,31 @@ test("verified single-thread Stockfish 16–19 binaries are shipped", () => {
     "public/engine/stockfish-19-lite-single.js": "ccb130d7ff29408531c47d859a49f91d59d4f482d05a53eb1a3231a4f624c91a",
     "public/engine/stockfish-19-lite-single.wasm": "ee4f115bdb2d32cadf96cada104a05b5ec257d7ad6f57582190b49bc71f096de",
     "public/engine/source/nn-9067e33176e8.nnue": "9067e33176e8c5edb7aa8db6a3aedd012f84a1f39872e86357c6c2d0993f314d",
+    "public/engine/source/nn-61e7af4bb97d.nnue": "61e7af4bb97d51eeeb25d322916f86513b5cd3a827ce189c98c6e31946f99e5b",
     "public/engine/source/stockfish.js-082eeba46b0c5f8f8065e5386750aa0ecfa2062c.tar.gz": "8e047428efde3b856dddd163dd8bd1a019b97956792d284d1cca8ef8417b5635",
+    "public/engine/source/stockfish.js-215df8c6a72847e306644d399733de18fb8e0d6c-source-only.tar.gz": "1206c5e69a34847ae2172f5d65f7a4009a4cf75b74b9233487a90f51da2a09b3",
+    "public/engine/source/stockfish.js-602fd7e1a571a2be71f242942db90483731f2a1f-source-only.tar.gz": "fdba5cd0604a4e195cac76e5c054c3c8b08028e18167c63bfbb497762b04d042",
+    "public/engine/source/stockfish.js-93c994592dcf3b4b21052ab925e9b534df9c0918.tar.gz": "ef9b6e9bd66de9869dc4715979ada23c6ab4fa96648025823a0a865f300667b2",
+    "public/engine/source/stockfish.js-0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6.tar.gz": "e5289a920554bf0069a6601c228e81d957c00522bb31c4343588dc5d7d251879",
   };
   for (const [path, hash] of Object.entries(expected)) {
     assert.equal(hashBerkas(path), hash, path);
   }
+});
+
+test("documentation matches the selectable engines and Stockfish 16 NNUE", () => {
+  const readme = readFileSync("README.md", "utf8");
+  const analisa = readFileSync("src/halaman/Analisa/README.md", "utf8");
+  for (const { label } of DAFTAR_ENGINE) assert.ok(readme.includes(label), `README should document ${label}`);
+  assert.match(readme, /Stockfish 18 Lite[^.]*bawaan|bawaan[^.]*Stockfish 18 Lite/i);
+  assert.match(analisa, /nn-5af11540bbfe\.nnue/);
+  assert.match(readme, /WASM mesinnya identik/);
+  const label1808 = DAFTAR_ENGINE.find(({ id }) => id === "stockfish-18.0.8-lite");
+  assert.equal(label1808.label, "Stockfish 18 Lite (JS 18.0.8)");
+  assert.equal(label1808.keterangan, "analisa.engine.paket1808");
+  assert.equal(hashBerkas("public/engine/stockfish-18-lite-single.wasm"), hashBerkas("public/engine/stockfish-18.0.8-lite-single.wasm"));
+  assert.notEqual(hashBerkas("public/engine/stockfish-18-lite-single.js"), hashBerkas("public/engine/stockfish-18.0.8-lite-single.js"));
+  assert.doesNotMatch(`${readme}\n${analisa}`, /Satu-satunya (?:engine|build)/i);
 });
 
 test("worker starts lazily, parses UCI score and MultiPV, and cleans up", async (t) => {

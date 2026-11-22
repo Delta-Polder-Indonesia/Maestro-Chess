@@ -9,7 +9,7 @@ Halaman ini mengadaptasi UI dan logika Analisa dari [ChessClub](https://github.c
 - `mesin/`: parser PGN/FEN, klasifikasi langkah, perhitungan ringkasan dan wawasan, serta adaptor UCI.
 - `database/`, `basisData.js`, `akun/`: IndexedDB, fallback, koleksi, statistik, dan pengambilan partai akun publik.
 - `penyimpanan.js`: pembacaan/tulis preferensi aman di bawah awalan `maestro-analisa-`; pengaturan Maestro lama dibaca sebagai fallback tanpa dihapus.
-- `src/lib/engineCatur.js`: worker UCI yang dimuat secara malas. Satu-satunya build adalah Stockfish 18 Lite single-thread di `public/engine/`.
+- `src/lib/engineCatur.js`: enam worker UCI Stockfish single-thread di `public/engine/`, dimuat saat diperlukan. Stockfish 16 menggunakan jaringan `nn-5af11540bbfe.nnue`; lima pilihan lain menggunakan build Lite. Stockfish 18 Lite dan Stockfish 18 Lite (JS 18.0.8) memakai WASM yang identik, tetapi pemuat JavaScript berbeda. Pilihan engine disimpan di peramban, dengan Stockfish 18 Lite sebagai bawaan.
 - `src/lib/asets.js`: URL aset yang menghormati `NEXT_PUBLIC_BASE_PATH`; buku pembukaan di `public/data/`, suara Lichess di `public/sounds/`.
 
 ## Perilaku penting
@@ -19,8 +19,12 @@ Halaman ini mengadaptasi UI dan logika Analisa dari [ChessClub](https://github.c
 - Setiap pencarian membawa `AbortSignal`. Analisis yang dibatalkan atau digantikan tidak boleh menimpa hasil partai yang lebih baru; kegagalan worker ditampilkan sebagai galat, bukan disamakan dengan pembatalan.
 - Evaluasi UCI dinyatakan relatif terhadap pihak yang mendapat giliran. `mesin/penilaian.js` dan adaptor analisis menangani konversi untuk tampilan.
 - Hasil PGN `*` atau yang tidak diketahui disimpan sebagai `unknown`, bukan remis. Partai lama yang sudah pernah disimpan sebagai remis tidak otomatis diubah.
-- IndexedDB menggunakan `maestro_chess_database_v1`. Data tetap lokal sampai dihapus oleh pengguna atau peramban; fallback localStorage menyimpan maksimal 100 partai terbaru.
-- Permintaan akun dan profil dilakukan langsung dari peramban ke API publik masing-masing. Fitur tersebut memerlukan koneksi, CORS dan ketersediaan layanan.
+- Tanggal impor diambil dari `UTCDate` atau `Date` PGN yang lengkap dan sah, bukan tanggal impor. Tanggal tak lengkap/tak sah ditampilkan sebagai tidak diketahui. Migrasi memperbaiki tanggal impor lama tanpa mengganti ID-nya.
+- Ringkasan Database mencari, mengurutkan dan membagi halaman dari seluruh koleksi; pencarian juga memeriksa isi PGN, bukan hanya metadata.
+- Papan mendukung seret sentuh dan dua ketuk. Dengan keyboard, Tab memfokuskan papan, tombol panah berpindah petak, Enter/Spasi memilih atau melangkah, dan Escape membatalkan pilihan atau promosi. Langkah manual pada FEN dapat dimundurkan sampai posisi awal dan dimainkan kembali; membuat langkah baru mengganti kelanjutan lama.
+- IndexedDB menggunakan `maestro_chess_database_v1`. Data tetap lokal sampai dihapus oleh pengguna atau peramban; fallback localStorage menyimpan satu snapshot atomik tanpa batas 100 partai dan dipulihkan saat IndexedDB tersedia lagi. Jika kuota/izin gagal atau Web Locks tidak tersedia, perubahan fallback hanya ada di memori tab dan ditampilkan sebagai belum tersimpan permanen.
+- Penghapusan akun dikoordinasikan antar-tab menggunakan Web Locks dan memerlukan peramban yang mendukungnya dalam konteks aman (HTTPS atau localhost). Jika koordinasi atau salah satu tahap penyimpanan gagal, penghapusan dilaporkan belum selesai; sebagian data mungkin sudah terhapus, sehingga pengguna dapat mencoba lagi.
+- Permintaan akun dan profil dilakukan langsung dari peramban ke API publik masing-masing. Fitur tersebut memerlukan koneksi, CORS dan ketersediaan layanan. Jika sebagian arsip Chess.com gagal, partai yang berhasil tetap disimpan dan aplikasi menampilkan jumlah serta bulan arsip yang gagal.
 - Deteksi engine bersifat indikatif, bukan penetapan kecurangan.
 
 Jalankan pemeriksaan proyek yang tercantum di [README utama](../../../README.md) sebelum mengubah atau merilisnya.

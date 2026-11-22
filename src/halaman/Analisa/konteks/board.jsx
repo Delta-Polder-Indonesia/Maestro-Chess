@@ -1,12 +1,11 @@
 /**
  * Provider BoardContext: state papan + navigasi langkah.
  *
- * Seluruh isi berkas ini adalah PEMINDAHAN apa adanya dari
- * `konteks/analyze.jsx` (Fase 2). Tidak ada perubahan nilai awal, urutan
- * `useState`, isi `gameController`, maupun perilaku ref. Yang berubah hanya
- * letak state: nilai yang berubah sangat sering (progress, pageState,
- * analyzingMove, langkahSementara, data, analyzeController) kini hidup di
- * `ImportProvider` sehingga perubahan itu tidak lagi me-render provider ini.
+ * State papan dipisahkan dari `konteks/analyze.jsx`: nilai yang berubah sangat
+ * sering (progress, pageState, analyzingMove, langkahSementara, data, dan
+ * analyzeController) hidup di `ImportProvider` sehingga perubahan itu tidak
+ * lagi me-render provider ini. Controller juga menjaga riwayat langkah manual
+ * pada posisi tanpa riwayat utama, seperti FEN.
  *
  * Urutan pemanggilan hook dipertahankan supaya urutan inisialisasi (termasuk
  * `bacaAngka("kedalaman", 13)` dan `t(...)` untuk nama pemain bawaan) tetap
@@ -91,8 +90,15 @@ export function BoardProvider({ children }) {
         } else if (customLineRef.current.moveNumber === 0) {
           setForward(false);
           setAnimation(true);
-          setReturnedToNormalGame(customLineRef.current.moves[0].movement ?? null);
-          setCustomLine({ moveNumber: -1, moves: [], arrows: {} });
+          setReturnedToNormalGame(customLineRef.current.moves[0]?.movement ?? null);
+          // A FEN (or another position without a main line) has nowhere else
+          // to go forward. Keep its manual line while displaying the origin;
+          // a PGN variation still exits to its existing main line as before.
+          if (gameLengthRef.current === 1) {
+            setCustomLine((prev) => ({ ...prev, moveNumber: -1 }));
+          } else {
+            setCustomLine({ moveNumber: -1, moves: [], arrows: {} });
+          }
         } else if (moveNumberRef.current > 0) {
           setForward(false);
           setAnimation(true);
@@ -102,7 +108,7 @@ export function BoardProvider({ children }) {
       },
       forward: () => {
         setReturnedToNormalGame(null);
-        if (customLineRef.current.moveNumber >= 0) {
+        if (customLineRef.current.moveNumber >= 0 || (gameLengthRef.current === 1 && customLineRef.current.moves.length > 0)) {
           if (customLineRef.current.moveNumber < customLineRef.current.moves.length - 1) {
             setForward(true);
             setAnimation(true);
@@ -118,8 +124,12 @@ export function BoardProvider({ children }) {
       first: () => {
         if (customLineRef.current.moveNumber >= 0) {
           setAnimation(false);
-          setReturnedToNormalGame(customLineRef.current.moves[0].movement ?? null);
-          setCustomLine({ moveNumber: -1, moves: [], arrows: {} });
+          setReturnedToNormalGame(customLineRef.current.moves[0]?.movement ?? null);
+          if (gameLengthRef.current === 1) {
+            setCustomLine((prev) => ({ ...prev, moveNumber: -1 }));
+          } else {
+            setCustomLine({ moveNumber: -1, moves: [], arrows: {} });
+          }
         } else {
           setAnimation(false);
           setReturnedToNormalGame(null);
@@ -128,7 +138,7 @@ export function BoardProvider({ children }) {
       },
       last: () => {
         setReturnedToNormalGame(null);
-        if (customLineRef.current.moveNumber >= 0) {
+        if (customLineRef.current.moveNumber >= 0 || (gameLengthRef.current === 1 && customLineRef.current.moves.length > 0)) {
           setAnimation(false);
           setCustomLine((prev) => ({ ...prev, moveNumber: prev.moves.length - 1 }));
         } else {

@@ -4,7 +4,7 @@ import { statusHasil, formatTanggal, BIRU } from "./formatDatabase.js";
 import SquareFillPlus from "../../svg/square-fill-plus.jsx";
 import SquareFillMinus from "../../svg/square-fill-minus.jsx";
 import SquareFillEqual from "../../svg/square-fill-equal.jsx";
-import { useLegacyTable, getCoreRowModel, getSortedRowModel, getPaginationRowModel } from "@tanstack/react-table/legacy";
+import { useLegacyTable, getCoreRowModel } from "@tanstack/react-table/legacy";
 import { IkonSearch } from "./ikonDatabase.jsx";
 import { MenuKolom, HeaderKolom } from "./tabelPartai.jsx";
 import DualRingSpinner from "../../loading/DualRingSpinner.jsx";
@@ -20,10 +20,9 @@ import { flexRender } from "@tanstack/react-table";
 
 /* ── Tabel Ringkasan (mode "data") ──────────────────────────────────── */
 
-/* Varian tampilan ringkas: hanya sebagian partai terbaru koleksi yang
- * dimuat (tanpa teks PGN) lalu difilter di memori. Internal paginasi
- * memakai @tanstack/react-table — tidak menarik seluruh baris sekaligus. */
-const BATAS_MUAT_RINGKAS = 400;
+/* Pencarian, pengurutan dan pagination berlaku pada SELURUH koleksi di
+ * basis data. Hanya metadata halaman yang terlihat dikirim ke tabel; teks PGN
+ * dapat dicari oleh kueri tanpa dibawa seluruhnya ke React. */
 const PERIODE_MUNDUR = [
   { nilai: "mingguan", hari: 7 },
   { nilai: "bulanan", hari: 31 },
@@ -31,50 +30,62 @@ const PERIODE_MUNDUR = [
   { nilai: "semua", hari: 0 },
 ];
 
-export function TabelRingkasan({ koleksiId, t, locale, revisi, username, tanganiAnalisa }) {
+export function TabelRingkasan({ koleksiId, t, locale, revisi, username, totalKoleksi, tanganiAnalisa }) {
   /* null = masih memuat; [] = sudah dimuat tapi kosong */
   const [daftar, setDaftar] = useState(null);
+  const [galat, setGalat] = useState(false);
+  const [totalCocok, setTotalCocok] = useState(0);
   const [periode, setPeriode] = useState("semua");
   const [cari, setCari] = useState("");
+  const [cariTunda, setCariTunda] = useState("");
   const [sorting, setSorting] = useState([]);
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+
+  useEffect(() => {
+    const timer = setTimeout(() => setCariTunda(cari.trim()), 200);
+    return () => clearTimeout(timer);
+  }, [cari]);
+
+  useEffect(() => {
+    setPagination((p) => p.pageIndex ? { ...p, pageIndex: 0 } : p);
+  }, [koleksiId, revisi]);
 
   useEffect(() => {
     let hidup = true;
+    const p = PERIODE_MUNDUR.find((x) => x.nilai === periode);
+    const sejak = p?.hari ? Date.now() - p.hari * 86400000 : 0;
+    const kolomUrut = { whiteName: "putih", blackName: "hitam", timestamp: "tanggal", plyCount: "langkah" };
+    const urut = kolomUrut[sorting[0]?.id] || "tanggal";
+    const arah = sorting.length ? (sorting[0].desc ? "desc" : "asc") : "desc";
     // String kosong berarti semua koleksi, bukan koleksi kosong.
     setDaftar(null);
+    setGalat(false);
     (async () => {
       try {
         const hasil = await ambilDaftarPartai({
-          koleksiId,
-          limit: BATAS_MUAT_RINGKAS,
+          koleksiId, cari: cariTunda, sejak, urut, arah,
+          limit: pagination.pageSize,
+          offset: pagination.pageIndex * pagination.pageSize,
           sertakanPgn: false,
-          urut: "tanggal",
-          arah: "desc",
         });
-        if (hidup) setDaftar(hasil?.partai || []);
+        if (hasil?.galat) throw new Error("basis data tidak dapat dibaca");
+        if (!hidup) return;
+        const total = hasil?.total ?? 0;
+        const halamanTerakhir = Math.max(0, Math.ceil(total / pagination.pageSize) - 1);
+        if (pagination.pageIndex > halamanTerakhir) {
+          setPagination((lama) => ({ ...lama, pageIndex: halamanTerakhir }));
+          return;
+        }
+        setTotalCocok(total);
+        setDaftar(hasil?.partai || []);
       } catch {
-        if (hidup) setDaftar([]);
+        if (hidup) { setGalat(true); setDaftar([]); }
       }
     })();
-    return () => {
-      hidup = false;
-    };
-  }, [koleksiId, revisi]);
+    return () => { hidup = false; };
+  }, [koleksiId, revisi, periode, cariTunda, sorting, pagination]);
 
-  const dataTampil = useMemo(() => {
-    const g = daftar || [];
-    const p = PERIODE_MUNDUR.find((x) => x.nilai === periode);
-    const batas = p?.hari ? Date.now() - p.hari * 86400000 : 0;
-    const q = cari.trim().toLowerCase();
-    return g.filter((baris) => {
-      if (batas > 0 && baris.timestamp && baris.timestamp < batas) return false;
-      if (!q) return true;
-      const teks = `${baris.whiteName || ""} ${baris.blackName || ""} ${
-        baris.event || ""
-      } ${baris.site || ""}`.toLowerCase();
-      return teks.includes(q);
-    });
-  }, [daftar, periode, cari]);
+  const dataTampil = daftar || [];
 
   const kolom = useMemo(
     () => [
@@ -82,7 +93,7 @@ export function TabelRingkasan({ koleksiId, t, locale, revisi, username, tangani
         id: "nomor",
         header: "#",
         enableSorting: false,
-        cell: (info) => info.row.index + 1,
+        cell: (info) => pagination.pageIndex * pagination.pageSize + info.row.index + 1,
       },
       {
         accessorKey: "whiteName",
@@ -149,9 +160,9 @@ export function TabelRingkasan({ koleksiId, t, locale, revisi, username, tangani
         cell: (info) => (
           <div className="whitespace-nowrap">
             <div className="text-xs text-foregroundGrey">
-              {formatTanggal(info.row.original.timestamp, locale)}
+              {formatTanggal(info.row.original.timestamp, locale, info.row.original.tanggalPgn) || "—"}
             </div>
-            <div className="font-mono text-[10px] uppercase tracking-wider text-foregroundGrey/75">
+            <div className="font-mono text-[10px] uppercase tracking-wider text-foregroundGrey">
               {info.row.original.timeClass || ""}
             </div>
           </div>
@@ -171,24 +182,29 @@ export function TabelRingkasan({ koleksiId, t, locale, revisi, username, tangani
         header: t("analisa.basisData.situs"),
         enableSorting: false,
         cell: (info) => (
-          <div className="truncate whitespace-nowrap text-[10px] uppercase tracking-wider text-foregroundGrey/75">
+          <div className="truncate whitespace-nowrap text-[10px] uppercase tracking-wider text-foregroundGrey">
             {info.row.original.site || info.row.original.url || ""}
           </div>
         ),
       },
     ],
-    [t, locale, username],
+    [t, locale, username, pagination.pageIndex, pagination.pageSize],
   );
 
   const tabel = useLegacyTable({
     data: dataTampil,
     columns: kolom,
-    state: { sorting },
-    onSortingChange: setSorting,
+    state: { sorting, pagination },
+    onSortingChange: (perubahan) => {
+      setSorting(perubahan);
+      setPagination((p) => ({ ...p, pageIndex: 0 }));
+    },
+    onPaginationChange: setPagination,
+    manualSorting: true,
+    manualPagination: true,
+    enableMultiSort: false,
+    rowCount: totalCocok,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize: 10 } },
   });
 
   const aktifHal = tabel.getState().pagination.pageIndex + 1;
@@ -205,13 +221,19 @@ export function TabelRingkasan({ koleksiId, t, locale, revisi, username, tangani
           <input
             type="search"
             value={cari}
-            onChange={(e) => setCari(e.target.value)}
+            onChange={(e) => {
+              setCari(e.target.value);
+              setPagination((p) => p.pageIndex ? { ...p, pageIndex: 0 } : p);
+            }}
             placeholder={t("analisa.basisData.cariPlaceholder")}
             aria-label={t("analisa.basisData.cariPlaceholder")}
             className="w-full rounded-borderRoundness border border-border bg-backgroundBoxBox pl-9 pr-3 py-1.5 text-sm text-foreground outline-none transition-colors placeholder:text-foregroundGrey hover:border-borderHighlighted focus:border-borderHighlighted"
           />
         </div>
-        <MenuKolom t={t} nilai={periode} onPilih={setPeriode} />
+        <MenuKolom t={t} nilai={periode} onPilih={(nilai) => {
+          setPeriode(nilai);
+          setPagination((p) => p.pageIndex ? { ...p, pageIndex: 0 } : p);
+        }} />
       </div>
 
       {daftar === null ? (
@@ -219,13 +241,15 @@ export function TabelRingkasan({ koleksiId, t, locale, revisi, username, tangani
           <DualRingSpinner color={BIRU} />
           <p className="text-sm text-foregroundGrey">{t("analisa.basisData.memuatData")}</p>
         </div>
+      ) : galat ? (
+        <p role="alert" className="py-6 text-center text-sm text-lossRed">{t("analisa.statistik.galatBasis")}</p>
       ) : dataTampil.length === 0 ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 text-center">
           <Database width={32} height={32} className="fill-foregroundGrey/30" />
           <p className="font-bold text-foreground">
-            {daftar.length === 0
-              ? t("analisa.basisData.kosongJudul")
-              : t("analisa.partai.tidakCocok")}
+            {cariTunda || periode !== "semua"
+              ? t("analisa.partai.tidakCocok")
+              : t("analisa.basisData.kosongJudul")}
           </p>
         </div>
       ) : (
@@ -261,7 +285,7 @@ export function TabelRingkasan({ koleksiId, t, locale, revisi, username, tangani
                   <tr
                     key={r.id}
                     onClick={() => tanganiAnalisa(r.original)}
-                    className="cursor-pointer select-none border-b border-border/50 transition-colors hover:bg-backgroundBoxHover"
+                    className="cursor-pointer select-none border-b border-border/50 transition-colors hover:bg-backgroundBoxHover focus-within:bg-backgroundBoxHover"
                   >
                     {r.getVisibleCells().map((c) => (
                       <td
@@ -274,7 +298,16 @@ export function TabelRingkasan({ koleksiId, t, locale, revisi, username, tangani
                               : ""
                         }`}
                       >
-                        {flexRender(c.column.columnDef.cell, c.getContext())}
+                        {c.column.id === "nomor" ? (
+                          <button
+                            type="button"
+                            aria-label={`${pagination.pageIndex * pagination.pageSize + r.index + 1}: ${t("analisa.basisData.analisaSekarang")}: ${r.original.whiteName || t("analisa.basisData.putih")} – ${r.original.blackName || t("analisa.basisData.hitam")}`}
+                            onClick={(e) => { e.stopPropagation(); tanganiAnalisa(r.original); }}
+                            className="-mx-1 rounded px-1 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-backgroundBoxBoxHighlighted"
+                          >
+                            {flexRender(c.column.columnDef.cell, c.getContext())}
+                          </button>
+                        ) : flexRender(c.column.columnDef.cell, c.getContext())}
                       </td>
                     ))}
                   </tr>
@@ -287,8 +320,8 @@ export function TabelRingkasan({ koleksiId, t, locale, revisi, username, tangani
           <div className="flex shrink-0 items-center justify-between gap-2 text-xs">
             <span className="text-foregroundGrey">
               {t("analisa.basisData.baris", {
-                jumlah: tabel.getRowCount(),
-                total: dataTampil.length,
+                jumlah: totalCocok,
+                total: Math.max(totalCocok, Number(totalKoleksi) || 0),
               })}
             </span>
             <div className="flex items-center gap-2">

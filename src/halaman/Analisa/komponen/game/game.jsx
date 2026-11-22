@@ -152,18 +152,22 @@ const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didu
   // dipanggil sekali di luar interval saat effect mulai) — inilah yang
   // membuat langkah berjalan terlalu cepat. Ref berikut selalu sinkron
   // dengan render terbaru.
-  const playingEndCheckRef = useRef({ moveNumber, gameLen: game.length, customLine, move2 });
+  const playingEndCheckRef = useRef({ moveNumber, gameLen: game.length, customLine });
   useEffect(() => {
-    playingEndCheckRef.current = { moveNumber, gameLen: game.length, customLine, move2 };
-  }, [moveNumber, game.length, customLine, move2]);
+    playingEndCheckRef.current = { moveNumber, gameLen: game.length, customLine };
+  }, [moveNumber, game.length, customLine]);
   useEffect(() => {
     clearInterval(intervalRef.current);
     if (playing) {
       const atEndOfLine = () => {
         const s = playingEndCheckRef.current;
         if (s.customLine.moveNumber >= 0) {
-          return s.customLine.moveNumber >= s.customLine.moves.length - 1 && Boolean(getCustomResult(s.move2));
+          // Stop at the end of the recorded line even if the chess position
+          // itself is not checkmate or stalemate.
+          return s.customLine.moveNumber >= s.customLine.moves.length - 1;
         }
+        // A FEN rewound to its origin still has a manual line to play.
+        if (s.gameLen === 1 && s.customLine.moves.length > 0) return false;
         return s.moveNumber >= s.gameLen - 1;
       };
       const nextMove2 = function() {
@@ -259,7 +263,7 @@ const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didu
    */
   useLayoutEffect(() => {
     // Ref <main> baru terpasang setelah layout effect anak saat mount awal.
-    const cariWadah = () => wadah?.current ?? componentRef.current?.closest?.("main");
+    const cariWadah = () => wadah?.current ?? componentRef.current?.closest?.("[data-wadah-papan]") ?? componentRef.current?.closest?.("main");
     function updateBoardSize() {
       const el = cariWadah();
       const lebar = ukuranWadah?.lebar ?? el?.clientWidth ?? window.innerWidth;
@@ -397,6 +401,7 @@ const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didu
                   />
                 ) : (
                 <Board
+    t={t}
     pratinjau={memuatPartaiPapan}
     setPlaying={setPlaying}
     cleanArrows={cleanCurrentArrows}
@@ -414,7 +419,7 @@ const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didu
     boardSize={boardSize}
     white={white}
     animation={animation}
-    gameEnded={moveNumber === game.length - 1 && customLine.moveNumber < 0 || customLine.moveNumber >= 0 && Boolean(shownResult)}
+    gameEnded={moveNumber === game.length - 1 && customLine.moveNumber < 0 && !(game.length === 1 && customLine.moves.length > 0) || customLine.moveNumber >= 0 && Boolean(shownResult)}
     capture={move2?.capture}
     nextCapture={nextMove?.capture}
     castle={move2?.castle}
