@@ -26,7 +26,7 @@ function Statistik({ label, nilai }) {
   );
 }
 
-function KartuEngine({ entri, terpilih, onPilih, labelVersi, labelKedalaman, kedalaman, dataUji, t }) {
+function KartuEngine({ entri, terpilih, onPilih, labelVersi, labelKedalaman, kedalaman, dataUji }) {
   const versi = /\d+(?:\.\d+)*/.exec(entri.label)?.[0] ?? "-";
   const berkas = entri.url.split("/").pop() ?? "-";
   return (
@@ -58,7 +58,6 @@ function KartuEngine({ entri, terpilih, onPilih, labelVersi, labelKedalaman, ked
         <Statistik label={labelVersi} nilai={versi} />
         <Statistik label={labelKedalaman} nilai={kedalaman} />
       </div>
-      {entri.keterangan ? <span className="text-xs leading-5 text-foregroundGrey">{t(entri.keterangan)}</span> : null}
     </button>
   );
 }
@@ -179,7 +178,6 @@ export default function LayarEngine() {
                       labelKedalaman={t("analisa.pengaturan.kedalaman")}
                       kedalaman={kedalaman}
                       dataUji={`engine-kartu-${entri.id}`}
-                      t={t}
                     />
                   ))}
                 </div>
