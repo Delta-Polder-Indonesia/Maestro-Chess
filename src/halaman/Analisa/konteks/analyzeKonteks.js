@@ -13,6 +13,7 @@ export const TAMPILAN_ANALISA = Object.freeze({
   WAWASAN: "wawasan",
   PENGATURAN: "pengaturan",
   BASIS_DATA: "database",
+  ENGINE: "engine",
   IMPOR: "impor",
 });
 

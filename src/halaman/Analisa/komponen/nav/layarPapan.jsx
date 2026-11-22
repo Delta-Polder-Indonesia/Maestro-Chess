@@ -132,7 +132,7 @@ function Kartu({ kunci, ikon, judul, deskripsi, labelTombol, segera, onClick, t 
   return (
     <div
       data-uji={`papan-kartu-${kunci}`}
-      className="relative flex h-full flex-col items-center justify-between rounded-lg border border-border bg-backgroundBoxBox p-6 text-center shadow-sm"
+      className="relative flex h-full flex-col items-center justify-between rounded-[6px] border-2 border-border bg-backgroundBoxBox p-6 text-center shadow-sm"
     >
       {segera ? (
         <span className="absolute right-2.5 top-2.5 rounded bg-backgroundBoxBoxHover px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foregroundGrey">

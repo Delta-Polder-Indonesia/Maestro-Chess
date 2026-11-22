@@ -13,6 +13,10 @@ import { daftarRiwayat, KUNCI_FITUR } from "../src/halaman/Analisa/riwayatFitur.
 // Node's test runner cannot import JSX directly. Compile the two UI components
 // and substitute only the storage/i18n boundaries.
 const nodeRequire = createRequire(import.meta.url);
+const TautanUji = React.forwardRef(function TautanUji(props, ref) {
+  return React.createElement("a", { ...props, ref });
+});
+
 function compile(path, dependencies, exportName = "default") {
   const filename = new URL(path, import.meta.url);
   const source = readFileSync(filename, "utf8");
@@ -46,17 +50,17 @@ function renderPapan(dictionary, handlers = {}, work = { siap: true, tersedia: t
   return TestRenderer.create(React.createElement(Papan, handlers));
 }
 
-function renderNav(dictionary, penyimpanan = { bacaBoolean: (_key, fallback) => fallback, tulisBoolean: () => {} }) {
+function renderNav(dictionary, penyimpanan = { bacaBoolean: (_key, fallback) => fallback, tulisBoolean: () => {} }, onTampilan = () => {}) {
   const translate = (key) => key.split(".").reduce((value, part) => value?.[part], { analisa: dictionary }) ?? key;
   const svg = { default: () => React.createElement("svg") };
   const Nav = compile("../src/halaman/Analisa/komponen/nav/nav.jsx", {
-    "next/link": { default: (props) => React.createElement("a", props) },
+    "next/link": { default: TautanUji },
     "../svg/github.jsx": svg,
     "../svg/license.jsx": svg,
     "../svg/profile.jsx": svg,
     "../svg/shield-alert.jsx": svg,
-    "../../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA: { PAPAN: "papan", AKUN: "akun", BASIS_DATA: "database", IMPOR: "impor", DETEKSI_ENGINE: "deteksi-engine", WAWASAN: "wawasan", PENGATURAN: "pengaturan" } },
-    "../../konteks/boardKonteks.js": { useTampilan: () => ["papan", () => {}] },
+    "../../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA: { PAPAN: "papan", AKUN: "akun", BASIS_DATA: "database", ENGINE: "engine", IMPOR: "impor", DETEKSI_ENGINE: "deteksi-engine", WAWASAN: "wawasan", PENGATURAN: "pengaturan" } },
+    "../../konteks/boardKonteks.js": { useTampilan: () => ["papan", onTampilan] },
     "../../konteks/tabKerja.jsx": { useTabKerja: () => ({ bukaImpor() {}, perluPulih: false }) },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
     "../../../../components/ui/tooltip.jsx": { TooltipLabel: ({ children }) => children },
@@ -128,6 +132,28 @@ test("navigation saves the user's choice and exposes clear toggle labels in both
     assert.equal(tersimpan, true);
     TestRenderer.act(() => renderer.unmount());
   }
+});
+
+test("navigation places Engine between database and settings with the requested chip icon", () => {
+  const lintas = [];
+  const renderer = renderNav(english, undefined, (tampilan) => lintas.push(tampilan));
+  const tombol = renderer.root.findAll((node) => typeof node.props["data-uji"] === "string" && node.props["data-uji"].startsWith("nav-") && node.props["data-uji"] !== "nav-tutup");
+  assert.deepEqual(
+    tombol.map((node) => node.props["data-uji"]),
+    ["nav-papan", "nav-akun", "nav-database", "nav-engine", "nav-pengaturan"],
+  );
+  const engine = byTestId(renderer, "nav-engine");
+  assert.equal(engine.props["aria-label"], "Engine");
+  const ikon = engine.findByType("svg");
+  assert.equal(ikon.props.width, 18);
+  assert.equal(ikon.props.height, 18);
+  assert.equal(
+    ikon.findByType("path").props.d,
+    "M9,15V9h6v6H9Zm2-2h2V11H11v2ZM9,21V19H7q-0.82,0-1.41-0.59T5,17V15H3V13H5V11H3V9H5V7Q5,6.18 5.59,5.59T7,5H9V3h2V5h2V3h2V5h2q0.82,0 1.41,0.59Q19,6.18 19,7V9h2v2H19v2h2v2H19v2q0,0.82-0.59,1.41T17,19H15v2H13V19H11v2H9Zm8-4V7H7V17H17Zm-5-5Z",
+  );
+  TestRenderer.act(() => engine.props.onClick());
+  assert.deepEqual(lintas, ["engine"]);
+  renderer.unmount();
 });
 
 test("a stable tooltip keeps its trigger mounted and only describes a visible label", () => {
@@ -260,7 +286,7 @@ test("dashboard and board controls retain Indonesian and English labels", () => 
 test("recent files use the original compact panel and empty state without explanatory copy", () => {
   const renderer = renderPapan(indonesia);
   const panel = byTestId(renderer, "pekerjaan-daftar");
-  assert.match(panel.props.className, /rounded-lg border border-border bg-backgroundBoxBox p-4/);
+  assert.match(panel.props.className, /rounded-\[6px\] border-2 border-border bg-backgroundBoxBox p-4/);
   assert.match(text(panel), /Belum ada file yang dibuka/);
   assert.doesNotMatch(text(panel), /Laporan dan draf disimpan otomatis/);
   assert.doesNotMatch(text(panel), /Impor partai atau mulai laporan/);

@@ -1,9 +1,10 @@
 /**
  * Pembungkus Stockfish (WebAssembly) untuk analisis catur di peramban.
  *
- * Engine diambil dari `public/engine/stockfish-18-lite-single.js`. Build
- * satu utas tidak memerlukan SharedArrayBuffer; loader mencari WASM dengan
- * nama yang sama di folder worker. URL menghormati base path static export.
+ * Mesin diambil dari berkas WebAssembly di `public/engine/` (Stockfish 16,
+ * 16.1, 17.1, 18, 18.0.8, dan 19). Build satu utas tidak memerlukan
+ * SharedArrayBuffer; loader mencari WASM dengan nama yang sama di folder
+ * worker. URL menghormati base path static export.
  *
  * Komunikasi memakai protokol UCI lewat `postMessage` string. Perintah yang
  * dikirim sebelum engine siap otomatis ditampung oleh loader engine sendiri,
@@ -12,12 +13,26 @@
 
 import { berkasPublik } from "./asets.js";
 
-// The worker and its WASM are local, single-threaded, and loaded on demand.
-const URL_ENGINE = berkasPublik("engine/stockfish-18-lite-single.js");
+// Semua worker dan WASM-nya lokal, satu utas, dan dimuat sesuai permintaan.
+const urlEngine = (namaBerkas) => berkasPublik(`engine/${namaBerkas}`);
+
+const URL_ENGINE = urlEngine("stockfish-18-lite-single.js");
+const URL_ENGINE_16 = urlEngine("stockfish-nnue-16-single.js");
+const URL_ENGINE_16_1 = urlEngine("stockfish-16.1-lite-single.js");
+const URL_ENGINE_17 = urlEngine("stockfish-17-lite-single.js");
+const URL_ENGINE_18_0_8 = urlEngine("stockfish-18.0.8-lite-single.js");
+const URL_ENGINE_19 = urlEngine("stockfish-19-lite-single.js");
+
 export const DAFTAR_ENGINE = [
+  { id: "stockfish-16", label: "Stockfish 16", url: URL_ENGINE_16 },
+  { id: "stockfish-16.1-lite", label: "Stockfish 16.1 Lite", url: URL_ENGINE_16_1 },
+  { id: "stockfish-17-lite", label: "Stockfish 17.1 Lite", url: URL_ENGINE_17 },
   { id: "stockfish-18-lite", label: "Stockfish 18 Lite", url: URL_ENGINE, saran: true },
+  { id: "stockfish-18.0.8-lite", label: "Stockfish 18.0.8 Lite", url: URL_ENGINE_18_0_8 },
+  { id: "stockfish-19-lite", label: "Stockfish 19 Lite", url: URL_ENGINE_19 },
 ];
-export const ENGINE_BAKU = DAFTAR_ENGINE[0].id;
+// Bawaan tetap 18 supaya analisis yang sudah berjalan tidak berubah mesin.
+export const ENGINE_BAKU = "stockfish-18-lite";
 
 /** Cari konfigurasi engine berdasarkan id (fallback ke bawaan). */
 export function cariEngine(id) {

@@ -7,6 +7,7 @@ import React from "react";
 import TestRenderer from "react-test-renderer";
 import ts from "typescript";
 import { buatPenyimpananPekerjaan, simpanDrafImpor } from "../src/halaman/Analisa/pekerjaan.js";
+import { tangkapGalatDiuji } from "./bantuGalat.mjs";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -115,6 +116,7 @@ test("successful import leaves a fresh draft without adding a button or overwrit
 
 test("unreadable draft is not overwritten when later writes succeed", async (t) => {
   pasangWindow(t);
+  const galat = tangkapGalatDiuji(t, "Gagal membaca pekerjaan Analisa:");
   const adapter = adapterMemori();
   const seeded = buatPenyimpananPekerjaan(adapter);
   simpanDrafImpor({ tipe: "pgn", pgn: "valuable original", fen: "", tautan: "" }, "draf:impor", seeded);
@@ -124,6 +126,8 @@ test("unreadable draft is not overwritten when later writes succeed", async (t) 
   adapter.ambil = async () => { throw new Error("read failed"); };
   const renderer = await render(komponenImpor(store));
   assert.equal(store.snapshot().tersedia, false);
+  assert.equal(galat.length, 1);
+  assert.match(String(galat[0][1]), /read failed/);
   assert.equal(kontrol(renderer, "galat-draf").props.role, "alert");
   assert.equal(kontrol(renderer, "impor-pgn").props.value, "");
   assert.notEqual(store.snapshot().terakhirDrafId, "draf:impor");

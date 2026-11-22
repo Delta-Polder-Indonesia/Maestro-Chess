@@ -2,7 +2,7 @@
  * Port dari Brilliant-Chess (MIT, © 2025 Delo) — src/components/nav/nav.tsx.
  *
  * Bilah navigasi kiri: logo + wordmark di atas, lalu menu area kerja
- * (Papan / Akun / Basis Data / Pengaturan), diikuti tautan Source Code
+ * (Papan / Akun / Basis Data / Engine / Pengaturan), diikuti tautan Source Code
  * dan Atribusi di dasar bilah.
  *
  * PERUBAHAN BESAR dari upstream (dan dari versi port sebelumnya):
@@ -66,6 +66,23 @@ function IkonPapan({ className }) {
         className={className}
         fillRule="evenodd"
         d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm1 3v2h2V6H5zm4 0v2h2V6H9zm4 0v2h2V6h-2zm4 0v2h2V6h-2zM5 10v2h2v-2H5zm4 0v2h2v-2H9zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zM5 14v2h2v-2H5zm4 0v2h2v-2H9zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Ikon "Engine" — cip mesin dengan inti kotak (monokrom, ikut warna kelas fill).
+ * Path-nya hanya memakai rentang 3–21 pada kanvas 24, jadi kanvas dipangkas
+ * ke 2–22 supaya gambar tampak sebesar ikon Papan/Akun/Database/Pengaturan
+ * tanpa mengubah ukuran luar 18px (rail menciut tetap muat).
+ */
+function IkonEngine({ className }) {
+  return (
+    <svg viewBox="2 2 20 20" width={18} height={18} aria-hidden="true">
+      <path
+        className={className}
+        d="M9,15V9h6v6H9Zm2-2h2V11H11v2ZM9,21V19H7q-0.82,0-1.41-0.59T5,17V15H3V13H5V11H3V9H5V7Q5,6.18 5.59,5.59T7,5H9V3h2V5h2V3h2V5h2q0.82,0 1.41,0.59Q19,6.18 19,7V9h2v2H19v2h2v2H19v2q0,0.82-0.59,1.41T17,19H15v2H13V19H11v2H9Zm8-4V7H7V17H17Zm-5-5Z"
       />
     </svg>
   );
@@ -153,6 +170,12 @@ export default function Nav() {
       icon: (props) => <IkonDatabase className={props.className} />,
       tampilan: TAMPILAN_ANALISA.BASIS_DATA,
       kunci: "database",
+    },
+    {
+      label: t("analisa.nav.engine"),
+      icon: (props) => <IkonEngine className={props.className} />,
+      tampilan: TAMPILAN_ANALISA.ENGINE,
+      kunci: "engine",
     },
     {
       label: t("analisa.nav.pengaturan"),

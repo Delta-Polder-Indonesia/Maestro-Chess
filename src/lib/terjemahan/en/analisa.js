@@ -364,6 +364,7 @@ export const analisa = {
       baruKeterangan: "Start a new analysis — clears the board",
       baruKonfirmasi: "Sure? Press again",
       akun: "Accounts",
+      engine: "Engine",
       deteksiEngine: "Engine detection",
       wawasan: "Insights",
       database: "Database",
@@ -373,6 +374,15 @@ export const analisa = {
       beranda: "Maestro Chess — Home",
       tutupBilah: "Collapse navigation",
       bukaBilah: "Expand navigation",
+    },
+    engine: {
+      judul: "Engines",
+      bukaFolder: "Show engine list",
+      cari: "Search",
+      tambah: "Add engine",
+      tambahTidakTersedia: "Adding engines is not supported yet",
+      kosongIsi: "The bundled engine is available on this site.",
+      tidakCocok: "No engines match your search",
     },
     papan: {
       balik: "Flip board",

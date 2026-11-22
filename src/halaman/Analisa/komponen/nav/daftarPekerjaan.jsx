@@ -69,7 +69,7 @@ export default function DaftarPekerjaan({ onBuka }) {
   const ditampilkan = lihatSemua ? riwayat : riwayat.slice(0, BATAS_TERBARU);
 
   return (
-    <section data-uji="pekerjaan-daftar" aria-labelledby="judul-pekerjaan" className="rounded-lg border border-border bg-backgroundBoxBox p-4 shadow-sm">
+    <section data-uji="pekerjaan-daftar" aria-labelledby="judul-pekerjaan" className="rounded-[6px] border-2 border-border bg-backgroundBoxBox p-4 shadow-sm">
       <div className="mb-2.5 flex items-center justify-between gap-2">
         <h2 id="judul-pekerjaan" className="text-lg font-semibold text-foreground">{t("analisa.pekerjaan.judul")}</h2>
         <button

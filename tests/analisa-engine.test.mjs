@@ -39,19 +39,59 @@ test("analysis errors retain the original worker failure as their cause", async 
   await assert.rejects(parseMove(mesin, 6, langkah, chess, [["cp", "0"]]), periksa);
 });
 
-test("only the verified Stockfish 18 Lite single-thread binary is shipped", () => {
-  assert.deepEqual(DAFTAR_ENGINE.map(({ id }) => id), ["stockfish-18-lite"]);
+function hashBerkas(path) {
+  const isi = readFileSync(path);
+  // Saat checkout di Windows, git mengubah LF menjadi CRLF pada berkas teks.
+  // Normalisasi supaya hash tetap sama dengan blob yang tersimpan di repo.
+  const isiNormal = path.endsWith(".js")
+    ? Buffer.from(isi.toString("latin1").replace(/\r\n/g, "\n"), "latin1")
+    : isi;
+  return createHash("sha256").update(isiNormal).digest("hex");
+}
+
+test("verified single-thread Stockfish 16–19 binaries are shipped", () => {
+  assert.deepEqual(DAFTAR_ENGINE.map(({ id }) => id), [
+    "stockfish-16",
+    "stockfish-16.1-lite",
+    "stockfish-17-lite",
+    "stockfish-18-lite",
+    "stockfish-18.0.8-lite",
+    "stockfish-19-lite",
+  ]);
   assert.equal(cariEngine("unknown").id, "stockfish-18-lite");
   const binaries = readdirSync("public/engine").filter((name) => /\.(js|wasm)$/.test(name)).sort();
-  assert.deepEqual(binaries, ["stockfish-18-lite-single.js", "stockfish-18-lite-single.wasm"]);
+  assert.deepEqual(binaries, [
+    "stockfish-16.1-lite-single.js",
+    "stockfish-16.1-lite-single.wasm",
+    "stockfish-17-lite-single.js",
+    "stockfish-17-lite-single.wasm",
+    "stockfish-18-lite-single.js",
+    "stockfish-18-lite-single.wasm",
+    "stockfish-18.0.8-lite-single.js",
+    "stockfish-18.0.8-lite-single.wasm",
+    "stockfish-19-lite-single.js",
+    "stockfish-19-lite-single.wasm",
+    "stockfish-nnue-16-single.js",
+    "stockfish-nnue-16-single.wasm",
+  ]);
   const expected = {
+    "public/engine/stockfish-nnue-16-single.js": "e2958bb89fc6ee0faedde87284bbb7e14da2ab224f06ca1bd82e62eaca87d00b",
+    "public/engine/stockfish-nnue-16-single.wasm": "a7acf7f20cb81d755b39b3dd42a4bdfd6e8c8d3d203d9fbdc525e40e1f68df08",
+    "public/engine/stockfish-16.1-lite-single.js": "8f43669b56239aaeb96c0fe0b9ac9cc033bcab2a1ce101ddeafdeae115df2b85",
+    "public/engine/stockfish-16.1-lite-single.wasm": "1313432744224014a1a98604f34ee71b34187af9980e2336fc2d4f5c6747ebfb",
+    "public/engine/stockfish-17-lite-single.js": "1c8265e52fdaef797684b4979b42c5dcfe0350df3e11a87e48e4ec5f86e0ca5c",
+    "public/engine/stockfish-17-lite-single.wasm": "7ca31bedd166148931a1cc84dbd8dd9cf001744e9994caf23a3c6ff4988d7086",
     "public/engine/stockfish-18-lite-single.js": "2278005057f381491f1c9bb3e44c9f5920b3a00bef9759e33cc6582769a1f1fe",
     "public/engine/stockfish-18-lite-single.wasm": "a8fbc05ec6920b56d7485826dcb02c5ffd2826bcbf751cf973046f237a9096f1",
+    "public/engine/stockfish-18.0.8-lite-single.js": "5243fd9b276cab7dfe3ad1d43ab9ead73568fac76468c614242977a210c4a391",
+    "public/engine/stockfish-18.0.8-lite-single.wasm": "a8fbc05ec6920b56d7485826dcb02c5ffd2826bcbf751cf973046f237a9096f1",
+    "public/engine/stockfish-19-lite-single.js": "ccb130d7ff29408531c47d859a49f91d59d4f482d05a53eb1a3231a4f624c91a",
+    "public/engine/stockfish-19-lite-single.wasm": "ee4f115bdb2d32cadf96cada104a05b5ec257d7ad6f57582190b49bc71f096de",
     "public/engine/source/nn-9067e33176e8.nnue": "9067e33176e8c5edb7aa8db6a3aedd012f84a1f39872e86357c6c2d0993f314d",
     "public/engine/source/stockfish.js-082eeba46b0c5f8f8065e5386750aa0ecfa2062c.tar.gz": "8e047428efde3b856dddd163dd8bd1a019b97956792d284d1cca8ef8417b5635",
   };
   for (const [path, hash] of Object.entries(expected)) {
-    assert.equal(createHash("sha256").update(readFileSync(path)).digest("hex"), hash, path);
+    assert.equal(hashBerkas(path), hash, path);
   }
 });
 

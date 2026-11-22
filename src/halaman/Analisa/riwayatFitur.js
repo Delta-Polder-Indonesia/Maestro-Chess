@@ -6,6 +6,7 @@ export const KUNCI_FITUR = Object.freeze({
   bermain: "analisa.papan.kartu.report.judul",
   akun: "analisa.nav.akun",
   database: "analisa.nav.database",
+  engine: "analisa.nav.engine",
   impor: "analisa.papan.kartu.impor.judul",
   "deteksi-engine": "analisa.nav.deteksiEngine",
   wawasan: "analisa.nav.wawasan",

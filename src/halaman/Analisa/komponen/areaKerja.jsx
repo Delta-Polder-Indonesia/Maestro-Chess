@@ -77,6 +77,7 @@ import { useUkuranArea } from "./useUkuranArea.js";
 const LayarPapan = lazy(() => import("./nav/layarPapan.jsx"));
 const LayarAkun = lazy(() => import("./nav/layarAkun.jsx"));
 const LayarDatabase = lazy(() => import("./nav/layarDatabase.jsx"));
+const LayarEngine = lazy(() => import("./nav/layarEngine.jsx"));
 const LayarImpor = lazy(() => import("./nav/layarImpor.jsx"));
 const LayarDeteksiEngine = lazy(() => import("./nav/layarDeteksiEngine.jsx"));
 const LayarWawasan = lazy(() => import("./nav/layarWawasan.jsx"));
@@ -588,6 +589,7 @@ function LapisanLayar({
                         }}
                       />
                     ) : null}
+                    {layar === TAMPILAN_ANALISA.ENGINE ? <LayarEngine aktif={aktif} /> : null}
                     {layar === TAMPILAN_ANALISA.IMPOR ? (
                       <LayarImpor
                         onTutup={() => { if (masihAktif()) void bukaLaporanAktif(); }}

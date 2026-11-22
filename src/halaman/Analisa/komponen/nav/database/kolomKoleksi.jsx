@@ -63,7 +63,7 @@ export default function KolomKoleksi({
   ) : null}
 
   {koleksiList.length === 0 ? (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-borderRoundness border border-border bg-backgroundBox p-6 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[6px] border-2 border-border bg-backgroundBox p-6 text-center">
       <Database width={32} height={32} className="fill-foregroundGrey/30" />
       <p className="font-bold text-foreground">{t("analisa.basisData.belumAdaKoleksi")}</p>
       <p className="max-w-[220px] text-xs leading-5 text-foregroundGrey">{t("analisa.basisData.kosongIsi")}</p>
@@ -76,7 +76,7 @@ export default function KolomKoleksi({
       </button>
     </div>
   ) : daftarKoleksi.length === 0 ? (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-borderRoundness border border-border bg-backgroundBox p-6 text-center">
+    <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-[6px] border-2 border-border bg-backgroundBox p-6 text-center">
       <IkonSearch className="h-6 w-6 text-foregroundGrey/50" />
       <p className="text-sm text-foregroundGrey">{t("analisa.partai.tidakCocok")}</p>
     </div>
@@ -102,7 +102,7 @@ export default function KolomKoleksi({
               }
             }}
             aria-pressed={aktif}
-            className={`flex cursor-pointer flex-col gap-2.5 rounded-[0.4rem] border p-3.5 transition-colors ${
+            className={`flex cursor-pointer flex-col gap-2.5 rounded-[6px] border-2 p-3.5 transition-colors ${
               aktif
                 ? "border-[var(--analisa-backgroundBoxBoxHighlighted)] bg-backgroundBox ring-1 ring-[var(--analisa-backgroundBoxBoxHighlighted)]"
                 : "border-border bg-backgroundBox hover:border-borderHighlighted"

@@ -364,6 +364,7 @@ export const analisa = {
       baruKeterangan: "Mulai analisis baru — papan dikosongkan",
       baruKonfirmasi: "Yakin? Tekan lagi",
       akun: "Akun",
+      engine: "Engine",
       deteksiEngine: "Deteksi engine",
       wawasan: "Wawasan",
       database: "Database",
@@ -373,6 +374,15 @@ export const analisa = {
       beranda: "Maestro Chess — Beranda",
       tutupBilah: "Perkecil bilah navigasi",
       bukaBilah: "Perluas bilah navigasi",
+    },
+    engine: {
+      judul: "Engine",
+      bukaFolder: "Tampilkan daftar engine",
+      cari: "Cari engine",
+      tambah: "Tambah engine",
+      tambahTidakTersedia: "Menambah engine belum didukung",
+      kosongIsi: "Engine bawaan tersedia di situs ini.",
+      tidakCocok: "Tidak ada engine yang cocok dengan pencarian",
     },
     papan: {
       balik: "Balik papan",
