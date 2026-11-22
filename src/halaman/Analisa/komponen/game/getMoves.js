@@ -20,6 +20,11 @@ export function getMoves(game, moveNumber, customLine, returnedToNormalGame) {
     if (customLine.moveNumber >= 0) {
       return customLine.moves[customLine.moveNumber + 1];
     }
+    // The first manual move is still the next position after rewinding a FEN
+    // line. Keep its full FEN/capture/castle data for backward animation.
+    if (game.length === 1 && customLine.moves.length > 0) {
+      return customLine.moves[0];
+    }
     if (returnedToNormalGame) {
       return { ...game[moveNumber], movement: returnedToNormalGame };
     }

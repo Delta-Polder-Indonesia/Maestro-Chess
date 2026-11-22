@@ -15,6 +15,7 @@ import { buatHandleKeyDown } from "../src/halaman/Analisa/komponen/game/keyboard
 import { getCapturedPieces } from "../src/halaman/Analisa/komponen/game/getMoves.js";
 import { useAnalisisPapan } from "../src/halaman/Analisa/komponen/game/useAnalisisPapan.js";
 import { useUkuranArea } from "../src/halaman/Analisa/komponen/useUkuranArea.js";
+import * as navigasiTab from "../src/halaman/Analisa/komponen/navigasiTab.js";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -234,6 +235,7 @@ test("move navigation defers the side panel without overriding a later tab selec
     "./analysis/moves/overallGameComment.jsx": { default: () => "" },
     "../svg/profile.jsx": { default: kosong },
     "../svg/files.jsx": { default: kosong },
+    "../navigasiTab.js": navigasiTab,
   }).default;
   const kendali = {};
   function Harness() {
@@ -300,7 +302,7 @@ test("the board observes its workspace from the first mount and resizes when the
     get offsetHeight() { return 832; },
     getElementsByTagName: () => [{ offsetHeight: tinggiStatus }],
     closest: (selector) => {
-      assert.equal(selector, "main");
+      assert.equal(selector, "[data-wadah-papan]");
       if (!refWadah.current) fallbackSaatRefKosong = true;
       return main;
     },

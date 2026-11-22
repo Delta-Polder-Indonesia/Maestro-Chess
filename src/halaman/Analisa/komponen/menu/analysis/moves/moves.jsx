@@ -132,8 +132,10 @@ function Moves(props) {
     const shownRating = getRating(currentMoveNumber, rating, prevRating, nextRating, lastBookMove, langkahTerpaksa(entriKini));
     const fgColorClass = shownRating ? shownRating.textClass : isSelected ? "text-foregroundHighlighted" : "";
     return <div key={`${i}-${j}`} className="w-1/2 flex flex-row gap-1 items-center">
-                                        <button type="button" onClick={() => handleMoveClick(currentMoveNumber)} className="w-[18px] outline-none">{shownRating ? <RatingSVG draggable rating={shownRating.rating} size={18} /> : null}</button>
-                                        <button type="button" onClick={() => handleMoveClick(currentMoveNumber)} className={`rounded-borderRoundness outline-none border-b-2 text-left px-1.5 w-fit ${isSelected ? "bg-backgroundBoxBox border-backgroundBoxBoxHover" : "border-transparent"} ${fgColorClass}`}>{move3}</button>
+                                        <button type="button" onClick={() => handleMoveClick(currentMoveNumber)} className={`flex items-center gap-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-backgroundBoxBoxHighlighted ${fgColorClass}`}>
+                                            <span aria-hidden="true" className="w-[18px] shrink-0">{shownRating ? <RatingSVG draggable rating={shownRating.rating} size={18} /> : null}</span>
+                                            <span className={`rounded-borderRoundness border-b-2 px-1.5 ${isSelected ? "bg-backgroundBoxBox border-backgroundBoxBoxHover" : "border-transparent"}`}>{move3}</span>
+                                        </button>
                                     </div>;
   })}
                         </div>

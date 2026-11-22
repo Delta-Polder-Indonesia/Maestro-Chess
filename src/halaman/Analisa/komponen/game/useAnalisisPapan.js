@@ -73,7 +73,13 @@ export function useAnalisisPapan({
     };
     setAnimation(animation2);
     setForward(true);
-    setCustomLine((prev) => ({ moveNumber: prev.moveNumber + 1, moves: [...prev.moves.slice(0, prev.moveNumber + 1), unanalyzedMove], arrows: sliceCustomArrows(prev.arrows, prev.moveNumber + 1) }));
+    setCustomLine((prev) => ({
+      moveNumber: prev.moveNumber + 1,
+      moves: [...prev.moves.slice(0, prev.moveNumber + 1), unanalyzedMove],
+      // A new branch replaces the future position; arrows drawn on the old
+      // continuation do not describe the new move.
+      arrows: { ...sliceCustomArrows(prev.arrows, prev.moveNumber), [prev.moveNumber + 1]: [] },
+    }));
     setAnalyzingMove(true);
     if (data.format === "fen") setPageState("analyzeCustom");
     /*
@@ -183,16 +189,26 @@ export function useAnalisisPapan({
       // ekspor) bisa membedakan batal vs gagal vs valid.
       const cap = dibatalkan ? STATUS_EVALUASI.DIBATALKAN : STATUS_EVALUASI.GAGAL;
       setCustomLine((prev) => {
+        const index = prev.moves.indexOf(unanalyzedMove);
+        if (index < 0) return prev;
+        const sasaran = prev.moves[index];
+        if (sasaran.previousStaticEvals || sasaran.statusEvaluasi) return prev;
         const daftar = prev.moves.slice();
-        const sasaran = daftar[prev.moveNumber];
-        if (sasaran && !sasaran.previousStaticEvals && !sasaran.statusEvaluasi) {
-          daftar[prev.moveNumber] = { ...sasaran, statusEvaluasi: cap };
-        }
+        daftar[index] = { ...sasaran, statusEvaluasi: cap };
         return { ...prev, moves: daftar };
       });
       return;
     }
-    setCustomLine((prev) => ({ ...prev, moveNumber: prev.moveNumber, moves: [...prev.moves.slice(0, prev.moveNumber), { ...move3, clock: unanalyzedMove.clock }] }));
+    setCustomLine((prev) => {
+      // Navigation can move the cursor, or discard a PGN variation, while the
+      // engine is still evaluating. Update the original placeholder instead
+      // of whichever move happens to be selected when the result arrives.
+      const index = prev.moves.indexOf(unanalyzedMove);
+      if (index < 0) return prev;
+      const daftar = prev.moves.slice();
+      daftar[index] = { ...move3, clock: unanalyzedMove.clock };
+      return { ...prev, moves: daftar };
+    });
   }, [
     controllerRef, muatSeqRef, openingsRef, data.format, depth, time, move2,
     siapkan, ambilMesin, t, setErrors, setAnalyzeController, setPageState,

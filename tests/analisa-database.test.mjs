@@ -30,7 +30,7 @@ test("unknown PGN results remain distinct from draws throughout the local databa
     ["white", "black", "draw", "draw", "draw", "unknown", "unknown", "unknown", "unknown"],
   );
   const koleksiId = "impor:impor";
-  assert.deepEqual(await imporPgnKeBasisData(pgn), { tersimpan: 4, total: 4 });
+  assert.deepEqual(await imporPgnKeBasisData(pgn), { tersimpan: 0, total: 4, sementara: 4, media: "memori", diproses: 4 });
   const { partai, total } = await ambilDaftarPartai({ koleksiId, limit: 0 });
   assert.equal(total, 4);
   assert.equal(partai.filter((p) => p.result === "unknown").length, 2);

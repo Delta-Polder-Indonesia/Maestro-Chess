@@ -28,9 +28,11 @@
  * perlu memuat worker Stockfish.
  */
 
+import { hashPgn } from "../../../lib/pgnRingan.js";
 import { GALAT_BATAL, MULTI_PV, parsePGN } from "../mesin/engine.js";
 import { cariNamaPembukaan } from "../mesin/buku.js";
 import { agregatSkorPemain, hitungSkorKecurigaan, ratingDariMetadata, warnaPemainDariMetadata } from "../mesin/antiCheat.js";
+import { denganKunciAkun, langgananPenghapusanAkun, periksaSinyalAkun } from "./koordinasiAkun.js";
 
 /** Jumlah partai bawaan jika kolom jumlah dikosongkan. */
 export const BATAS_PARTAI = 12;
@@ -51,34 +53,24 @@ export function batasPartaiDariInput(nilai) {
  */
 export const KEDALAMAN_AGGREGAT = 8;
 
-/*
- * Cache sesi hasil per partai. Kuncinya menyertakan kedalaman dan MULTI_PV
- * karena hasil pada 8 ply dan 13 ply memang berbeda, dan hasil tanpa
- * kandidat MultiPV (analisis generasi lama) tidak boleh tercampur dengan
- * hasil ber-kandidat — menyimpan keduanya terpisah lebih jujur daripada
- * menimpa dan berpura-pura setara.
- */
+/* Cache hanya valid untuk isi PGN, engine, kedalaman, MultiPV, dan versi
+ * perhitungan yang sama. Tanpa identitas engine/PGN, jangan pakai cache. */
 const cacheHasilPartai = new Map();
+const VERSI_PERHITUNGAN = 1;
+const AWALAN_CACHE = "maestro-anticheat-cache-v";
+const KUNCI_SIMPANAN_CACHE = `${AWALAN_CACHE}7`;
 
-export function kunciCachePartai(id, kedalaman) {
-  return `${id ?? ""}|d${kedalaman}|mp${MULTI_PV}`;
+export function kunciCachePartai(id, kedalaman, pgn, idEngine) {
+  if (!id || typeof pgn !== "string" || !pgn.trim() || !idEngine) return null;
+  return JSON.stringify([VERSI_PERHITUNGAN, String(id), kedalaman, MULTI_PV, String(idEngine), hashPgn(pgn)]);
 }
-
-/*
- * Lapisan localStorage — cache lintas kunjungan. Kunci simpanan menyertakan
- * penanda versi (`v4`) karena bentuk hasil ikut berubah saat metrik baru
- * ditambahkan; hasil lama yang tidak punya field baru TIDAK boleh tercampur.
- * Semua akses dibungkus try/catch: localStorage bisa penuh, dinonaktifkan,
- * atau tidak ada (SSR/uji) — cache itu optimalisasi, bukan kebutuhan benar.
- */
-const KUNCI_SIMPANAN_CACHE = "maestro-anticheat-cache-v6";
 
 function bacaSimpananCache() {
   try {
     if (typeof localStorage === "undefined") return {};
     const mentah = localStorage.getItem(KUNCI_SIMPANAN_CACHE);
     const urai = mentah ? JSON.parse(mentah) : null;
-    return urai && typeof urai === "object" ? urai : {};
+    return urai && typeof urai === "object" && !Array.isArray(urai) ? urai : {};
   } catch {
     return {};
   }
@@ -86,47 +78,64 @@ function bacaSimpananCache() {
 
 function tulisSimpananCache(objek) {
   try {
-    if (typeof localStorage === "undefined") return;
-    localStorage.setItem(KUNCI_SIMPANAN_CACHE, JSON.stringify(objek));
-  } catch {
-    /* penuh/dinonaktifkan — cache memori tetap jalan */
-  }
+    if (typeof localStorage !== "undefined") localStorage.setItem(KUNCI_SIMPANAN_CACHE, JSON.stringify(objek));
+  } catch { /* cache memori tetap jalan */ }
 }
 
 let cacheSudahDimuat = false;
 
+// Cache di memori tab lain juga harus gugur ketika akun dihapus. Perubahan
+// cache antartab dimuat ulang agar hasil yang lebih baru tidak tertutup salinan lama.
+langgananPenghapusanAkun(() => { cacheHasilPartai.clear(); cacheSudahDimuat = false; });
+if (typeof window !== "undefined" && window.addEventListener) {
+  window.addEventListener("storage", (event) => {
+    if (!event.key?.startsWith(AWALAN_CACHE)) return;
+    cacheHasilPartai.clear();
+    cacheSudahDimuat = false;
+  });
+}
+
 function pastikanCacheDimuat() {
   if (cacheSudahDimuat) return;
   cacheSudahDimuat = true;
-  const tersimpan = bacaSimpananCache();
-  for (const [kunci, nilai] of Object.entries(tersimpan)) {
-    if (!cacheHasilPartai.has(kunci) && nilai && typeof nilai === "object") {
-      cacheHasilPartai.set(kunci, nilai);
-    }
+  for (const [kunci, nilai] of Object.entries(bacaSimpananCache())) {
+    if (!cacheHasilPartai.has(kunci) && nilai && typeof nilai === "object") cacheHasilPartai.set(kunci, nilai);
   }
 }
 
-export function bacaCachePartai(id, kedalaman) {
+export function bacaCachePartai(id, kedalaman, pgn, idEngine) {
+  const kunci = kunciCachePartai(id, kedalaman, pgn, idEngine);
+  if (!kunci) return null;
   pastikanCacheDimuat();
-  return cacheHasilPartai.get(kunciCachePartai(id, kedalaman)) ?? null;
+  return cacheHasilPartai.get(kunci) ?? null;
 }
 
-export function simpanCachePartai(id, kedalaman, hasil) {
-  if (!id || !hasil) return;
+export function simpanCachePartai(id, kedalaman, hasil, pgn, idEngine) {
+  const kunci = kunciCachePartai(id, kedalaman, pgn, idEngine);
+  if (!kunci || !hasil) return;
   pastikanCacheDimuat();
-  cacheHasilPartai.set(kunciCachePartai(id, kedalaman), hasil);
+  cacheHasilPartai.set(kunci, hasil);
   const cermin = bacaSimpananCache();
-  cermin[kunciCachePartai(id, kedalaman)] = hasil;
+  cermin[kunci] = hasil;
   tulisSimpananCache(cermin);
 }
 
+/** Versi lama tidak memiliki pemilik yang andal; hapus seluruh cache deteksi. */
 export function bersihkanCacheAntiCheat() {
   cacheHasilPartai.clear();
   cacheSudahDimuat = true;
   try {
-    if (typeof localStorage !== "undefined") localStorage.removeItem(KUNCI_SIMPANAN_CACHE);
+    if (typeof localStorage === "undefined") return true;
+    const storage = localStorage;
+    const kunci = new Set(Array.from({ length: 7 }, (_, i) => `${AWALAN_CACHE}${i + 1}`));
+    for (let i = 0; i < storage.length; i++) {
+      const nama = storage.key(i);
+      if (nama?.startsWith(AWALAN_CACHE)) kunci.add(nama);
+    }
+    for (const nama of kunci) storage.removeItem(nama);
+    return true;
   } catch {
-    /* abaikan */
+    return false;
   }
 }
 
@@ -174,6 +183,7 @@ export async function analisisRiwayatAntiCheat({
   progres = null,
   parserPgn = parsePGN,
   cariBuku = cariNamaPembukaan,
+  paksa = false,
 } = {}) {
   const batasPilihan = batasPartaiDariInput(batas);
   if (batasPilihan === null) throw new RangeError("Jumlah partai harus berupa bilangan bulat positif.");
@@ -195,10 +205,11 @@ export async function analisisRiwayatAntiCheat({
   }
 
   for (let i = 0; i < daftar.length; i++) {
+    periksaSinyalAkun(sinyal);
     if (sinyal?.aborted) break;
     const p = daftar[i];
     const warna = warnaPemainPadaPartai(p, username) ?? null;
-    const tersimpan = bacaCachePartai(p.id, kedalaman);
+    const tersimpan = paksa ? null : bacaCachePartai(p.id, kedalaman, p.pgn, mesin?.idEngine);
     let hasil = tersimpan;
 
     if (!hasil) {
@@ -207,12 +218,22 @@ export async function analisisRiwayatAntiCheat({
         const { metadata, moves } = await parserPgn(mesin, p.pgn, kedalaman, openings, () => {}, sinyal, {
           multiPv: MULTI_PV,
         });
+        // Parser/worker dapat menyelesaikan jawaban setelah sinyal dibatalkan.
+        // Jangan isi kembali cache setelah akun dihapus.
+        periksaSinyalAkun(sinyal);
+        if (sinyal?.aborted) break;
         const rating = ratingDariMetadata(metadata);
         hasil = { metadata, hasil: hitungSkorKecurigaan(moves, { rating }) };
         const ms = Date.now() - mulai;
         durasiPerPartai.push({ id: p.id, ms });
         totalDurasiMs += ms;
-        simpanCachePartai(p.id, kedalaman, hasil);
+        // Pemeriksaan generasi dan penulisan cache harus atomik terhadap
+        // penghapusan akun di tab peramban lain.
+        await denganKunciAkun(() => {
+          periksaSinyalAkun(sinyal);
+          if (!sinyal?.aborted) simpanCachePartai(p.id, kedalaman, hasil, p.pgn, mesin?.idEngine);
+        }, { signal: sinyal });
+        if (sinyal?.aborted) break;
       } catch (e) {
         if (sinyal?.aborted || e?.kunci === GALAT_BATAL) break;
         galat.push({ id: p.id, pesan: e?.message ?? String(e) });

@@ -9,11 +9,13 @@ import {
   STORE_PARTAI,
   STORE_KOLEKSI,
   memoriPartai,
-  memoriKoleksi,
   bukaDB,
   simpanFallbackKeStorage,
+  hapusSeluruhFallback,
+  indexedDBGagalDibuka,
 } from "./migrasi.js";
 import { naikkanRevisi } from "./index.js";
+import { denganKunciAkun } from "../akun/koordinasiAkun.js";
 
 /**
  * Gabungkan dua pemain dalam satu koleksi: semua partai yang memakai nama
@@ -27,7 +29,8 @@ import { naikkanRevisi } from "./index.js";
  * @param {string} namaTujuan nama pemain pengganti (tujuan penggabungan).
  * @returns {Promise<{diubah: number, nama: string}>}
  */
-export async function gabungkanPemain(koleksiId, namaAsliRaw, namaTujuanRaw) {
+export async function gabungkanPemain(koleksiId, namaAsliRaw, namaTujuanRaw, { terkunci = false } = {}) {
+  if (!terkunci) return denganKunciAkun(() => gabungkanPemain(koleksiId, namaAsliRaw, namaTujuanRaw, { terkunci: true }));
   const asli = String(namaAsliRaw || "").trim();
   const tujuan = String(namaTujuanRaw || "").trim();
   if (!koleksiId || !asli || !tujuan) return { diubah: 0, nama: "" };
@@ -50,7 +53,7 @@ export async function gabungkanPemain(koleksiId, namaAsliRaw, namaTujuanRaw) {
   const selaraskanPgn = (pgn) => gantiTag(gantiTag(pgn, "White"), "Black");
 
   let diubah = 0;
-  const db = await bukaDB();
+  const db = await bukaDB({ terkunci: true });
 
   /* --- Cadangan memori --- */
   if (!db) {
@@ -80,7 +83,10 @@ export async function gabungkanPemain(koleksiId, namaAsliRaw, namaTujuanRaw) {
       const tx = db.transaction([STORE_PARTAI], "readwrite");
       tx.oncomplete = () => {
         if (diubah > 0) naikkanRevisi();
+        resolve({ diubah, nama: tujuan });
       };
+      tx.onabort = () => resolve({ diubah: 0, nama: "" });
+      tx.onerror = () => resolve({ diubah: 0, nama: "" });
       const store = tx.objectStore(STORE_PARTAI);
       const idx = store.index("koleksiWaktu");
       const BAWAH = -Infinity;
@@ -89,10 +95,7 @@ export async function gabungkanPemain(koleksiId, namaAsliRaw, namaTujuanRaw) {
 
       req.onsuccess = (e) => {
         const kursor = e.target.result;
-        if (!kursor) {
-          resolve({ diubah, nama: tujuan });
-          return;
-        }
+        if (!kursor) return; // tunggu commit sebelum melepas lock
         const p = kursor.value;
         if (p && (cocokNama(p.whiteName) || cocokNama(p.blackName))) {
           const baru = { ...p, pgn: selaraskanPgn(p.pgn) };
@@ -103,7 +106,7 @@ export async function gabungkanPemain(koleksiId, namaAsliRaw, namaTujuanRaw) {
         }
         kursor.continue();
       };
-      req.onerror = () => resolve({ diubah, nama: tujuan });
+      req.onerror = () => { try { tx.abort(); } catch { /* sudah batal */ } };
     } catch {
       resolve({ diubah: 0, nama: "" });
     }
@@ -113,14 +116,14 @@ export async function gabungkanPemain(koleksiId, namaAsliRaw, namaTujuanRaw) {
 /**
  * Kosongkan seluruh basis data (semua partai & koleksi).
  */
-export async function bersihkanBasisData() {
-  const db = await bukaDB();
+export async function bersihkanBasisData({ terkunci = false } = {}) {
+  if (!terkunci) return denganKunciAkun(() => bersihkanBasisData({ terkunci: true }));
+  const db = await bukaDB({ terkunci: true });
   if (!db) {
-    memoriPartai.clear();
-    memoriKoleksi.clear();
-    simpanFallbackKeStorage();
-    naikkanRevisi();
-    return true;
+    if (indexedDBGagalDibuka()) return false;
+    const bersih = hapusSeluruhFallback();
+    if (bersih) naikkanRevisi();
+    return bersih;
   }
 
   return new Promise((resolve) => {
@@ -129,10 +132,12 @@ export async function bersihkanBasisData() {
       tx.objectStore(STORE_PARTAI).clear();
       tx.objectStore(STORE_KOLEKSI).clear();
       tx.oncomplete = () => {
+        const bersih = hapusSeluruhFallback();
         naikkanRevisi();
-        resolve(true);
+        resolve(bersih);
       };
       tx.onerror = () => resolve(false);
+      tx.onabort = () => resolve(false);
     } catch {
       resolve(false);
     }

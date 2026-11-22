@@ -30,6 +30,7 @@ export default function PanelRingkasanDatabase({
         locale={locale}
         revisi={revisiRingkasan}
         username={koleksi?.username || ""}
+        totalKoleksi={koleksiTerpilih ? koleksi?.jumlahPartai : totalPartai}
         tanganiAnalisa={tanganiAnalisa}
       />
 
@@ -40,7 +41,7 @@ export default function PanelRingkasanDatabase({
           <div className="shrink-0">
             <div className="text-xs font-bold uppercase tracking-wide text-foregroundGrey">{t("analisa.basisData.aksi")}</div>
             <div className="mt-3 grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5">
-              <button type="button" onClick={tanganiKosongkanSemua} className="inline-flex items-center gap-1.5 rounded-borderRoundness border border-border bg-backgroundBoxBox px-2.5 py-1.5 text-xs font-semibold text-lossRed transition-colors hover:bg-backgroundBoxBoxHover cursor-pointer">
+              <button type="button" onClick={tanganiKosongkanSemua} className="inline-flex items-center gap-1.5 rounded-borderRoundness border border-border bg-backgroundBoxBox px-2.5 py-1.5 text-xs font-semibold text-[#ffaaa2] transition-colors hover:bg-backgroundBoxBoxHover cursor-pointer">
                 <Trash className="h-3.5 w-3.5 shrink-0" />
                 <span>{t("analisa.basisData.hapusSemua")}</span>
               </button>

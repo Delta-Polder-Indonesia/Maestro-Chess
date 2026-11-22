@@ -8,12 +8,15 @@
  * + pgnHeaders; langkah-langkahnya diterjemahkan ke SAN lewat chess.js.
  * Lichess memakai endpoint ekspor publik yang mengembalikan teks PGN.
  */
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import PanelLayar from "./PanelLayar.jsx";
 import ChessComLogo from "../svg/ChessComLogo.jsx";
 import LichessLogo from "../svg/LichessLogo.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { imporPgnKeBasisData } from "../../basisData.js";
+import { pesanPenyimpananPartai } from "../../database/statusSimpan.js";
+import { ErrorsContext } from "../../konteks/errorsKonteks.js";
+import { pushPageWarning } from "../errors/pushPageError.js";
 import { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan, simpanDrafImpor } from "../../pekerjaan.js";
 import { usePekerjaan } from "../../usePekerjaan.js";
 import { BATAS_IMPOR, KODE_GALAT, ambilPgn, galatImpor, validasiFen, validasiPgn } from "./validasiImpor.js";
@@ -75,6 +78,7 @@ function GambarIkon({ ikon }) {
 
 export default function LayarImpor({ onTutup, onImpor, onSebelumImpor, drafId, onDrafId }) {
   const { t } = useI18n();
+  const setErrors = useContext(ErrorsContext).errors[1];
   const penyimpanan = usePekerjaan();
   const [draf, setDraf] = useState({ tipe: "pgn", pgn: "", tautan: "", fen: "" });
   // Draf milik tab ditangkap saat formulir dibuka; perubahan penunjuk global
@@ -144,7 +148,16 @@ export default function LayarImpor({ onTutup, onImpor, onSebelumImpor, drafId, o
     const lanjut = () => {
       // Baru ganti penunjuk setelah pengguna menyetujui pergantian laporan.
       // Jika dibatalkan, formulir dan draf tab ini tetap tidak berubah.
-      if (data.format === "pgn") imporPgnKeBasisData(data.string).catch(() => {});
+      if (data.format === "pgn") {
+        // Papan boleh langsung dibuka, tetapi hasil penyimpanan harus diperiksa
+        // dan peringatannya tetap muncul setelah berpindah layar.
+        void (async () => {
+          let hasil;
+          try { hasil = await imporPgnKeBasisData(data.string); } catch { /* laporkan di bawah */ }
+          const pesan = pesanPenyimpananPartai(t, Math.max(1, hasil?.diproses || 0), hasil);
+          if (pesan) pushPageWarning(setErrors, t("analisa.basisData.simpanGagalJudul"), pesan, { persisten: true });
+        })();
+      }
       const idBaru = buatIdDrafImpor();
       pekerjaan.tetapkanDrafAktif(idBaru);
       onDrafIdRef.current?.(idBaru);

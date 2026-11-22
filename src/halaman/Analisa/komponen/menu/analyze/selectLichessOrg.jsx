@@ -10,6 +10,8 @@ import { ErrorsContext } from "../../../konteks/errorsKonteks.js";
 import { useI18n } from "../../../../../lib/i18n.jsx";
 import { TooltipLabel } from "../../../../../components/ui/tooltip.jsx";
 import { simpanBanyakPartai } from "../../../basisData.js";
+import { pesanPenyimpananPartai } from "../../../database/statusSimpan.js";
+import { daftarkanOperasiAkun } from "../../../akun/koordinasiAkun.js";
 const PLAYER_URL = "https://lichess.org/@/";
 const PLATFORM = "Lichess.org";
 function Games(props) {
@@ -17,6 +19,7 @@ function Games(props) {
   const { url, username, depth, unSelect } = props;
   const [gamesInfo, setGamesInfo] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [peringatanSimpan, setPeringatanSimpan] = useState("");
   const errorsContext = useContext(ErrorsContext);
   const setData = useImport().data[1];
   const setErrors = errorsContext.errors[1];
@@ -24,7 +27,8 @@ function Games(props) {
   callbacksRef.current = { t, unSelect };
   useEffect(() => {
     const controller = new AbortController();
-    const { signal } = controller;
+    const operasi = daftarkanOperasiAkun("lichessOrg", username, controller.signal);
+    const { signal } = operasi;
     (async () => {
       try {
         setLoading(true);
@@ -47,11 +51,15 @@ function Games(props) {
           (gameInfo) => gameInfo && Number.isFinite(gameInfo.plyCount) && gameInfo.plyCount > 0,
         );
         if (signal.aborted) return;
+        let simpan;
+        if (newGamesInfo.length > 0) {
+          try { simpan = await simpanBanyakPartai(newGamesInfo, { platform: "lichessOrg", username, signal }); }
+          catch (error) { if (signal.aborted || error?.name === "AbortError") return; }
+        }
+        if (signal.aborted) return;
+        setPeringatanSimpan(newGamesInfo.length ? pesanPenyimpananPartai(callbacksRef.current.t, newGamesInfo.length, simpan) : "");
         setLoading(false);
         setGamesInfo(newGamesInfo);
-        if (newGamesInfo.length > 0) {
-          simpanBanyakPartai(newGamesInfo, { platform: "lichessOrg", username }).catch(() => {});
-        }
       } catch {
         if (signal.aborted) return;
         setLoading(false);
@@ -60,15 +68,18 @@ function Games(props) {
         await pushPageError(setErrors, callbacksRef.current.t(GAMES_ERROR[0]), callbacksRef.current.t(GAMES_ERROR[1]));
         if (!signal.aborted) await pushPageWarning(setErrors, callbacksRef.current.t(API_BLOCKING_ERROR[0]), callbacksRef.current.t(API_BLOCKING_ERROR[1]));
       }
-    })();
+    })().finally(operasi.selesai);
     // URL/username menentukan arsip yang dimuat. Callback dan bahasa dibaca
     // lewat ref agar perubahan identitas fungsi tidak memulai fetch ulang.
-    return () => controller.abort();
+    return () => { controller.abort(); operasi.selesai(); };
   }, [url, username, setErrors]);
   if (gamesInfo.length === 0 && !loading) {
     return <div className="text-center text-sm text-foregroundGrey py-8">{t("analisa.partai.tidakAda")}</div>;
   }
-  return <GamesUI gamesInfo={gamesInfo} loading={loading} username={username} depth={depth} setData={setData} />;
+  return <>
+    {peringatanSimpan ? <p role="alert" className="px-8 pt-2 text-xs text-lossRed">{peringatanSimpan}</p> : null}
+    <GamesUI gamesInfo={gamesInfo} loading={loading} username={username} depth={depth} setData={setData} />
+  </>;
 }
 function SelectLichessOrgGame(props) {
   const { t, bahasa: locale } = useI18n();

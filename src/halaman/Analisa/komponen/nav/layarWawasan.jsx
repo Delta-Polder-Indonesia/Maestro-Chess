@@ -229,7 +229,7 @@ export default function LayarWawasan({ akunTab, aktif = true }) {
     <PanelLayar>
       <div className="flex min-h-0 w-full flex-col gap-4 p-4">
         <div className="flex flex-col gap-2">
-          <span className="text-xl font-bold text-foreground">{t("analisa.wawasan.judul")}</span>
+          <h1 className="text-xl font-bold text-foreground">{t("analisa.wawasan.judul")}</h1>
           <p className="text-xs leading-4 text-foregroundGrey">{t("analisa.wawasan.deskripsi")}</p>
         </div>
 

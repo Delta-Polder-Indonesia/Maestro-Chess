@@ -8,12 +8,14 @@
 import {
   STORE_PARTAI,
   STORE_KOLEKSI,
-  memoriPartai,
   memoriKoleksi,
   bukaDB,
   simpanFallbackKeStorage,
+  hapusFallbackKoleksi,
+  indexedDBGagalDibuka,
 } from "./migrasi.js";
 import { naikkanRevisi } from "./index.js";
+import { akunSedangDihapus, daftarkanOperasiAkun, denganKunciAkun } from "../akun/koordinasiAkun.js";
 import { ambilDaftarPartai } from "./partai.js";
 
 /**
@@ -24,13 +26,29 @@ import { ambilDaftarPartai } from "./partai.js";
 export async function pastikanKoleksi({ platform = "", username = "" } = {}) {
   const plat = String(platform || "").trim();
   const user = String(username || "").trim();
-  if (!plat || !user) return null;
+  if (!plat || !user || akunSedangDihapus(plat, user)) return null;
+  const operasi = daftarkanOperasiAkun(plat, user);
+  try {
+    return await denganKunciAkun(() => pastikanKoleksiTerkunci(plat, user, operasi), { signal: operasi.signal });
+  } catch (error) {
+    if (error?.name === "AbortError") return null;
+    throw error;
+  } finally {
+    operasi.selesai();
+  }
+}
+
+async function pastikanKoleksiTerkunci(plat, user, operasi) {
+  operasi.periksa();
+  if (operasi.signal.aborted || akunSedangDihapus(plat, user)) return null;
   const koleksiId = `${plat}:${user.toLowerCase()}`;
   const label = user
     ? `${user} ${plat === "chessCom" ? "Chess.com" : plat === "lichessOrg" ? "Lichess.org" : plat}`
     : plat;
 
-  const db = await bukaDB();
+  const db = await bukaDB({ terkunci: true });
+  operasi.periksa();
+  if (operasi.signal.aborted || akunSedangDihapus(plat, user)) return null;
   if (!db) {
     if (!memoriKoleksi.has(koleksiId)) {
       memoriKoleksi.set(koleksiId, {
@@ -127,15 +145,14 @@ export async function ambilSemuaKoleksi() {
 /**
  * Hapus seluruh partai dalam satu koleksi akun.
  */
-export async function hapusKoleksi(koleksiId) {
+export async function hapusKoleksi(koleksiId, { terkunci = false, dbTerbuka } = {}) {
   if (!koleksiId) return false;
-  const db = await bukaDB();
+  if (!terkunci) return denganKunciAkun(() => hapusKoleksi(koleksiId, { terkunci: true }));
+  const db = dbTerbuka !== undefined ? dbTerbuka : await bukaDB({ terkunci: true });
   if (!db) {
-    memoriKoleksi.delete(koleksiId);
-    for (const [id, p] of memoriPartai.entries()) {
-      if (p.koleksiId === koleksiId) memoriPartai.delete(id);
-    }
-    simpanFallbackKeStorage();
+    // Bila IndexedDB ada tetapi gagal dibuka, mungkin masih ada partai di
+    // sana; tidak aman mengaku semuanya terhapus hanya dari cadangan.
+    if (indexedDBGagalDibuka() || !hapusFallbackKoleksi(koleksiId)) return false;
     naikkanRevisi();
     return true;
   }
@@ -148,48 +165,43 @@ export async function hapusKoleksi(koleksiId) {
         resolve(ok);
       }
     };
+    let tx;
+    const gagal = () => {
+      try { tx?.abort(); } catch { /* transaksi sudah batal */ }
+      akhiri(false);
+    };
     try {
-      const tx = db.transaction([STORE_PARTAI, STORE_KOLEKSI], "readwrite");
+      tx = db.transaction([STORE_PARTAI, STORE_KOLEKSI], "readwrite");
       const storePartai = tx.objectStore(STORE_PARTAI);
       const storeKoleksi = tx.objectStore(STORE_KOLEKSI);
 
       tx.oncomplete = () => {
+        // Data fallback dari sesi lama bisa tetap ada meski IndexedDB kini
+        // berfungsi. Bersihkan juga agar tidak muncul kembali atau bocor.
+        const cadanganBersih = hapusFallbackKoleksi(koleksiId);
         naikkanRevisi();
-        akhiri(true);
+        akhiri(cadanganBersih);
       };
       tx.onerror = () => akhiri(false);
       tx.onabort = () => akhiri(false);
 
       storeKoleksi.delete(koleksiId);
 
-      /*
-       * Hapus partai lewat kursor indeks — BUKAN `getAll` + `delete` per id.
-       * `getAll` memuat SELURUH teks PGN semua koleksi ke memori hanya untuk
-       * menghapus satu koleksi; kursor indeks hanya menyentuh baris yang
-       * cocok. Basis warisan tanpa indeks "koleksiWaktu" (versi lama) jatuh
-       * ke pindai seluruh store dengan pemeriksaan `koleksiId` per baris.
-       */
-      let sumber = storePartai;
-      let rentang;
-      try {
-        if (storePartai.indexNames.contains("koleksiWaktu")) {
-          sumber = storePartai.index("koleksiWaktu");
-          rentang = IDBKeyRange.bound([koleksiId, -Infinity], [koleksiId, Infinity]);
-        }
-      } catch {
-        sumber = storePartai;
-        rentang = undefined;
-      }
-      const req = sumber.openCursor(rentang);
+      /* Rekaman lama tanpa timestamp tidak tercakup indeks koleksiWaktu.
+       * Pindai kursor store agar penghapusan benar-benar mencakup semuanya,
+       * tanpa memuat seluruh PGN ke memori sekaligus lewat getAll(). */
+      const req = storePartai.openCursor();
       req.onsuccess = (e) => {
-        const kursor = e.target.result;
-        if (!kursor) return; // selesai — tx.oncomplete yang menyelesaikan
-        if (kursor.value?.koleksiId === koleksiId) kursor.delete();
-        kursor.continue();
+        try {
+          const kursor = e.target.result;
+          if (!kursor) return; // selesai — tx.oncomplete yang menyelesaikan
+          if (kursor.value?.koleksiId === koleksiId) kursor.delete();
+          kursor.continue();
+        } catch { gagal(); }
       };
-      req.onerror = () => akhiri(false);
+      req.onerror = gagal;
     } catch {
-      akhiri(false);
+      gagal();
     }
   });
 }

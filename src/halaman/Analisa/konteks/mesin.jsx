@@ -16,15 +16,19 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ENGINE_BAKU } from "../../../lib/engineCatur.js";
+import { ENGINE_BAKU, cariEngine } from "../../../lib/engineCatur.js";
 import { EngineAnalisis } from "../mesin/engine.js";
 import { hashUntukEngine, wasmSupported } from "../mesin/cekWasm.js";
-import { tulis } from "../penyimpanan.js";
+import { bacaTeks, tulis } from "../penyimpanan.js";
 import { KonteksMesin } from "./mesinKonteks.js";
 
 export function MesinProvider({ children }) {
-  // Do not restore a ChessClub selection pointing at an engine we do not ship.
+  // The visible state starts with the same value on the server and during
+  // hydration. Restore the ref immediately, however: a child effect can ask
+  // for an engine before this provider's effects run. Only known IDs are used.
   const [idEngine, setIdEngineState] = useState(ENGINE_BAKU);
+  const idEngineRef = useRef(null);
+  if (idEngineRef.current === null) idEngineRef.current = cariEngine(bacaTeks("engine", ENGINE_BAKU)).id;
   const [didukung] = useState(() => (typeof window === "undefined" ? true : wasmSupported()));
   const [status, setStatus] = useState("mati"); // mati | memuat | siap | gagal
   const [galat, setGalat] = useState("");
@@ -71,14 +75,15 @@ export function MesinProvider({ children }) {
 
   /** Engine siap pakai (dimuat bila belum ada). Boleh dipanggil berulang. */
   const Siapkan = useCallback(async () => {
-    const mesin = mesinRef.current ?? buat(idEngine);
+    const mesin = mesinRef.current ?? buat(idEngineRef.current);
     mesinRef.current = mesin;
     const generasiAwal = generasiRef.current;
     setStatus((s) => (s === "siap" ? s : "memuat"));
     try {
       await mesin.siapkan();
-      // Jika engine sudah diganti selama menunggu, jangan timpa status baru.
-      if (mesinRef.current !== mesin || generasiRef.current !== generasiAwal) return mesin;
+      // A resolved startup can race a selection change before this microtask
+      // resumes. Never hand a destroyed, superseded engine to the caller.
+      if (mesinRef.current !== mesin || generasiRef.current !== generasiAwal) throw new Error("engine diganti");
       setStatus("siap");
       setGalat("");
       return mesin;
@@ -88,18 +93,26 @@ export function MesinProvider({ children }) {
       setGalat(e?.message ?? String(e));
       throw e;
     }
-  }, [buat, idEngine]);
+  }, [buat]);
 
   const gantiEngine = useCallback(
-    () => {
-      setIdEngineState(ENGINE_BAKU);
-      tulis("engine", ENGINE_BAKU);
+    (id) => {
+      const pilihan = cariEngine(id).id;
+      idEngineRef.current = pilihan;
+      setIdEngineState(pilihan);
+      tulis("engine", pilihan);
       setStatus("mati");
       setGalat("");
-      buat(ENGINE_BAKU);
+      buat(pilihan);
     },
     [buat]
   );
+
+  useEffect(() => {
+    // If a child selected an engine in its mount effect, use the newer ref
+    // rather than overwriting it with the value originally read from storage.
+    setIdEngineState(idEngineRef.current);
+  }, []);
 
   /** Batal pencarian aktif (tombol Batal pada panel muat). */
   const setop = useCallback(() => {

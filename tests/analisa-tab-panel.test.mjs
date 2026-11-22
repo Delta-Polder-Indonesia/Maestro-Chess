@@ -6,6 +6,7 @@ import { runInThisContext } from "node:vm";
 import React from "react";
 import TestRenderer from "react-test-renderer";
 import ts from "typescript";
+import * as koordinasiAkun from "../src/halaman/Analisa/akun/koordinasiAkun.js";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -172,6 +173,7 @@ test("a hidden detection tab closes its portal and aborts its engine search with
     "../../konteks/mesinKonteks.js": { useMesin: () => mesin },
     "../../basisData.js": { ambilDaftarPartai: async () => (galatBasis ? { partai: [], galat: true } : { partai: [{ pgn: "1. e4 *" }] }) },
     "../../akun/useAkunKoleksi.js": { useAkunKoleksi: () => ({ akunTersimpan: [], koleksi: [] }) },
+    "../../akun/koordinasiAkun.js": koordinasiAkun,
     "../../akun/antiCheatRiwayat.js": {
       BATAS_PARTAI: 50, KEDALAMAN_AGGREGAT: 6, batasPartaiDariInput: (value) => Number(value) || 50,
       analisisRiwayatAntiCheat: ({ sinyal: value }) => { sinyal = value; return new Promise(() => {}); },
@@ -368,15 +370,21 @@ test("returning to an account tab refreshes the shared list changed by another t
   let revisi = 0;
   const pendengar = new Set();
   const Akun = kompilasi("../src/halaman/Analisa/komponen/nav/layarAkun.jsx", {
+    "../../../../lib/i18n.jsx": { useI18n: () => ({ t }) },
+    "../../akun/antiCheatRiwayat.js": { bersihkanCacheAntiCheat: () => true },
+    "../../akun/koordinasiAkun.js": koordinasiAkun,
     "./PanelLayar.jsx": { default: wrapper },
     "../../akun/DaftarAkun.jsx": { default: (props) => React.createElement("div", { "data-uji": "daftar-akun-test", ...props }) },
     "../../akun/PanelTarikPartai.jsx": { default: kosong },
     "../../akun/daftarAkun.js": { bacaDaftarAkun: () => [...daftar], tambahKeDaftar: () => [...daftar], hapusDariDaftar: () => [...daftar] },
+    "../../database/migrasi.js": { bukaDB: async () => null },
     "../../basisData.js": {
       bacaRevisiBasis: () => revisi, pastikanKoleksi: async () => {}, hapusKoleksi: async () => {},
       langgananRevisi: (callback) => { pendengar.add(callback); return () => pendengar.delete(callback); },
     },
     "../../konteks/analyzeKonteks.js": { AnalyzeContext },
+    "../../konteks/errorsKonteks.js": { ErrorsContext: React.createContext({ errors: [[], () => {}] }) },
+    "../errors/pushPageError.js": { pushPageWarning: () => {} },
   });
   const analyze = { akun: [{ platform: "chessCom", username: "" }, () => {}] };
   const isi = (aktif) => React.createElement(AnalyzeContext.Provider, { value: analyze }, React.createElement(Akun, { aktif, onTutup() {} }));

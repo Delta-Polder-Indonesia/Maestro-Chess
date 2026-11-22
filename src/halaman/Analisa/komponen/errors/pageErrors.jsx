@@ -1,12 +1,14 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 import { useContext, useEffect, useRef, useState } from "react";
 import { ErrorsContext } from "../../konteks/errorsKonteks.js";
+import { useI18n } from "../../../../lib/i18n.jsx";
 
 const TIME_IN_SCREEN = 7500;
 const CORNER = "br";
 
 function PageError(props) {
-  const { title, description, errorKey: errorKey2, removeError, newErrorKey, y, type } = props;
+  const { title, description, errorKey: errorKey2, removeError, newErrorKey, y, type, persisten = false } = props;
+  const { t } = useI18n();
   const [hided, setHided] = useState(true);
   const errorRef = useRef(null);
 
@@ -16,10 +18,9 @@ function PageError(props) {
   }
 
   useEffect(() => {
-    setTimeout(() => {
-      removeCurrentError();
-    }, TIME_IN_SCREEN);
+    const timer = persisten ? null : setTimeout(removeCurrentError, TIME_IN_SCREEN);
     setHided(false);
+    return () => { if (timer) clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once: timer hapus hanya dipasang sekali saat error muncul
   }, []);
 
@@ -36,8 +37,11 @@ function PageError(props) {
     });
   }, [newErrorKey, errorKey2, y]);
 
-  return <div ref={errorRef} data-errorkey={errorKey2} style={{ opacity: hided ? 0 : 100, backgroundColor: type === "error" ? "var(--error)" : type === "warning" ? "var(--warning)" : "" }} className="p-3 text-xl select-text z-[999] text-foregroundHighlighted font-bold rounded-borderRoundness hover:scale-105 will-change-transform transition-all max-w-96">
-    {title}
+  return <div ref={errorRef} role="alert" data-errorkey={errorKey2} style={{ opacity: hided ? 0 : 100, backgroundColor: type === "error" ? "var(--error)" : type === "warning" ? "var(--warning)" : "" }} className="p-3 text-xl select-text z-[999] text-foregroundHighlighted font-bold rounded-borderRoundness hover:scale-105 will-change-transform transition-all max-w-96">
+    <div className="flex items-start justify-between gap-3">
+      <span>{title}</span>
+      {persisten ? <button type="button" aria-label={t("analisa.status.tutupPeringatan")} onClick={removeCurrentError} className="shrink-0 rounded px-1 hover:opacity-75 focus-visible:outline focus-visible:outline-2">×</button> : null}
+    </div>
     <div style={{ display: description ? "" : "none" }} className="text-base opacity-85 mt-2">
       {description}
     </div>

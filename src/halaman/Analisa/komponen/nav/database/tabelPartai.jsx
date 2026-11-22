@@ -1,4 +1,4 @@
-import { useDropdown } from "../useDropdown.js";
+import { tekanPanahOpsi, useDropdown } from "../useDropdown.js";
 import Check from "../../svg/check.jsx";
 import { IkonSort } from "./ikonDatabase.jsx";
 import { statusHasil, TINGGI_BARIS, formatTanggal } from "./formatDatabase.js";
@@ -27,19 +27,22 @@ import { ArrowUpDown, ChevronDown } from "lucide-react";
  * latar hitam-abu (#2a2a2a) dan sorotan/item terpilih warna HITAM.
  */
 export function DropdownPilih({ ariaLabel, nilai, opsi, onPilih, sejajar = "kiri", keAtas = false, labelKhusus, kontenAtas }) {
-  const { terbuka, setTerbuka, wadahRef } = useDropdown();
+  const { terbuka, wadahRef, pemicuRef, idDaftar, tekanPemicu, toggle, keluarFokus, tutupDanFokus } = useDropdown();
 
   const aktif = opsi.find((o) => o.nilai === nilai) ?? opsi[0];
   const labelTampil = labelKhusus !== undefined ? labelKhusus : (aktif?.label ?? "");
 
   return (
-    <div ref={wadahRef} className="relative">
+    <div ref={wadahRef} onBlur={keluarFokus} className="relative">
       <button
         type="button"
-        aria-label={ariaLabel}
+        ref={pemicuRef}
+        aria-label={`${ariaLabel}: ${labelTampil}`}
         aria-haspopup="listbox"
+        aria-controls={terbuka ? idDaftar : undefined}
         aria-expanded={terbuka}
-        onClick={() => setTerbuka((b) => !b)}
+        onKeyDown={tekanPemicu}
+        onClick={toggle}
         className="flex cursor-pointer items-center justify-between gap-2 rounded-borderRoundness border border-border bg-backgroundBoxBox px-3 py-1.5 text-xs text-foreground outline-none transition-colors hover:border-borderHighlighted"
       >
         <span className="max-w-[220px] truncate">{labelTampil}</span>
@@ -68,18 +71,19 @@ export function DropdownPilih({ ariaLabel, nilai, opsi, onPilih, sejajar = "kiri
           }`}
         >
           {kontenAtas ? <div className="border-b border-border p-2">{kontenAtas}</div> : null}
-          <ul role="listbox" className="py-1">
+          <ul id={idDaftar} role="listbox" aria-label={ariaLabel} onKeyDown={tekanPanahOpsi} className="py-1">
           {opsi.map((o) => {
             const dipilih = o.nilai === nilai;
             return (
-              <li key={o.nilai || "_default"}>
+              <li key={o.nilai || "_default"} role="presentation">
                 <button
                   type="button"
                   role="option"
+                  tabIndex={-1}
                   aria-selected={dipilih}
                   onClick={() => {
                     onPilih(o.nilai);
-                    setTerbuka(false);
+                    tutupDanFokus();
                   }}
                   className={`flex w-full cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-3 py-1.5 text-left text-xs transition-colors hover:bg-black hover:text-white ${
                     dipilih ? "bg-black font-semibold text-white" : "text-foreground"
@@ -315,8 +319,8 @@ export function BarisPartai({ game, locale, tanganiAnalisa, bukaDialogHapusParta
 
       {/* Tanggal */}
       <td className="py-2 px-2 whitespace-nowrap text-xs text-foregroundGrey">
-        <div>{formatTanggal(game.timestamp, locale)}</div>
-        <div className="text-[10px] text-foregroundGrey/75 font-mono uppercase tracking-wider">
+        <div>{formatTanggal(game.timestamp, locale, game.tanggalPgn) || "—"}</div>
+        <div className="text-[10px] text-foregroundGrey font-mono uppercase tracking-wider">
           {game.timeClass || ""}
         </div>
       </td>
@@ -327,7 +331,7 @@ export function BarisPartai({ game, locale, tanganiAnalisa, bukaDialogHapusParta
       </td>
 
       {/* Situs - hidden on mobile/tablet */}
-      <td className="py-2 px-2 text-right whitespace-nowrap text-[10px] uppercase tracking-wider text-foregroundGrey/75 hidden lg:table-cell">
+      <td className="py-2 px-2 text-right whitespace-nowrap text-[10px] uppercase tracking-wider text-foregroundGrey hidden lg:table-cell">
         <div className="truncate">{game.site || game.url || ""}</div>
       </td>
 
@@ -356,7 +360,7 @@ export function HeaderKolom({ kolom, t: _t }) {
 }
 
 export function MenuKolom({ t, nilai, onPilih }) {
-  const { terbuka, setTerbuka, wadahRef } = useDropdown();
+  const { terbuka, wadahRef, pemicuRef, idDaftar, tekanPemicu, toggle, keluarFokus, tutupDanFokus } = useDropdown();
 
   const opsi = [
     { nilai: "mingguan", label: t("analisa.basisData.periodeMingguan") },
@@ -366,12 +370,16 @@ export function MenuKolom({ t, nilai, onPilih }) {
   ];
 
   return (
-    <div ref={wadahRef} className="relative">
+    <div ref={wadahRef} onBlur={keluarFokus} className="relative">
       <button
         type="button"
+        ref={pemicuRef}
+        aria-label={`${t("analisa.basisData.kolom")}: ${opsi.find((o) => o.nilai === nilai)?.label ?? ""}`}
         aria-haspopup="listbox"
+        aria-controls={terbuka ? idDaftar : undefined}
         aria-expanded={terbuka}
-        onClick={() => setTerbuka((b) => !b)}
+        onKeyDown={tekanPemicu}
+        onClick={toggle}
         className="flex cursor-pointer items-center gap-1.5 rounded-borderRoundness border border-border bg-backgroundBoxBox px-3 py-1.5 text-xs text-foreground outline-none transition-colors hover:border-borderHighlighted"
       >
         {t("analisa.basisData.kolom")}
@@ -383,21 +391,24 @@ export function MenuKolom({ t, nilai, onPilih }) {
 
       {terbuka ? (
         <ul
+          id={idDaftar}
           role="listbox"
           aria-label={t("analisa.basisData.kolom")}
+          onKeyDown={tekanPanahOpsi}
           className="absolute right-0 top-full z-[1200] mt-1 w-max min-w-[140px] overflow-hidden rounded-borderRoundness border border-border bg-[#2a2a2a] py-1 shadow-2xl"
         >
           {opsi.map((o) => {
             const dipilih = o.nilai === nilai;
             return (
-              <li key={o.nilai}>
+              <li key={o.nilai} role="presentation">
                 <button
                   type="button"
                   role="option"
+                  tabIndex={-1}
                   aria-selected={dipilih}
                   onClick={() => {
                     onPilih(o.nilai);
-                    setTerbuka(false);
+                    tutupDanFokus();
                   }}
                   className={`flex w-full cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-3 py-1.5 text-left text-xs transition-colors hover:bg-black hover:text-white ${
                     dipilih ? "bg-black font-semibold text-white" : "text-foreground"

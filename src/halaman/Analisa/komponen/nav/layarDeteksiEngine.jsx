@@ -11,6 +11,7 @@ import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
 import { useMesin } from "../../konteks/mesinKonteks.js";
 import { ambilDaftarPartai } from "../../basisData.js";
 import { useAkunKoleksi } from "../../akun/useAkunKoleksi.js";
+import { daftarkanOperasiAkun, langgananPenghapusanAkun, penandaMilikAkun } from "../../akun/koordinasiAkun.js";
 import { analisisRiwayatAntiCheat, BATAS_PARTAI, batasPartaiDariInput, KEDALAMAN_AGGREGAT } from "../../akun/antiCheatRiwayat.js";
 import { MULTI_PV } from "../../mesin/engine.js";
 import { hashUntukEngine } from "../../mesin/cekWasm.js";
@@ -79,7 +80,13 @@ function useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk, a
     setJumlahPartai("");
   }, [platform, username, resetHasil]);
 
-  useEffect(resetHasil, [waktu, kedalaman, resetHasil]);
+  useEffect(resetHasil, [waktu, kedalaman, mesin.idEngine, resetHasil]);
+
+  // Hasil yang sudah ditampilkan juga harus gugur saat akun dihapus dari
+  // workspace atau tab peramban lain, bukan hanya cache di penyimpanan.
+  useEffect(() => langgananPenghapusanAkun((_status, penanda) => {
+    if (penandaMilikAkun(platform, username, penanda)) resetHasil();
+  }), [platform, username, resetHasil]);
 
   // Satu engine dipakai bersama papan. Panel tersembunyi mempertahankan
   // hasil dan filternya, tetapi pencarian yang sedang berjalan dihentikan
@@ -110,10 +117,11 @@ function useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk, a
     if (!username || batas === null || papanSibuk || controllerRef.current) return;
     const controller = new AbortController();
     controllerRef.current = controller;
-    const { signal } = controller;
-    // Batal oleh pengguna boleh mengembalikan hasil parsial. Pergantian akun
-    // atau unmount tidak boleh menerima hasil/progres dari run sebelumnya.
-    const terkini = () => controllerRef.current === controller;
+    const operasi = daftarkanOperasiAkun(platform, username, controller.signal);
+    const { signal } = operasi;
+    // Batal oleh pengguna boleh mengembalikan hasil parsial. Penghapusan akun
+    // membatalkan sinyal operasi, dan tidak boleh menampilkan hasil lama.
+    const terkini = () => controllerRef.current === controller && (!signal.aborted || controller.signal.aborted);
     setHasil(null);
     setStatus("jalan");
     setBerjalan(true);
@@ -148,6 +156,7 @@ function useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk, a
         username,
         batas,
         kedalaman,
+        paksa: Boolean(hasil?.agregat?.jumlahPartai),
         mesin: mesinSiap,
         sinyal: signal,
         progres: ({ jenis, ke, total, pesan: galat }) => {
@@ -172,9 +181,14 @@ function useDeteksiRiwayat({ platform, username, waktu, kedalaman, papanSibuk, a
       setStatus("galat");
       setPesan(e?.message ?? String(e));
     } finally {
-      if (terkini()) {
+      operasi.selesai();
+      if (controllerRef.current === controller) {
         controllerRef.current = null;
         setBerjalan(false);
+        if (signal.aborted && !controller.signal.aborted) {
+          setHasil(null);
+          setStatus("batal");
+        }
       }
     }
   }

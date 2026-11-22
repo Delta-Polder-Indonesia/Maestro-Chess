@@ -47,14 +47,29 @@ export function bacaTeks(kunci, bawaan = null) {
   }
 }
 
+/** Baca tanpa menyamakan kegagalan penyimpanan dengan nilai kosong. */
+export function cobaBacaTeks(kunci) {
+  try {
+    const storage = gudang();
+    return storage ? { berhasil: true, nilai: storage.getItem(AWALAN + kunci) } : { berhasil: false, nilai: null };
+  } catch (error) {
+    console.error("Gagal membaca pengaturan Analisa:", error);
+    return { berhasil: false, nilai: null };
+  }
+}
+
 /** Tulis nilai; bila gagal, pilihan tetap berlaku di state halaman saat ini. */
 export function tulis(kunci, nilai) {
   try {
-    gudang()?.setItem(AWALAN + kunci, String(nilai));
+    const storage = gudang();
+    if (!storage) return false;
+    storage.setItem(AWALAN + kunci, String(nilai));
+    return true;
   } catch (error) {
     // Mode pribadi / kuota penuh tidak boleh merobohkan halaman, tetapi
     // penyebab pilihan tidak tersimpan harus terlihat di console.
     console.error("Gagal menyimpan pengaturan Analisa:", error);
+    return false;
   }
 }
 

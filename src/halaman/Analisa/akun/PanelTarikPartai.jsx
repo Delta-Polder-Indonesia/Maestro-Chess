@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui
 import { useI18n } from "../../../lib/i18n.jsx";
 import { bacaTeks, tulis } from "../penyimpanan.js";
 import { muatPartaiChessCom, muatPartaiLichess } from "./muatPartaiAkun.js";
+import { pesanPenyimpananPartai } from "../database/statusSimpan.js";
 import PemilihRentang from "./PemilihRentang.jsx";
 import { PRESET_RENTANG, rentangPreset } from "./rentangTanggal.js";
 
@@ -20,6 +21,17 @@ const KELAS_WAKTU = ["bullet", "blitz", "rapid", "classical", "daily"];
 function tanggalSah(nilai) {
   const s = String(nilai || "").trim();
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
+}
+
+function pesanArsipGagal(t, hasil) {
+  const gagal = hasil?.arsipGagal;
+  if (!Array.isArray(gagal) || !gagal.length) return "";
+  const bulan = gagal.slice(0, 6).map((a) => `${a.tahun}-${a.bulan}`).join(", ");
+  return t("analisa.akun.tarik.arsipParsial", {
+    gagal: gagal.length,
+    total: hasil.totalArsip,
+    bulan: bulan + (gagal.length > 6 ? ", …" : ""),
+  });
 }
 
 function bacaTersimpan() {
@@ -33,7 +45,7 @@ function bacaTersimpan() {
   }
 }
 
-export default function PanelTarikPartai({ akun, abortRef, onSelesai }) {
+export default function PanelTarikPartai({ akun, abortRef, onSelesai, disabled = false }) {
   const { t } = useI18n();
   const akunAktif = akun?.platform && akun?.username ? akun : null;
   const awalPreset = rentangPreset("30hari");
@@ -70,7 +82,7 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai }) {
 
   const jalankan = useCallback(
     async ({ nilai, konfirmasi = false } = {}) => {
-      if (!akunAktif) return;
+      if (!akunAktif || disabled) return;
       const opsi = nilai ?? opsiRef.current;
       const dariNilai = tanggalSah(opsi.dari);
       const sampaiNilai = tanggalSah(opsi.sampai);
@@ -123,10 +135,16 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai }) {
         });
         if (kendali.signal.aborted) return;
 
+        const jumlah = hasil.partai.length;
+        const peringatan = pesanPenyimpananPartai(t, jumlah, hasil.penyimpanan);
+        const arsipParsial = pesanArsipGagal(t, hasil);
         const namaSitus = t(`analisa.format.${akunAktif.platform}`);
+        const ringkasan = peringatan || t("analisa.akun.tarik.sukses", {
+          n: jumlah, situs: namaSitus, tersimpan: hasil.penyimpanan.tersimpan,
+        });
         setPesan({
-          jenis: "sukses",
-          teks: t("analisa.akun.tarik.sukses", { n: hasil.length, situs: namaSitus }),
+          jenis: peringatan || arsipParsial ? "gagal" : "sukses",
+          teks: [arsipParsial, ringkasan].filter(Boolean).join(" "),
         });
 
         const simpan = {
@@ -142,14 +160,14 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai }) {
         };
         tulis(KUNCI_TERSIMPAN, JSON.stringify(simpan));
         setTersimpan(simpan);
-        onSelesai?.(hasil.length);
+        onSelesai?.(jumlah);
       } catch (e) {
         if (e?.name === "AbortError" || kendali.signal.aborted) return;
         setPesan({
           jenis: "gagal",
-          teks: e?.cooldown
+          teks: pesanArsipGagal(t, e) || (e?.cooldown
             ? t("analisa.akun.tarik.cooldown")
-            : t("analisa.akun.tarik.gagal", { pesan: e?.message || "unknown" }),
+            : t("analisa.akun.tarik.gagal", { pesan: e?.message || "unknown" })),
         });
       } finally {
         if (abortRef.current === kendali) {
@@ -159,7 +177,7 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai }) {
         }
       }
     },
-    [abortRef, akunAktif, onSelesai, t],
+    [abortRef, akunAktif, disabled, onSelesai, t],
   );
 
   /* Satu pintu untuk setiap perubahan rentang, baik dari preset maupun dari
@@ -365,7 +383,7 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai }) {
         {tersimpanCocok ? (
           <button
             type="button"
-            disabled={sedang}
+            disabled={sedang || disabled}
             onClick={pakaiTersimpan}
             className="cursor-pointer rounded-borderRoundness border border-border bg-backgroundBoxBox px-3.5 py-2 text-xs font-semibold text-foregroundGrey transition-colors hover:border-borderHighlighted hover:text-foregroundHighlighted disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -392,6 +410,7 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai }) {
 
       {pesan ? (
         <p
+          role={pesan.jenis === "gagal" ? "alert" : "status"}
           className={`text-xs leading-4 ${
             pesan.jenis === "gagal"
               ? "text-lossRed"

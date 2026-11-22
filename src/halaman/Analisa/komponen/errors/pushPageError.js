@@ -5,7 +5,7 @@ export async function pushPageError(setErrors, title, description) {
   setErrors((prev) => [...prev, { title, description, type: "error", errorKey }]);
 }
 
-export async function pushPageWarning(setErrors, title, description) {
+export async function pushPageWarning(setErrors, title, description, { persisten = false } = {}) {
   errorKey++;
-  setErrors((prev) => [...prev, { title, description, type: "warning", errorKey }]);
+  setErrors((prev) => [...prev, { title, description, type: "warning", errorKey, persisten }]);
 }

@@ -8,6 +8,7 @@ import TestRenderer from "react-test-renderer";
 import ts from "typescript";
 import { buatPenyimpananPekerjaan, simpanDrafImpor } from "../src/halaman/Analisa/pekerjaan.js";
 import { tangkapGalatDiuji } from "./bantuGalat.mjs";
+import { pesanPenyimpananPartai } from "../src/halaman/Analisa/database/statusSimpan.js";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -26,14 +27,18 @@ function adapterMemori() {
 }
 
 // Render the actual import form, substituting storage, i18n and other boundaries.
-function komponenImpor(store, onDatabaseImport = async () => {}) {
+function komponenImpor(store, onDatabaseImport = async () => ({ tersimpan: 1, diproses: 1, media: "indexedDB" }), warnings = []) {
   let idBaru = 0;
+  const ErrorsContext = React.createContext({ errors: [[], () => {}] });
   const dependencies = {
     "./PanelLayar.jsx": { default: ({ headerKanan, children }) => React.createElement("section", null, headerKanan, children) },
     "../svg/ChessComLogo.jsx": { default: () => null },
     "../svg/LichessLogo.jsx": { default: () => null },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
     "../../basisData.js": { imporPgnKeBasisData: onDatabaseImport },
+    "../../database/statusSimpan.js": { pesanPenyimpananPartai },
+    "../../konteks/errorsKonteks.js": { ErrorsContext },
+    "../errors/pushPageError.js": { pushPageWarning: (_set, judul, pesan, opsi) => warnings.push({ judul, pesan, opsi }) },
     "../../pekerjaan.js": {
       ID_DRAF_IMPOR: "draf:impor", pekerjaan: store,
       buatIdDrafImpor: () => `draf:baru-${++idBaru}`,
@@ -171,4 +176,25 @@ test("a tab loads its own draft and defers import until confirmation", async (t)
   assert.equal((await store.ambil("draf:2")).isi.pgn, "second PGN");
   act(() => renderer.unmount());
   await store.tungguTulis();
+});
+
+test("PGN import warns after an asynchronous database failure without blocking analysis", async (t) => {
+  pasangWindow(t);
+  const store = buatPenyimpananPekerjaan(adapterMemori());
+  simpanDrafImpor({ tipe: "pgn", pgn: "1. e4 e5 *" }, "draf:impor", store);
+  await store.tungguTulis();
+  const imported = [];
+  const warnings = [];
+  let selesai;
+  const Impor = komponenImpor(store, () => new Promise((resolve) => { selesai = resolve; }), warnings);
+  const renderer = await render(Impor, (data) => imported.push(data));
+  await act(async () => { await kontrol(renderer, "kirim-impor").props.onClick(); });
+  assert.deepEqual(imported, [{ format: "pgn", string: "1. e4 e5 *" }]);
+  assert.deepEqual(warnings, []);
+  await act(async () => {
+    selesai({ diproses: 1, tersimpan: 0, sementara: 0, media: "gagal" });
+    await flush();
+  });
+  assert.deepEqual(warnings, [{ judul: "analisa.basisData.simpanGagalJudul", pesan: "analisa.basisData.simpanGagal", opsi: { persisten: true } }]);
+  act(() => renderer.unmount());
 });
