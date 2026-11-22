@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { runInThisContext } from "node:vm";
 import React from "react";
 import TestRenderer from "react-test-renderer";
@@ -11,6 +12,7 @@ import { buatIdDrafImpor, buatPenyimpananPekerjaan, ID_DRAF_IMPOR, simpanDrafImp
 import { catatFitur, KUNCI_FITUR } from "../src/halaman/Analisa/riwayatFitur.js";
 import * as modelTab from "../src/halaman/Analisa/tabKerja.js";
 import { useUkuranArea } from "../src/halaman/Analisa/komponen/useUkuranArea.js";
+import { tangkapGalatDiuji } from "./bantuGalat.mjs";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -217,7 +219,7 @@ test("the board and report panel use overflow-safe centering only when the works
   // Tailwind utility would otherwise pass a class-name-only test.
   const postcss = require("postcss");
   const tailwind = require("tailwindcss");
-  const config = require("tailwindcss/loadConfig")(new URL("../tailwind.config.ts", import.meta.url).pathname);
+  const config = require("tailwindcss/loadConfig")(fileURLToPath(new URL("../tailwind.config.ts", import.meta.url)));
   const css = await postcss([tailwind({ ...config, content: [{ raw: `<div class="${wrapper.props.className} ${grupPapan.props.className}"></div>` }] })])
     .process("@tailwind utilities;", { from: undefined });
   const rules = [];
@@ -487,6 +489,7 @@ test("independent feature panels retain their local state while another tab is s
 
 test("blocked session storage warns while tabs remain usable and recovers after a successful save", async (t) => {
   pasangDocument(t);
+  const galat = tangkapGalatDiuji(t, "Gagal menyimpan sesi tab Analisa:");
   const nilai = pasangSession(t);
   let diblokir = true;
   globalThis.sessionStorage = {
@@ -500,6 +503,8 @@ test("blocked session storage warns while tabs remain usable and recovers after 
   await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); });
   assert.equal(navigasi.tab.sesiTersedia, false);
   assert.equal(renderer.root.findAllByProps({ "data-uji": "sesi-tab-gagal" }).length, 1);
+  assert.ok(galat.length > 0);
+  assert.match(String(galat[0][1]), /blocked/);
   await act(async () => { navigasi.tabBar.onTambah(); await flush(); });
   assert.equal(navigasi.tab.daftar.length, 2);
   diblokir = false;
@@ -787,6 +792,7 @@ test("a completed session report restores its snapshot without requesting a new 
 
 test("an unreadable session report is not replaced or overwritten by an empty board", async (t) => {
   pasangDocument(t);
+  const galat = tangkapGalatDiuji(t, "Gagal membaca pekerjaan Analisa:");
   const id = "laporan:berharga";
   pasangSession(t, { versi: 1, aktifId: "tab:berharga", daftar: [{ id: "tab:berharga", tampilan: "bermain", laporanId: id }] });
   const adapter = adapterMemori();
@@ -800,6 +806,8 @@ test("an unreadable session report is not replaced or overwritten by an empty bo
   let renderer;
   await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); await flush(); });
   assert.equal(store.snapshot().tersedia, false);
+  assert.ok(galat.length > 0);
+  assert.match(String(galat[0][1]), /blocked/);
   assert.equal(navigasi.tab.daftar.length, 2);
   assert.equal(navigasi.tab.daftar[0].id, "tab:berharga");
   assert.equal(navigasi.tab.daftar[0].laporanId, id);

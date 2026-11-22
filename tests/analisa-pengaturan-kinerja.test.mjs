@@ -42,21 +42,22 @@ test("a setting updates only the relevant panels while theme changes reach every
     "../../penyimpanan.js": { bacaTeks: () => null, tulis: noop },
     "../svg/piece.jsx": { default: kosong },
     "../svg/rating.jsx": { default: kosong },
+    "./barisPengaturan.jsx": { default: function BarisPengaturanUji({ children }) { return React.createElement("div", null, children); } },
   };
   const Themes = kompilasi("../src/halaman/Analisa/komponen/pengaturan/themes.jsx", {
-    ...umum, "../../../../components/ui/switch.jsx": { Switch: saklar("themes") },
+    ...umum, "./sakelarPengaturan.jsx": { default: saklar("themes") },
   });
   const Ratings = kompilasi("../src/halaman/Analisa/komponen/pengaturan/ratings.jsx", {
     ...umum, "../menu/analyze/selectChessComData.js": { capitalizeFirst: (value) => value[0].toUpperCase() + value.slice(1) },
-    "../../../../components/ui/switch.jsx": { Switch: saklar("ratings") },
+    "./sakelarPengaturan.jsx": { default: saklar("ratings") },
   });
   const Moves = kompilasi("../src/halaman/Analisa/komponen/pengaturan/moves.jsx", {
     ...umum, "../svg/soundMax.jsx": { default: kosong }, "../svg/sound-mute.jsx": { default: kosong },
-    "../../../../components/ui/switch.jsx": { Switch: saklar("moves") },
+    "./sakelarPengaturan.jsx": { default: saklar("moves") },
   });
   const BestMoves = kompilasi("../src/halaman/Analisa/komponen/pengaturan/bestMoves.jsx", {
     ...umum, "../game/board.jsx": { Arrow: kosong },
-    "../../../../components/ui/switch.jsx": { Switch: saklar("best") },
+    "./sakelarPengaturan.jsx": { default: saklar("best") },
   });
   function Harness() {
     const boardTheme = React.useState(0);

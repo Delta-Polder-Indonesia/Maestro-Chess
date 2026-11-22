@@ -3,10 +3,11 @@ import { ConfigContext } from "../../konteks/configKonteks.js";
 import { memo, useContext, useEffect } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { bacaTeks, tulis } from "../../penyimpanan.js";
-import { Switch } from "../../../../components/ui/switch.jsx";
+import SakelarPengaturan from "./sakelarPengaturan.jsx";
 import { boardThemes } from "./boardThemes.js";
+import BarisPengaturan from "./barisPengaturan.jsx";
 
-const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme }) {
+const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, cocok = () => true, deskripsi = () => null }) {
   const { t } = useI18n();
   useEffect(() => {
     const boardTheme2 = Number(bacaTeks("boardTheme"));
@@ -23,31 +24,35 @@ const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme }) {
   }
   return <section>
             {boardThemes.map((theme, i) => {
-    return <div key={i} className="flex flex-row items-center gap-2 hover:bg-black transition-colors hover:text-foregroundHighlighted w-full p-2">
-                        <button onClick={() => changeBoardTheme(i)} type="button" className="flex flex-1 flex-row items-center gap-2 text-left">
-                            <div className="grid grid-cols-2 w-fit">
-                                {Array.from({ length: 4 }).map((_, i2) => {
-          const isEvenCol = i2 % 2 === 0;
-          const isEvenRow = Math.floor(i2 / 2) % 2 === 0;
-          const squareColor = isEvenCol ? isEvenRow ? theme.white : theme.black : isEvenRow ? theme.black : theme.white;
-          return <div key={i2} style={{ backgroundColor: squareColor }} className="h-5 w-5" />;
-        })}
-                            </div>
-                            <span className="font-bold text-sm">{t(`analisa.tema.${theme.kunci}`)}</span>
-                        </button>
-                        <Switch
-                            size="sm"
-                            checked={boardTheme === i}
-                            onCheckedChange={() => changeBoardTheme(i)}
-                            aria-label={t(`analisa.tema.${theme.kunci}`)}
-                        />
-                    </div>;
+    const label = t(`analisa.tema.${theme.kunci}`);
+    if (!cocok(`tema.${theme.kunci}`, label)) return null;
+    return <BarisPengaturan
+      key={i}
+      judul={<button onClick={() => changeBoardTheme(i)} type="button" className="flex items-center gap-2 text-left font-medium text-foreground">
+        <div className="grid grid-cols-2 w-fit">
+          {Array.from({ length: 4 }).map((_, i2) => {
+            const isEvenCol = i2 % 2 === 0;
+            const isEvenRow = Math.floor(i2 / 2) % 2 === 0;
+            const squareColor = isEvenCol ? isEvenRow ? theme.white : theme.black : isEvenRow ? theme.black : theme.white;
+            return <div key={i2} style={{ backgroundColor: squareColor }} className="h-5 w-5" />;
+          })}
+        </div>
+        <span className="text-[13.5px]">{label}</span>
+      </button>}
+      deskripsi={deskripsi("temaPapan")}
+    >
+      <SakelarPengaturan
+        checked={boardTheme === i}
+        onCheckedChange={() => changeBoardTheme(i)}
+        aria-label={label}
+      />
+    </BarisPengaturan>;
   })}
         </section>;
 });
 
-function Themes() {
+function Themes({ cocok, deskripsi }) {
   const [boardTheme, setBoardTheme] = useContext(ConfigContext).boardTheme;
-  return <IsiThemes boardTheme={boardTheme} setBoardTheme={setBoardTheme} />;
+  return <IsiThemes boardTheme={boardTheme} setBoardTheme={setBoardTheme} cocok={cocok} deskripsi={deskripsi} />;
 }
 export default memo(Themes);

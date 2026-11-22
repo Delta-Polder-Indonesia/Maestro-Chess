@@ -92,7 +92,7 @@ export default function PanelTabelData({
       {/* ── Tabel Permainan ─────────────────────────────────────── */}
       {/* flex-1: kotak mengisi sisa tinggi kolom kanan — tabel selalu
           mentok ke bawah, ada isi atau kosong. */}
-      <div className="relative w-full min-h-0 flex-1 overflow-y-auto overflow-x-auto border border-border rounded-borderRoundness bg-backgroundBox [scrollbar-gutter:stable] -mx-3 sm:mx-0 w-[calc(100%+1.5rem)] sm:w-full">
+      <div className="relative w-full min-h-0 flex-1 overflow-y-auto overflow-x-auto border-2 border-border rounded-[6px] bg-backgroundBox [scrollbar-gutter:stable] -mx-3 sm:mx-0 w-[calc(100%+1.5rem)] sm:w-full">
         <table className="w-full h-full min-w-[600px] sm:min-w-[760px] table-fixed border-collapse text-sm">
           <colgroup>
             <col style={{ width: "36%" }} />
@@ -216,7 +216,7 @@ export default function PanelTabelData({
               {cari ? t("analisa.partai.tidakCocok") : t("analisa.partai.tidakAda")}
             </div>
           ) : (
-            <div className="relative w-full min-h-0 overflow-y-auto overflow-x-auto border border-border rounded-borderRoundness bg-backgroundBox [scrollbar-gutter:stable] -mx-3 sm:mx-0 w-[calc(100%+1.5rem)] sm:w-full">
+            <div className="relative w-full min-h-0 overflow-y-auto overflow-x-auto border-2 border-border rounded-[6px] bg-backgroundBox [scrollbar-gutter:stable] -mx-3 sm:mx-0 w-[calc(100%+1.5rem)] sm:w-full">
               <table className="w-full min-w-[480px] sm:min-w-[560px] table-fixed border-collapse text-sm">
                 <colgroup>
                   <col style={{ width: "10%" }} />
@@ -289,7 +289,7 @@ export default function PanelTabelData({
               {cari ? t("analisa.partai.tidakCocok") : t("analisa.partai.tidakAda")}
             </div>
           ) : (
-            <div className="relative w-full min-h-0 overflow-y-auto overflow-x-auto border border-border rounded-borderRoundness bg-backgroundBox [scrollbar-gutter:stable] -mx-3 sm:mx-0 w-[calc(100%+1.5rem)] sm:w-full">
+            <div className="relative w-full min-h-0 overflow-y-auto overflow-x-auto border-2 border-border rounded-[6px] bg-backgroundBox [scrollbar-gutter:stable] -mx-3 sm:mx-0 w-[calc(100%+1.5rem)] sm:w-full">
               <table className="w-full min-w-[400px] sm:min-w-[480px] table-fixed border-collapse text-sm">
                 <colgroup>
                   <col style={{ width: "10%" }} />

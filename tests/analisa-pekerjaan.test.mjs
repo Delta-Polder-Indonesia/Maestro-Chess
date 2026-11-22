@@ -4,6 +4,7 @@ import { Chess } from "chess.js";
 import { ID_DRAF_IMPOR, buatAdapterPekerjaan, buatIdDrafImpor, buatPenyimpananPekerjaan, simpanDrafImpor, snapshotLaporanAman } from "../src/halaman/Analisa/pekerjaan.js";
 import { buatManajerLaporan } from "../src/halaman/Analisa/manajerLaporan.js";
 import { catatFitur, daftarRiwayat } from "../src/halaman/Analisa/riwayatFitur.js";
+import { tangkapGalatDiuji } from "./bantuGalat.mjs";
 
 function adapterMemori(records = []) {
   const isi = new Map(records.map((record) => [record.id, structuredClone(record)]));
@@ -104,7 +105,11 @@ test("rapid writes are serialized and coalesced without losing the latest edit",
   assert.equal(store.snapshot().menyimpan, false);
 });
 
-test("read/write failure is surfaced while in-memory work remains accessible", async () => {
+test("read/write failure is surfaced while in-memory work remains accessible", async (t) => {
+  const galat = tangkapGalatDiuji(t, [
+    "Gagal membaca daftar pekerjaan Analisa:",
+    "Gagal menyimpan atau menghapus pekerjaan Analisa:",
+  ]);
   const blocked = { open() { throw new Error("blocked"); } };
   const store = buatPenyimpananPekerjaan(buatAdapterPekerjaan(blocked));
   await store.init();
@@ -115,6 +120,12 @@ test("read/write failure is surfaced while in-memory work remains accessible", a
   assert.equal((await store.ambil("memory")).judul, "Still here");
   assert.equal(store.snapshot().daftar[0].judul, "Still here");
   assert.equal(store.snapshot().tersedia, false);
+  for (const pesan of [
+    "Gagal membaca daftar pekerjaan Analisa:",
+    "Gagal menyimpan atau menghapus pekerjaan Analisa:",
+  ]) {
+    assert.ok(galat.some(([pesanTercatat]) => pesanTercatat === pesan), `expected console error: ${pesan}`);
+  }
 });
 
 function gameDari(moves) {
@@ -253,7 +264,8 @@ test("an explicitly new blank board is resumable and does not become a stale res
   assert.equal(running.sumber.string, "1. e4 e5 *");
 });
 
-test("an IndexedDB open that never responds times out, and late connections are closed", async () => {
+test("an IndexedDB open that never responds times out, and late connections are closed", async (t) => {
+  const galat = tangkapGalatDiuji(t, "Gagal membaca daftar pekerjaan Analisa:");
   const request = {};
   let closed = false;
   const adapter = buatAdapterPekerjaan({ open: () => request }, 15);
@@ -261,6 +273,8 @@ test("an IndexedDB open that never responds times out, and late connections are 
   await store.init();
   assert.equal(store.snapshot().siap, true);
   assert.equal(store.snapshot().tersedia, false);
+  assert.equal(galat.length, 1);
+  assert.match(String(galat[0][1]), /Penyimpanan tidak merespons/);
   request.result = { close() { closed = true; } };
   request.onsuccess();
   assert.equal(closed, true);

@@ -14,7 +14,7 @@ export default function DaftarAkun({ daftar, aktif, tabAktif = true, revisi = 0,
 
   if (buka) {
     return (
-      <div className="flex h-full w-full flex-col gap-3 overflow-y-auto rounded-borderRoundness border border-border bg-backgroundBox p-3 sm:p-4">
+      <div className="flex h-full w-full flex-col gap-3 overflow-y-auto rounded-[6px] border-2 border-border bg-backgroundBox p-3 sm:p-4">
         <FormulirAkun
           judul={t("analisa.akun.judul")}
           subjudul={t("analisa.akun.isi")}

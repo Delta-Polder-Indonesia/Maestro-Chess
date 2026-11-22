@@ -4,6 +4,7 @@ import {
   aktifkanTab, bacaSesiTab, hapusPilihanAkun, hapusTabLain, KUNCI_SESI_TAB, perbaruiTab,
   simpanSesiTab, tabBaru, tambahTab,
 } from "../src/halaman/Analisa/tabKerja.js";
+import { tangkapGalatDiuji } from "./bantuGalat.mjs";
 
 function storageMemori() {
   const data = new Map();
@@ -40,7 +41,11 @@ test("session keeps separate feature, report and draft pointers through tab oper
   assert.equal(sesi.aktifId, "tab:3");
 });
 
-test("damaged or blocked session storage does not break a fresh workspace", () => {
+test("damaged or blocked session storage does not break a fresh workspace", (t) => {
+  const galat = tangkapGalatDiuji(t, [
+    "Gagal membaca sesi tab Analisa:",
+    "Gagal menyimpan sesi tab Analisa:",
+  ]);
   const storage = storageMemori();
   storage.setItem(KUNCI_SESI_TAB, "not JSON");
   assert.equal(bacaSesiTab(storage), null);
@@ -63,6 +68,12 @@ test("damaged or blocked session storage does not break a fresh workspace", () =
   assert.equal(bacaSesiTab(terblokir), null);
   assert.equal(simpanSesiTab(terblokir, { daftar: [tabBaru("tab:1")], aktifId: "tab:1" }), false);
   assert.equal(simpanSesiTab(null, { daftar: [tabBaru("tab:1")], aktifId: "tab:1" }), false);
+  assert.equal(galat.length, 3);
+  assert.deepEqual(galat.map(([pesan]) => pesan), [
+    "Gagal membaca sesi tab Analisa:",
+    "Gagal membaca sesi tab Analisa:",
+    "Gagal menyimpan sesi tab Analisa:",
+  ]);
 });
 
 test("account selection is per tab and deleting a shared account clears only matching selections", () => {

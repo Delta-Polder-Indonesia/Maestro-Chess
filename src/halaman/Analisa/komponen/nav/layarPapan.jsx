@@ -9,7 +9,8 @@
  *  - ikon           : 60px, monokrom mengikuti warna teks;
  *  - judul          : 16px / 500;
  *  - deskripsi      : 14px / dimmed;
- *  - tombol         : varian "light" (tint warna aksen), tinggi 42px, full width.
+ *  - tombol         : hijau solid #8BC550 dengan teks hitam, tinggi 42px, full width;
+ *  - tata letak     : lima kartu per baris pada layar lebar, sisanya lanjut di bawah.
  *
  * Fitur yang sudah tersedia langsung membuka layarnya; fitur yang belum
  * dikerjakan diberi lencana "Segera hadir" dan tombolnya dinonaktifkan.
@@ -92,6 +93,27 @@ function Ikon({ nama }) {
     );
   }
 
+  if (nama === "deteksi") {
+    return (
+      <svg {...umum}>
+        <path d="M12 3l7 3v5c0 4.4-2.9 8.4-7 10-4.1-1.6-7-5.6-7-10V6l7-3z" />
+        <path d="M12 8v4" />
+        <path d="M12 15h.01" />
+      </svg>
+    );
+  }
+
+  if (nama === "wawasan") {
+    return (
+      <svg {...umum}>
+        <path d="M4 20V4" />
+        <path d="M4 20h16" />
+        <path d="M7 15l4-4 3 2 5-6" />
+        <path d="M16 7h3v3" />
+      </svg>
+    );
+  }
+
   // report
   return (
     <svg {...umum}>
@@ -110,7 +132,7 @@ function Kartu({ kunci, ikon, judul, deskripsi, labelTombol, segera, onClick, t 
   return (
     <div
       data-uji={`papan-kartu-${kunci}`}
-      className="relative flex h-full flex-col items-center justify-between rounded-lg border border-border bg-backgroundBoxBox p-6 text-center shadow-sm"
+      className="relative flex h-full flex-col items-center justify-between rounded-[6px] border-2 border-border bg-backgroundBoxBox p-6 text-center shadow-sm"
     >
       {segera ? (
         <span className="absolute right-2.5 top-2.5 rounded bg-backgroundBoxBoxHover px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foregroundGrey">
@@ -135,7 +157,7 @@ function Kartu({ kunci, ikon, judul, deskripsi, labelTombol, segera, onClick, t 
         className={`mt-4 h-[42px] w-full rounded-lg px-4 text-sm font-medium transition-colors ${
           segera
             ? "cursor-not-allowed bg-backgroundBoxBoxHover text-foregroundGrey opacity-60"
-            : "cursor-pointer bg-backgroundBoxBoxHighlighted/15 text-backgroundBoxBoxHighlighted hover:bg-backgroundBoxBoxHighlighted/25"
+            : "cursor-pointer bg-[#8BC550] font-bold text-black hover:bg-[#81b64c]"
         }`}
       >
         {labelTombol}
@@ -146,7 +168,7 @@ function Kartu({ kunci, ikon, judul, deskripsi, labelTombol, segera, onClick, t 
 
 /* ── Layar ──────────────────────────────────────────────────────────── */
 
-export default function LayarPapan({ onReport, onImpor, onBukaPekerjaan }) {
+export default function LayarPapan({ onReport, onImpor, onDeteksiEngine, onWawasan, onBukaPekerjaan }) {
   const { t } = useI18n();
 
   const kartu = [
@@ -198,13 +220,29 @@ export default function LayarPapan({ onReport, onImpor, onBukaPekerjaan }) {
       labelTombol: t("analisa.papan.kartu.puzzle.tombol"),
       segera: true,
     },
+    {
+      kunci: "deteksi-engine",
+      ikon: "deteksi",
+      judul: t("analisa.papan.kartu.deteksiEngine.judul"),
+      deskripsi: t("analisa.papan.kartu.deteksiEngine.deskripsi"),
+      labelTombol: t("analisa.papan.kartu.deteksiEngine.tombol"),
+      onClick: onDeteksiEngine,
+    },
+    {
+      kunci: "wawasan",
+      ikon: "wawasan",
+      judul: t("analisa.papan.kartu.wawasan.judul"),
+      deskripsi: t("analisa.papan.kartu.wawasan.deskripsi"),
+      labelTombol: t("analisa.papan.kartu.wawasan.tombol"),
+      onClick: onWawasan,
+    },
   ];
 
   return (
     <PanelLayar lebarMaks="max-w-[1400px]">
       <h1 className="sr-only">{t("analisa.papan.judul")}</h1>
       <div className="flex flex-col gap-6 pt-2.5">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {kartu.map((k) => (
             <Kartu key={k.kunci} t={t} {...k} />
           ))}

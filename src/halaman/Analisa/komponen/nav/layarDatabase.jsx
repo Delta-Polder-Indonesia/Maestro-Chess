@@ -748,6 +748,7 @@ export default function LayarDatabase({
 
   return (
     <PanelLayar
+      kepalaRapat
       judul={
         mode === "tabel" ? (
           <span className="flex min-w-0 items-center gap-3">
@@ -773,7 +774,7 @@ export default function LayarDatabase({
       }
       bawahJudul={
         mode === "data" ? (
-          <div className={`flex flex-wrap items-center gap-2.5 text-xs text-foregroundGrey ${!stats || stats.totalPartai === 0 ? "invisible" : ""}`}>
+          <div className={`flex flex-wrap items-center gap-2.5 text-xs text-foregroundGrey ${!stats || stats.totalPartai === 0 ? "hidden" : ""}`}>
             <span className="font-bold text-foreground flex items-center gap-1.5">
               <Database
                 width={14}
