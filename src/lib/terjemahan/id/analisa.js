@@ -412,6 +412,16 @@ export const analisa = {
           deskripsi: "Latih kemampuan taktikmu",
           tombol: "Latih",
         },
+        deteksiEngine: {
+          judul: "Deteksi Engine",
+          deskripsi: "Periksa riwayat partai untuk kemiripan gaya bermain dengan engine",
+          tombol: "Buka deteksi",
+        },
+        wawasan: {
+          judul: "Wawasan",
+          deskripsi: "Lihat performa dan akurasi dari partai yang sudah dianalisis",
+          tombol: "Lihat wawasan",
+        },
       },
     },
     pekerjaan: {

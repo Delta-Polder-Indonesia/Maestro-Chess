@@ -204,10 +204,14 @@ test("dashboard has one report button and opens recent features or saved work", 
   const renderer = renderPapan(indonesia, {
     onReport: () => calls.push("report"),
     onImpor: () => calls.push("impor"),
+    onDeteksiEngine: () => calls.push("deteksi-engine"),
+    onWawasan: () => calls.push("wawasan"),
     onBukaPekerjaan: (record) => calls.push(`buka:${record.id}`),
   }, work);
   const cards = renderer.root.findAll((node) => node.props["data-uji"]?.startsWith("papan-kartu-"));
-  assert.equal(cards.length, 6);
+  assert.equal(cards.length, 8);
+  const grid = renderer.root.findAll((node) => typeof node.props.className === "string" && /grid grid-cols-1.*xl:grid-cols-5/.test(node.props.className));
+  assert.equal(grid.length, 1);
   const report = byTestId(renderer, "papan-kartu-report");
   assert.equal(report.findByType("h2").children.join(""), "Report Analisa");
   assert.equal(report.findAllByType("button").length, 1);
@@ -224,11 +228,13 @@ test("dashboard has one report button and opens recent features or saved work", 
   TestRenderer.act(() => {
     byTestId(renderer, "papan-tombol-report").props.onClick();
     byTestId(renderer, "papan-tombol-impor").props.onClick();
+    byTestId(renderer, "papan-tombol-deteksi-engine").props.onClick();
+    byTestId(renderer, "papan-tombol-wawasan").props.onClick();
     for (const id of ["draft", "done", "interrupted", "previous", "running", "fitur:akun"]) {
       item(renderer, id).find((node) => node.props["data-uji"] === "pekerjaan-buka").props.onClick();
     }
   });
-  assert.deepEqual(calls, ["report", "impor", "buka:draft", "buka:done", "buka:interrupted", "buka:previous", "buka:running", "buka:fitur:akun"]);
+  assert.deepEqual(calls, ["report", "impor", "deteksi-engine", "wawasan", "buka:draft", "buka:done", "buka:interrupted", "buka:previous", "buka:running", "buka:fitur:akun"]);
   for (const key of ["main", "analisa", "repertoar", "puzzle"]) {
     assert.equal(byTestId(renderer, `papan-tombol-${key}`).props.disabled, true);
   }

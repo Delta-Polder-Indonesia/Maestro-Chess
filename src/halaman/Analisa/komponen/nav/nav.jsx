@@ -2,8 +2,7 @@
  * Port dari Brilliant-Chess (MIT, © 2025 Delo) — src/components/nav/nav.tsx.
  *
  * Bilah navigasi kiri: logo + wordmark di atas, lalu menu area kerja
- * (Papan / Akun / Basis Data / Impor / Deteksi Engine / Wawasan /
- * Pengaturan), diikuti tautan Source Code
+ * (Papan / Akun / Basis Data / Pengaturan), diikuti tautan Source Code
  * dan Atribusi di dasar bilah.
  *
  * PERUBAHAN BESAR dari upstream (dan dari versi port sebelumnya):
@@ -47,8 +46,7 @@ import Link from "next/link";
 import GitHub from "../svg/github.jsx";
 import Lisensi from "../svg/license.jsx";
 import Profile from "../svg/profile.jsx";
-import ShieldAlert from "../svg/shield-alert.jsx";
-import { Settings, BarChart3 } from "lucide-react";
+import { Settings } from "lucide-react";
 import { TAMPILAN_ANALISA } from "../../konteks/analyzeKonteks.js";
 import { useTampilan } from "../../konteks/boardKonteks.js";
 import { useTabKerja } from "../../konteks/tabKerja.jsx";
@@ -59,18 +57,6 @@ import { bacaBoolean, tulisBoolean } from "../../penyimpanan.js";
 
 /** Kode sumber aplikasi mandiri ini. Atribusi hulu tersedia di halaman Atribusi. */
 export const URL_REPO = "https://github.com/Delta-Polder-Indonesia/Maestro-Chess";
-
-/** Ikon impor sederhana (monokrom, ikut warna kelas fill). */
-function IkonImpor({ className }) {
-  return (
-    <svg viewBox="0 0 24 24" width={18} height={18} aria-hidden="true">
-      <path
-        className={className}
-        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm1 2.5L18.5 8H15V4.5zM8 11h8v2H8v-2zm0 4h8v2H8v-2zm4-10v5h5v.5h-5V5h.75L12.5 5.5z"
-      />
-    </svg>
-  );
-}
 
 /** Ikon "Papan" — papan catur 8x8 (monokrom, ikut warna kelas fill). */
 function IkonPapan({ className }) {
@@ -103,7 +89,7 @@ export default function Nav() {
    * Bilah hanya berlangganan layar, bukan state papan maupun progres engine.
    */
   const [tampilan, setTampilan] = useTampilan();
-  const { bukaImpor, perluPulih } = useTabKerja();
+  const { perluPulih } = useTabKerja();
   const [navTerbuka, setNavTerbuka] = useState(() => bacaBoolean("navTerbuka", true));
   const [navDiAtas, setNavDiAtas] = useState(() => typeof window !== "undefined" && window.innerWidth < navTop);
   const papanRef = useRef(null);
@@ -167,24 +153,6 @@ export default function Nav() {
       icon: (props) => <IkonDatabase className={props.className} />,
       tampilan: TAMPILAN_ANALISA.BASIS_DATA,
       kunci: "database",
-    },
-    {
-      label: t("analisa.nav.impor"),
-      icon: (props) => <IkonImpor className={props.className} />,
-      tampilan: TAMPILAN_ANALISA.IMPOR,
-      kunci: "impor",
-    },
-    {
-      label: t("analisa.nav.deteksiEngine"),
-      icon: () => <ShieldAlert className="h-[18px] w-[18px] shrink-0" />,
-      tampilan: TAMPILAN_ANALISA.DETEKSI_ENGINE,
-      kunci: "deteksi-engine",
-    },
-    {
-      label: t("analisa.nav.wawasan"),
-      icon: () => <BarChart3 className="h-[18px] w-[18px] shrink-0" />,
-      tampilan: TAMPILAN_ANALISA.WAWASAN,
-      kunci: "wawasan",
     },
     {
       label: t("analisa.nav.pengaturan"),
@@ -272,10 +240,7 @@ export default function Nav() {
               // mengosongkan `data`, `akun`, dan `pageState`: karena papan
               // tidak pernah dilepas, analisis yang sedang direview tetap utuh.
               const keterangan = item.label;
-              const aksi = () => {
-                if (item.tampilan === TAMPILAN_ANALISA.IMPOR) void bukaImpor();
-                else setTampilan(item.tampilan);
-              };
+              const aksi = () => setTampilan(item.tampilan);
               return (
                 <TooltipLabel key={item.kunci} stabil label={!navTerbuka || navDiAtas ? keterangan : undefined} side="right">
                   <button

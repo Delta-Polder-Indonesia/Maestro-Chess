@@ -564,6 +564,8 @@ function LapisanLayar({
                       <LayarPapan
                         onReport={() => { void bukaLaporanAktif(); }}
                         onImpor={keImpor}
+                        onDeteksiEngine={() => { if (masihAktif()) setTampilan(TAMPILAN_ANALISA.DETEKSI_ENGINE); }}
+                        onWawasan={() => { if (masihAktif()) setTampilan(TAMPILAN_ANALISA.WAWASAN); }}
                         onBukaPekerjaan={bukaRiwayat}
                       />
                     ) : null}

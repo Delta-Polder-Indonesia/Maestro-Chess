@@ -412,6 +412,16 @@ export const analisa = {
           deskripsi: "Train your tactical skills",
           tombol: "Train",
         },
+        deteksiEngine: {
+          judul: "Engine Detection",
+          deskripsi: "Review game history for playing styles similar to an engine",
+          tombol: "Open detection",
+        },
+        wawasan: {
+          judul: "Insights",
+          deskripsi: "See performance and accuracy from analyzed games",
+          tombol: "View insights",
+        },
       },
     },
     pekerjaan: {

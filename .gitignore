@@ -25,6 +25,9 @@
 .DS_Store
 *.pem
 
+# referensi lokal (bukan bagian dari aplikasi)
+prompt.md
+
 # debug
 npm-debug.log*
 yarn-debug.log*
