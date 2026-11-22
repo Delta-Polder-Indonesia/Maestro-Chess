@@ -29,7 +29,7 @@ export default function CapturedPieces({ white = false, pieces = [], advantage =
   const advantageText = formatAdvantage(displayAdvantage);
 
   return (
-    <div className="flex flex-row h-full items-end gap-1 vertical:gap-1.5">
+    <div className="flex flex-row h-full items-end gap-1 group-data-[panel-sejajar=true]/papan:gap-1.5">
       <div className="flex flex-row h-full w-fit -ml-[3px]">
         {sortedGroupedPieces.map(([piece, count]) => (
           <div key={piece} className="mb-[1px] flex flex-row items-end">
@@ -44,13 +44,13 @@ export default function CapturedPieces({ white = false, pieces = [], advantage =
                   ? "mx-[1px]"
                   : "";
 
-              const overlapClass = !isFirst ? "-ml-[7px] vertical:-ml-[10px]" : "";
+              const overlapClass = !isFirst ? "-ml-[7px] group-data-[panel-sejajar=true]/papan:-ml-[10px]" : "";
 
               return (
                 <ChessPiece
                   key={`${piece}-${idx}`}
                   piece={pieceChar}
-                  className={`w-[10px] h-[10px] vertical:w-[17px] vertical:h-[17px] ${marginX} ${overlapClass}`}
+                  className={`w-[10px] h-[10px] group-data-[panel-sejajar=true]/papan:w-[17px] group-data-[panel-sejajar=true]/papan:h-[17px] ${marginX} ${overlapClass}`}
                 />
               );
             })}
@@ -60,7 +60,7 @@ export default function CapturedPieces({ white = false, pieces = [], advantage =
 
       {/* Ukuran angka disamakan proporsinya dengan bidak */}
       {advantageText && (
-        <span className="text-foregroundGrey font-medium text-[9px] vertical:text-[12px] leading-none mb-[1px] select-none">
+        <span className="text-foregroundGrey font-medium text-[9px] group-data-[panel-sejajar=true]/papan:text-[12px] leading-none mb-[1px] select-none">
           {advantageText}
         </span>
       )}

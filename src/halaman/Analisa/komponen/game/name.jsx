@@ -2,7 +2,6 @@
 import Profile from "../svg/profile.jsx";
 import CapturedPieces from "./capturedPieces.jsx";
 import LencanaGelar from "../LencanaGelar.jsx";
-import { maxVertical } from "../../konstanta.js";
 import { useEffect, useState } from "react";
 import { urlBendera } from "../../../../lib/bendera.js";
 // Data kartu pemain lama di localStorage menyimpan emoji; data baru menyimpan
@@ -25,33 +24,26 @@ function kodeBendera(nilai) {
   return null;
 }
 function Name(props) {
-  const [profileSize, setProfileSize] = useState(40);
   const [imgError, setImgError] = useState(false);
   const { white, captured, materialAdvantage, avatar, title, flag } = props;
   const name = props.children;
-  useEffect(() => {
-    function resizeProfile() {
-      setProfileSize(window.innerWidth < maxVertical ? 24 : 40);
-    }
-    resizeProfile();
-    window.addEventListener("resize", resizeProfile);
-    return () => window.removeEventListener("resize", resizeProfile);
-  }, []);
   // Avatar baru → hapus tanda galat agar bisa dicoba lagi.
   useEffect(() => setImgError(false), [avatar]);
   const showAvatar = avatar && !imgError;
   const kode = kodeBendera(flag);
   const srcBendera = urlBendera(kode);
-  return <div className="flex flex-row items-start vertical:text-sm text-[10px] font-bold text-foregroundHighlighted vertical:gap-2 gap-[6px] flex-grow overflow-x-auto overflow-y-hidden">
-            <div className={`vertical:h-11 vertical:w-11 h-7 w-7 flex flex-row justify-center items-end overflow-hidden ${white ? "bg-backgroundProfileWhite" : "bg-backgroundProfileBlack"}`}>
+  return <div className="flex flex-row items-start group-data-[panel-sejajar=true]/papan:text-sm text-[10px] font-bold text-foregroundHighlighted group-data-[panel-sejajar=true]/papan:gap-2 gap-[6px] flex-grow overflow-x-auto overflow-y-hidden">
+            <div className={`group-data-[panel-sejajar=true]/papan:h-11 group-data-[panel-sejajar=true]/papan:w-11 h-7 w-7 flex flex-row justify-center items-end overflow-hidden ${white ? "bg-backgroundProfileWhite" : "bg-backgroundProfileBlack"}`}>
                 {showAvatar ? (
                   <img className="h-full w-full object-cover" src={avatar} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setImgError(true)} />
                 ) : (
-                  <Profile width={profileSize} height={profileSize} class={`${white ? "fill-foregroundProfileWhite" : "fill-foregroundProfileBlack"}`} />
+                  <span className="h-6 w-6 group-data-[panel-sejajar=true]/papan:h-10 group-data-[panel-sejajar=true]/papan:w-10">
+                    <Profile width="100%" height="100%" class={`${white ? "fill-foregroundProfileWhite" : "fill-foregroundProfileBlack"}`} />
+                  </span>
                 )}
             </div>
-            <div className="flex flex-col justify-between h-7 vertical:h-11">
-                <span className="h-fit vertical:pb-[1px] vertical:pt-[2px] select-text text-nowrap">
+            <div className="flex flex-col justify-between h-7 group-data-[panel-sejajar=true]/papan:h-11">
+                <span className="h-fit group-data-[panel-sejajar=true]/papan:pb-[1px] group-data-[panel-sejajar=true]/papan:pt-[2px] select-text text-nowrap">
                   {/* Gelar FIDE (GM, IM, FM, WGM, …) memakai lencana SVG yang
                       sama dengan kartu profil Wawasan; tingginya mengikuti
                       ukuran huruf baris nama (em), jadi proporsional di mode

@@ -12,7 +12,7 @@ import { useMesin } from "../../konteks/mesinKonteks.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { useKartuPemain } from "../../../../lib/pemainCatur.js";
 import { ErrorsContext } from "../../konteks/errorsKonteks.js";
-import { maxVertical, navTop } from "../../konstanta.js";
+import { maxSisiPapan, minSisiPapan, navTop } from "../../konstanta.js";
 import { ConfigContext } from "../../konteks/configKonteks.js";
 import GameButtons from "../menu/analysis/gameButtons.jsx";
 import { getMoves, getArrows, getCapturedPieces, getCustomResult, formatPlayerLabel } from "./getMoves.js";
@@ -21,7 +21,7 @@ import { useAnalisisPapan } from "./useAnalisisPapan.js";
 import { usePekerjaanLaporan } from "./usePekerjaanLaporan.js";
 import PendengarKeyboard from "./pendengarKeyboard.jsx";
 
-const IsiGame = memo(function IsiGame({ wadah, boardSoundsRef, didukung, siapkan, ambilMesin, setErrors }) {
+const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didukung, siapkan, ambilMesin, setErrors }) {
   const [boardSize, setBoardSize] = useState(750);
   const [gameHeight, setGameHeight] = useState(850);
   const [arrows, setArrows] = useState({ 0: [] });
@@ -258,12 +258,14 @@ const IsiGame = memo(function IsiGame({ wadah, boardSoundsRef, didukung, siapkan
    * terbesar skor Performance halaman ini.
    */
   useLayoutEffect(() => {
+    // Ref <main> baru terpasang setelah layout effect anak saat mount awal.
+    const cariWadah = () => wadah?.current ?? componentRef.current?.closest?.("main");
     function updateBoardSize() {
-      const el = wadah?.current;
-      const lebar = el?.clientWidth ?? window.innerWidth;
-      const tinggi = el?.clientHeight ?? window.innerHeight;
-
-      const newGap = window.innerWidth < maxVertical ? 6 : 10;
+      const el = cariWadah();
+      const lebar = ukuranWadah?.lebar ?? el?.clientWidth ?? window.innerWidth;
+      const tinggi = ukuranWadah?.tinggi ?? el?.clientHeight ?? window.innerHeight;
+      const sejajar = ukuranWadah?.sejajar ?? false;
+      const newGap = sejajar ? 10 : 6;
       setGap(newGap);
 
       const component = componentRef.current;
@@ -277,9 +279,8 @@ const IsiGame = memo(function IsiGame({ wadah, boardSoundsRef, didukung, siapkan
       const gapWidth = 8;
       const paddingWidth = 16;
 
-      // CSS breakpoint `vertical`/`navTop` memakai lebar viewport, bukan
-      // lebar <main> (yang sudah dikurangi bilah navigasi kiri).
-      const isNavTop = window.innerWidth < navTop;
+      // Navigasi atas mengikuti viewport; panel sejajar mengikuti ukuran <main>.
+      const isNavTop = ukuranWadah?.navDiAtas ?? window.innerWidth < navTop;
       setIsNavTop(isNavTop);
 
       if (isNavTop) {
@@ -289,19 +290,19 @@ const IsiGame = memo(function IsiGame({ wadah, boardSoundsRef, didukung, siapkan
           tinggi -
           (padding + evalWidth + gapWidth + statusBarHeight + gapWidth + gapWidth + statusBarHeight + gapHeight + gameButtonsHeight + gapHeight + boardMenuWidth + padding);
         const maxWidth = lebar - padding * 2;
-        const size = roundBoardSize(Math.min(boardHeight, maxWidth));
+        const size = roundBoardSize(Math.min(maxWidth, Math.max(minSisiPapan, boardHeight)));
         setBoardSize(size);
         setGameHeight(size);
         return;
       }
 
-      if (window.innerWidth < maxVertical) {
+      if (!sejajar) {
         const padding = 8;
         const evalLebar = 28;
         const gameButtonsHeight = 69;
         const boardHeight = tinggi - (statusBarHeight * 2 + gapHeight * 3 + padding * 2 + gameButtonsHeight);
         const maxWidth = lebar - (padding + evalLebar + gapHeight + gapWidth + boardMenuWidth + padding);
-        const size = roundBoardSize(Math.min(boardHeight, maxWidth));
+        const size = roundBoardSize(Math.min(maxWidth, Math.max(minSisiPapan, boardHeight)));
         setBoardSize(size);
         setGameHeight(size + statusBarHeight * 2 + gapHeight * 2);
         return;
@@ -310,25 +311,19 @@ const IsiGame = memo(function IsiGame({ wadah, boardSoundsRef, didukung, siapkan
       const boardHeight = componentHeight - (statusBarHeight * 2 + gapHeight * 2);
       const maxWidth =
         lebar - (paddingWidth + evalWidth + gapHeight + gapWidth + boardMenuWidth + gapWidth + menuWidth + paddingWidth);
-      const size = roundBoardSize(Math.min(boardHeight, maxWidth));
+      const size = roundBoardSize(Math.min(maxWidth, Math.max(minSisiPapan, boardHeight)));
       setBoardSize(size);
       setGameHeight(size + statusBarHeight * 2 + gapHeight * 2);
     }
 
     updateBoardSize();
-    window.addEventListener("resize", updateBoardSize);
-    const observer = typeof ResizeObserver === "function" ? new ResizeObserver(updateBoardSize) : null;
-    if (observer && wadah?.current) observer.observe(wadah.current);
-    return () => {
-      window.removeEventListener("resize", updateBoardSize);
-      observer?.disconnect();
-    };
-    // pageState ikut jadi dependensi: panel kanan baru muncul setelah
-    // analisis berjalan, dan itu mengubah lebar yang tersedia untuk papan.
-  }, [wadah, pageState]);
+    // useUkuranArea mengamati <main> dan mengirim ukuran serta mode yang sama
+    // ke tata letak dan papan. pageState tetap dihitung ulang saat isi berubah.
+  }, [wadah, ukuranWadah, pageState]);
   function roundBoardSize(boardSize2) {
-    // Papan boleh melebar sampai batas ini (kelipatan 8) supaya tetap rapi.
-    return Math.min(1000, Math.round(boardSize2 / 8) * 8);
+    // Kelipatan 8, dengan batas atas; viewport ekstrem tidak boleh
+    // menghasilkan ukuran negatif. Papan kecil dapat di-scroll secara vertikal.
+    return Math.max(0, Math.min(maxSisiPapan, Math.round(boardSize2 / 8) * 8));
   }
   function formatTime(seconds) {
     const noTime = "--:--";
@@ -443,7 +438,7 @@ const IsiGame = memo(function IsiGame({ wadah, boardSoundsRef, didukung, siapkan
                 </div>
             </div>
         </div>
-        <div className="bg-backgroundBox flex-row justify-center rounded-borderRoundness vertical:hidden w-full navTop:flex hidden">
+        <div className="bg-backgroundBox flex-row justify-center rounded-borderRoundness group-data-[panel-sejajar=true]/papan:hidden w-full navTop:flex hidden">
             <div className="max-w-[500px] w-full flex flex-row justify-center">
                 <GameButtons />
             </div>
@@ -453,13 +448,13 @@ const IsiGame = memo(function IsiGame({ wadah, boardSoundsRef, didukung, siapkan
 
 // Konteks konfigurasi/engine/errors memiliki banyak field; pilih hanya nilai
 // yang benar-benar dipakai IsiGame sebelum melewati batas memo.
-function Game({ wadah }) {
+function Game({ wadah, ukuranWadah }) {
   const [boardSounds] = useContext(ConfigContext).boardSounds;
   const boardSoundsRef = useRef(boardSounds);
   useLayoutEffect(() => { boardSoundsRef.current = boardSounds; }, [boardSounds]);
   const setErrors = useContext(ErrorsContext).errors[1];
   const { didukung, siapkan, ambilMesin } = useMesin();
-  return <IsiGame wadah={wadah} boardSoundsRef={boardSoundsRef} didukung={didukung} siapkan={siapkan} ambilMesin={ambilMesin} setErrors={setErrors} />;
+  return <IsiGame wadah={wadah} ukuranWadah={ukuranWadah} boardSoundsRef={boardSoundsRef} didukung={didukung} siapkan={siapkan} ambilMesin={ambilMesin} setErrors={setErrors} />;
 }
 
 export default memo(Game);

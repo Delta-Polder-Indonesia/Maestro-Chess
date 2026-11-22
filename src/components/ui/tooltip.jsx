@@ -9,6 +9,7 @@
 "use client"
 
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
+import { useEffect, useRef, useState } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -54,13 +55,35 @@ function TooltipContent({
         {...props}
       >
         {props.children}
-        <TooltipPrimitive.Arrow data-slot="tooltip-arrow" width={8} height={8} />
+        {/* Radix mengukur Arrow dengan ResizeObserver tanpa fallback. */}
+        {typeof ResizeObserver === "function" ? <TooltipPrimitive.Arrow data-slot="tooltip-arrow" width={8} height={8} /> : null}
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   )
 }
 
-function TooltipLabel({ children, label, side = "top", sideOffset = 4 }) {
+function TooltipLabelStabil({ children, label, side, sideOffset }) {
+  const [terbuka, setTerbuka] = useState(false)
+  const fokus = useRef(false)
+
+  // Saat label menghilang, jangan tinggalkan aria-describedby yang menunjuk
+  // ke tooltip yang tidak ada. Jika label muncul pada kontrol yang masih
+  // fokus, tampilkan tooltip-nya tanpa mengganti elemen kontrol tersebut.
+  useEffect(() => { setTerbuka(Boolean(label) && fokus.current) }, [label])
+
+  return (
+    <TooltipProvider>
+      <Tooltip open={Boolean(label) && terbuka} onOpenChange={(nilai) => { if (label) setTerbuka(nilai) }}>
+        <TooltipTrigger asChild onFocus={() => { fokus.current = true }} onBlur={() => { fokus.current = false }}>{children}</TooltipTrigger>
+        {label ? <TooltipContent side={side} sideOffset={sideOffset}>{label}</TooltipContent> : null}
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
+function TooltipLabel({ children, label, side = "top", sideOffset = 4, stabil = false }) {
+  // Hanya kontrol yang labelnya berubah memerlukan pemicu yang tetap terpasang.
+  if (stabil) return <TooltipLabelStabil label={label} side={side} sideOffset={sideOffset}>{children}</TooltipLabelStabil>
   if (!label) return children
 
   return (

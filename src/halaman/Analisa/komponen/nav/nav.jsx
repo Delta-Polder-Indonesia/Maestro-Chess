@@ -35,17 +35,13 @@
  * bilah ini ke komponen itu:
  *  - lebar menciut 3rem (`w-12`), sama dengan `--sidebar-width-icon` di
  *    komponen sidebar;
- *  - setiap tombol menu (dan burger) menjadi kotak 2rem (`w-8 h-8`) dengan
- *    bantalan 8px yang TETAP di kedua keadaan (pola `group-data-
- *    [collapsible=icon]:size-8 p-2` di komponen sidebar), sehingga ikon
- *    duduk tepat di tengah lajur dan tidak bergeser saat burger ditekan;
- *    lebar rail berubah sekali dan label memakai transisi opacity saja;
+ *  - saat menciut, tombol menu memakai lebar 2rem dengan bantalan 7px
+ *    dan tanpa gap label, sehingga ikon 18px serta garis fokus tidak terpotong;
  *  - burger duduk di baris kepala bersama wordmark; saat bilah menciut,
- *    wordmark ikut menyusut habis sehingga tidak ada teks terpotong dan
- *    burger tinggal sendiri di tengah lajur;
- *  - `title`/`aria-label` tiap tombol sudah menjadi pengganti tooltip.
+ *    wordmark ikut disembunyikan dan burger tinggal di tengah lajur;
+ *  - setiap ikon memiliki nama aksesibel dan tooltip saat label tidak terlihat.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import GitHub from "../svg/github.jsx";
@@ -58,6 +54,8 @@ import { useTampilan } from "../../konteks/boardKonteks.js";
 import { useTabKerja } from "../../konteks/tabKerja.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { TooltipLabel } from "../../../../components/ui/tooltip.jsx";
+import { navTop } from "../../konstanta.js";
+import { bacaBoolean, tulisBoolean } from "../../penyimpanan.js";
 
 /** Kode sumber aplikasi mandiri ini. Atribusi hulu tersedia di halaman Atribusi. */
 export const URL_REPO = "https://github.com/Delta-Polder-Indonesia/Maestro-Chess";
@@ -106,7 +104,33 @@ export default function Nav() {
    */
   const [tampilan, setTampilan] = useTampilan();
   const { bukaImpor, perluPulih } = useTabKerja();
-  const [navTerbuka, setNavTerbuka] = useState(true);
+  const [navTerbuka, setNavTerbuka] = useState(() => bacaBoolean("navTerbuka", true));
+  const [navDiAtas, setNavDiAtas] = useState(() => typeof window !== "undefined" && window.innerWidth < navTop);
+  const papanRef = useRef(null);
+  const berandaRef = useRef(null);
+  const toggleRef = useRef(null);
+
+  useEffect(() => { tulisBoolean("navTerbuka", navTerbuka); }, [navTerbuka]);
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const ukur = () => setNavDiAtas(window.innerWidth < navTop);
+    window.addEventListener("resize", ukur);
+    return () => window.removeEventListener("resize", ukur);
+  }, []);
+
+  // Bila perubahan ukuran menyembunyikan tombol yang sedang fokus, pindahkan
+  // fokus ke navigasi ponsel, bukan membiarkannya jatuh ke <body>.
+  function pulihkanFokus(event) {
+    if (window.innerWidth >= navTop || event.relatedTarget) return;
+    const tujuan = papanRef.current && !papanRef.current.disabled ? papanRef.current : berandaRef.current;
+    tujuan?.focus({ preventScroll: true });
+  }
+
+  function pulihkanFokusBeranda(event) {
+    if (!event.relatedTarget && window.getComputedStyle(event.currentTarget).display === "none") {
+      toggleRef.current?.focus({ preventScroll: true });
+    }
+  }
 
   const botLinks = [
     {
@@ -170,21 +194,9 @@ export default function Nav() {
     },
   ];
 
-  /**
-   * Kelas tombol menu.
-   *
-   * Mode ponsel (di bawah `navTop`): bilah mendatar, tombol melebar rata
-   * tanpa label (`h-full`, label memang `hidden` di lebar ini).
-   *
-   * Mode bilah tegak: tombol SELALU `navTop:w-full` — lebarnya mengikuti
-   * bilah, sama seperti Sidebar Pengurus. Saat bilah menciut, kontainer
-   * 3rem membuat tombol ikut 2rem (8 + 2rem + 8), jadi ikon tetap di tempat.
-   * Lebar tidak dianimasikan: setiap frame sebelumnya memicu pengukuran dan
-   * perubahan ukuran papan lewat ResizeObserver.
-   */
-  // min-h-10 (40px) hanya di mode ponsel: target sentuh minimum yang nyaman
-  // (audit Lighthouse "touch targets"); di bilah tegak desktop tinggi tetap h-9.
-  const kelasTombol = `flex flex-row gap-2.5 h-full min-h-10 navTop:min-h-0 navTop:h-9 navTop:px-2 navTop:justify-start justify-center items-center navTop:py-0 p-2 group hover:bg-backgroundBoxHover text-foregroundGrey hover:text-foregroundHighlighted transition-colors cursor-pointer navTop:w-full`;
+  /* Di rail 32px, ikon 18px + dua bantalan 7px pas tanpa gap label kosong.
+   * Mode ponsel tetap memakai target sentuh setinggi 40px. */
+  const kelasTombol = `flex flex-row gap-2.5 h-full min-h-10 navTop:min-h-0 navTop:h-9 navTop:min-w-0 navTop:justify-start justify-center items-center navTop:py-0 p-2 group hover:bg-backgroundBoxHover text-foregroundGrey hover:text-foregroundHighlighted transition-colors cursor-pointer navTop:w-full ${navTerbuka ? "navTop:px-2" : "navTop:px-[7px] navTop:gap-0"}`;
 
   /** Perubahan lebar label seketika; hanya opacity yang ditransisikan. */
   const kelasLabelNav = `overflow-hidden whitespace-nowrap transition-opacity duration-150 motion-reduce:transition-none hidden navTop:block text-[15px] leading-5 font-bold ${
@@ -202,7 +214,7 @@ export default function Nav() {
         yang panjang tidak memunculkan scrollbar horizontal pada rail kecil.
       */}
       <div className="navTop:pt-1 navTop:pb-6 navTop:px-2 navTop:h-full w-full overflow-y-auto navTop:overflow-x-hidden bg-backgroundBox flex navTop:flex-col flex-row justify-between select-none navTop:items-start items-stretch">
-        <div className="flex navTop:flex-col flex-row">
+        <div className="flex navTop:flex-col flex-row navTop:w-full navTop:min-w-0">
           {/*
             Baris kepala: burger + wordmark. Burger hanya ada di bilah tegak
             (di mode ponsel bilahnya sudah mendatar, tidak ada yang bisa
@@ -212,9 +224,11 @@ export default function Nav() {
           <div className="flex flex-row items-center gap-1 navTop:w-full navTop:py-1">
             <TooltipLabel label={navTerbuka ? t("analisa.nav.tutupBilah") : t("analisa.nav.bukaBilah")} side="right">
               <button
+                ref={toggleRef}
                 type="button"
                 data-uji="nav-tutup"
                 onClick={() => setNavTerbuka((t) => !t)}
+                onBlur={pulihkanFokus}
                 aria-label={navTerbuka ? t("analisa.nav.tutupBilah") : t("analisa.nav.bukaBilah")}
                 aria-expanded={navTerbuka}
                 className="hidden navTop:flex navTop:shrink-0 items-center justify-center w-8 h-8 navTop:px-2 group hover:bg-backgroundBoxHover text-foregroundGrey hover:text-foregroundHighlighted transition-colors cursor-pointer"
@@ -225,6 +239,8 @@ export default function Nav() {
               </button>
             </TooltipLabel>
             <Link
+              ref={berandaRef}
+              onBlur={pulihkanFokusBeranda}
               draggable={false}
               href="/"
               /*
@@ -247,7 +263,7 @@ export default function Nav() {
             </Link>
           </div>
           <hr className="border-border mx-2 navTop:mx-0 my-1 navTop:block hidden" />
-          <div className="flex navTop:flex-col flex-row navTop:gap-1">
+          <div className="flex navTop:flex-col flex-row navTop:gap-1 navTop:w-full navTop:min-w-0">
             {menu.map((item) => {
               // Layar yang sedang tampil ditandai di bilah, persis seperti
               // sidebar dashboard Pengurus menandai tab aktifnya.
@@ -261,8 +277,9 @@ export default function Nav() {
                 else setTampilan(item.tampilan);
               };
               return (
-                <TooltipLabel key={item.kunci} label={navTerbuka ? undefined : keterangan} side="right">
+                <TooltipLabel key={item.kunci} stabil label={!navTerbuka || navDiAtas ? keterangan : undefined} side="right">
                   <button
+                    ref={item.kunci === "papan" ? papanRef : undefined}
                     type="button"
                     data-uji={`nav-${item.kunci}`}
                     aria-label={keterangan}
@@ -288,16 +305,14 @@ export default function Nav() {
           </div>
         </div>
         <div className="flex navTop:flex-col flex-row text-sm font-bold navTop:w-full navTop:h-fit">
-          <div className="flex navTop:flex-col flex-row navTop:gap-1">
+          <div className="flex navTop:flex-col flex-row navTop:gap-1 navTop:w-full navTop:min-w-0">
             {botLinks.map((link, i) => {
-              // Kelas yang sama dengan tombol menu: selalu `navTop:w-full`,
-              // ikon diam saat bilah menciut (lihat kelasTombol).
-              const kelas = `flex flex-row gap-2.5 h-full min-h-10 navTop:min-h-0 navTop:h-9 navTop:px-2 navTop:justify-start justify-center items-center navTop:py-0 p-2 group hover:bg-backgroundBoxHover text-foregroundGrey hover:text-foregroundHighlighted transition-colors navTop:w-full`;
+              const kelas = kelasTombol;
               // Label teksnya `hidden` di mode ponsel — aria-label wajib ada
               // supaya tautan tetap bernama bagi pembaca layar (audit
               // Lighthouse "links do not have a discernible name").
               return link.to ? (
-                <TooltipLabel key={i} label={navTerbuka ? undefined : link.label} side="right">
+                <TooltipLabel key={i} stabil label={!navTerbuka || navDiAtas ? link.label : undefined} side="right">
                   <Link draggable={false} href={link.to} aria-label={link.label} className={kelas}>
                     <span className="flex shrink-0">
                       {link.icon({ className: "fill-foregroundGrey transition-colors group-hover:fill-foregroundHighlighted" })}
@@ -306,7 +321,7 @@ export default function Nav() {
                   </Link>
                 </TooltipLabel>
               ) : (
-                <TooltipLabel key={i} label={navTerbuka ? undefined : link.label} side="right">
+                <TooltipLabel key={i} stabil label={!navTerbuka || navDiAtas ? link.label : undefined} side="right">
                   <a draggable={false} target="_blank" rel="noreferrer noopener" href={link.href} aria-label={link.label} className={kelas}>
                     <span className="flex shrink-0">
                       {link.icon({ className: "fill-foregroundGrey transition-colors group-hover:fill-foregroundHighlighted" })}

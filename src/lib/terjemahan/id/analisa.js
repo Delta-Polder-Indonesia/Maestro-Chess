@@ -371,8 +371,8 @@ export const analisa = {
       kodeSumber: "Kode Sumber",
       atribusi: "Atribusi",
       beranda: "Maestro Chess — Beranda",
-      tutupBilah: "Sembunyikan bilah",
-      bukaBilah: "Tampilkan bilah",
+      tutupBilah: "Perkecil bilah navigasi",
+      bukaBilah: "Perluas bilah navigasi",
     },
     papan: {
       balik: "Balik papan",

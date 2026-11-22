@@ -10,6 +10,7 @@ import { TAMPILAN_ANALISA } from "../src/halaman/Analisa/konteks/analyzeKonteks.
 import { buatIdDrafImpor, buatPenyimpananPekerjaan, ID_DRAF_IMPOR, simpanDrafImpor, snapshotLaporanAman } from "../src/halaman/Analisa/pekerjaan.js";
 import { catatFitur, KUNCI_FITUR } from "../src/halaman/Analisa/riwayatFitur.js";
 import * as modelTab from "../src/halaman/Analisa/tabKerja.js";
+import { useUkuranArea } from "../src/halaman/Analisa/komponen/useUkuranArea.js";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -106,6 +107,7 @@ function siapkanAreaKerja(store, navigasi) {
       AlertDialogAction: ({ children, ...props }) => React.createElement("button", props, children),
     },
     "./errors/pushPageError.js": { pushPageError: () => {}, pushPageWarning: () => {} },
+    "./useUkuranArea.js": { useUkuranArea },
     "./game/game.jsx": { default: GameMock },
     "./tabBar.jsx": { default: TabBarMock },
     "./boardMenu/boardMenu.jsx": { default: kosong },
@@ -191,6 +193,45 @@ test("screen changes and Escape keep the board mounted without rebuilding it", a
   assert.equal(navigasi.gameUnmounts ?? 0, 0);
   await act(async () => { renderer.unmount(); await store.tungguTulis(); });
   assert.equal(navigasi.gameUnmounts, 1);
+});
+
+test("the board and report panel use overflow-safe centering only when the workspace is wide enough", async (t) => {
+  pasangDocument(t);
+  pasangSession(t);
+  const store = buatPenyimpananPekerjaan(adapterMemori());
+  await store.init();
+  const navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); });
+
+  const main = renderer.root.findByType("main");
+  const wrapper = main.find((node) => node.type === "div" && node.props["data-panel-sejajar"] !== undefined);
+  const kelas = wrapper.props.className.split(" ");
+  for (const nama of ["flex-col", "items-center", "justify-start", "overflow-y-auto", "data-[panel-sejajar=true]:flex-row"]) {
+    assert.ok(kelas.includes(nama), `missing ${nama}`);
+  }
+  const grupPapan = wrapper.find((node) => node.type === "div" && node.props.className?.split(" ").includes("w-min"));
+  assert.ok(grupPapan.props.className.split(" ").includes("min-h-fit"), "short screens must scroll rather than overlap the panel");
+
+  // Compile the actual classes with the project config: an unsupported
+  // Tailwind utility would otherwise pass a class-name-only test.
+  const postcss = require("postcss");
+  const tailwind = require("tailwindcss");
+  const config = require("tailwindcss/loadConfig")(new URL("../tailwind.config.ts", import.meta.url).pathname);
+  const css = await postcss([tailwind({ ...config, content: [{ raw: `<div class="${wrapper.props.className} ${grupPapan.props.className}"></div>` }] })])
+    .process("@tailwind utilities;", { from: undefined });
+  const rules = [];
+  postcss.parse(css.css).walkRules((rule) => {
+    if (rule.nodes.some((node) => node.prop === "justify-content" && node.value === "safe center")) rules.push(rule);
+  });
+  assert.equal(rules.length, 1);
+  assert.equal(rules[0].parent.type, "root");
+  assert.match(rules[0].selector, /\[data-panel-sejajar="true"\]/);
+  let minHeightFit = false;
+  postcss.parse(css.css).walkDecls("min-height", (declaration) => { if (declaration.value === "fit-content") minHeightFit = true; });
+  assert.equal(minHeightFit, true, "the short-screen minimum height utility must be generated");
+
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
 });
 
 test("opened screens enter history and their rows return to the corresponding feature or saved target", async (t) => {
