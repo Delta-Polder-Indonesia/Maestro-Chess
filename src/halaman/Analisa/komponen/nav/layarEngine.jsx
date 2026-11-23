@@ -26,7 +26,7 @@ function Statistik({ label, nilai }) {
   );
 }
 
-function KartuEngine({ entri, terpilih, onPilih, labelVersi, labelKedalaman, kedalaman, dataUji }) {
+function KartuEngine({ entri, terpilih, onPilih, labelVersi, labelElo, dataUji }) {
   const versi = /\d+(?:\.\d+)*/.exec(entri.label)?.[0] ?? "-";
   const berkas = entri.url.split("/").pop() ?? "-";
   return (
@@ -37,7 +37,7 @@ function KartuEngine({ entri, terpilih, onPilih, labelVersi, labelKedalaman, ked
       onClick={onPilih}
       className={`flex w-full flex-col gap-3.5 rounded-[6px] border-2 p-3.5 text-left transition-colors ${
         terpilih
-          ? "border-[#228be6] bg-backgroundBoxBox shadow-[0_0_0_1px_rgba(34,139,230,0.15)]"
+          ? "border-[#8BC550] bg-backgroundBoxBox shadow-[0_0_0_1px_rgba(139,197,80,0.18)]"
           : "border-transparent bg-backgroundBox hover:border-border"
       }`}
     >
@@ -55,8 +55,8 @@ function KartuEngine({ entri, terpilih, onPilih, labelVersi, labelKedalaman, ked
         </div>
       </div>
       <div className="flex justify-between pr-3.5">
+        <Statistik label={labelElo} nilai={entri.elo} />
         <Statistik label={labelVersi} nilai={versi} />
-        <Statistik label={labelKedalaman} nilai={kedalaman} />
       </div>
     </button>
   );
@@ -84,7 +84,6 @@ export default function LayarEngine() {
   const { t } = useI18n();
   const { idEngine, gantiEngine, setop } = useMesin();
   const analyzeContext = useContext(AnalyzeContext);
-  const [kedalaman] = analyzeContext.depth;
   const [cari, setCari] = useState("");
   const cariRef = useRef(null);
   const idCari = useId();
@@ -175,8 +174,7 @@ export default function LayarEngine() {
                       terpilih={entri.id === idEngine}
                       onPilih={() => pilihEngine(entri.id)}
                       labelVersi={t("analisa.pengaturan.versiMesin")}
-                      labelKedalaman={t("analisa.pengaturan.kedalaman")}
-                      kedalaman={kedalaman}
+                      labelElo={t("analisa.pengaturan.elo")}
                       dataUji={`engine-kartu-${entri.id}`}
                     />
                   ))}

@@ -25,9 +25,11 @@ export default function Attributions() {
             <p><Local href="licenses/chessclub-MIT.txt">Lisensi ChessClub</Local> · <Local href="licenses/brilliant-chess-MIT.txt">Brilliant-Chess</Local> · <Local href="licenses/chess-game-reviewer-MIT.txt">ChessGameReviewer</Local></p>
           </Section>
 
-          <Section title="Stockfish 18 Lite">
-            <p>Mesin Stockfish dan distribusi <External href="https://github.com/nmrugg/stockfish.js">stockfish.js</External> dilisensikan GPL-3.0. Build Lite satu utas berjalan lokal di peramban.</p>
-            <p><Local href="engine/source/COPYING.txt">Lisensi GPL-3.0</Local> · <Local href="engine/source/AUTHORS.txt">Penulis</Local> · <Local href="engine/source/stockfish.js-082eeba46b0c5f8f8065e5386750aa0ecfa2062c.tar.gz">Kode sumber</Local> · <Local href="engine/source/nn-9067e33176e8.nnue">Jaringan NNUE</Local></p>
+          <Section title="Engine Stockfish">
+            <p>Mesin Stockfish dan distribusi <External href="https://github.com/nmrugg/stockfish.js">stockfish.js</External> dilisensikan GPL-3.0. Semua pilihan memakai satu utas dan berjalan lokal di peramban. Stockfish 18 Lite (JS 18.0.8) memakai WASM yang sama dengan Stockfish 18 Lite bawaan, dengan pemuat JavaScript berbeda.</p>
+            <p><Local href="engine/source/COPYING.txt">Lisensi GPL-3.0</Local> · <Local href="engine/source/AUTHORS.txt">Penulis</Local></p>
+            <p>Kode sumber: <Local href="engine/source/stockfish.js-efc5758a1cf72ec7644fa771a1f17fcbfdae410e-no-networks.tar.gz">16</Local> · <Local href="engine/source/stockfish.js-215df8c6a72847e306644d399733de18fb8e0d6c-source-only.tar.gz">16.1</Local> · <Local href="engine/source/stockfish.js-602fd7e1a571a2be71f242942db90483731f2a1f-source-only.tar.gz">17.1</Local> · <Local href="engine/source/stockfish.js-082eeba46b0c5f8f8065e5386750aa0ecfa2062c.tar.gz">18</Local> · <Local href="engine/source/stockfish.js-93c994592dcf3b4b21052ab925e9b534df9c0918.tar.gz">18 (JS 18.0.8)</Local> · <Local href="engine/source/stockfish.js-0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6.tar.gz">19</Local>.</p>
+            <p>Jaringan NNUE: <Local href="engine/nn-5af11540bbfe.nnue">16</Local> · <Local href="engine/source/nn-9067e33176e8.nnue">Lite 16.1–18</Local> · <Local href="engine/source/nn-61e7af4bb97d.nnue">Lite 19</Local>. Salin jaringan yang sesuai ke direktori <code>src/</code> sumber jika membangun ulang engine.</p>
           </Section>
 
           <Section title="Bidak catur">

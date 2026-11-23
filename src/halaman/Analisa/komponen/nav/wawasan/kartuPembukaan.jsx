@@ -1,5 +1,6 @@
 /** Kartu pembukaan teratas dengan tab Semua/Putih/Hitam. */
-import { useState } from "react";
+import { useId, useState } from "react";
+import { tekanPanahTab } from "../../navigasiTab.js";
 import DaftarPembukaanAkun from "../../../akun/DaftarPembukaanAkun.jsx";
 import { TooltipLabel } from "../../../../../components/ui/tooltip.jsx";
 
@@ -10,6 +11,7 @@ export function KartuPembukaanTeratas({
   t,
 }) {
   const [warna, setWarna] = useState("all");
+  const idTab = useId();
   const daftarAkunPutih = rekapAkun?.putih || [];
   const daftarAkunHitam = rekapAkun?.hitam || [];
   const jumlahSemua = daftarAkunPutih.length + daftarAkunHitam.length;
@@ -31,6 +33,7 @@ export function KartuPembukaanTeratas({
           className="flex rounded-borderRoundness bg-backgroundBoxBox p-0.5"
           role="tablist"
           aria-label={t("analisa.wawasan.pembukaanJudul")}
+          onKeyDown={tekanPanahTab}
         >
           {daftarTab.map((tab) => {
             const terpilih = aktif.kunci === tab.kunci;
@@ -39,8 +42,11 @@ export function KartuPembukaanTeratas({
                 key={tab.kunci}
                 type="button"
                 role="tab"
+                id={`${idTab}-${tab.kunci}`}
+                aria-controls={`${idTab}-panel`}
                 data-uji={`wawasan-pembukaan-tab-${tab.kunci}`}
                 aria-selected={terpilih}
+                tabIndex={terpilih ? 0 : -1}
                 onClick={() => setWarna(tab.kunci)}
                 className={`cursor-pointer rounded-borderRoundness px-2 py-1 text-xs font-medium transition-colors ${
                   terpilih
@@ -55,6 +61,7 @@ export function KartuPembukaanTeratas({
         </div>
       </div>
 
+      <div id={`${idTab}-panel`} role="tabpanel" aria-labelledby={`${idTab}-${aktif.kunci}`} tabIndex={0} className="flex min-h-0 flex-1 flex-col">
       {kosong ? (
         <div className="flex min-h-0 flex-1 items-center justify-center p-4">
           <p className="text-sm text-foregroundGrey">{t("analisa.wawasan.tanpaPembukaan")}</p>
@@ -123,6 +130,7 @@ export function KartuPembukaanTeratas({
           </table>
         </div>
       )}
+      </div>
     </div>
   );
 }

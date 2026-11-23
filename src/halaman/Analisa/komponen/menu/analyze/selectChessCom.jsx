@@ -23,6 +23,8 @@ import { ErrorsContext } from "../../../konteks/errorsKonteks.js";
 import { useI18n } from "../../../../../lib/i18n.jsx";
 import { TooltipLabel } from "../../../../../components/ui/tooltip.jsx";
 import { ambilDaftarPartai, simpanBanyakPartai } from "../../../basisData.js";
+import { pesanPenyimpananPartai } from "../../../database/statusSimpan.js";
+import { daftarkanOperasiAkun } from "../../../akun/koordinasiAkun.js";
 import {
   GAMES_ERROR,
   USER_ERROR,
@@ -307,6 +309,7 @@ function SelectChessComGame(props) {
   const [fase, setFase] = useState("muatArsip"); // muatArsip | siap | galatPengguna | galatBatas | galatJaringan
   const [gamesInfo, setGamesInfo] = useState([]);
   const [sumberDb, setSumberDb] = useState(false);
+  const [peringatanSimpan, setPeringatanSimpan] = useState("");
   const [gagal, setGagal] = useState(0);
   const [progres, setProgres] = useState(null); // { selesai, total, bulan }
   const [coba, setCoba] = useState(0);
@@ -319,6 +322,8 @@ function SelectChessComGame(props) {
     let dibatalkan = false;
     const sinyal = new AbortController();
     sinyalRef.current = sinyal;
+    const operasi = daftarkanOperasiAkun("chessCom", username, sinyal.signal);
+    const { signal } = operasi;
 
     (async () => {
       try {
@@ -326,7 +331,7 @@ function SelectChessComGame(props) {
         // unduhan ulang. Tarik dari api.chess.com hanya bila database kosong
         // atau pengguna menekan "Tarik ulang" (coba > 0).
         const dbData = await ambilDaftarPartai({ platform: "chessCom", username });
-        if (dibatalkan) return;
+        if (dibatalkan || signal.aborted) return;
         const adaLokal = dbData?.partai?.length > 0;
         if (adaLokal && coba === 0) {
           setGamesInfo(dbData.partai);
@@ -337,9 +342,10 @@ function SelectChessComGame(props) {
         // Database kosong (atau diminta tarik ulang) → unduh dari API.
         setFase((f) => (adaLokal ? f : "muatArsip"));
         setGagal(0);
+        setPeringatanSimpan("");
         setProgres(null);
 
-        const res = await fetch(`https://api.chess.com/pub/player/${username}/games/archives`, { signal: sinyal.signal });
+        const res = await fetch(`https://api.chess.com/pub/player/${username}/games/archives`, { signal });
         if (!res.ok) throw Object.assign(new Error(String(res.status)), { status: res.status });
         const json = await res.json();
         const arsip = (Array.isArray(json?.archives) ? json.archives : []).toReversed().map((alamat) => {
@@ -367,7 +373,7 @@ function SelectChessComGame(props) {
               });
             }
             try {
-              const jawaban = await fetch(arsipBulan.url, { signal: sinyal.signal });
+              const jawaban = await fetch(arsipBulan.url, { signal });
               if (!jawaban.ok) throw new Error(String(jawaban.status));
               const isi = await jawaban.json();
               const daftar = Array.isArray(isi?.games) ? isi.games : [];
@@ -389,12 +395,17 @@ function SelectChessComGame(props) {
           return;
         }
 
-        // Simpan seluruh partai ke basis data lokal (IndexedDB)
+        // Tunggu hasil transaksi; partai yang gagal disimpan tetap bisa
+        // dipilih, tetapi tidak boleh dilabeli sebagai tersimpan permanen.
+        if (signal.aborted) return;
+        let simpan;
         if (semua.length > 0) {
-          simpanBanyakPartai(semua, { platform: "chessCom", username }).catch(() => {});
+          try { simpan = await simpanBanyakPartai(semua, { platform: "chessCom", username, signal }); }
+          catch (error) { if (signal.aborted || error?.name === "AbortError") return; }
         }
 
-        if (!dibatalkan) {
+        if (!dibatalkan && !signal.aborted) {
+          setPeringatanSimpan(semua.length ? pesanPenyimpananPartai(t, semua.length, simpan) : "");
           setGagal(gagalArsip);
           setGamesInfo(semua);
           setSumberDb(false);
@@ -423,10 +434,11 @@ function SelectChessComGame(props) {
           }
         }
       }
-    })();
+    })().finally(operasi.selesai);
     return () => {
       dibatalkan = true;
       sinyal.abort();
+      operasi.selesai();
     };
     // gamesInfo.length hanya dipakai sebagai guard di jalur galat (jangan
     // hancurkan tampilan yang sudah berisi). Menambahkannya ke deps akan
@@ -484,6 +496,7 @@ function SelectChessComGame(props) {
                     </button>
                   </div>
                 ) : null}
+                {peringatanSimpan ? <p role="alert" className="px-8 pt-2 text-xs text-lossRed">{peringatanSimpan}</p> : null}
                 {gagal > 0 ? <div className="flex flex-wrap items-center gap-2 px-8 pt-2 text-xs text-foregroundGrey">
                     <span>{t("analisa.partai.arsipGagal", { jumlah: gagal })}</span>
                     <button type="button" onClick={muatUlang} className="underline hover:text-foregroundHighlighted transition-colors">{tombolMuatUlang}</button>

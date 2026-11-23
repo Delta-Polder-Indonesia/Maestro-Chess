@@ -28,7 +28,7 @@ export function useUkuranArea(wadahRef, isiRef) {
 
   useLayoutEffect(() => {
     // Ref induk dipasang sesudah layout effect anak pada mount pertama.
-    const wadah = wadahRef.current ?? isiRef.current?.closest?.("main");
+    const wadah = wadahRef.current ?? isiRef.current?.closest?.("[data-wadah-papan]") ?? isiRef.current?.closest?.("main");
     if (!wadah || typeof window === "undefined") return undefined;
 
     function ukur() {

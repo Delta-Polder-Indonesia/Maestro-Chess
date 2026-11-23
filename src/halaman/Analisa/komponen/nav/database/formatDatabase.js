@@ -19,13 +19,15 @@ export const LEBAR_JENDELA_HALAMAN = 5; // jumlah tombol nomor halaman yang tamp
 
 /* ── Utilitas ──────────────────────────────────────────────────────── */
 
-export function formatTanggal(timestamp, locale = "id") {
+export function formatTanggal(timestamp, locale = "id", tanggalPgn = "") {
   if (!timestamp) return "";
   try {
     return new Intl.DateTimeFormat(locale, {
       day: "numeric",
       month: "short",
       year: "numeric",
+      // Imported PGN dates have no timezone; show their calendar day in UTC.
+      ...(tanggalPgn ? { timeZone: "UTC" } : {}),
     }).format(new Date(timestamp));
   } catch {
     return "";

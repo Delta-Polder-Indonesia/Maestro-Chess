@@ -44,7 +44,7 @@ function formatRating(x) {
   return x == null ? "—" : String(x);
 }
 
-export default function KartuAkun({ platform, username, aktif = false, tabAktif = true, revisi = 0, onPilih, onHapus }) {
+export default function KartuAkun({ platform, username, aktif = false, tabAktif = true, revisi = 0, disabled = false, onPilih, onHapus }) {
   const { t, bahasa: locale } = useI18n();
   const user = String(username || "").trim();
   const koleksiId = `${platform}:${user.toLowerCase()}`;
@@ -106,21 +106,21 @@ export default function KartuAkun({ platform, username, aktif = false, tabAktif 
   return (
     <>
       <div
-        role="button"
-        tabIndex={0}
-        onClick={onPilih}
-        onKeyDown={(e) => {
-          if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
-            e.preventDefault();
-            onPilih();
-          }
-        }}
-        data-uji="kartu-akun"
-        aria-pressed={aktif}
-        className={`flex w-full cursor-pointer flex-col overflow-hidden rounded-[0.4rem] border bg-backgroundBox text-left transition-colors ${
+        className={`relative w-full overflow-hidden rounded-[0.4rem] border bg-backgroundBox text-left transition-colors ${
           aktif ? "border-[var(--analisa-backgroundBoxBoxHighlighted)] ring-1 ring-[var(--analisa-backgroundBoxBoxHighlighted)]" : "border-border hover:border-borderHighlighted"
         }`}
       >
+        {/* Selection covers the card, but delete is a separate sibling control. */}
+        <button
+          type="button"
+          data-uji="kartu-akun"
+          aria-label={`${user} — ${t(`analisa.format.${platform}`)}`}
+          aria-pressed={aktif}
+          disabled={disabled}
+          onClick={onPilih}
+          className="absolute inset-0 w-full cursor-pointer rounded-[0.4rem] focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-backgroundBoxBoxHighlighted disabled:cursor-not-allowed"
+        />
+        <div className="pointer-events-none relative">
         {/* Header: avatar + nama + aksi hapus (logo platform & tombol refresh
             dihapus — logo tidak memberi informasi tambahan, refresh redundan
             karena pembaruan statistik ditangani otomatis di Wawasan/Database). */}
@@ -140,8 +140,9 @@ export default function KartuAkun({ platform, username, aktif = false, tabAktif 
                 e.stopPropagation();
                 setKonfirmasiHapus(true);
               }}
+              disabled={disabled}
               aria-label={`${t("analisa.akun.hapus")}: ${user}`}
-              className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-borderRoundness text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-lossRed focus-visible:outline focus-visible:outline-2 focus-visible:outline-lossRed"
+              className="pointer-events-auto grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-borderRoundness text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-lossRed focus-visible:outline focus-visible:outline-2 focus-visible:outline-lossRed"
             >
               <Trash className="h-[15px] w-[15px]" />
             </button>
@@ -178,6 +179,7 @@ export default function KartuAkun({ platform, username, aktif = false, tabAktif 
               </div>
             </>
           )}
+        </div>
         </div>
       </div>
       <AlertDialog open={tabAktif && konfirmasiHapus} onOpenChange={setKonfirmasiHapus}>

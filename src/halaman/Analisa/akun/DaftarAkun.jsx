@@ -7,7 +7,7 @@ import KartuAkun from "./KartuAkun.jsx";
 import FormulirAkun from "./FormulirAkun.jsx";
 import Profile from "../komponen/svg/profile.jsx";
 
-export default function DaftarAkun({ daftar, aktif, tabAktif = true, revisi = 0, onPilih, onHapus, onTambah }) {
+export default function DaftarAkun({ daftar, aktif, tabAktif = true, revisi = 0, disabled = false, onPilih, onHapus, onTambah }) {
   const { t } = useI18n();
   const [buka, setBuka] = useState(false);
   const list = daftar || [];
@@ -41,6 +41,7 @@ export default function DaftarAkun({ daftar, aktif, tabAktif = true, revisi = 0,
             type="button"
             data-uji="tambah-akun-kosong"
             onClick={() => setBuka(true)}
+            disabled={disabled}
             className="mt-1 cursor-pointer rounded-borderRoundness bg-backgroundBoxBoxHighlighted px-4 py-2 text-sm font-bold text-foregroundBlackDark transition-colors hover:bg-backgroundBoxBoxHighlightedHover"
           >
             {t("analisa.akun.tambahBaru")}
@@ -64,6 +65,7 @@ export default function DaftarAkun({ daftar, aktif, tabAktif = true, revisi = 0,
                   aktif={aktif?.platform === a.platform && String(aktif?.username || "").toLowerCase() === String(a.username || "").toLowerCase()}
                   tabAktif={tabAktif}
                   revisi={revisi}
+                  disabled={disabled}
                   onPilih={() => onPilih(a.platform, a.username)}
                   onHapus={() => onHapus(a.platform, a.username)}
                 />
@@ -74,6 +76,7 @@ export default function DaftarAkun({ daftar, aktif, tabAktif = true, revisi = 0,
             type="button"
             data-uji="tambah-akun"
             onClick={() => setBuka(true)}
+            disabled={disabled}
             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-borderRoundness border border-border bg-backgroundBoxBox px-3 py-2.5 text-sm font-bold text-foregroundGrey transition-colors hover:border-borderHighlighted hover:text-foregroundHighlighted"
           >
             <span className="text-base leading-none">+</span>

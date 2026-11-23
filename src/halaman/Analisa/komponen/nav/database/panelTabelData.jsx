@@ -5,7 +5,9 @@
  * Markup murni — state, pemuatan, dan cache tetap di `layarDatabase.jsx`.
  * Nama prop sengaja sama dengan nama state induk.
  */
+import { useId } from "react";
 import { useI18n } from "../../../../../lib/i18n.jsx";
+import { tekanPanahTab } from "../../navigasiTab.js";
 import Database from "../../svg/database.jsx";
 import DualRingSpinner from "../../loading/DualRingSpinner.jsx";
 import { JUMLAH_BARIS_SKELETON, daftarHalaman, BIRU, formatTanggal } from "./formatDatabase.js";
@@ -38,6 +40,7 @@ export default function PanelTabelData({
   memuatEvent,
 }) {
   const { t } = useI18n();
+  const idTab = useId();
 
   return (
     <>
@@ -45,6 +48,7 @@ export default function PanelTabelData({
         <div
           role="tablist"
           aria-label={t("analisa.basisData.judul")}
+          onKeyDown={tekanPanahTab}
           className="flex shrink-0 rounded-borderRoundness border border-border bg-backgroundBoxBox p-0.5 w-full sm:w-auto overflow-x-auto"
         >
           {[
@@ -56,7 +60,10 @@ export default function PanelTabelData({
               key={tab.k}
               type="button"
               role="tab"
+              id={`${idTab}-${tab.k}`}
+              aria-controls={`${idTab}-panel`}
               aria-selected={tampilan === tab.k}
+              tabIndex={tampilan === tab.k ? 0 : -1}
               onClick={() => setTampilan(tab.k)}
               className={`cursor-pointer rounded-borderRoundness px-3 py-1 text-xs font-bold transition-colors ${
                 tampilan === tab.k
@@ -87,6 +94,7 @@ export default function PanelTabelData({
         </div>
       </div>
 
+      <div id={`${idTab}-panel`} role="tabpanel" aria-labelledby={`${idTab}-${tampilan}`} tabIndex={0} className="flex min-h-0 flex-1 flex-col gap-3">
       {tampilan === "partai" ? (
         <>
       {/* ── Tabel Permainan ─────────────────────────────────────── */}
@@ -337,6 +345,7 @@ export default function PanelTabelData({
           )}
         </div>
       )}
+      </div>
     </>
   );
 }

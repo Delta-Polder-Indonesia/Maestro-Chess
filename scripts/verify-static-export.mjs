@@ -25,6 +25,8 @@ const requiredFiles = [
   "licenses/lichess-AGPL-3.0.txt",
   "engine/stockfish-nnue-16-single.js",
   "engine/stockfish-nnue-16-single.wasm",
+  "engine/nn-5af11540bbfe.nnue",
+  "engine/source/stockfish.js-efc5758a1cf72ec7644fa771a1f17fcbfdae410e-no-networks.tar.gz",
   "engine/stockfish-16.1-lite-single.js",
   "engine/stockfish-16.1-lite-single.wasm",
   "engine/stockfish-17-lite-single.js",
@@ -38,7 +40,12 @@ const requiredFiles = [
   "engine/source/COPYING.txt",
   "engine/source/AUTHORS.txt",
   "engine/source/stockfish.js-082eeba46b0c5f8f8065e5386750aa0ecfa2062c.tar.gz",
+  "engine/source/stockfish.js-215df8c6a72847e306644d399733de18fb8e0d6c-source-only.tar.gz",
+  "engine/source/stockfish.js-602fd7e1a571a2be71f242942db90483731f2a1f-source-only.tar.gz",
+  "engine/source/stockfish.js-93c994592dcf3b4b21052ab925e9b534df9c0918.tar.gz",
+  "engine/source/stockfish.js-0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6.tar.gz",
   "engine/source/nn-9067e33176e8.nnue",
+  "engine/source/nn-61e7af4bb97d.nnue",
 ];
 
 let failed = false;

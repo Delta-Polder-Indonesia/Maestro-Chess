@@ -13,6 +13,7 @@ import { Chess } from "chess.js";
 import { hashPgn, pecahMultiPgn } from "../../../lib/pgnRingan.js";
 import { hasilChessCom, hasilDariPgn, normalisasiHasil } from "../../../lib/hasilPartai.js";
 import { pastikanTidakDibatalkan } from "../../../lib/pembatalan.js";
+import { daftarkanOperasiAkun, denganKunciAkun, periksaSinyalAkun } from "../akun/koordinasiAkun.js";
 import {
   STORE_PARTAI,
   STORE_KOLEKSI,
@@ -22,6 +23,7 @@ import {
   simpanFallbackKeStorage,
 } from "./migrasi.js";
 import { naikkanRevisi } from "./index.js";
+import { tanggalDariHeaderPgn } from "./tanggalPgn.js";
 
 export function buatIdPartai(p, platform = "chessCom", username = "") {
   if (p.id) return String(p.id);
@@ -74,7 +76,9 @@ export function normalisasiDataPartai(p, platform = "chessCom", username = "") {
   // tag atau token PGN; `*` tetap tidak diketahui.
   const hasil = p.result ? normalisasiHasil(p.result) : hasilChessCom(p);
 
-  const timestamp = Number(p.timestamp) || (p.end_time ? p.end_time * 1000 : Date.now());
+  // Explicit zero means the date is unknown; it must not become today's date.
+  const angkaTimestamp = p.timestamp == null || p.timestamp === "" ? NaN : Number(p.timestamp);
+  const timestamp = Number.isFinite(angkaTimestamp) ? angkaTimestamp : (p.end_time ? p.end_time * 1000 : Date.now());
   const id = buatIdPartai({ ...p, whiteName: wName, blackName: bName, timestamp, plyCount }, plat, user);
 
   return {
@@ -90,6 +94,8 @@ export function normalisasiDataPartai(p, platform = "chessCom", username = "") {
     blackElo: bElo,
     result: hasil,
     timestamp,
+    // Date-only PGN headers are calendar dates, not local-time instants.
+    ...(typeof p.tanggalPgn === "string" ? { tanggalPgn: p.tanggalPgn } : {}),
     timeClass: p.timeClass || p.time_class || "unknown",
     event,
     site,
@@ -123,18 +129,38 @@ export function normalisasiDataPartai(p, platform = "chessCom", username = "") {
  * Simpan banyak partai sekaligus ke IndexedDB (dan update metadata koleksi).
  */
 export async function simpanBanyakPartai(daftarPartai, { platform = "chessCom", username = "", signal } = {}) {
+  const operasi = daftarkanOperasiAkun(platform, username, signal);
+  try {
+    return await denganKunciAkun(() => {
+      operasi.periksa();
+      return simpanBanyakPartaiInti(daftarPartai, { platform, username, signal: operasi.signal });
+    }, { signal: operasi.signal });
+  } finally {
+    operasi.selesai();
+  }
+}
+
+async function simpanBanyakPartaiInti(daftarPartai, { platform, username, signal }) {
+  periksaSinyalAkun(signal);
   pastikanTidakDibatalkan(signal);
   if (!Array.isArray(daftarPartai) || daftarPartai.length === 0) {
-    return { tersimpan: 0, total: 0 };
+    return { tersimpan: 0, total: 0, sementara: 0, media: "tidak-ada" };
   }
 
   const plat = platform.trim();
   const user = username.trim();
   const koleksiId = `${plat}:${user.toLowerCase()}`;
-  const daftarNormal = daftarPartai.map((p) => normalisasiDataPartai(p, plat, user)).filter((p) => p.pgn);
+  // Beberapa input dapat menunjuk baris yang sama. Hitung yang benar-benar
+  // ditulis, bukan jumlah permintaan `put` yang menimpa satu sama lain.
+  const daftarNormal = [...new Map(daftarPartai
+    .map((p) => normalisasiDataPartai(p, plat, user))
+    .filter((p) => p.pgn)
+    .map((p) => [p.id, p])).values()];
+  if (daftarNormal.length === 0) return { tersimpan: 0, total: 0, sementara: 0, media: "tidak-ada" };
 
-  const db = await bukaDB();
-  // The account may have been removed while IndexedDB was opening.
+  const db = await bukaDB({ terkunci: true });
+  // Akun mungkin dihapus ketika IndexedDB sedang dibuka.
+  periksaSinyalAkun(signal);
   pastikanTidakDibatalkan(signal);
   if (!db) {
     // Fallback memori
@@ -144,19 +170,44 @@ export async function simpanBanyakPartai(daftarPartai, { platform = "chessCom", 
       id: koleksiId,
       platform: plat,
       username: user,
-          label: user ? `${user} ${plat === "chessCom" ? "Chess.com" : plat === "lichessOrg" ? "Lichess.org" : plat}` : plat,
+      label: user ? `${user} ${plat === "chessCom" ? "Chess.com" : plat === "lichessOrg" ? "Lichess.org" : plat}` : plat,
       jumlahPartai: hitung,
       terakhirDisinkronkan: Date.now(),
       dibuatPada: memoriKoleksi.get(koleksiId)?.dibuatPada || Date.now(),
     });
-    simpanFallbackKeStorage();
+    const permanen = simpanFallbackKeStorage();
     if (daftarNormal.length > 0) naikkanRevisi();
-    return { tersimpan: daftarNormal.length, total: hitung };
+    return {
+      tersimpan: permanen ? daftarNormal.length : 0,
+      total: hitung,
+      sementara: permanen ? 0 : daftarNormal.length,
+      media: permanen ? "localStorage" : "memori",
+    };
   }
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    let tx;
+    let selesai = false;
+    const gagal = { tersimpan: 0, total: 0, sementara: 0, media: "gagal" };
+    const akhiri = (hasil) => {
+      if (selesai) return;
+      selesai = true;
+      signal?.removeEventListener("abort", batalkan);
+      if (signal?.aborted) {
+        try { pastikanTidakDibatalkan(signal); } catch (error) { reject(error); }
+      } else resolve(hasil);
+    };
+    const batalkan = () => { try { tx?.abort(); } catch { /* transaksi sudah selesai */ } };
     try {
-      const tx = db.transaction([STORE_PARTAI, STORE_KOLEKSI], "readwrite");
+      tx = db.transaction([STORE_PARTAI, STORE_KOLEKSI], "readwrite");
+      tx.oncomplete = () => {
+        if (daftarNormal.length > 0) naikkanRevisi();
+        akhiri({ tersimpan: daftarNormal.length, total: totalKoleksi, sementara: 0, media: "indexedDB" });
+      };
+      tx.onerror = () => akhiri(gagal);
+      tx.onabort = () => akhiri(gagal);
+      signal?.addEventListener("abort", batalkan, { once: true });
+      pastikanTidakDibatalkan(signal);
       const storePartai = tx.objectStore(STORE_PARTAI);
       const storeKoleksi = tx.objectStore(STORE_KOLEKSI);
 
@@ -172,22 +223,30 @@ export async function simpanBanyakPartai(daftarPartai, { platform = "chessCom", 
        * yang salah. `dibuatPada` dipertahankan dari rekaman lama.
        */
       let totalKoleksi = daftarNormal.length;
+      const gagalTransaksi = () => {
+        try { tx.abort(); } catch { /* transaksi sudah batal */ }
+        akhiri(gagal);
+      };
       const tulisKoleksi = (total) => {
-        totalKoleksi = total;
-        const reqKol = storeKoleksi.get(koleksiId);
-        const simpan = (lama) => {
-          storeKoleksi.put({
-            id: koleksiId,
-            platform: plat,
-            username: user,
-            label: user ? `${user} ${plat === "chessCom" ? "Chess.com" : plat === "lichessOrg" ? "Lichess.org" : plat}` : plat,
-            jumlahPartai: total,
-            terakhirDisinkronkan: Date.now(),
-            dibuatPada: lama?.dibuatPada || Date.now(),
-          });
-        };
-        reqKol.onsuccess = () => simpan(reqKol.result);
-        reqKol.onerror = () => simpan(null);
+        try {
+          totalKoleksi = total;
+          const reqKol = storeKoleksi.get(koleksiId);
+          const simpan = (lama) => {
+            try {
+              storeKoleksi.put({
+                id: koleksiId,
+                platform: plat,
+                username: user,
+                label: user ? `${user} ${plat === "chessCom" ? "Chess.com" : plat === "lichessOrg" ? "Lichess.org" : plat}` : plat,
+                jumlahPartai: total,
+                terakhirDisinkronkan: Date.now(),
+                dibuatPada: lama?.dibuatPada || Date.now(),
+              });
+            } catch { gagalTransaksi(); }
+          };
+          reqKol.onsuccess = () => simpan(reqKol.result);
+          reqKol.onerror = gagalTransaksi;
+        } catch { gagalTransaksi(); }
       };
       try {
         let reqCount;
@@ -199,20 +258,15 @@ export async function simpanBanyakPartai(daftarPartai, { platform = "chessCom", 
           reqCount = storePartai.index("kombinasi").count(IDBKeyRange.only([plat, user]));
         }
         reqCount.onsuccess = () => tulisKoleksi(reqCount.result || daftarNormal.length);
-        reqCount.onerror = () => tulisKoleksi(daftarNormal.length);
+        reqCount.onerror = gagalTransaksi;
       } catch {
         tulisKoleksi(daftarNormal.length);
       }
 
-      tx.oncomplete = () => {
-        if (daftarNormal.length > 0) naikkanRevisi();
-        resolve({ tersimpan: daftarNormal.length, total: totalKoleksi });
-      };
-      tx.onerror = () => {
-        resolve({ tersimpan: 0, total: 0 });
-      };
     } catch {
-      resolve({ tersimpan: 0, total: 0 });
+      // Bila satu put melempar setelah put sebelumnya, jangan commit parsial.
+      try { tx?.abort(); } catch { /* sudah batal/ditutup */ }
+      akhiri(gagal);
     }
   });
 }
@@ -305,21 +359,21 @@ function tanpaTeksPgn(partai) {
  * Penyaring sisi klien untuk hal-hal yang tidak bisa dilayani indeks:
  * koleksi, kata kunci, hasil, dan kelas waktu.
  */
-function buatPenyaring({ koleksiId, cari, hasil, timeClass, username }) {
+function buatPenyaring({ koleksiId, cari, hasil, timeClass, username, sejak }) {
   const kata = cari && cari.trim() ? cari.trim().toLowerCase() : "";
   const kelas = timeClass && timeClass !== "all" ? timeClass.toLowerCase() : "";
   const nama = (username || "").toLowerCase();
+  const batas = Number.isFinite(sejak) ? sejak : 0;
 
   return (p) => {
     if (!p) return false;
     if (koleksiId && p.koleksiId !== koleksiId) return false;
     if (kata) {
-      const cocok =
-        p.whiteName?.toLowerCase().includes(kata) ||
-        p.blackName?.toLowerCase().includes(kata) ||
-        p.pgn?.toLowerCase().includes(kata);
+      const cocok = [p.whiteName, p.blackName, p.event, p.site, p.url, p.pgn]
+        .some((nilai) => typeof nilai === "string" && nilai.toLowerCase().includes(kata));
       if (!cocok) return false;
     }
+    if (batas && (!Number.isFinite(Number(p.timestamp)) || !Number(p.timestamp) || Number(p.timestamp) < batas)) return false;
     if (hasil) {
       if (hasil === "white" || hasil === "black" || hasil === "draw") {
         if (p.result !== hasil) return false;
@@ -349,9 +403,11 @@ function bandingkan(urut, arah) {
   const pengali = arah === "asc" ? 1 : -1;
   return (a, b) => {
     if (urut === "langkah") return ((a.plyCount ?? 0) - (b.plyCount ?? 0)) * pengali;
-    if (urut === "pemain") {
-      const cmp = (a.whiteName || "").localeCompare(b.whiteName || "");
-      return (cmp || (a.blackName || "").localeCompare(b.blackName || "")) * pengali;
+    if (urut === "pemain" || urut === "putih" || urut === "hitam") {
+      const utama = urut === "hitam" ? "blackName" : "whiteName";
+      const lain = utama === "whiteName" ? "blackName" : "whiteName";
+      return ((a[utama] || "").localeCompare(b[utama] || "") ||
+        (a[lain] || "").localeCompare(b[lain] || "")) * pengali;
     }
     if (urut === "hasil") {
       const nilai = (r) => (r === "white" ? 1 : r === "black" ? -1 : 0);
@@ -444,17 +500,18 @@ export async function ambilDaftarPartai(opsi = {}) {
     koleksiId = "",
     platform = "",
     username = "",
-    cari = "", // cocokkan nama pemain atau isi PGN
+    cari = "", // nama pemain, event, situs, URL atau isi PGN
     hasil = "", // "white" | "black" | "draw" | "win" | "loss"
     timeClass = "", // "blitz" | "rapid" | "bullet" | "classical"
-    urut = "tanggal", // "tanggal" | "pemain" | "langkah" | "hasil"
+    sejak = 0, // timestamp minimum untuk filter periode
+    urut = "tanggal", // "tanggal" | "pemain" | "putih" | "hitam" | "langkah" | "hasil"
     arah = "desc",
     limit = 0,
     offset = 0,
     sertakanPgn = true,
   } = opsi;
 
-  const saringDasar = buatPenyaring({ koleksiId, cari, hasil, timeClass, username });
+  const saringDasar = buatPenyaring({ koleksiId, cari, hasil, timeClass, username, sejak });
   const rapikan = (p) => (sertakanPgn ? p : tanpaTeksPgn(p));
   const db = await bukaDB();
 
@@ -486,9 +543,9 @@ export async function ambilDaftarPartai(opsi = {}) {
   // Bila indeksnya sudah dibatasi pada satu koleksi, penyaring koleksi tidak
   // perlu dijalankan lagi — dan itulah yang membuka jalur cepat.
   const saring = pemilikTerpenuhi
-    ? buatPenyaring({ koleksiId: "", cari, hasil, timeClass, username })
+    ? buatPenyaring({ koleksiId: "", cari, hasil, timeClass, username, sejak })
     : saringDasar;
-  const adaSaringan = Boolean((koleksiId && !pemilikTerpenuhi) || cari || hasil || timeClass);
+  const adaSaringan = Boolean((koleksiId && !pemilikTerpenuhi) || cari || hasil || timeClass || sejak);
   const arahKursor = arah === "asc" ? "next" : "prev";
   const bisaLompat = urutWaktu && !adaSaringan && urut === "tanggal";
 
@@ -583,9 +640,10 @@ export async function ambilPartai(id) {
 /**
  * Hapus 1 partai dari basis data.
  */
-export async function hapusPartai(id) {
+export async function hapusPartai(id, { terkunci = false } = {}) {
   if (!id) return false;
-  const db = await bukaDB();
+  if (!terkunci) return denganKunciAkun(() => hapusPartai(id, { terkunci: true }));
+  const db = await bukaDB({ terkunci: true });
   if (!db) {
     const partai = memoriPartai.get(id);
     if (partai) {
@@ -598,9 +656,9 @@ export async function hapusPartai(id) {
           terakhirDisinkronkan: Date.now(),
         });
       }
-      simpanFallbackKeStorage();
+      const tersimpan = simpanFallbackKeStorage();
       naikkanRevisi();
-      return true;
+      return tersimpan;
     }
     return false;
   }
@@ -648,7 +706,7 @@ export async function hapusPartai(id) {
  * lalu simpan semuanya ke basis data di bawah koleksi "impor:default".
  */
 export async function imporPgnKeBasisData(teksPgn, { label: _label = "Impor PGN" } = {}) {
-  if (!teksPgn || !teksPgn.trim()) return { tersimpan: 0 };
+  if (!teksPgn || !teksPgn.trim()) return { tersimpan: 0, total: 0, sementara: 0, media: "tidak-ada" };
   const raw = teksPgn.trim();
 
   // Pecah multi-partai lewat alat bersama (dipakai juga analisis di
@@ -690,7 +748,7 @@ export async function imporPgnKeBasisData(teksPgn, { label: _label = "Impor PGN"
         whiteElo: wElo,
         blackElo: bElo,
         result: hasil,
-        timestamp: Date.now(),
+        ...tanggalDariHeaderPgn(headers),
         timeClass: headers.TimeControl ? "custom" : "unknown",
         plyCount: moves.length,
       });
@@ -700,10 +758,11 @@ export async function imporPgnKeBasisData(teksPgn, { label: _label = "Impor PGN"
   }
 
   if (hasilPartai.length === 0) {
-    return { tersimpan: 0 };
+    return { tersimpan: 0, total: 0, sementara: 0, media: "tidak-ada", diproses: 0 };
   }
 
-  return await simpanBanyakPartai(hasilPartai, { platform: "impor", username: "impor" });
+  const hasil = await simpanBanyakPartai(hasilPartai, { platform: "impor", username: "impor" });
+  return { ...hasil, diproses: hasilPartai.length };
 }
 
 /* Dipakai `./statistik.js` untuk menghitung ringkasan tanpa memuat PGN. */
