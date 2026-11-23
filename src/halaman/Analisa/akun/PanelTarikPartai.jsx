@@ -237,19 +237,19 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai, disabled =
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-4 overflow-y-auto p-3 sm:p-4">
       <Tabs defaultValue="rentang" className="w-full">
-        <div className="slanted-header-wrapper mb-4">
+        <div className="slanted-header-wrapper">
           <div className="slanted-border-overlay">
             <TabsList className="slanted-tabs-container">
               <TabsTrigger
                 value="rentang"
-                className="slanted-tab flex-1 cursor-pointer px-3 py-2 text-xs sm:flex-initial sm:px-4 sm:text-sm"
+                className="slanted-tab flex-1 cursor-pointer !transition-none px-3 py-2 text-xs data-[state=active]:!bg-[#5F873A] data-[state=active]:!text-white data-[state=active]:!shadow-none data-[state=inactive]:!bg-transparent data-[state=inactive]:!text-foregroundGrey sm:flex-initial sm:px-4 sm:text-sm"
               >
                 Tanggal
               </TabsTrigger>
               <div className="h-5 w-[1px] shrink-0 bg-[#45474b]" aria-hidden="true" />
               <TabsTrigger
                 value="filter"
-                className="slanted-tab flex-1 cursor-pointer px-3 py-2 text-xs sm:flex-initial sm:px-4 sm:text-sm"
+                className="slanted-tab flex-1 cursor-pointer !transition-none px-3 py-2 text-xs data-[state=active]:!bg-[#5F873A] data-[state=active]:!text-white data-[state=active]:!shadow-none data-[state=inactive]:!bg-transparent data-[state=inactive]:!text-foregroundGrey sm:flex-initial sm:px-4 sm:text-sm"
               >
                 Filter
               </TabsTrigger>
@@ -257,7 +257,7 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai, disabled =
           </div>
 
           <div className="user-title-section">
-            <div className="flex max-w-full items-center text-right">
+            <div className="flex max-w-full items-center text-left">
               <h2
                 className="min-w-0 break-words text-sm font-bold tracking-tight text-white [overflow-wrap:anywhere] sm:text-base"
                 title={akunAktif ? akunAktif.username : t("analisa.akun.tarik.pilihAkun")}
@@ -277,8 +277,8 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai, disabled =
           />
         </TabsContent>
 
-        <TabsContent value="filter" forceMount className="data-[state=inactive]:hidden">
-          <div className="flex flex-col gap-3 rounded-borderRoundness border border-border bg-backgroundBoxBox px-3 py-3">
+        <TabsContent value="filter" forceMount className="mt-0 data-[state=inactive]:hidden">
+          <div className="flex flex-col gap-3 rounded-b-lg border border-t-0 border-[#52555a] bg-backgroundBoxBox px-4 py-4">
             <label className="flex flex-col gap-1">
               <span className="text-[10px] font-bold uppercase tracking-wide text-foregroundGrey">
                 {t("analisa.akun.tarik.maksPartai")}
