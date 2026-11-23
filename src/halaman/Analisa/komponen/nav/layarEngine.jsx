@@ -35,10 +35,10 @@ function KartuEngine({ entri, terpilih, onPilih, labelVersi, labelElo, dataUji }
       data-uji={dataUji}
       aria-pressed={terpilih}
       onClick={onPilih}
-      className={`flex w-full flex-col gap-3.5 rounded-[6px] border-2 p-3.5 text-left transition-colors ${
+      className={`flex w-full flex-col gap-3.5 rounded-[6px] border-2 bg-[#2A2A2A] p-3.5 text-left transition-colors ${
         terpilih
-          ? "border-[#8BC550] bg-backgroundBoxBox shadow-[0_0_0_1px_rgba(139,197,80,0.18)]"
-          : "border-transparent bg-backgroundBox hover:border-border"
+          ? "border-[#8BC550] shadow-[0_0_0_1px_rgba(139,197,80,0.18)]"
+          : "border-transparent hover:border-border"
       }`}
     >
       <div className="flex min-w-0 items-center gap-3">

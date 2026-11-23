@@ -236,27 +236,37 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai, disabled =
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-4 overflow-y-auto p-3 sm:p-4">
-      <div className="flex items-center justify-center gap-2 border-b border-border pb-3">
-        <h2 className="min-w-0 break-words text-center text-xl font-extrabold leading-tight text-foreground [overflow-wrap:anywhere] sm:text-[32px]">
-          {akunAktif ? akunAktif.username : t("analisa.akun.tarik.pilihAkun")}
-        </h2>
-      </div>
-
       <Tabs defaultValue="rentang" className="w-full">
-        <TabsList className="w-full border border-border bg-backgroundBox text-foregroundGrey">
-          <TabsTrigger
-            value="rentang"
-            className="text-xs text-foregroundGrey transition-colors hover:text-foregroundHighlighted data-[state=active]:bg-backgroundBoxBoxHighlighted data-[state=active]:text-foregroundBlackDark data-[state=active]:shadow-none"
-          >
-            {t("analisa.akun.tarik.rentang")}
-          </TabsTrigger>
-          <TabsTrigger
-            value="filter"
-            className="text-xs text-foregroundGrey transition-colors hover:text-foregroundHighlighted data-[state=active]:bg-backgroundBoxBoxHighlighted data-[state=active]:text-foregroundBlackDark data-[state=active]:shadow-none"
-          >
-            {t("analisa.akun.tarik.filter")}
-          </TabsTrigger>
-        </TabsList>
+        <div className="slanted-header-wrapper mb-4">
+          <div className="slanted-border-overlay">
+            <TabsList className="slanted-tabs-container">
+              <TabsTrigger
+                value="rentang"
+                className="slanted-tab flex-1 cursor-pointer px-3 py-2 text-xs sm:flex-initial sm:px-4 sm:text-sm"
+              >
+                Tanggal
+              </TabsTrigger>
+              <div className="h-5 w-[1px] shrink-0 bg-[#45474b]" aria-hidden="true" />
+              <TabsTrigger
+                value="filter"
+                className="slanted-tab flex-1 cursor-pointer px-3 py-2 text-xs sm:flex-initial sm:px-4 sm:text-sm"
+              >
+                Filter
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <div className="user-title-section">
+            <div className="flex max-w-full items-center text-right">
+              <h2
+                className="min-w-0 break-words text-sm font-bold tracking-tight text-white [overflow-wrap:anywhere] sm:text-base"
+                title={akunAktif ? akunAktif.username : t("analisa.akun.tarik.pilihAkun")}
+              >
+                {akunAktif ? akunAktif.username : t("analisa.akun.tarik.pilihAkun")}
+              </h2>
+            </div>
+          </div>
+        </div>
 
         <TabsContent value="rentang" forceMount className="mt-0 data-[state=inactive]:hidden">
           <PemilihRentang
