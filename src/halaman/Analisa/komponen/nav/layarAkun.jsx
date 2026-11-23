@@ -15,7 +15,7 @@ import { pushPageWarning } from "../errors/pushPageError.js";
 import { bersihkanCacheAntiCheat } from "../../akun/antiCheatRiwayat.js";
 import { akunSedangDihapus, aktifkanKembaliAkun, denganKunciAkun, mulaiPenghapusanAkun, tandaiPenghapusanAkun } from "../../akun/koordinasiAkun.js";
 
-export default function LayarAkun({ onTutup, onAkunDihapus, akunTab, aktif = true }) {
+export default function LayarAkun({ onAkunDihapus, akunTab, aktif = true }) {
   const { t } = useI18n();
   const analyzeContext = useContext(AnalyzeContext);
   const setErrors = useContext(ErrorsContext).errors[1];
@@ -59,11 +59,10 @@ export default function LayarAkun({ onTutup, onAkunDihapus, akunTab, aktif = tru
       const berikut = list[0];
       onAkunDihapus?.(terpilih.platform, terpilih.username, berikut);
       setUsername(berikut ? { platform: berikut.platform, username: berikut.username } : { platform: "", username: "" });
-      if (!berikut && aktifRef.current) onTutup();
     };
     window.addEventListener("storage", sinkronkan);
     return () => window.removeEventListener("storage", sinkronkan);
-  }, [onAkunDihapus, onTutup, setUsername]);
+  }, [onAkunDihapus, setUsername]);
 
   useEffect(() => {
     let hidup = true;
@@ -162,8 +161,9 @@ export default function LayarAkun({ onTutup, onAkunDihapus, akunTab, aktif = tru
       if (akunSedangDipilih(platform, nama)) {
         const berikut = list[0];
         if (!berikut) {
+          // Tetap di layar Akun agar daftar kosong dan tombol tambah akun
+          // terlihat; penghapusan bukan permintaan untuk membuka papan.
           setUsername({ platform: "", username: "" });
-          onTutup();
         } else {
           setUsername({ platform: berikut.platform, username: berikut.username });
         }
@@ -198,9 +198,9 @@ export default function LayarAkun({ onTutup, onAkunDihapus, akunTab, aktif = tru
         </div>
 
         {/* Kolom kanan: tarik partai akun aktif */}
-        <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col gap-2 overflow-y-auto [scrollbar-gutter:stable] lg:w-1/2">
+        <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col gap-2 overflow-y-auto lg:w-1/2">
           <div className="min-h-0 min-w-0 flex-1 flex flex-col">
-            <div className="flex h-full w-full flex-col p-1" data-uji="akun-kartu-kanan">
+            <div className="flex h-full w-full flex-col" data-uji="akun-kartu-kanan">
               <div className="flex min-h-48 lg:min-h-0 flex-1 flex-col overflow-hidden rounded-[6px] border-2 border-border bg-backgroundBox">
                 <PanelTarikPartai
                   akun={username}

@@ -132,7 +132,7 @@ export const analisa = {
       tarik: {
         judul: "Review your games",
         isi: "Pick an account on the left, choose a date range, then load its games. Results are saved to the local database.",
-        pilihAkun: "Pick an account on the left first.",
+        pilihAkun: "Pick an account",
         rentang: "Date range",
         hariIni: "Today",
         kemarin: "Yesterday",

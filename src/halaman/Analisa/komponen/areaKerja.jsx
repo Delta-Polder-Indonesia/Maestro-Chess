@@ -598,7 +598,7 @@ function LapisanLayar({
                       />
                     ) : null}
                     {layar === TAMPILAN_ANALISA.AKUN ? (
-                      <LayarAkun aktif={aktif} akunTab={akunTab} onAkunDihapus={hapusAkunTerpilih} onTutup={() => { if (masihAktif()) void bukaLaporanAktif(); }} />
+                      <LayarAkun aktif={aktif} akunTab={akunTab} onAkunDihapus={hapusAkunTerpilih} />
                     ) : null}
                     {layar === TAMPILAN_ANALISA.PENGATURAN ? <LayarPengaturan aktif={aktif} /> : null}
                     {layar === TAMPILAN_ANALISA.DETEKSI_ENGINE ? (
