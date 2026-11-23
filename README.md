@@ -58,4 +58,4 @@ Untuk Vercel, `vercel.json` mengatur deteksi otomatis Output Directory. Jangan m
 
 ## Lisensi dan kredit
 
-Lisensi MIT kode proyek tersedia di [LICENSE](LICENSE). Pemberitahuan ChessClub, Brilliant-Chess, ChessGameReviewer, Cburnett, Lichess, flag-icons, Geist, buku pembukaan, serta Stockfish ada di [ATTRIBUTIONS](ATTRIBUTIONS) dan halaman Atribusi di aplikasi. Lisensi pihak ketiga dan sumber Stockfish juga disertakan dalam `public/licenses/` dan `public/engine/source/` agar tersedia pada ekspor statis.
+Lisensi MIT kode proyek tersedia di [LICENSE](LICENSE). Pemberitahuan ChessClub, Brilliant-Chess, ChessGameReviewer, Cburnett, Lichess, flag-icons, Geist, Montserrat, buku pembukaan, serta Stockfish ada di [ATTRIBUTIONS](ATTRIBUTIONS) dan halaman Atribusi di aplikasi. Lisensi pihak ketiga dan sumber Stockfish juga disertakan dalam `public/licenses/` dan `public/engine/source/` agar tersedia pada ekspor statis.

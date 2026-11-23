@@ -18,18 +18,29 @@ test("static export validation rejects undefined asset prefixes", () => {
       "attributions/index.txt",
       "favicon.ico",
       "data/buku-analisa.json",
-      "images/analisa/settings.svg",
+      "images/analisa/chesscom.svg",
+      "images/analisa/cross.svg",
       "images/analisa/flip.svg",
+      "images/analisa/lichess.svg",
+      "images/analisa/settings.svg",
       "images/stockfish.webp",
       "flags/id.svg",
-      "sounds/move-self.mp3",
       "sounds/capture.mp3",
+      "sounds/castle.mp3",
+      "sounds/game-end.mp3",
+      "sounds/game-start.mp3",
+      "sounds/illegal.mp3",
+      "sounds/move-check.mp3",
+      "sounds/move-opponent.mp3",
+      "sounds/move-self.mp3",
+      "sounds/promote.mp3",
       "licenses/chessclub-MIT.txt",
       "licenses/brilliant-chess-MIT.txt",
       "licenses/chess-game-reviewer-MIT.txt",
       "licenses/chess-openings-CC0.txt",
       "licenses/flag-icons-MIT.txt",
       "licenses/geist-OFL-1.1.txt",
+      "licenses/montserrat-OFL-1.1.txt",
       "licenses/lichess-AGPL-3.0.txt",
       "engine/stockfish-nnue-16-single.js",
       "engine/stockfish-nnue-16-single.wasm",
@@ -63,12 +74,12 @@ test("static export validation rejects undefined asset prefixes", () => {
     mkdirSync(join(fixture, "_next/static"), { recursive: true });
 
     const runCheck = () => spawnSync(process.execPath, [verifyScript, fixture], { encoding: "utf8" });
-    writeFileSync(join(fixture, "index.html"), '<img src="/Maestro-Chess/images/logo.svg">');
+    writeFileSync(join(fixture, "index.html"), '<img src="/Maestro-Chess/images/analisa/settings.svg">');
     let result = runCheck();
     assert.equal(result.status, 0, result.stderr);
 
     for (const [file, markup] of [
-      ["index.html", '<img src="undefined/images/logo.svg">'],
+      ["index.html", '<img src="undefined/images/analisa/settings.svg">'],
       ["404.html", '<img src="undefined/images/error.svg">'],
       ["attributions/index.html", '<link href="undefined/_next/static/app.css">'],
     ]) {
@@ -79,10 +90,16 @@ test("static export validation rejects undefined asset prefixes", () => {
       writeFileSync(join(fixture, file), "fixture");
     }
 
-    // Client-side navigation needs both RSC payloads and the favicon; every
-    // distributed Stockfish build also needs its corresponding source and net.
+    // Client-side navigation, dynamically selected images/sounds, and every
+    // distributed Stockfish build must retain their required exported files.
     for (const file of [
       "index.txt", "attributions/index.txt", "favicon.ico",
+      "images/analisa/chesscom.svg", "images/analisa/cross.svg",
+      "images/analisa/flip.svg", "images/analisa/lichess.svg", "images/analisa/settings.svg",
+      "sounds/capture.mp3", "sounds/castle.mp3", "sounds/game-end.mp3", "sounds/game-start.mp3",
+      "sounds/illegal.mp3", "sounds/move-check.mp3", "sounds/move-opponent.mp3",
+      "sounds/move-self.mp3", "sounds/promote.mp3",
+      "licenses/montserrat-OFL-1.1.txt",
       "engine/nn-5af11540bbfe.nnue",
       "engine/source/stockfish.js-efc5758a1cf72ec7644fa771a1f17fcbfdae410e-no-networks.tar.gz",
       "engine/source/stockfish.js-215df8c6a72847e306644d399733de18fb8e0d6c-source-only.tar.gz",

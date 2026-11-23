@@ -16,10 +16,9 @@
  *     memori sesi + penulisan-lulus ke localStorage sehingga mengulang
  *     analisis di kunjungan berikutnya tidak membayar dua kali (bisa
  *     dibersihkan lewat `bersihkanCacheAntiCheat`).
- *  3. BATAL — `AbortSignal` diteruskan ke `parsePGN` (pola tombol Batal di
- *     `selectChessCom.jsx`). Pembatalan menghentikan loop, tetapi hasil partai
- *     yang sudah selesai TETAP dikembalikan: sebagian gambaran lebih berguna
- *     daripada tidak sama sekali.
+ *  3. BATAL — `AbortSignal` diteruskan ke `parsePGN`. Pembatalan menghentikan
+ *     loop, tetapi hasil partai yang sudah selesai TETAP dikembalikan: sebagian
+ *     gambaran lebih berguna daripada tidak sama sekali.
  *  4. PROGRES + WAKTU — callback `progres({ jenis, ke, total, … })` untuk
  *     bilah muat, dan pengukuran durasi per partai (dasar keputusan
  *     menaikkan/menurunkan kedalaman atau MULTI_PV — lihat README).

@@ -5,7 +5,7 @@
  * berkas teks siap lampir berita acara — TANPA analisis ulang: semua angka
  * sudah dihitung. Laporan ini INDIKASI STATISTIK untuk ditinjau manusia,
  * bukan vonis; sanggahan wajib menyertai setiap laporan (aturan yang sama
- * dengan `summary/deteksiEngine.jsx`).
+ * dengan layar Deteksi Engine).
  *
  * Semua fungsi murni kecuali `unduhLaporanPeninjauan` (memakai Blob +
  * anchor, dijaga `typeof document` supaya aman diuji di Node/jsdom).

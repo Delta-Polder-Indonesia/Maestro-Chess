@@ -59,7 +59,6 @@ function renderNav(dictionary, penyimpanan = { bacaBoolean: (_key, fallback) => 
     "../svg/github.jsx": svg,
     "../svg/license.jsx": svg,
     "../svg/profile.jsx": svg,
-    "../svg/shield-alert.jsx": svg,
     "../../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA: { PAPAN: "papan", BERMAIN: "bermain", AKUN: "akun", BASIS_DATA: "database", ENGINE: "engine", IMPOR: "impor", DETEKSI_ENGINE: "deteksi-engine", WAWASAN: "wawasan", PENGATURAN: "pengaturan" } },
     "../../konteks/boardKonteks.js": { useTampilan: () => [tampilan, onTampilan] },
     "../../konteks/tabKerja.jsx": { useTabKerja: () => ({ bukaImpor() {}, bukaPapan: onBukaPapan, perluPulih: false }) },
