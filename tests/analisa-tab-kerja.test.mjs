@@ -14,6 +14,32 @@ function storageMemori() {
   };
 }
 
+test("each tab remembers its board destination across features and session recovery", () => {
+  const storage = storageMemori();
+  let sesi = { daftar: [tabBaru("tab:1")], aktifId: "tab:1" };
+  assert.equal(sesi.daftar[0].tampilanPapan, "papan");
+  sesi = perbaruiTab(sesi, "tab:1", { tampilan: "bermain", laporanId: "laporan:1" });
+  sesi = perbaruiTab(sesi, "tab:1", { tampilan: "pengaturan" });
+  assert.equal(sesi.daftar[0].tampilanPapan, "bermain");
+  sesi = tambahTab(sesi, tabBaru("tab:2"));
+  sesi = perbaruiTab(sesi, "tab:2", { tampilan: "database" });
+  assert.equal(sesi.daftar[1].tampilanPapan, "papan");
+  simpanSesiTab(storage, sesi);
+  assert.deepEqual(bacaSesiTab(storage), sesi);
+  sesi = perbaruiTab(sesi, "tab:1", { tampilan: "papan" });
+  sesi = perbaruiTab(sesi, "tab:1", { tampilan: "pengaturan" });
+  assert.equal(sesi.daftar[0].tampilanPapan, "papan", "a deliberate home screen must not resurrect its old report");
+
+  // Sessions created by the older version have no board destination. A
+  // feature with a saved report can still recover it; an explicit home stays home.
+  storage.setItem(KUNCI_SESI_TAB, JSON.stringify({ versi: 1, aktifId: "tab:legacy", daftar: [
+    { id: "tab:legacy", tampilan: "pengaturan", laporanId: "laporan:lama" },
+    { id: "tab:home", tampilan: "papan", laporanId: "laporan:lain" },
+    { id: "tab:empty", tampilan: "engine", tampilanPapan: "invalid" },
+  ] }));
+  assert.deepEqual(bacaSesiTab(storage).daftar.map((tab) => tab.tampilanPapan), ["bermain", "papan", "papan"]);
+});
+
 test("session keeps separate feature, report and draft pointers through tab operations", () => {
   const first = tabBaru("tab:1");
   const second = tabBaru("tab:2");
@@ -23,8 +49,8 @@ test("session keeps separate feature, report and draft pointers through tab oper
   sesi = perbaruiTab(sesi, second.id, { tampilan: "impor", drafId: "draf:2", akun: { platform: "lichessOrg", username: "Bob" } });
   sesi = aktifkanTab(sesi, first.id);
   assert.deepEqual(sesi.daftar, [
-    { id: "tab:1", tampilan: "bermain", laporanId: "laporan:1", drafId: null, akun: { platform: "chessCom", username: "Alice" } },
-    { id: "tab:2", tampilan: "impor", laporanId: null, drafId: "draf:2", akun: { platform: "lichessOrg", username: "Bob" } },
+    { id: "tab:1", tampilan: "bermain", tampilanPapan: "bermain", laporanId: "laporan:1", drafId: null, akun: { platform: "chessCom", username: "Alice" } },
+    { id: "tab:2", tampilan: "impor", tampilanPapan: "papan", laporanId: null, drafId: "draf:2", akun: { platform: "lichessOrg", username: "Bob" } },
   ]);
   assert.equal(sesi.aktifId, first.id);
 
@@ -62,7 +88,7 @@ test("damaged or blocked session storage does not break a fresh workspace", (t) 
   }));
   assert.deepEqual(bacaSesiTab(storage), {
     aktifId: "tab:1",
-    daftar: [{ id: "tab:1", tampilan: "database", laporanId: null, drafId: "draf:1", akun: { platform: "chessCom", username: "" } }],
+    daftar: [{ id: "tab:1", tampilan: "database", tampilanPapan: "papan", laporanId: null, drafId: "draf:1", akun: { platform: "chessCom", username: "" } }],
   });
   const terblokir = { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); } };
   assert.equal(bacaSesiTab(terblokir), null);

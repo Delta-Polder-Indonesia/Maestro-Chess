@@ -201,7 +201,7 @@ function LapisanLayar({
   const { t } = useI18n();
   const {
     daftar: daftarTab, aktifId, perluPulih, selesaiPulih,
-    catat, tambah, aktifkan, hapusLain, hapusAkunTerpilih, siapkanImpor,
+    catat, tambah, aktifkan, hapusLain, hapusAkunTerpilih, siapkanImpor, daftarkanPembukaPapan,
   } = useTabKerja();
   const [dialog, setDialog] = useState(null);
   const permintaanRef = useRef(0);
@@ -210,6 +210,7 @@ function LapisanLayar({
   const daftarTabRef = useRef(daftarTab);
   const dataRef = useRef(data);
   const kembaliPapanRef = useRef(null);
+  const bukaRuangPapanRef = useRef(null);
   const peralihanTabRef = useRef(null);
   const panelTerpasangRef = useRef(new Map());
   // Untuk kembali ke bilah tab dari fitur, pengguna lebih dulu membuka Papan.
@@ -515,6 +516,23 @@ function LapisanLayar({
     const tujuan = daftarTabRef.current[indeks + 1] ?? daftarTabRef.current[indeks - 1];
     if (tujuan) pilihTab(tujuan.id, id);
   }
+
+  // Navigasi Papan kembali ke isi terakhir tab yang dipilih. Jika pengguna
+  // sudah melihat laporan dan meminta beranda, gunakan tab beranda lain (atau
+  // buat tab baru) sehingga laporan yang sedang dibuka tidak tertimpa.
+  bukaRuangPapanRef.current = () => {
+    const aktif = daftarTabRef.current.find((tab) => tab.id === tabAktifRef.current);
+    if (tampilanRef.current === TAMPILAN_ANALISA.BERMAIN) {
+      const beranda = daftarTabRef.current.find((tab) => tab.id !== aktif?.id && tab.tampilan === TAMPILAN_ANALISA.PAPAN);
+      if (beranda) return pilihTab(beranda.id);
+      tambahTab();
+      return undefined;
+    }
+    if (aktif?.tampilanPapan === TAMPILAN_ANALISA.BERMAIN) return bukaLaporanAktif();
+    setTampilan(TAMPILAN_ANALISA.PAPAN);
+    return undefined;
+  };
+  useEffect(() => daftarkanPembukaPapan(() => bukaRuangPapanRef.current?.()), [daftarkanPembukaPapan]);
 
   // Escape dan tombol kembali memakai laporan milik tab ini, bukan laporan
   // global terakhir yang mungkin sedang ditampilkan oleh tab lain.

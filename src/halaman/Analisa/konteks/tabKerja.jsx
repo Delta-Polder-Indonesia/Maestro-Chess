@@ -31,6 +31,7 @@ export function TabKerjaProvider({ children }) {
   const [perluPulih, setPerluPulih] = useState(awal.perluPulih);
   const [sesiTersedia, setSesiTersedia] = useState(true);
   const sesiRef = useRef(sesi);
+  const pembukaPapanRef = useRef(null);
   sesiRef.current = sesi;
   const [tampilan, setTampilan] = useTampilan();
   const tampilanRef = useRef(tampilan);
@@ -62,6 +63,19 @@ export function TabKerjaProvider({ children }) {
     setSesi((lama) => hapusPilihanAkun(lama, platform, nama, pengganti));
   }, []);
   const selesaiPulih = useCallback(() => setPerluPulih(false), []);
+
+  // AreaKerja memiliki logika pemulihan laporan dan konfirmasi analisis.
+  // Navigasi di sebelahnya memakai handler yang sama, bukan mengganti layar
+  // menjadi beranda dan secara tidak sengaja mengubah isi tab laporan.
+  const daftarkanPembukaPapan = useCallback((buka) => {
+    pembukaPapanRef.current = buka;
+    return () => { if (pembukaPapanRef.current === buka) pembukaPapanRef.current = null; };
+  }, []);
+  const bukaPapan = useCallback(() => {
+    if (pembukaPapanRef.current) return pembukaPapanRef.current();
+    setTampilan(TAMPILAN_ANALISA.PAPAN);
+    return undefined;
+  }, [setTampilan]);
 
   /** Pilih draf milik tab, bukan menimpa draf yang sedang dibuka tab lain. */
   const siapkanImpor = useCallback(async (tabId, pilihanId = null, masihDipilih = () => true) => {
@@ -105,9 +119,11 @@ export function TabKerjaProvider({ children }) {
     aktifkan,
     hapusLain,
     hapusAkunTerpilih,
+    daftarkanPembukaPapan,
+    bukaPapan,
     siapkanImpor,
     bukaImpor,
-  }), [sesi, perluPulih, sesiTersedia, selesaiPulih, catat, tambah, aktifkan, hapusLain, hapusAkunTerpilih, siapkanImpor, bukaImpor]);
+  }), [sesi, perluPulih, sesiTersedia, selesaiPulih, catat, tambah, aktifkan, hapusLain, hapusAkunTerpilih, daftarkanPembukaPapan, bukaPapan, siapkanImpor, bukaImpor]);
   return <KonteksTabKerja.Provider value={nilai}>{children}</KonteksTabKerja.Provider>;
 }
 

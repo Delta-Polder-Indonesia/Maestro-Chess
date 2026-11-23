@@ -86,6 +86,7 @@ function siapkanAreaKerja(store, navigasi) {
     "layarAkun", "layarDeteksiEngine", "layarWawasan",
   ].map((nama) => [`./nav/${nama}.jsx`, { default: LayarAkunTabMock }]));
   layar["./nav/layarPengaturan.jsx"] = { default: kosong };
+  layar["./nav/layarEngine.jsx"] = { default: kosong };
   const dependencies = {
     "../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA },
     "../konteks/boardKonteks.js": {
@@ -885,6 +886,171 @@ test("a late report read cannot undo a newer tab selection", async (t) => {
   assert.equal(navigasi.data.pekerjaanId, "laporan:aktif");
   assert.equal(navigasi.dialog.open, false);
   assert.equal(navigasi.tab.daftar[1].laporanId, id);
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+});
+
+test("sidebar screens preserve and return to the selected report tab without reloading its board", async (t) => {
+  pasangDocument(t);
+  const nilai = pasangSession(t, { versi: 1, aktifId: "tab:report", daftar: [
+    { id: "tab:report", tampilan: "bermain", laporanId: "laporan:1" },
+  ] });
+  const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  const store = buatPenyimpananPekerjaan(adapterMemori());
+  store.simpan({
+    id: "laporan:1", jenis: "laporan", status: "selesai", judul: "Alice vs Bob",
+    sumber: { format: "fen", string: fen },
+    snapshot: { versi: 1, game: [{ fen }], customLine: { moves: [] } },
+  });
+  await store.tungguTulis();
+  const navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); await flush(); });
+  const laporan = navigasi.data;
+  const renderAwal = navigasi.gameRenders;
+  assert.equal(navigasi.tampilan, "bermain");
+
+  for (const fitur of ["pengaturan", "database", "engine", "akun"]) {
+    await act(async () => { navigasi.setTampilan(fitur); await flush(); });
+    assert.equal(navigasi.tab.daftar[0].tampilanPapan, "bermain");
+    assert.equal(JSON.parse(nilai.get(modelTab.KUNCI_SESI_TAB)).daftar[0].tampilanPapan, "bermain");
+    await act(async () => { await navigasi.tab.bukaPapan(); await flush(); });
+    assert.equal(navigasi.tampilan, "bermain", fitur);
+    assert.equal(navigasi.tab.aktifId, "tab:report");
+    assert.equal(navigasi.tab.daftar[0].tampilan, "bermain");
+    assert.equal(navigasi.tab.daftar[0].laporanId, "laporan:1");
+    assert.equal(navigasi.data, laporan, "the existing board data must not be reloaded");
+    assert.equal(navigasi.gameRenders, renderAwal);
+    assert.equal(navigasi.gameMounts, 1);
+  }
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+});
+
+test("a report tab returns after reload while settings is open", async (t) => {
+  pasangDocument(t);
+  const nilai = pasangSession(t, { versi: 1, aktifId: "tab:report", daftar: [
+    { id: "tab:report", tampilan: "bermain", laporanId: "laporan:1" },
+  ] });
+  const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  const store = buatPenyimpananPekerjaan(adapterMemori());
+  store.simpan({
+    id: "laporan:1", jenis: "laporan", status: "selesai",
+    sumber: { format: "fen", string: fen },
+    snapshot: { versi: 1, game: [{ fen }], customLine: { moves: [] }, players: [{ name: "Alice" }] },
+  });
+  await store.tungguTulis();
+  let navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); await flush(); });
+  await act(async () => { navigasi.setTampilan("pengaturan"); await flush(); });
+  assert.equal(JSON.parse(nilai.get(modelTab.KUNCI_SESI_TAB)).daftar[0].tampilanPapan, "bermain");
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+
+  navigasi = {};
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); await flush(); });
+  assert.equal(navigasi.tampilan, "pengaturan");
+  assert.equal(navigasi.data.pekerjaanId, "laporan:aktif"); // not yet restored while the feature is visible
+  await act(async () => { await navigasi.tab.bukaPapan(); await flush(); await flush(); });
+  assert.equal(navigasi.tampilan, "bermain");
+  assert.equal(navigasi.tab.aktifId, "tab:report");
+  assert.equal(navigasi.data.pekerjaanId, "laporan:1");
+  assert.equal(navigasi.data.pemulihan.snapshot.players[0].name, "Alice");
+  assert.equal(navigasi.data.rekamAwal, undefined);
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+});
+
+test("returning to a new board tab does not replace a separate report tab", async (t) => {
+  pasangDocument(t);
+  pasangSession(t, { versi: 1, aktifId: "tab:report", daftar: [
+    { id: "tab:report", tampilan: "bermain", laporanId: "laporan:1" },
+  ] });
+  const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  const store = buatPenyimpananPekerjaan(adapterMemori());
+  store.simpan({ id: "laporan:1", jenis: "laporan", status: "selesai", sumber: { format: "fen", string: fen }, snapshot: { versi: 1, game: [{ fen }], customLine: { moves: [] } } });
+  await store.tungguTulis();
+  const navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); await flush(); });
+  await act(async () => { navigasi.tabBar.onTambah(); await flush(); });
+  const tabHome = navigasi.tab.aktifId;
+  assert.equal(navigasi.tampilan, "papan");
+  await act(async () => { navigasi.setTampilan("pengaturan"); await flush(); });
+  await act(async () => { await navigasi.tab.bukaPapan(); await flush(); });
+  assert.equal(navigasi.tampilan, "papan");
+  assert.equal(navigasi.tab.aktifId, tabHome);
+  assert.deepEqual(navigasi.tab.daftar.map((tab) => tab.tampilan), ["bermain", "papan"]);
+
+  await act(async () => { await navigasi.tabBar.onPilih("tab:report"); await flush(); });
+  await act(async () => { navigasi.setTampilan("pengaturan"); await flush(); });
+  await act(async () => { await navigasi.tab.bukaPapan(); await flush(); });
+  assert.equal(navigasi.tampilan, "bermain");
+  assert.equal(navigasi.tab.aktifId, "tab:report");
+  assert.deepEqual(navigasi.tab.daftar.map((tab) => tab.tampilan), ["bermain", "papan"]);
+
+  // Papan still offers its dashboard when already viewing a report, without
+  // turning the report itself into a new tab.
+  await act(async () => { await navigasi.tab.bukaPapan(); await flush(); });
+  assert.equal(navigasi.tampilan, "papan");
+  assert.equal(navigasi.tab.aktifId, tabHome);
+  assert.deepEqual(navigasi.tab.daftar.map((tab) => tab.tampilan), ["bermain", "papan"]);
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+});
+
+test("returning to an interrupted report still asks before reanalysis", async (t) => {
+  pasangDocument(t);
+  const id = "laporan:terputus";
+  pasangSession(t, { versi: 1, aktifId: "tab:report", daftar: [
+    { id: "tab:report", tampilan: "pengaturan", tampilanPapan: "bermain", laporanId: id },
+  ] });
+  const store = buatPenyimpananPekerjaan(adapterMemori());
+  store.simpan({ id, jenis: "laporan", status: "terputus", sumber: { format: "pgn", string: "1. e4 *" }, snapshot: null });
+  await store.tungguTulis();
+  const navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); await flush(); });
+  assert.equal(navigasi.tampilan, "pengaturan");
+  await act(async () => { await navigasi.tab.bukaPapan(); await flush(); });
+  assert.equal(navigasi.dialog.open, true);
+  assert.equal(navigasi.tampilan, "pengaturan");
+  assert.equal(navigasi.data.pekerjaanId, "laporan:aktif");
+  await act(async () => { navigasi.dialog.onOpenChange(false); await flush(); });
+  assert.equal(navigasi.tab.daftar[0].laporanId, id);
+  assert.equal(navigasi.tab.daftar[0].tampilanPapan, "bermain");
+  await act(async () => { await navigasi.tab.bukaPapan(); await flush(); });
+  await act(async () => { renderer.root.findByProps({ "data-uji": "pekerjaan-konfirmasi" }).props.onClick(); await flush(); });
+  assert.equal(navigasi.tampilan, "bermain");
+  assert.equal(navigasi.data.pekerjaanId, id);
+  assert.equal(navigasi.data.rekamAwal.status, "terputus");
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+});
+
+test("a late report lookup from sidebar navigation cannot undo a newer screen choice", async (t) => {
+  pasangDocument(t);
+  const id = "laporan:lambat";
+  const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  pasangSession(t, { versi: 1, aktifId: "tab:report", daftar: [
+    { id: "tab:report", tampilan: "pengaturan", tampilanPapan: "bermain", laporanId: id },
+  ] });
+  const adapter = adapterMemori();
+  const seed = buatPenyimpananPekerjaan(adapter);
+  seed.simpan({ id, jenis: "laporan", status: "selesai", sumber: { format: "fen", string: fen }, snapshot: { versi: 1, game: [{ fen }], customLine: { moves: [] } } });
+  await seed.tungguTulis();
+  const ambil = adapter.ambil;
+  adapter.daftar = async () => [];
+  let lanjut;
+  adapter.ambil = (key) => key === id ? new Promise((resolve) => { lanjut = async () => resolve(await ambil(key)); }) : ambil(key);
+  const store = buatPenyimpananPekerjaan(adapter);
+  const navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); });
+  await act(async () => { void navigasi.tab.bukaPapan(); await flush(); });
+  assert.equal(typeof lanjut, "function");
+  await act(async () => { navigasi.setTampilan("database"); await flush(); });
+  await act(async () => { await lanjut(); await flush(); });
+  assert.equal(navigasi.tampilan, "database");
+  assert.equal(navigasi.data.pekerjaanId, "laporan:aktif");
+  assert.equal(navigasi.tab.daftar[0].laporanId, id);
+  assert.equal(navigasi.tab.daftar[0].tampilanPapan, "bermain");
+  assert.equal(navigasi.dialog.open, false);
   await act(async () => { renderer.unmount(); await store.tungguTulis(); });
 });
 
