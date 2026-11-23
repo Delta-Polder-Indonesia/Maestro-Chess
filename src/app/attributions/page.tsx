@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Atribusi & lisensi — Maestro Chess",
@@ -30,19 +29,6 @@ export default function Attributions() {
       <a href="#konten-atribusi" className="sr-only z-50 bg-white px-4 py-2 font-semibold text-[#202421] outline outline-2 outline-[#436b35] focus:not-sr-only focus:absolute focus:left-4 focus:top-4">
         Lewati ke isi
       </a>
-
-      <header className="border-b border-[#e2e4e2] bg-[#f8f9f8]">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-5 py-5 sm:px-10">
-          <Link href="/" aria-label="Maestro Chess — Beranda" className="whitespace-nowrap text-lg font-bold text-[#202421] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#436b35]">
-            Maestro <span className="text-[#436b35]">Chess</span>
-          </Link>
-          <Link href="/" aria-label="Kembali ke Maestro Chess" className="inline-flex min-h-9 items-center gap-2 text-sm font-medium text-[#343b35] hover:text-[#436b35] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#436b35]">
-            <ArrowLeft size={16} aria-hidden="true" />
-            <span className="hidden sm:inline">Kembali ke aplikasi</span>
-            <span className="sm:hidden">Kembali</span>
-          </Link>
-        </div>
-      </header>
 
       <div className="mx-auto max-w-[1440px] lg:flex">
         <aside className="hidden w-[244px] shrink-0 px-10 py-10 lg:block">

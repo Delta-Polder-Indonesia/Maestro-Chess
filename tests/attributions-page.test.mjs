@@ -20,7 +20,7 @@ function renderPage(basePath = "") {
   const pageModule = { exports: {} };
   factory((id) => {
     if (id === "next/link") return { default: Link };
-    if (id === "react/jsx-runtime" || id === "lucide-react") return nodeRequire(id);
+    if (id === "react/jsx-runtime") return nodeRequire(id);
     throw new Error(`Unexpected attribution dependency: ${id}`);
   }, pageModule, pageModule.exports, { env: { NEXT_PUBLIC_BASE_PATH: basePath } });
   return {
@@ -97,6 +97,19 @@ test("attributions are an article with a clear heading hierarchy and six labelle
     assert.equal(renderer.root.findAll((node) => typeof node.type === "string" && node.props.id === link.props.href.slice(1)).length, 1, link.props.href);
   }
   renderer.unmount();
+});
+
+test("the breadcrumb is the only link back to the application", () => {
+  for (const basePath of ["", "/Maestro-Chess"]) {
+    const { renderer } = renderPage(basePath);
+    const links = renderer.root.findAllByType("a");
+    const homeLinks = links.filter((link) => link.props.href === "/");
+    assert.deepEqual(homeLinks.map(text), ["Beranda"]);
+    assert.equal(renderer.root.findByProps({ "aria-label": "Jejak navigasi" }).findByType("a").props.href, "/");
+    assert.ok(!links.some((link) => ["Maestro Chess — Beranda", "Kembali ke Maestro Chess"].includes(link.props["aria-label"])));
+    assert.ok(!text(renderer.root).includes("Kembali ke aplikasi"));
+    renderer.unmount();
+  }
 });
 
 test("all attribution, license, source and NNUE links survive both static-export base paths", () => {
