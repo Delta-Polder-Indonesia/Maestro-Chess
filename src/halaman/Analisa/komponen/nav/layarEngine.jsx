@@ -164,7 +164,7 @@ export default function LayarEngine() {
               </button>
             </div>
             <div className="shrink-0 border-b border-border" />
-            <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
+            <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable] p-2.5">
               {daftarTampil.length ? (
                 <div data-uji="engine-daftar" className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {daftarTampil.map((entri) => (
@@ -191,7 +191,7 @@ export default function LayarEngine() {
 
         <div className="flex min-h-0 w-full flex-col lg:flex-1">
           <div data-uji="engine-panel" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[6px] border-2 border-border bg-backgroundBox">
-            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+            <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable] p-4 sm:p-5">
               <PengaturanMesin />
             </div>
           </div>

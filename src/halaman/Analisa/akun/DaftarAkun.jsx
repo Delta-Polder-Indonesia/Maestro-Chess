@@ -14,7 +14,7 @@ export default function DaftarAkun({ daftar, aktif, tabAktif = true, revisi = 0,
 
   if (buka) {
     return (
-      <div className="flex h-full w-full flex-col gap-3 overflow-y-auto rounded-[6px] border-2 border-border bg-backgroundBox p-3 sm:p-4">
+      <div className="flex h-full w-full flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] rounded-[6px] border-2 border-border bg-backgroundBox p-3 sm:p-4">
         <FormulirAkun
           judul={t("analisa.akun.judul")}
           subjudul={t("analisa.akun.isi")}
@@ -56,7 +56,7 @@ export default function DaftarAkun({ daftar, aktif, tabAktif = true, revisi = 0,
           {/* Dua kolom di sm+, satu kolom di ponsel. Grid otomatis membagi
               lebar sama rata sehingga kartu tidak lagi tumpuk ke kiri
               menyisakan ruang kosong di kanan. */}
-          <div className="grid min-h-0 flex-1 grid-cols-1 sm:grid-cols-2 content-start gap-2 sm:gap-3 overflow-y-auto pb-1">
+          <div className="grid min-h-0 flex-1 grid-cols-1 content-start gap-2 overflow-y-auto [scrollbar-gutter:stable] pb-1 sm:grid-cols-2 sm:gap-3">
             {list.map((a) => (
               <div key={`${a.platform}:${a.username}`} className="min-w-0">
                 <KartuAkun

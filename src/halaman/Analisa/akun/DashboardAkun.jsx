@@ -276,8 +276,8 @@ export default function DashboardAkun({
     ? "flex h-[300px] min-h-[300px] flex-col overflow-hidden rounded-[6px] border-2 border-border bg-backgroundBox"
     : "flex min-h-0 flex-1 flex-col overflow-hidden rounded-[6px] border-2 border-border bg-backgroundBox";
   const kelasIsi = sebagaiKartu
-    ? "min-h-0 flex-1 overflow-y-auto px-4 pb-4"
-    : "min-h-0 flex-1 overflow-y-auto px-4 pb-4";
+    ? "min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable] px-4 pb-4"
+    : "min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable] px-4 pb-4";
 
   if (!user) {
     return (

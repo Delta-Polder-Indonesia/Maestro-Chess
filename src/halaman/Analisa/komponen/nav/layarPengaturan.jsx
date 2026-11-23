@@ -174,7 +174,9 @@ export default function LayarPengaturan({ aktif = true }) {
     /* Sama seperti layar Basis Data Permainan, tapi garisnya diturunkan
        sedikit: pb-1 / sm:pb-2 alih-alih pb-0.5 / sm:pb-1. */
     <PanelLayar kepalaRapat kepalaRapatPb="pb-1 sm:pb-2" judul={t("analisa.pengaturan.judul")}>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      {/* -mr meniadakan bantalan kanan PanelLayar supaya tepi scroll
+          berada persis di garis panel, bukan tertinggal di dalamnya. */}
+      <div className="-mr-3 flex min-h-0 flex-1 flex-col overflow-hidden sm:-mr-5">
         <div className="shrink-0 px-1 pb-2 pt-1 sm:px-0">
           <div className="relative w-full max-w-[410px]">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foregroundGrey" aria-hidden="true">
@@ -218,7 +220,7 @@ export default function LayarPengaturan({ aktif = true }) {
             })}
           </nav>
 
-          <div className="min-w-0 flex-1 overflow-y-auto px-1 pb-4 pt-3 sm:px-4 sm:pt-0">
+          <div className="min-w-0 flex-1 overflow-y-auto [scrollbar-gutter:stable] pb-4 pl-1 pr-3 pt-3 sm:pl-4 sm:pr-5 sm:pt-0">
             {kueri && hasil.length === 0 ? (
               <p className="rounded-[6px] border-2 border-border bg-backgroundBox px-5 py-4 text-sm text-foregroundGrey">
                 {t("analisa.pengaturan.hasilKosong", { q: pencarian.trim() })}
