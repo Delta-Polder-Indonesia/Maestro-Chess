@@ -106,3 +106,85 @@ body {
   transform: rotate(45deg);
   background: var(--tooltip-bg);
 }
+
+/* Panel Akun: header tab miring mengikuti contoh desain. */
+.slanted-header-wrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.slanted-border-overlay {
+  position: relative;
+  z-index: 10;
+  display: inline-flex;
+  padding: 1px;
+  border-radius: 9px 0 0 0;
+  background-color: #52555a;
+  clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 100%, 0 100%);
+}
+
+.slanted-tabs-container {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  height: auto;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 38px 5px 6px;
+  border-radius: 8px 0 0 0;
+  background-color: #2c2d30;
+  clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 100%, 0 100%);
+}
+
+.slanted-tab {
+  border-radius: 6px;
+}
+.slanted-tab[data-state="active"] {
+  background-color: #5f873a;
+  color: #ffffff;
+  font-weight: 600;
+}
+.slanted-tab[data-state="inactive"] {
+  background-color: transparent;
+  color: var(--foregroundGrey);
+  font-weight: 500;
+}
+
+.user-title-section {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  margin-left: -24px;
+  padding: 0 12px 0 28px;
+  border-bottom: 1px solid #52555a;
+}
+
+@media (max-width: 640px) {
+  .slanted-header-wrapper {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .slanted-border-overlay {
+    width: 100%;
+    padding: 1px;
+    border-radius: 8px;
+    clip-path: none;
+  }
+  .slanted-tabs-container {
+    width: 100%;
+    padding: 5px;
+    border-radius: 7px;
+    clip-path: none;
+  }
+  .user-title-section {
+    justify-content: center;
+    margin-left: 0;
+    padding: 6px 4px;
+  }
+}

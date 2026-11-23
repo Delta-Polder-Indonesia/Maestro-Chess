@@ -40,8 +40,8 @@ function IkonLabel() {
 function IkonPanah() {
   return <Ikon><path d="M4 12h15" /><path d="m13 6 6 6-6 6" /></Ikon>;
 }
-function IkonTampilan() {
-  return <Ikon><path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z" /><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7" /></Ikon>;
+function IkonBahasa() {
+  return <Ikon><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3a15 15 0 0 1 0 18" /><path d="M12 3a15 15 0 0 0 0 18" /></Ikon>;
 }
 function IkonDokumentasi() {
   return <Ikon><path d="M4 19.5V5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-1.5Z" /><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H19" /><path d="M8 7h7M8 11h7" /></Ikon>;
@@ -119,7 +119,7 @@ export default function LayarPengaturan({ aktif = true }) {
     { id: "papan", judul: t("analisa.pengaturan.tab.papan"), deskripsi: t("analisa.pengaturan.tab.papanDeskripsi"), Ikon: IkonPapan },
     { id: "penilaian", judul: t("analisa.pengaturan.penilaian"), deskripsi: t("analisa.pengaturan.tab.penilaianDeskripsi"), Ikon: IkonLabel },
     { id: "langkah", judul: t("analisa.pengaturan.langkah"), deskripsi: t("analisa.pengaturan.tab.langkahDeskripsi"), Ikon: IkonPanah },
-    { id: "tampilan", judul: t("analisa.pengaturan.tab.tampilan"), deskripsi: t("analisa.pengaturan.tab.tampilanDeskripsi"), Ikon: IkonTampilan },
+    { id: "bahasa", judul: t("analisa.pengaturan.tab.bahasa"), deskripsi: t("analisa.pengaturan.tab.bahasaDeskripsi"), Ikon: IkonBahasa },
     { id: "dokumentasi", judul: t("analisa.pengaturan.tab.dokumentasi"), deskripsi: t("analisa.pengaturan.tab.dokumentasiDeskripsi"), Ikon: IkonDokumentasi },
   ];
 
@@ -129,7 +129,7 @@ export default function LayarPengaturan({ aktif = true }) {
     { id: "perilaku", tab: "papan", judul: t("analisa.pengaturan.perilakuPapan"), deskripsi: t("analisa.pengaturan.deskripsi.perilakuPapan"), render: (props) => <Moves aktif={aktif} {...props} /> },
     { id: "penilaian", tab: "penilaian", judul: t("analisa.pengaturan.penilaian"), deskripsi: t("analisa.pengaturan.tab.penilaianDeskripsi"), render: (props) => <Ratings {...props} /> },
     { id: "langkah", tab: "langkah", judul: t("analisa.pengaturan.langkahTerbaik"), deskripsi: t("analisa.pengaturan.tab.langkahDeskripsi"), render: (props) => <BestMoves {...props} /> },
-    { id: "bahasa", tab: "tampilan", judul: labelBahasa, deskripsi: t("analisa.pengaturan.deskripsi.bahasa"), render: (props) => <BarisBahasa bahasa={bahasa} setBahasa={setBahasa} label={labelBahasa} {...props} /> },
+    { id: "bahasa", tab: "bahasa", judul: labelBahasa, deskripsi: t("analisa.pengaturan.deskripsi.bahasa"), render: (props) => <BarisBahasa bahasa={bahasa} setBahasa={setBahasa} label={labelBahasa} {...props} /> },
     {
       id: "dokumentasi",
       tab: "dokumentasi",
@@ -174,7 +174,9 @@ export default function LayarPengaturan({ aktif = true }) {
     /* Sama seperti layar Basis Data Permainan, tapi garisnya diturunkan
        sedikit: pb-1 / sm:pb-2 alih-alih pb-0.5 / sm:pb-1. */
     <PanelLayar kepalaRapat kepalaRapatPb="pb-1 sm:pb-2" judul={t("analisa.pengaturan.judul")}>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      {/* -mr meniadakan bantalan kanan PanelLayar supaya tepi scroll
+          berada persis di garis panel, bukan tertinggal di dalamnya. */}
+      <div className="-mr-3 flex min-h-0 flex-1 flex-col overflow-hidden sm:-mr-5">
         <div className="shrink-0 px-1 pb-2 pt-1 sm:px-0">
           <div className="relative w-full max-w-[410px]">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foregroundGrey" aria-hidden="true">
@@ -218,7 +220,7 @@ export default function LayarPengaturan({ aktif = true }) {
             })}
           </nav>
 
-          <div className="min-w-0 flex-1 overflow-y-auto px-1 pb-4 pt-3 sm:px-4 sm:pt-0">
+          <div className="min-w-0 flex-1 overflow-y-auto [scrollbar-gutter:stable] pb-4 pl-1 pr-3 pt-3 sm:pl-4 sm:pr-5 sm:pt-0">
             {kueri && hasil.length === 0 ? (
               <p className="rounded-[6px] border-2 border-border bg-backgroundBox px-5 py-4 text-sm text-foregroundGrey">
                 {t("analisa.pengaturan.hasilKosong", { q: pencarian.trim() })}

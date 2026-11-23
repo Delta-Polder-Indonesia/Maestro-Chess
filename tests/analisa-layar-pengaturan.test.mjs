@@ -113,7 +113,7 @@ test("settings screen uses a search row, a vertical category nav, and only real 
   assert.equal(teks(renderer.root.findByType("h1")), "Settings");
   assert.equal(renderer.root.findByType("input").props.placeholder, "Search settings");
   const tab = renderer.root.findByType("nav").findAllByType("button");
-  assert.deepEqual(tab.map(teks), ["Board", "Ratings", "Moves", "Appearance", "Documentation"]);
+  assert.deepEqual(tab.map(teks), ["Board", "Ratings", "Moves", "Language", "Documentation"]);
   assert.equal(tab[0].props["aria-current"], "page");
   assert.deepEqual(judulGrup(renderer), ["Board theme", "Board behaviour"]);
   renderer.unmount();

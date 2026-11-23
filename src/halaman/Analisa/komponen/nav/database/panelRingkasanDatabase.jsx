@@ -21,7 +21,7 @@ export default function PanelRingkasanDatabase({
   const { t } = useI18n();
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto rounded-[6px] border-2 border-border bg-backgroundBox p-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto [scrollbar-gutter:stable] rounded-[6px] border-2 border-border bg-backgroundBox p-4">
   {koleksi || (!koleksiTerpilih && adaKoleksi) ? (
     <>
       <TabelRingkasan

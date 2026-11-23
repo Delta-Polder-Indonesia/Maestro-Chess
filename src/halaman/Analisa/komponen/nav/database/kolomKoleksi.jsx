@@ -81,7 +81,7 @@ export default function KolomKoleksi({
       <p className="text-sm text-foregroundGrey">{t("analisa.partai.tidakCocok")}</p>
     </div>
   ) : (
-    <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
+    <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto [scrollbar-gutter:stable] pr-1">
       {daftarKoleksi.map((k) => {
         const aktif = k.id === koleksiTerpilih;
         const st = statMap[k.id];

@@ -198,7 +198,7 @@ export default function LayarAkun({ onTutup, onAkunDihapus, akunTab, aktif = tru
         </div>
 
         {/* Kolom kanan: tarik partai akun aktif */}
-        <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col gap-2 lg:w-1/2 overflow-y-auto">
+        <div className="flex min-h-0 min-w-0 w-full flex-1 flex-col gap-2 overflow-y-auto [scrollbar-gutter:stable] lg:w-1/2">
           <div className="min-h-0 min-w-0 flex-1 flex flex-col">
             <div className="flex h-full w-full flex-col p-1" data-uji="akun-kartu-kanan">
               <div className="flex min-h-48 lg:min-h-0 flex-1 flex-col overflow-hidden rounded-[6px] border-2 border-border bg-backgroundBox">

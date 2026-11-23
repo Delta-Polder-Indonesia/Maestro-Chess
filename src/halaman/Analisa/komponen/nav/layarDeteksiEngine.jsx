@@ -323,13 +323,13 @@ export default function LayarDeteksiEngine({ onBukaAkun, akunTab, aktif = true }
 
   return (
     <PanelLayar judul={t("analisa.antiCheat.judul")}>
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto sm:gap-4 lg:flex-row lg:overflow-hidden">
+      <div className="-mr-3 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] pr-3 sm:-mr-5 sm:gap-4 sm:pr-5 lg:flex-row lg:overflow-hidden">
         <div className="flex w-full shrink-0 flex-col lg:min-h-0 lg:flex-1">
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[0.4rem] border border-border bg-backgroundBox">
             <div className="shrink-0 px-4 pt-4">
               <span className="block text-center text-xl font-bold text-foreground">{t("analisa.antiCheat.riwayat.pengaturan")}</span>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4 pt-4 lg:overflow-y-auto">
+            <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4 pt-4 [scrollbar-gutter:stable] lg:overflow-y-auto">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <span className="h-px flex-1 bg-border" />
@@ -509,7 +509,7 @@ export default function LayarDeteksiEngine({ onBukaAkun, akunTab, aktif = true }
             <div className="shrink-0 px-4 pt-4">
               <span className="block text-center text-xl font-bold text-foreground">{t("analisa.antiCheat.riwayat.hasil")}</span>
             </div>
-            <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4 pt-4 lg:overflow-y-auto">
+            <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4 pt-4 [scrollbar-gutter:stable] lg:overflow-y-auto">
               <p className="text-xs leading-4 text-foregroundGrey">{t("analisa.antiCheat.riwayat.isi")}</p>
               {ac.berjalan ? (
                 <div className="flex flex-col gap-2">

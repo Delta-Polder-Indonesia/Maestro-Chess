@@ -58,9 +58,9 @@ function posisiDalamRentang(kunci, dari, sampai) {
  * tertutup latar sel tengah yang datang kemudian.
  */
 const KELAS_POSISI = {
-  tunggal: "z-20 rounded-borderRoundness bg-backgroundBoxBoxHighlighted",
-  awal: "z-20 rounded-l-borderRoundness bg-backgroundBoxBoxHighlighted after:absolute after:inset-y-0 after:right-0 after:w-3 after:bg-backgroundBoxBoxHighlighted/25",
-  akhir: "z-10 rounded-r-borderRoundness bg-backgroundBoxBoxHighlighted after:absolute after:inset-y-0 after:left-0 after:w-3 after:bg-backgroundBoxBoxHighlighted/25",
+  tunggal: "z-20 rounded-md bg-backgroundBoxBoxHighlighted shadow-sm",
+  awal: "z-20 rounded-l-md bg-backgroundBoxBoxHighlighted shadow-sm after:absolute after:inset-y-0 after:right-0 after:w-3 after:bg-backgroundBoxBoxHighlighted/25",
+  akhir: "z-10 rounded-r-md bg-backgroundBoxBoxHighlighted shadow-sm after:absolute after:inset-y-0 after:left-0 after:w-3 after:bg-backgroundBoxBoxHighlighted/25",
   tengah: "z-0 bg-backgroundBoxBoxHighlighted/25",
 };
 
@@ -215,15 +215,14 @@ export default function PemilihRentang({ preset, dari, sampai, onPilih }) {
         : t("analisa.akun.tarik.pilihRentang");
 
   return (
-    <div className="mt-2" data-uji="pemilih-rentang">
+    <div className="mt-0" data-uji="pemilih-rentang">
       {/*
-        `basis-[15rem]` (bukan `flex-1`) dipakai agar keputusan membungkus
-        didasarkan pada lebar yang benar-benar dibutuhkan kalender: bila kolom
-        panel terlalu sempit, kalender pindah ke bawah mengisi lebar penuh
-        daripada disempitkan sampai selnya sebesar kuku.
+       grid md:grid-cols-12: preset menempati 4 kolom dan kalender 8 kolom,
+       seperti contoh. Di layar sempit keduanya bertumpuk dan preset bisa
+       digeser horizontal supaya kalender tetap mendapat lebar penuh.
       */}
-      <div className="flex flex-col overflow-hidden rounded-borderRoundness border border-border bg-backgroundBoxBox sm:flex-row sm:flex-wrap">
-        <div className="flex shrink-0 flex-row flex-wrap gap-1 border-b border-border p-2 sm:w-32 sm:flex-col sm:flex-nowrap sm:gap-0.5 sm:border-b-0 sm:border-e sm:py-3">
+      <div className="grid grid-cols-1 overflow-hidden rounded-b-lg border border-t-0 border-[#52555a] bg-backgroundBoxBox md:grid-cols-12">
+        <div className="flex flex-row gap-1 overflow-x-auto border-b border-border p-3 md:col-span-4 md:flex-col md:overflow-visible md:border-b-0 md:border-r">
           {PRESET_RENTANG.map((nilai) => (
             <button
               key={nilai}
@@ -231,7 +230,7 @@ export default function PemilihRentang({ preset, dari, sampai, onPilih }) {
               onClick={() => pilihPreset(nilai)}
               aria-pressed={preset === nilai}
               data-uji={`preset-${nilai}`}
-              className={`cursor-pointer whitespace-nowrap rounded-borderRoundness px-2 py-1.5 text-left text-xs font-semibold transition-colors sm:w-full ${
+              className={`cursor-pointer whitespace-nowrap rounded-md px-3 py-2 text-left text-xs font-semibold transition-colors sm:text-sm md:w-full ${
                 preset === nilai
                   ? "bg-backgroundBoxBoxHighlighted text-foregroundBlackDark"
                   : "text-foregroundGrey hover:bg-backgroundBoxBoxHover hover:text-foregroundHighlighted"
@@ -242,18 +241,18 @@ export default function PemilihRentang({ preset, dari, sampai, onPilih }) {
           ))}
         </div>
 
-        <div className="min-w-[13rem] grow basis-[15rem] p-2 sm:p-3" ref={wadahRef}>
+        <div className="min-w-0 p-4 md:col-span-8" ref={wadahRef}>
           <div className="flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => pindahBulan(-1)}
               aria-label={t("analisa.akun.tarik.bulanMundur")}
               data-uji="bulan-mundur"
-              className="grid h-7 w-7 cursor-pointer place-items-center rounded-borderRoundness text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-foregroundHighlighted"
+              className="cursor-pointer rounded-md p-1.5 text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-foregroundHighlighted"
             >
               <span aria-hidden="true">‹</span>
             </button>
-            <p className="text-center text-xs font-bold text-foreground" data-uji="nama-bulan">
+            <p className="text-center text-sm font-semibold text-foreground" data-uji="nama-bulan">
               {namaBulan(lokal, bulan.tahun, bulan.bulan)}
             </p>
             <button
@@ -261,7 +260,7 @@ export default function PemilihRentang({ preset, dari, sampai, onPilih }) {
               onClick={() => pindahBulan(1)}
               aria-label={t("analisa.akun.tarik.bulanMaju")}
               data-uji="bulan-maju"
-              className="grid h-7 w-7 cursor-pointer place-items-center rounded-borderRoundness text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-foregroundHighlighted"
+              className="cursor-pointer rounded-md p-1.5 text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHover hover:text-foregroundHighlighted"
             >
               <span aria-hidden="true">›</span>
             </button>
@@ -274,7 +273,7 @@ export default function PemilihRentang({ preset, dari, sampai, onPilih }) {
                   key={nama}
                   role="columnheader"
                   aria-label={nama}
-                  className="pb-1 text-center text-[10px] font-bold uppercase tracking-wide text-foregroundGrey"
+                  className="pb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-foregroundGrey"
                 >
                   {nama}
                 </div>
@@ -282,7 +281,7 @@ export default function PemilihRentang({ preset, dari, sampai, onPilih }) {
             </div>
 
             {pekan.map((baris, indeksBaris) => (
-              <div role="row" key={indeksBaris} className="grid grid-cols-7">
+              <div role="row" key={indeksBaris} className="mb-1 grid grid-cols-7">
                 {baris.map((hari) => {
                   const posisi = posisiDalamRentang(hari.kunci, dari, sampai);
                   const lewat = hari.kunci > hariIni;
@@ -297,7 +296,7 @@ export default function PemilihRentang({ preset, dari, sampai, onPilih }) {
                       className={`relative ${posisi ? KELAS_POSISI[posisi] : ""}`}
                     >
                       {hari.luar ? (
-                        <span className="block h-8" aria-hidden="true" />
+                        <span className="block h-9" aria-hidden="true" />
                       ) : (
                         <button
                           type="button"
@@ -314,7 +313,7 @@ export default function PemilihRentang({ preset, dari, sampai, onPilih }) {
                           }}
                           onKeyDown={(acara) => tekanTombol(acara, hari.kunci)}
                           onFocus={() => setFokus(hari.kunci)}
-                          className={`relative z-10 h-8 w-full cursor-pointer rounded-borderRoundness text-xs font-semibold tabular-nums transition-colors disabled:cursor-not-allowed disabled:text-foregroundGrey disabled:opacity-40 ${
+                          className={`relative z-10 h-9 w-full cursor-pointer rounded-md text-xs font-semibold tabular-nums transition-colors disabled:cursor-not-allowed disabled:text-foregroundGrey disabled:opacity-100 sm:text-sm ${
                             posisi
                               ? KELAS_ANGKA[posisi]
                               : "text-foreground hover:bg-backgroundBoxBoxHover"
@@ -332,7 +331,7 @@ export default function PemilihRentang({ preset, dari, sampai, onPilih }) {
         </div>
       </div>
 
-      <p className="mt-1.5 text-[11px] text-foregroundGrey" data-uji="ringkasan-rentang">
+      <p className="mt-2 text-xs text-foregroundGrey" data-uji="ringkasan-rentang">
         {ringkasan}
       </p>
     </div>

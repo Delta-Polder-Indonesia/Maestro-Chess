@@ -59,6 +59,7 @@ const localPaths = [
 ];
 const externalUrls = [
   "https://github.com/Delta-Polder-Indonesia/ChessClub",
+  "https://github.com/Delta-Polder-Indonesia/Maestro-Chess",
   "https://github.com/wdeloo/Brilliant-Chess",
   "https://github.com/SheyBoiCarti/ChessGameReviewer",
   "https://github.com/nmrugg/stockfish.js",
@@ -81,10 +82,10 @@ test("attributions are an article with a clear heading hierarchy and six labelle
   const main = renderer.root.findByType("main");
   assert.match(main.props.className, /\bfixed\b/);
   assert.match(main.props.className, /\boverflow-y-auto\b/);
-  assert.match(main.props.style.fontFamily, /Montserrat Variable/);
+  assert.equal(main.props.style, undefined);
   const cards = renderer.root.findAllByType("article").filter((node) => node.props["aria-labelledby"]);
   const titles = ["Antarmuka & analisis", "Engine Stockfish", "Bendera & huruf", "Bidak catur", "Suara papan", "Buku pembukaan"];
-  assert.deepEqual(renderer.root.findAllByType("h2").map(text), [titles[0], titles[1], "Komponen & aset lainnya", "Kode sumber dan jaringan NNUE", "Catatan merek"]);
+  assert.deepEqual(renderer.root.findAllByType("h2").map(text), [titles[0], titles[1], "Komponen & aset lainnya", "Kode sumber dan jaringan NNUE", "Catatan merek", "Tetap terhubung"]);
   assert.deepEqual(renderer.root.findAllByType("h3").map(text), [...titles.slice(2), "Kode sumber Stockfish", "Jaringan NNUE"]);
   assert.equal(cards.length, titles.length);
   cards.forEach((card, index) => {
@@ -99,7 +100,7 @@ test("attributions are an article with a clear heading hierarchy and six labelle
   assert.ok(links.some((link) => link.props.href === "#konten-atribusi"));
   assert.ok(links.some((link) => link.props.href === "#daftar-atribusi"));
   assert.ok(links.some((link) => link.props.href === "/"));
-  assert.deepEqual(renderer.root.findAllByType("nav").map((nav) => nav.props["aria-label"]), ["Jejak navigasi", "Bagian halaman"]);
+  assert.deepEqual(renderer.root.findAllByType("nav").map((nav) => nav.props["aria-label"]), ["Jejak navigasi", "Bagian halaman", "Tautan footer"]);
   for (const link of links.filter((item) => item.props.href?.startsWith("#"))) {
     assert.equal(renderer.root.findAll((node) => typeof node.type === "string" && node.props.id === link.props.href.slice(1)).length, 1, link.props.href);
   }
@@ -124,14 +125,14 @@ test("all attribution, license, source and NNUE links survive both static-export
     const { renderer } = renderPage(basePath);
     const links = renderer.root.findAllByType("a");
     const local = links.filter((link) => link.props.href?.startsWith(`${basePath}/licenses/`) || link.props.href?.startsWith(`${basePath}/engine/`));
-    assert.deepEqual(local.map((link) => link.props.href).sort(), localPaths.map((path) => `${basePath}/${path}`).sort());
+    assert.deepEqual([...new Set(local.map((link) => link.props.href))].sort(), localPaths.map((path) => `${basePath}/${path}`).sort());
     for (const link of local) {
       assert.equal(link.props.target, undefined, link.props.href);
       if (link.props.href.endsWith(".tar.gz")) assert.match(link.props["aria-label"], /^Kode sumber Stockfish /);
       if (link.props.href.endsWith(".nnue")) assert.match(link.props["aria-label"], /^Jaringan NNUE /);
     }
     const external = links.filter((link) => link.props.href?.startsWith("https://"));
-    assert.deepEqual(external.map((link) => link.props.href).sort(), [...externalUrls].sort());
+    assert.deepEqual([...new Set(external.map((link) => link.props.href))].sort(), [...externalUrls].sort());
     for (const link of external) {
       assert.equal(link.props.target, "_blank");
       assert.match(link.props.rel, /\bnoopener\b/);
@@ -146,7 +147,7 @@ test("the bundled Montserrat font retains its full upstream license", () => {
   const bundled = readFileSync(new URL("../public/licenses/montserrat-OFL-1.1.txt", import.meta.url), "utf8");
   const upstream = readFileSync(nodeRequire.resolve("@fontsource-variable/montserrat/LICENSE"), "utf8");
   const notices = readFileSync(new URL("../ATTRIBUTIONS", import.meta.url), "utf8");
-  assert.equal(bundled, upstream);
+  assert.equal(bundled.replace(/\r\n/g, "\n"), upstream.replace(/\r\n/g, "\n"));
   assert.match(notices, /Montserrat Variable, copyright 2011 The Montserrat Project Authors/);
   assert.match(notices, /public\/licenses\/montserrat-OFL-1\.1\.txt/);
 });
@@ -167,7 +168,7 @@ test("copyright, license, engine and trademark notices remain visible", () => {
     "Beberapa nama berkas menggunakan suara yang sama",
     "CC0 1.0",
     "© 2013 Panayiotis Lipiridis",
-    "Montserrat Variable untuk halaman ini oleh The Montserrat Project Authors",
+    "Montserrat Variable dalam paket proyek oleh The Montserrat Project Authors",
     "© 2011, SIL OFL 1.1",
     "Nama dan logo Chess.com serta Lichess merupakan merek pemiliknya masing-masing",
   ]) assert.ok(content.includes(notice), notice);
