@@ -19,8 +19,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ENGINE_BAKU, cariEngine } from "../../../lib/engineCatur.js";
 import { EngineAnalisis } from "../mesin/engine.js";
 import { hashUntukEngine, wasmSupported } from "../mesin/cekWasm.js";
-import { bacaTeks, tulis } from "../penyimpanan.js";
+import { bacaAngka, bacaTeks, tulis } from "../penyimpanan.js";
 import { KonteksMesin } from "./mesinKonteks.js";
+
+/** Batas waktu pencarian (ms). null = tanpa batas waktu tambahan. */
+function jepitBatasWaktu(nilai) {
+  if (nilai === null || nilai === undefined || nilai === "") return null;
+  return Number.isFinite(nilai) ? Math.min(60000, Math.max(1000, Math.round(nilai))) : null;
+}
 
 export function MesinProvider({ children }) {
   // The visible state starts with the same value on the server and during
@@ -35,21 +41,46 @@ export function MesinProvider({ children }) {
   const mesinRef = useRef(null);
   const generasiRef = useRef(0);
   /*
-   * Opsi UCI per engine (Hash MB & Threads). Ref dipakai supaya `buat` yang
-   * selalu dibuat ulang memakai nilai terkini tanpa dependensi berubah.
+   * Opsi UCI per engine (Hash MB, Threads, Skill Level & batas waktu). Ref dipakai supaya
+   * `buat` yang selalu dibuat ulang memakai nilai terkini tanpa dependensi
+   * berubah. Pilihan pengguna bertahan di localStorage; bila penyimpanan
+   * diblokir, nilai state tetap berlaku untuk sesi ini.
    */
-  const opsiRef = useRef({ hash: hashUntukEngine(), threads: 1 });
+  const opsiRef = useRef({
+    hash: Math.min(128, Math.max(16, Math.round(bacaAngka("hash", hashUntukEngine())))),
+    threads: 1,
+    skill: (() => {
+      const nilai = bacaAngka("skill", null);
+      return nilai === null ? null : Math.min(20, Math.max(0, Math.round(nilai)));
+    })(),
+    movetime: jepitBatasWaktu(bacaAngka("movetime", null)),
+  });
   const [opsi, setOpsiState] = useState(opsiRef.current);
+  // Nilai bawaan dipakai panel pengaturan untuk tombol "Reset".
+  const opsiBawaan = useRef({ hash: hashUntukEngine(), skill: null, movetime: null }).current;
 
   const ubahOpsi = useCallback((perubahan) => {
     const hash = Number.isFinite(perubahan.hash)
       ? Math.min(128, Math.max(16, Math.round(perubahan.hash)))
       : opsiRef.current.hash;
+    const skill = "skill" in perubahan
+      ? perubahan.skill === null
+        ? null
+        : Number.isFinite(perubahan.skill)
+          ? Math.min(20, Math.max(0, Math.round(perubahan.skill)))
+          : opsiRef.current.skill
+      : opsiRef.current.skill;
+    const movetime = "movetime" in perubahan
+      ? jepitBatasWaktu(perubahan.movetime)
+      : opsiRef.current.movetime;
     // The distributed Lite build is single-threaded regardless of saved UI state.
-    const aman = { hash, threads: 1 };
+    const aman = { hash, threads: 1, skill, movetime };
     opsiRef.current = aman;
     setOpsiState(aman);
     mesinRef.current?.terapkanOpsi?.(aman);
+    if (Number.isFinite(perubahan.hash)) tulis("hash", hash);
+    if ("skill" in perubahan) tulis("skill", skill === null ? "" : skill);
+    if ("movetime" in perubahan) tulis("movetime", movetime === null ? "" : movetime);
   }, []);
 
   const buat = useCallback((id) => {
@@ -62,6 +93,8 @@ export function MesinProvider({ children }) {
       idEngine: id,
       hash: opsiRef.current.hash,
       threads: opsiRef.current.threads,
+      skill: opsiRef.current.skill,
+      movetime: opsiRef.current.movetime,
       onError: (error) => {
         if (generasiRef.current !== generasi || mesinRef.current !== mesin) return;
         console.error("Engine analisis gagal:", error);
@@ -138,8 +171,10 @@ export function MesinProvider({ children }) {
     galat,
     siapkan: Siapkan,
     setop,
-    /** Opsi UCI aktif (Hash MB & Threads). */
+    /** Opsi UCI aktif (Hash MB, Threads, Skill Level & batas waktu). */
     opsi,
+    /** Nilai awal opsi di atas, dipakai tombol Reset. */
+    opsiBawaan,
     /** Ubah opsi UCI — langsung disetel ke worker bila sudah ada. */
     ubahOpsi,
     /** Instance engine aktif, atau null bila belum pernah dimuat. */

@@ -24,13 +24,13 @@ const URL_ENGINE_18_0_8 = urlEngine("stockfish-18.0.8-lite-single.js");
 const URL_ENGINE_19 = urlEngine("stockfish-19-lite-single.js");
 
 export const DAFTAR_ENGINE = [
-  { id: "stockfish-16", label: "Stockfish 16", url: URL_ENGINE_16 },
-  { id: "stockfish-16.1-lite", label: "Stockfish 16.1 Lite", url: URL_ENGINE_16_1 },
-  { id: "stockfish-17-lite", label: "Stockfish 17.1 Lite", url: URL_ENGINE_17 },
-  { id: "stockfish-18-lite", label: "Stockfish 18 Lite", url: URL_ENGINE, saran: true },
+  { id: "stockfish-16", label: "Stockfish 16", url: URL_ENGINE_16, elo: "3.500" },
+  { id: "stockfish-16.1-lite", label: "Stockfish 16.1 Lite", url: URL_ENGINE_16_1, elo: "3.500" },
+  { id: "stockfish-17-lite", label: "Stockfish 17.1 Lite", url: URL_ENGINE_17, elo: "3.515" },
+  { id: "stockfish-18-lite", label: "Stockfish 18 Lite", url: URL_ENGINE, elo: "3.530", saran: true },
   // 18.0.8 is the stockfish.js package version; its WASM is identical to 18 Lite.
-  { id: "stockfish-18.0.8-lite", label: "Stockfish 18 Lite (JS 18.0.8)", url: URL_ENGINE_18_0_8, keterangan: "analisa.engine.paket1808" },
-  { id: "stockfish-19-lite", label: "Stockfish 19 Lite", url: URL_ENGINE_19 },
+  { id: "stockfish-18.0.8-lite", label: "Stockfish 18 Lite (JS 18.0.8)", url: URL_ENGINE_18_0_8, elo: "3.530", keterangan: "analisa.engine.paket1808" },
+  { id: "stockfish-19-lite", label: "Stockfish 19 Lite", url: URL_ENGINE_19, elo: "3.550" },
 ];
 // Bawaan tetap 18 supaya analisis yang sudah berjalan tidak berubah mesin.
 export const ENGINE_BAKU = "stockfish-18-lite";
@@ -126,6 +126,16 @@ export class EngineCatur {
     });
     this.janjiSiap = dijaga;
     return dijaga;
+  }
+
+  /**
+   * Ubah Skill Level tanpa membuat ulang worker. Nilai null berarti bawaan
+   * Stockfish (20 = kekuatan penuh); worker yang belum dimuat memakai nilai
+   * ini ketika `mulai()` mengirim setoption awal.
+   */
+  terapkanSkill(skill) {
+    this.skill = skill;
+    this.kirim(`setoption name Skill Level value ${skill === null ? 20 : skill}`);
   }
 
   /** Resolve all waiters on a worker error, including errors reported as UCI text. */

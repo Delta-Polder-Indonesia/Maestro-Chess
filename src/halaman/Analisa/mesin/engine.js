@@ -90,14 +90,15 @@ export const MULTI_PV = 5;
 
 export class EngineAnalisis {
   /**
-   * @param {{idEngine?: string, kedalaman?: number, threads?: number, hash?: number, onError?: Function}} [opsi]
+   * @param {{idEngine?: string, kedalaman?: number, threads?: number, hash?: number, skill?: number|null, onError?: Function}} [opsi]
    */
-  constructor({ idEngine, kedalaman = 13, threads = 1, hash = hashUntukEngine(), onError } = {}) {
+  constructor({ idEngine, kedalaman = 13, threads = 1, hash = hashUntukEngine(), skill = null, movetime = null, onError } = {}) {
     const pilihan = cariEngine(idEngine);
     this.idEngine = pilihan.id;
     this.labelEngine = pilihan.label;
     this.kedalaman = kedalaman;
-    this.engine = new EngineCatur({ url: pilihan.url, hash, threads, onError });
+    this.movetime = movetime;
+    this.engine = new EngineCatur({ url: pilihan.url, hash, threads, skill, onError });
   }
 
   /**
@@ -110,11 +111,12 @@ export class EngineAnalisis {
   }
 
   /**
-   * Terapkan opsi UCI (Hash/Threads). Nilai tersimpan lebih dulu sehingga
-   * worker yang belum dimuat memakainya saat `mulai()`, lalu setoption
-   * dikirim ke worker yang sudah hidup (kirim aman bila worker belum ada).
+   * Terapkan opsi UCI (Hash/Threads/Skill) dan batas waktu pencarian. Nilai
+   * tersimpan lebih dulu sehingga worker yang belum dimuat memakainya saat
+   * `mulai()`, lalu setoption dikirim ke worker yang sudah hidup (kirim aman
+   * bila belum ada).
    */
-  terapkanOpsi({ hash, threads }) {
+  terapkanOpsi({ hash, threads, skill, movetime }) {
     if (Number.isFinite(hash)) {
       this.engine.hash = hash;
       this.engine.kirim(`setoption name Hash value ${hash}`);
@@ -123,6 +125,10 @@ export class EngineAnalisis {
       this.engine.threads = threads;
       this.engine.kirim(`setoption name Threads value ${threads}`);
     }
+    if (skill === null || Number.isFinite(skill)) {
+      this.engine.terapkanSkill(skill);
+    }
+    if (movetime === null || Number.isFinite(movetime)) this.movetime = movetime;
   }
 
   /**
@@ -132,7 +138,7 @@ export class EngineAnalisis {
    * `multiPv > 1` mengaktifkan MultiPV: hasilnya berupa `daftarKandidat`,
    * kandidat terbaik terurut peringkat — bahan metrik peringkat anti-cheat.
    */
-  async cari(fen, { kedalaman = this.kedalaman, sinyal = null, multiPv = 1 } = {}) {
+  async cari(fen, { kedalaman = this.kedalaman, sinyal = null, multiPv = 1, movetime = this.movetime } = {}) {
     if (sinyal?.aborted) throw galat(GALAT_BATAL);
     await this.siapkan();
     /*
@@ -148,7 +154,7 @@ export class EngineAnalisis {
 
     let hasil;
     try {
-      hasil = await this.engine.cari({ fen, kedalaman, multiPv });
+      hasil = await this.engine.cari({ fen, kedalaman, multiPv, movetime });
     } finally {
       if (sinyal) sinyal.removeEventListener("abort", hentikan);
     }
@@ -394,13 +400,13 @@ function muatPgn(chess, rawPgn) {
 /* ------------------------------------------------------------ per langkah */
 
 /** Posisi sebelum langkah pertama dianalisis agar rating langkah 1 adil. */
-export async function parsePosition(mesin, chess, depth, sinyal, handleAbort, multiPv = 1) {
+export async function parsePosition(mesin, chess, depth, sinyal, handleAbort, multiPv = 1, movetime) {
   const fen = chess.fen();
   const color = chess.turn();
 
   let hasil;
   try {
-    hasil = await mesin.cari(fen, { kedalaman: depth, sinyal, multiPv });
+    hasil = await mesin.cari(fen, { kedalaman: depth, sinyal, multiPv, movetime });
   } catch (e) {
     // Pembatalan oleh pengguna → serahkan ke handleAbort (menghentikan
     // seluruh alur). Kegagalan engine yang sesungguhnya TIDAK boleh
@@ -436,7 +442,7 @@ export async function parsePosition(mesin, chess, depth, sinyal, handleAbort, mu
  * label "kritis"). Pola yang sama dipakai ./antiCheat.js saat membaca
  * `moves[i - 1].kandidat`.
  */
-export async function parseMove(mesin, depth, move, chess, previousStaticEvals, previousBestMoveSan, previousSacrifice, openings, handleAbort, sinyal, multiPv = 1, previousKandidat = []) {
+export async function parseMove(mesin, depth, move, chess, previousStaticEvals, previousBestMoveSan, previousSacrifice, openings, handleAbort, sinyal, multiPv = 1, previousKandidat = [], movetime) {
   if (sinyal?.aborted) handleAbort?.();
 
   const movement = [move.from, move.to].map((kotak) => formatSquare(kotak));
@@ -476,6 +482,7 @@ export async function parseMove(mesin, depth, move, chess, previousStaticEvals, 
         kedalaman: depth,
         sinyal,
         multiPv,
+        movetime,
       }));
     } catch (e) {
       // Lihat catatan yang sama di parsePosition: hanya pembatalan yang
@@ -625,7 +632,7 @@ export function bacaPartaiPGN(rawPgn) {
  * grafik; `onLangkah` menerima posisi yang telah dinilai setelah tiap langkah.
  * `multiPv` (bawaan MULTI_PV) merekam kandidat untuk penilaian langkah.
  */
-export async function parsePGN(mesin, rawPgn, depth, openings, setProgress, sinyal, { multiPv = MULTI_PV, onLangkah, partai } = {}) {
+export async function parsePGN(mesin, rawPgn, depth, openings, setProgress, sinyal, { multiPv = MULTI_PV, onLangkah, partai, movetime } = {}) {
   const { riwayat, metadata, daftarClock, jumlahPartai = 1 } = partai ?? bacaPartaiPGN(rawPgn);
 
   const hentikan = () => mesin.setop();
@@ -654,7 +661,7 @@ export async function parsePGN(mesin, rawPgn, depth, openings, setProgress, siny
     // Langkah pembuka dianalisis dari posisi awal supaya diff eval langkah
     // pertama punya pembanding.
     const chessAwal = new Chess(riwayat[0].before);
-    const awal = await parsePosition(mesin, chessAwal, depth, sinyal, gagalkan, multiPv);
+    const awal = await parsePosition(mesin, chessAwal, depth, sinyal, gagalkan, multiPv, movetime);
     moves.push({ ...awal, clock: daftarClock[0] ?? { white: metadata.time || null, black: metadata.time || null } });
     onLangkah?.([...moves]);
     previousStaticEvals = awal.previousStaticEvals;
@@ -678,7 +685,8 @@ export async function parsePGN(mesin, rawPgn, depth, openings, setProgress, siny
         gagalkan,
         sinyal,
         multiPv,
-        previousKandidat
+        previousKandidat,
+        movetime
       );
 
       if (sinyal?.aborted) throw galat(GALAT_BATAL);

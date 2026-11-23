@@ -217,6 +217,9 @@ export async function analisisRiwayatAntiCheat({
       try {
         const { metadata, moves } = await parserPgn(mesin, p.pgn, kedalaman, openings, () => {}, sinyal, {
           multiPv: MULTI_PV,
+          // Deteksi memakai kedalaman tetap + MultiPV; jangan terkena batas
+          // waktu panel pengaturan agar hasilnya tetap dapat dibandingkan.
+          movetime: null,
         });
         // Parser/worker dapat menyelesaikan jawaban setelah sinyal dibatalkan.
         // Jangan isi kembali cache setelah akun dihapus.
