@@ -8,6 +8,8 @@ import TestRenderer from "react-test-renderer";
 import ts from "typescript";
 import * as configContext from "../src/halaman/Analisa/konteks/configKonteks.js";
 import { boardThemes } from "../src/halaman/Analisa/komponen/pengaturan/boardThemes.js";
+import { analisa as indonesia } from "../src/lib/terjemahan/id/analisa.js";
+import { analisa as english } from "../src/lib/terjemahan/en/analisa.js";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -96,4 +98,69 @@ test("a setting updates only the relevant panels while theme changes reach every
   assert.equal(tombol("analisa.tema.biru").props["aria-checked"], true);
   for (const bagian of Object.keys(renders)) assert.ok(renders[bagian] > setelahRating[bagian], bagian);
   await act(async () => { renderer.unmount(); });
+});
+
+test("theme switch names match the visible colour labels while state and persistence stay correct", async () => {
+  const Sakelar = kompilasi("../src/halaman/Analisa/komponen/pengaturan/sakelarPengaturan.jsx", {});
+  const Baris = kompilasi("../src/halaman/Analisa/komponen/pengaturan/barisPengaturan.jsx", {});
+  for (const dictionary of [indonesia, english]) {
+    const saved = [];
+    const Themes = kompilasi("../src/halaman/Analisa/komponen/pengaturan/themes.jsx", {
+      "../../konteks/configKonteks.js": configContext,
+      "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key.split(".").reduce((value, part) => value?.[part], { analisa: dictionary }) }) },
+      "../../penyimpanan.js": { bacaTeks: () => "0", tulis: (key, value) => saved.push([key, value]) },
+      "./sakelarPengaturan.jsx": { default: Sakelar },
+      "./boardThemes.js": { boardThemes },
+      "./barisPengaturan.jsx": { default: Baris },
+    });
+    function Harness() {
+      const boardTheme = React.useState(0);
+      return React.createElement(configContext.ConfigContext.Provider, { value: { boardTheme } }, React.createElement(Themes));
+    }
+    let renderer;
+    await act(async () => { renderer = TestRenderer.create(React.createElement(Harness)); });
+    const switches = () => renderer.root.findAllByType("button").filter((node) => node.props.role === "switch");
+    const previews = () => renderer.root.findAllByType("button").filter((node) => !node.props.role);
+    const labels = boardThemes.map((theme) => dictionary.tema[theme.kunci]);
+    assert.equal(switches().length, labels.length);
+    assert.equal(previews().length, labels.length);
+    for (const [index, label] of labels.entries()) {
+      const preview = previews()[index];
+      assert.equal(preview.findByType("span").children.join(""), label);
+      assert.equal(preview.findByType("div").props["aria-hidden"], "true");
+    }
+    for (let selected = 0; selected < labels.length; selected++) {
+      await act(async () => { switches()[selected].props.onClick(); });
+      assert.deepEqual(saved.at(-1), ["boardTheme", String(selected)]);
+      switches().forEach((button, index) => {
+        const status = index === selected ? "ON" : "OFF";
+        assert.equal(button.props["aria-checked"], index === selected);
+        assert.equal(button.findAllByType("span")[0].children.join(""), status);
+        assert.equal(button.findAllByType("span")[0].props["aria-hidden"], "true");
+        assert.equal(button.props["aria-label"], labels[index]);
+        assert.equal(button.findAllByType("span")[1].props["aria-hidden"], "true");
+      });
+    }
+    await act(async () => { previews()[1].props.onClick(); });
+    assert.equal(switches()[1].props["aria-checked"], true);
+    assert.deepEqual(saved.at(-1), ["boardTheme", "1"]);
+    await act(async () => { renderer.unmount(); });
+  }
+});
+
+test("settings switch preserves its boolean toggle behaviour", () => {
+  const Sakelar = kompilasi("../src/halaman/Analisa/komponen/pengaturan/sakelarPengaturan.jsx", {});
+  for (const checked of [true, false]) {
+    const changes = [];
+    const renderer = TestRenderer.create(React.createElement(Sakelar, {
+      checked, onCheckedChange: (value) => changes.push(value), "aria-label": "Tampilkan panah",
+    }));
+    const button = renderer.root.findByType("button");
+    assert.equal(button.props["aria-label"], "Tampilkan panah");
+    assert.equal(button.props["aria-checked"], checked);
+    assert.equal(button.findAllByType("span")[0].props["aria-hidden"], "true");
+    act(() => button.props.onClick());
+    assert.deepEqual(changes, [!checked]);
+    renderer.unmount();
+  }
 });
