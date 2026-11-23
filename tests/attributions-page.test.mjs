@@ -72,23 +72,30 @@ test("attributions are an article with a clear heading hierarchy and six labelle
   const { renderer, metadata } = renderPage();
   assert.equal(metadata.title, "Atribusi & lisensi — Maestro Chess");
   assert.equal(text(renderer.root.findByType("h1")), "Atribusi & lisensi");
-  assert.deepEqual(renderer.root.findAllByType("h2").map(text), ["Komponen & aset", "Catatan merek"]);
+  // The root body is overflow-hidden. Keep this route as the viewport's own
+  // scrolling area so in-page links cannot scroll the hidden body too.
+  assert.match(renderer.root.findByType("main").props.className, /\bfixed\b/);
+  assert.match(renderer.root.findByType("main").props.className, /\boverflow-y-auto\b/);
   const cards = renderer.root.findAllByType("article").filter((node) => node.props["aria-labelledby"]);
-  const titles = ["Antarmuka & analisis", "Engine Stockfish", "Bidak catur", "Suara papan", "Buku pembukaan", "Bendera & huruf"];
+  const titles = ["Antarmuka & analisis", "Engine Stockfish", "Bendera & huruf", "Bidak catur", "Suara papan", "Buku pembukaan"];
+  assert.deepEqual(renderer.root.findAllByType("h2").map(text), [...titles, "Kode sumber dan jaringan NNUE", "Catatan merek"]);
   assert.equal(cards.length, titles.length);
   cards.forEach((card, index) => {
-    const heading = card.findByType("h3");
+    const heading = card.findByType("h2");
     assert.equal(text(heading), titles[index]);
     assert.equal(card.props["aria-labelledby"], heading.props.id);
     assert.ok(card.findAllByType("a").length > 0, `${titles[index]} has attribution links`);
   });
   const section = renderer.root.findByProps({ id: "daftar-atribusi" });
-  assert.equal(section.props["aria-labelledby"], "judul-daftar");
+  assert.equal(section.props["aria-label"], "Daftar komponen dan aset");
   const links = renderer.root.findAllByType("a");
   assert.ok(links.some((link) => link.props.href === "#konten-atribusi"));
   assert.ok(links.some((link) => link.props.href === "#daftar-atribusi"));
   assert.ok(links.some((link) => link.props.href === "/"));
-  assert.equal(renderer.root.findByType("nav").props["aria-label"], "Jejak navigasi");
+  assert.deepEqual(renderer.root.findAllByType("nav").map((nav) => nav.props["aria-label"]), ["Bagian halaman", "Jejak navigasi"]);
+  for (const link of links.filter((item) => item.props.href?.startsWith("#"))) {
+    assert.equal(renderer.root.findAll((node) => typeof node.type === "string" && node.props.id === link.props.href.slice(1)).length, 1, link.props.href);
+  }
   renderer.unmount();
 });
 
