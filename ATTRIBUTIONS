@@ -52,6 +52,18 @@ Geist Variable, copyright 2024 The Geist Project Authors, SIL OFL 1.1:
 https://github.com/vercel/geist-font
 Full license: public/licenses/geist-OFL-1.1.txt.
 
+Montserrat Variable, copyright 2011 The Montserrat Project Authors, SIL OFL
+1.1, is used on the attribution page:
+https://github.com/JulietaUla/Montserrat
+Full license: public/licenses/montserrat-OFL-1.1.txt.
+
+Attribution page design reference
+---------------------------------
+The attribution page's visual layout is independently adapted from the
+portfolio screenshots by CodeBucks:
+https://github.com/codebucks27/Next.js-Developer-Portfolio-Starter-Code
+No source code or image assets from that repository are included.
+
 Stockfish engines
 -----------------
 Stockfish and stockfish.js are GPL-3.0 software by the Stockfish authors and

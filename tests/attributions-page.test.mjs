@@ -20,6 +20,7 @@ function renderPage(basePath = "") {
   const pageModule = { exports: {} };
   factory((id) => {
     if (id === "next/link") return { default: Link };
+    if (id === "@fontsource-variable/montserrat/wght.css") return {};
     if (id === "react/jsx-runtime") return nodeRequire(id);
     throw new Error(`Unexpected attribution dependency: ${id}`);
   }, pageModule, pageModule.exports, { env: { NEXT_PUBLIC_BASE_PATH: basePath } });
@@ -54,6 +55,7 @@ const localPaths = [
   "licenses/chess-openings-CC0.txt",
   "licenses/flag-icons-MIT.txt",
   "licenses/geist-OFL-1.1.txt",
+  "licenses/montserrat-OFL-1.1.txt",
 ];
 const externalUrls = [
   "https://github.com/Delta-Polder-Indonesia/ChessClub",
@@ -66,6 +68,8 @@ const externalUrls = [
   "https://github.com/lichess-org/chess-openings",
   "https://github.com/lipis/flag-icons",
   "https://github.com/vercel/geist-font",
+  "https://github.com/JulietaUla/Montserrat",
+  "https://github.com/codebucks27/Next.js-Developer-Portfolio-Starter-Code",
 ];
 
 test("attributions are an article with a clear heading hierarchy and six labelled cards", () => {
@@ -74,16 +78,19 @@ test("attributions are an article with a clear heading hierarchy and six labelle
   assert.equal(text(renderer.root.findByType("h1")), "Atribusi & lisensi");
   // The root body is overflow-hidden. Keep this route as the viewport's own
   // scrolling area so in-page links cannot scroll the hidden body too.
-  assert.match(renderer.root.findByType("main").props.className, /\bfixed\b/);
-  assert.match(renderer.root.findByType("main").props.className, /\boverflow-y-auto\b/);
+  const main = renderer.root.findByType("main");
+  assert.match(main.props.className, /\bfixed\b/);
+  assert.match(main.props.className, /\boverflow-y-auto\b/);
+  assert.match(main.props.style.fontFamily, /Montserrat Variable/);
   const cards = renderer.root.findAllByType("article").filter((node) => node.props["aria-labelledby"]);
   const titles = ["Antarmuka & analisis", "Engine Stockfish", "Bendera & huruf", "Bidak catur", "Suara papan", "Buku pembukaan"];
-  assert.deepEqual(renderer.root.findAllByType("h2").map(text), [...titles, "Kode sumber dan jaringan NNUE", "Catatan merek"]);
+  assert.deepEqual(renderer.root.findAllByType("h2").map(text), [titles[0], titles[1], "Komponen & aset lainnya", "Kode sumber dan jaringan NNUE", "Catatan merek"]);
+  assert.deepEqual(renderer.root.findAllByType("h3").map(text), [...titles.slice(2), "Kode sumber Stockfish", "Jaringan NNUE"]);
   assert.equal(cards.length, titles.length);
   cards.forEach((card, index) => {
-    const heading = card.findByType("h2");
+    const heading = card.findByProps({ id: card.props["aria-labelledby"] });
+    assert.equal(heading.type, index < 2 ? "h2" : "h3");
     assert.equal(text(heading), titles[index]);
-    assert.equal(card.props["aria-labelledby"], heading.props.id);
     assert.ok(card.findAllByType("a").length > 0, `${titles[index]} has attribution links`);
   });
   const section = renderer.root.findByProps({ id: "daftar-atribusi" });
@@ -92,7 +99,7 @@ test("attributions are an article with a clear heading hierarchy and six labelle
   assert.ok(links.some((link) => link.props.href === "#konten-atribusi"));
   assert.ok(links.some((link) => link.props.href === "#daftar-atribusi"));
   assert.ok(links.some((link) => link.props.href === "/"));
-  assert.deepEqual(renderer.root.findAllByType("nav").map((nav) => nav.props["aria-label"]), ["Bagian halaman", "Jejak navigasi"]);
+  assert.deepEqual(renderer.root.findAllByType("nav").map((nav) => nav.props["aria-label"]), ["Jejak navigasi", "Bagian halaman"]);
   for (const link of links.filter((item) => item.props.href?.startsWith("#"))) {
     assert.equal(renderer.root.findAll((node) => typeof node.type === "string" && node.props.id === link.props.href.slice(1)).length, 1, link.props.href);
   }
@@ -135,6 +142,15 @@ test("all attribution, license, source and NNUE links survive both static-export
   }
 });
 
+test("the bundled Montserrat font retains its full upstream license", () => {
+  const bundled = readFileSync(new URL("../public/licenses/montserrat-OFL-1.1.txt", import.meta.url), "utf8");
+  const upstream = readFileSync(nodeRequire.resolve("@fontsource-variable/montserrat/LICENSE"), "utf8");
+  const notices = readFileSync(new URL("../ATTRIBUTIONS", import.meta.url), "utf8");
+  assert.equal(bundled, upstream);
+  assert.match(notices, /Montserrat Variable, copyright 2011 The Montserrat Project Authors/);
+  assert.match(notices, /public\/licenses\/montserrat-OFL-1\.1\.txt/);
+});
+
 test("copyright, license, engine and trademark notices remain visible", () => {
   const { renderer } = renderPage();
   const content = text(renderer.root).replace(/\s+/g, " ");
@@ -151,7 +167,8 @@ test("copyright, license, engine and trademark notices remain visible", () => {
     "Beberapa nama berkas menggunakan suara yang sama",
     "CC0 1.0",
     "© 2013 Panayiotis Lipiridis",
-    "SIL OFL 1.1",
+    "Montserrat Variable untuk halaman ini oleh The Montserrat Project Authors",
+    "© 2011, SIL OFL 1.1",
     "Nama dan logo Chess.com serta Lichess merupakan merek pemiliknya masing-masing",
   ]) assert.ok(content.includes(notice), notice);
   renderer.unmount();

@@ -32,6 +32,7 @@ const requiredFiles = [
   "licenses/chess-openings-CC0.txt",
   "licenses/flag-icons-MIT.txt",
   "licenses/geist-OFL-1.1.txt",
+  "licenses/montserrat-OFL-1.1.txt",
   "licenses/lichess-AGPL-3.0.txt",
   "engine/stockfish-nnue-16-single.js",
   "engine/stockfish-nnue-16-single.wasm",
