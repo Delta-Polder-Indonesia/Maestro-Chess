@@ -40,8 +40,8 @@ function IkonLabel() {
 function IkonPanah() {
   return <Ikon><path d="M4 12h15" /><path d="m13 6 6 6-6 6" /></Ikon>;
 }
-function IkonTampilan() {
-  return <Ikon><path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 7l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 10l4.37-4.37a2.12 2.12 0 1 0-3-3Z" /><path d="M9 8c-2 3-4 3.5-7 4l8 10c2-1 6-5 6-7" /></Ikon>;
+function IkonBahasa() {
+  return <Ikon><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3a15 15 0 0 1 0 18" /><path d="M12 3a15 15 0 0 0 0 18" /></Ikon>;
 }
 function IkonDokumentasi() {
   return <Ikon><path d="M4 19.5V5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-1.5Z" /><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H19" /><path d="M8 7h7M8 11h7" /></Ikon>;
@@ -119,7 +119,7 @@ export default function LayarPengaturan({ aktif = true }) {
     { id: "papan", judul: t("analisa.pengaturan.tab.papan"), deskripsi: t("analisa.pengaturan.tab.papanDeskripsi"), Ikon: IkonPapan },
     { id: "penilaian", judul: t("analisa.pengaturan.penilaian"), deskripsi: t("analisa.pengaturan.tab.penilaianDeskripsi"), Ikon: IkonLabel },
     { id: "langkah", judul: t("analisa.pengaturan.langkah"), deskripsi: t("analisa.pengaturan.tab.langkahDeskripsi"), Ikon: IkonPanah },
-    { id: "tampilan", judul: t("analisa.pengaturan.tab.tampilan"), deskripsi: t("analisa.pengaturan.tab.tampilanDeskripsi"), Ikon: IkonTampilan },
+    { id: "bahasa", judul: t("analisa.pengaturan.tab.bahasa"), deskripsi: t("analisa.pengaturan.tab.bahasaDeskripsi"), Ikon: IkonBahasa },
     { id: "dokumentasi", judul: t("analisa.pengaturan.tab.dokumentasi"), deskripsi: t("analisa.pengaturan.tab.dokumentasiDeskripsi"), Ikon: IkonDokumentasi },
   ];
 
@@ -129,7 +129,7 @@ export default function LayarPengaturan({ aktif = true }) {
     { id: "perilaku", tab: "papan", judul: t("analisa.pengaturan.perilakuPapan"), deskripsi: t("analisa.pengaturan.deskripsi.perilakuPapan"), render: (props) => <Moves aktif={aktif} {...props} /> },
     { id: "penilaian", tab: "penilaian", judul: t("analisa.pengaturan.penilaian"), deskripsi: t("analisa.pengaturan.tab.penilaianDeskripsi"), render: (props) => <Ratings {...props} /> },
     { id: "langkah", tab: "langkah", judul: t("analisa.pengaturan.langkahTerbaik"), deskripsi: t("analisa.pengaturan.tab.langkahDeskripsi"), render: (props) => <BestMoves {...props} /> },
-    { id: "bahasa", tab: "tampilan", judul: labelBahasa, deskripsi: t("analisa.pengaturan.deskripsi.bahasa"), render: (props) => <BarisBahasa bahasa={bahasa} setBahasa={setBahasa} label={labelBahasa} {...props} /> },
+    { id: "bahasa", tab: "bahasa", judul: labelBahasa, deskripsi: t("analisa.pengaturan.deskripsi.bahasa"), render: (props) => <BarisBahasa bahasa={bahasa} setBahasa={setBahasa} label={labelBahasa} {...props} /> },
     {
       id: "dokumentasi",
       tab: "dokumentasi",
