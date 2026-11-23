@@ -105,7 +105,7 @@ export default function Nav() {
    * Bilah hanya berlangganan layar, bukan state papan maupun progres engine.
    */
   const [tampilan, setTampilan] = useTampilan();
-  const { perluPulih } = useTabKerja();
+  const { bukaPapan, perluPulih } = useTabKerja();
   const [navTerbuka, setNavTerbuka] = useState(() => bacaBoolean("navTerbuka", true));
   const [navDiAtas, setNavDiAtas] = useState(() => typeof window !== "undefined" && window.innerWidth < navTop);
   const papanRef = useRef(null);
@@ -194,7 +194,8 @@ export default function Nav() {
   function tombolMenu(item) {
     // Layar yang sedang tampil ditandai di bilah, persis seperti sidebar
     // dashboard Pengurus menandai tab aktifnya.
-    const aktif = Boolean(item.tampilan) && tampilan === item.tampilan;
+    const aktif = Boolean(item.tampilan) && (tampilan === item.tampilan ||
+      (item.tampilan === TAMPILAN_ANALISA.PAPAN && tampilan === TAMPILAN_ANALISA.BERMAIN));
     return (
       <TooltipLabel key={item.kunci} stabil label={!navTerbuka || navDiAtas ? item.label : undefined} side="right">
         <button
@@ -204,7 +205,7 @@ export default function Nav() {
           aria-label={item.label}
           aria-current={aktif ? "true" : undefined}
           disabled={perluPulih}
-          onClick={() => setTampilan(item.tampilan)}
+          onClick={() => { if (item.kunci === "papan") void bukaPapan(); else setTampilan(item.tampilan); }}
           className={`${kelasTombol} disabled:cursor-wait disabled:opacity-50${aktif ? " bg-backgroundBoxHover text-foregroundHighlighted" : ""}`}
         >
           {/*

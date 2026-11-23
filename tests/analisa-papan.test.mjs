@@ -50,7 +50,7 @@ function renderPapan(dictionary, handlers = {}, work = { siap: true, tersedia: t
   return TestRenderer.create(React.createElement(Papan, handlers));
 }
 
-function renderNav(dictionary, penyimpanan = { bacaBoolean: (_key, fallback) => fallback, tulisBoolean: () => {} }, onTampilan = () => {}) {
+function renderNav(dictionary, penyimpanan = { bacaBoolean: (_key, fallback) => fallback, tulisBoolean: () => {} }, onTampilan = () => {}, onBukaPapan = () => {}, tampilan = "papan") {
   const translate = (key) => key.split(".").reduce((value, part) => value?.[part], { analisa: dictionary }) ?? key;
   const svg = { default: () => React.createElement("svg") };
   const Nav = compile("../src/halaman/Analisa/komponen/nav/nav.jsx", {
@@ -60,9 +60,9 @@ function renderNav(dictionary, penyimpanan = { bacaBoolean: (_key, fallback) => 
     "../svg/license.jsx": svg,
     "../svg/profile.jsx": svg,
     "../svg/shield-alert.jsx": svg,
-    "../../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA: { PAPAN: "papan", AKUN: "akun", BASIS_DATA: "database", ENGINE: "engine", IMPOR: "impor", DETEKSI_ENGINE: "deteksi-engine", WAWASAN: "wawasan", PENGATURAN: "pengaturan" } },
-    "../../konteks/boardKonteks.js": { useTampilan: () => ["papan", onTampilan] },
-    "../../konteks/tabKerja.jsx": { useTabKerja: () => ({ bukaImpor() {}, perluPulih: false }) },
+    "../../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA: { PAPAN: "papan", BERMAIN: "bermain", AKUN: "akun", BASIS_DATA: "database", ENGINE: "engine", IMPOR: "impor", DETEKSI_ENGINE: "deteksi-engine", WAWASAN: "wawasan", PENGATURAN: "pengaturan" } },
+    "../../konteks/boardKonteks.js": { useTampilan: () => [tampilan, onTampilan] },
+    "../../konteks/tabKerja.jsx": { useTabKerja: () => ({ bukaImpor() {}, bukaPapan: onBukaPapan, perluPulih: false }) },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
     "../../../../components/ui/tooltip.jsx": { TooltipLabel: ({ children }) => children },
     "../../konstanta.js": { navTop: 516 },
@@ -155,6 +155,20 @@ test("navigation places Engine between database and settings with the requested 
   TestRenderer.act(() => engine.props.onClick());
   assert.deepEqual(lintas, ["engine"]);
   renderer.unmount();
+});
+
+test("board navigation returns to the saved workspace instead of resetting it", () => {
+  const tujuan = [];
+  const renderer = renderNav(english, undefined, (layar) => tujuan.push(layar), () => tujuan.push("buka-papan"));
+  TestRenderer.act(() => byTestId(renderer, "nav-papan").props.onClick());
+  assert.deepEqual(tujuan, ["buka-papan"]);
+  TestRenderer.act(() => byTestId(renderer, "nav-pengaturan").props.onClick());
+  assert.deepEqual(tujuan, ["buka-papan", "pengaturan"]);
+  renderer.unmount();
+  const laporan = renderNav(english, undefined, undefined, undefined, "bermain");
+  assert.equal(byTestId(laporan, "nav-papan").props["aria-current"], "true");
+  assert.equal(byTestId(laporan, "nav-pengaturan").props["aria-current"], undefined);
+  laporan.unmount();
 });
 
 test("navigation keeps only the home link; source and attributions live in settings", () => {

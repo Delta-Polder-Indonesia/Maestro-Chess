@@ -16,7 +16,7 @@ export function normalisasiAkunTab(akun) {
 }
 
 export function tabBaru(id = idTabBaru(), akun = null) {
-  return { id, tampilan: "papan", laporanId: null, drafId: null, akun: normalisasiAkunTab(akun) };
+  return { id, tampilan: "papan", tampilanPapan: "papan", laporanId: null, drafId: null, akun: normalisasiAkunTab(akun) };
 }
 
 export function sesiBaru() {
@@ -26,6 +26,20 @@ export function sesiBaru() {
 
 function idAman(id) {
   return typeof id === "string" && id.length > 0 && id.length <= 200;
+}
+
+function layarPapan(tampilan) {
+  return tampilan === "papan" || tampilan === "bermain";
+}
+
+/** Tujuan terakhir tiap tab di area Papan, terpisah dari layar fitur aktif. */
+function tujuanPapan(tab) {
+  if (layarPapan(tab.tampilan)) return tab.tampilan;
+  if (layarPapan(tab.tampilanPapan)) return tab.tampilanPapan;
+  // Sesi versi lama belum menyimpan tujuan papan. Jika pengguna sedang di
+  // fitur lain dan ada laporan, pulihkan laporan itu alih-alih menghilangkan
+  // tabnya; sesi yang jelas berada di beranda tetap berada di beranda.
+  return idAman(tab.laporanId) ? "bermain" : "papan";
 }
 
 /** Hanya simpan penunjuk; isi laporan dan draf tetap di penyimpanan pekerjaan. */
@@ -42,6 +56,7 @@ export function bacaSesiTab(storage) {
       daftar.push({
         id: tab.id,
         tampilan: tab.tampilan,
+        tampilanPapan: tujuanPapan(tab),
         laporanId: idAman(tab.laporanId) ? tab.laporanId : null,
         drafId: idAman(tab.drafId) ? tab.drafId : null,
         akun: normalisasiAkunTab(tab.akun),
@@ -71,8 +86,11 @@ export function perbaruiTab(sesi, id, perubahan) {
   const daftar = sesi.daftar.map((tab) => {
     if (tab.id !== id) return tab;
     const berikut = { ...tab, ...perubahan };
+    berikut.tampilanPapan = layarPapan(berikut.tampilan) ? berikut.tampilan
+      : layarPapan(perubahan.tampilanPapan) ? perubahan.tampilanPapan : tujuanPapan(tab);
     if (Object.hasOwn(perubahan, "akun")) berikut.akun = normalisasiAkunTab(perubahan.akun);
-    if (tab.tampilan === berikut.tampilan && tab.laporanId === berikut.laporanId && tab.drafId === berikut.drafId &&
+    if (tab.tampilan === berikut.tampilan && tab.tampilanPapan === berikut.tampilanPapan &&
+      tab.laporanId === berikut.laporanId && tab.drafId === berikut.drafId &&
       tab.akun?.platform === berikut.akun?.platform && tab.akun?.username === berikut.akun?.username) return tab;
     berubah = true;
     return berikut;
