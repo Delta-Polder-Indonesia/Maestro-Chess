@@ -257,9 +257,9 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai, disabled =
           </div>
 
           <div className="user-title-section">
-            <div className="flex max-w-full items-center text-left">
+            <div className="flex max-w-full items-center text-center">
               <h2
-                className="min-w-0 break-words text-sm font-bold tracking-tight text-white [overflow-wrap:anywhere] sm:text-base"
+                className="mx-auto min-w-0 break-words text-[25px] font-bold leading-tight tracking-tight text-white [overflow-wrap:anywhere]"
                 title={akunAktif ? akunAktif.username : t("analisa.akun.tarik.pilihAkun")}
               >
                 {akunAktif ? akunAktif.username : t("analisa.akun.tarik.pilihAkun")}
