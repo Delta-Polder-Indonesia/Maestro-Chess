@@ -27,9 +27,9 @@
 import { useMemo, useState } from "react";
 import { AnalyzeContext } from "./analyzeKonteks.js";
 import { BoardProvider } from "./board.jsx";
-import { ImportProvider } from "./import.jsx";
+import { ImportProvider } from "../../../modul/sesi/imporProvider.js";
 import { useBoard } from "./boardKonteks.js";
-import { useImport } from "./importKonteks.js";
+import { useImport } from "../../../modul/sesi/impor.js";
 
 /**
  * Penyusun nilai gabungan. Harus berada DI DALAM kedua provider supaya bisa

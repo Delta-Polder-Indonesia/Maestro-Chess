@@ -45,7 +45,7 @@
 import { lazy, memo, Suspense, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { TAMPILAN_ANALISA } from "../konteks/analyzeKonteks.js";
 import { useSetTampilan, useTampilan } from "../konteks/boardKonteks.js";
-import { useImport } from "../konteks/importKonteks.js";
+import { useImport } from "../../../modul/sesi/impor.js";
 import { useTabKerja } from "@/modul/sesi/index.js";
 import { PanelAktifContext } from "../konteks/panelAktif.js";
 import { ErrorsContext, pushPageError, pushPageWarning } from "../../../modul/sesi/galat.js";

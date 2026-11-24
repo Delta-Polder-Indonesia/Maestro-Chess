@@ -93,7 +93,7 @@ function siapkanAreaKerja(store, navigasi) {
       useTampilan: () => React.useContext(Board).tampilan,
       useSetTampilan: () => React.useContext(Board).tampilan[1],
     },
-    "../konteks/importKonteks.js": { useImport: () => React.useContext(Import) },
+    "../../../modul/sesi/impor.js": { useImport: () => React.useContext(Import) },
     "@/modul/sesi/index.js": tab,
     "../konteks/panelAktif.js": { PanelAktifContext: React.createContext(true) },
     "../../../modul/sesi/galat.js": { ErrorsContext: Errors, pushPageError: () => {}, pushPageWarning: () => {} },

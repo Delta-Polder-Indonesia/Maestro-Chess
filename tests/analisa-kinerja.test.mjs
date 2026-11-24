@@ -55,9 +55,9 @@ test("navigation notifies the screen only, while board and analysis still receiv
   const analyze = kompilasi("../src/halaman/Analisa/konteks/analyze.jsx", {
     "./analyzeKonteks.js": analyzeContext,
     "./board.jsx": board,
-    "./import.jsx": { ImportProvider: ({ children }) => children },
+    "../../../modul/sesi/imporProvider.js": { ImportProvider: ({ children }) => children },
     "./boardKonteks.js": boardContext,
-    "./importKonteks.js": { useImport: () => imp },
+    "../../../modul/sesi/impor.js": { useImport: () => imp },
   });
   const hitung = { papan: 0, analisis: 0, tampilan: 0, setter: 0 };
   const nilai = {};

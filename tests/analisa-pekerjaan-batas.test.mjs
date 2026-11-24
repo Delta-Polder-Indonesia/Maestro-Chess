@@ -166,7 +166,7 @@ test("all application consumers use the facade, not private files or legacy path
   }
   for (const path of [
     "src/modul/sesi/tabKerja.js",
-    "src/halaman/Analisa/konteks/import.jsx",
+    "src/modul/sesi/ImportProvider.jsx",
     "src/modul/sesi/TabKerjaProvider.jsx",
     "src/halaman/Analisa/komponen/areaKerja.jsx",
     "src/halaman/Analisa/komponen/tabBar.jsx",

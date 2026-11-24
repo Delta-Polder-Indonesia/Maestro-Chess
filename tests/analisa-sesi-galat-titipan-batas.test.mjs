@@ -255,7 +255,7 @@ test("all ten mapped callers import their required names from the correct public
     ["src/halaman/Analisa/komponen/game/useMuatPartai.js", "src/modul/sesi/titipan.js", ["adaPgnTitipan"]],
     ["src/halaman/Analisa/komponen/nav/layarAkun.jsx", "src/modul/sesi/galat.js", ["ErrorsContext", "pushPageWarning"]],
     ["src/halaman/Analisa/komponen/nav/layarImpor.jsx", "src/modul/sesi/galat.js", ["ErrorsContext", "pushPageWarning"]],
-    ["src/halaman/Analisa/konteks/import.jsx", "src/modul/sesi/titipan.js", ["adaPgnTitipan"]],
+    ["src/modul/sesi/ImportProvider.jsx", "src/modul/sesi/titipanAnalisa.js", ["adaPgnTitipan"]],
     ["src/modul/sesi/TabKerjaProvider.jsx", "src/modul/sesi/titipanAnalisa.js", ["adaPgnTitipan"]],
   ];
   assert.equal(new Set(konsumen.map(([file]) => file)).size, 10);

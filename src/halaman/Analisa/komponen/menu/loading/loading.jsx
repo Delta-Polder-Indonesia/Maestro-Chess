@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Lens from "../../svg/lens.jsx";
 import LoadingBar from "./loadingBar.jsx";
 import DualRingSpinner from "../../loading/DualRingSpinner.jsx";
-import { useImport } from "../../../konteks/importKonteks.js";
+import { useImport } from "../../../../../modul/sesi/impor.js";
 import { useMesin } from "../../../konteks/mesinKonteks.js";
 import { useI18n } from "../../../../../lib/i18n.jsx";
 import { persenProgres } from "./persenProgres.js";
