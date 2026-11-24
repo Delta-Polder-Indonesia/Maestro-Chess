@@ -219,6 +219,13 @@ test("account fetch panel distinguishes committed, temporary, and failed storage
   });
   let renderer;
   await act(async () => { renderer = TestRenderer.create(React.createElement(Panel, { akun: { platform: "chessCom", username: "Alice" }, abortRef: { current: null } })); });
+  // Kedua tab memakai hijau yang sama dengan tombol pilihan aktif.
+  const tabSlanted = renderer.root.findAllByType(wrapper).filter((node) => /(?:^|\s)slanted-tab(?:\s|$)/.test(String(node.props.className)));
+  assert.equal(tabSlanted.length, 2);
+  for (const tab of tabSlanted) {
+    assert.match(tab.props.className, /data-\[state=active\]:!bg-backgroundBoxBoxHighlighted/);
+    assert.match(tab.props.className, /data-\[state=active\]:!text-foregroundBlackDark/);
+  }
   const muat = () => renderer.root.findAllByType("button").find((node) => node.children.includes("analisa.akun.tarik.muat"));
   await act(async () => { muat().props.onClick(); await flush(); });
   assert.equal(renderer.root.findAllByProps({ role: "status" }).some((node) => node.children.includes("analisa.akun.tarik.sukses")), true);
