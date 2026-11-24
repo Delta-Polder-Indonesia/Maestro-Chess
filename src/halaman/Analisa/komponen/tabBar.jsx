@@ -1,8 +1,7 @@
 import { Plus, X } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 import { useI18n } from "../../../lib/i18n.jsx";
-import { KUNCI_FITUR } from "../riwayatFitur.js";
-import { usePekerjaan } from "../usePekerjaan.js";
+import { KUNCI_FITUR, usePekerjaan } from "../../../modul/pekerjaan/index.js";
 
 function tampilkanTabAktif(daftar) {
   const tombol = daftar?.querySelector('[aria-selected="true"]');

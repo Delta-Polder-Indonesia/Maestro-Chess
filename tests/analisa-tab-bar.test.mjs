@@ -24,8 +24,7 @@ function komponenTab() {
   const dependencies = {
     "lucide-react": require("lucide-react"),
     "../../../lib/i18n.jsx": { useI18n: () => ({ t: (key, nilai) => (terjemahan[key] ?? key).replace("{nama}", nilai?.nama ?? "") }) },
-    "../riwayatFitur.js": { KUNCI_FITUR },
-    "../usePekerjaan.js": { usePekerjaan: () => ({ daftar: [{ id: "laporan:1", jenis: "laporan", judul: "Alice vs Bob" }] }) },
+    "../../../modul/pekerjaan/index.js": { KUNCI_FITUR, usePekerjaan: () => ({ daftar: [{ id: "laporan:1", jenis: "laporan", judul: "Alice vs Bob" }] }) },
   };
   const filename = new URL("../src/halaman/Analisa/komponen/tabBar.jsx", import.meta.url);
   const compiled = ts.transpileModule(readFileSync(filename, "utf8"), {

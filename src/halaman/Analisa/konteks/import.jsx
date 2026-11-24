@@ -13,7 +13,7 @@
  */
 import { useCallback, useMemo, useState } from "react";
 import { adaPgnTitipan } from "../../../lib/titipanAnalisa.js";
-import { buatIdPekerjaan, pekerjaan, simpanLaporanAktif } from "../pekerjaan.js";
+import { buatIdPekerjaan, pekerjaan, simpanLaporanAktif } from "../../../modul/pekerjaan/index.js";
 import { ImportContext } from "./importKonteks.js";
 
 export function ImportProvider({ children }) {

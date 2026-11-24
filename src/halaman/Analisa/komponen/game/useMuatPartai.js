@@ -30,7 +30,7 @@ import { hashPgn } from "../../../../lib/pgnRingan.js";
 import { ringkasAnalisis } from "../../mesin/ringkasanAnalisis.js";
 import { catatAnalisis } from "../../mesin/analisisTersimpan.js";
 import { adaPgnTitipan } from "../../../../lib/titipanAnalisa.js";
-import { snapshotLaporanAman } from "../../pekerjaan.js";
+import { snapshotLaporanAman } from "../../../../modul/pekerjaan/index.js";
 import { gameStartSound } from "./gameStartSound.js";
 
 export function useMuatPartai({

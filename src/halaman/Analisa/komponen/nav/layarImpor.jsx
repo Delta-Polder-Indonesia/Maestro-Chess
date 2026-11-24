@@ -17,8 +17,7 @@ import { imporPgnKeBasisData } from "../../basisData.js";
 import { pesanPenyimpananPartai } from "../../database/statusSimpan.js";
 import { ErrorsContext } from "../../konteks/errorsKonteks.js";
 import { pushPageWarning } from "../errors/pushPageError.js";
-import { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan, simpanDrafImpor } from "../../pekerjaan.js";
-import { usePekerjaan } from "../../usePekerjaan.js";
+import { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan, simpanDrafImpor, usePekerjaan } from "../../../../modul/pekerjaan/index.js";
 import { BATAS_IMPOR, KODE_GALAT, ambilPgn, galatImpor, validasiFen, validasiPgn } from "./validasiImpor.js";
 
 const TIPE = [

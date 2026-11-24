@@ -49,9 +49,7 @@ import { useImport } from "../konteks/importKonteks.js";
 import { useTabKerja } from "../konteks/tabKerja.jsx";
 import { PanelAktifContext } from "../konteks/panelAktif.js";
 import { ErrorsContext } from "../konteks/errorsKonteks.js";
-import { pekerjaan, snapshotLaporanAman } from "../pekerjaan.js";
-import { catatFitur, KUNCI_FITUR } from "../riwayatFitur.js";
-import { usePekerjaan } from "../usePekerjaan.js";
+import { catatFitur, KUNCI_FITUR, pekerjaan, snapshotLaporanAman, usePekerjaan } from "../../../modul/pekerjaan/index.js";
 import { useI18n } from "../../../lib/i18n.jsx";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,

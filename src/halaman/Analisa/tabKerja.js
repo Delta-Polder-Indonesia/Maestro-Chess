@@ -1,4 +1,4 @@
-import { KUNCI_FITUR } from "./riwayatFitur.js";
+import { KUNCI_FITUR } from "../../modul/pekerjaan/index.js";
 
 export const KUNCI_SESI_TAB = "maestro-analisa-tab-v1";
 

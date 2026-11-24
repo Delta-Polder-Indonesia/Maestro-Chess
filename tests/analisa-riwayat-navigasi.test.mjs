@@ -53,7 +53,7 @@ function siapkanAreaKerja(store, navigasi) {
   const Errors = React.createContext(null);
   const tab = kompilasi("../src/halaman/Analisa/konteks/tabKerja.jsx", {
     "../../../lib/titipanAnalisa.js": { adaPgnTitipan: () => Boolean(navigasi.adaTitipan) },
-    "../pekerjaan.js": { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan: store },
+    "../../../modul/pekerjaan/index.js": { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan: store },
     "../tabKerja.js": modelTab,
     "./analyzeKonteks.js": { TAMPILAN_ANALISA },
     "./boardKonteks.js": { useTampilan: () => React.useContext(Board).tampilan },
@@ -97,9 +97,11 @@ function siapkanAreaKerja(store, navigasi) {
     "../konteks/tabKerja.jsx": tab,
     "../konteks/panelAktif.js": { PanelAktifContext: React.createContext(true) },
     "../konteks/errorsKonteks.js": { ErrorsContext: Errors },
-    "../pekerjaan.js": { pekerjaan: store, snapshotLaporanAman },
-    "../riwayatFitur.js": { KUNCI_FITUR, catatFitur: (fitur, target) => catatFitur(fitur, target, store, ++waktu) },
-    "../usePekerjaan.js": { usePekerjaan: () => React.useSyncExternalStore(store.langganan, store.snapshot, store.snapshot) },
+    "../../../modul/pekerjaan/index.js": {
+      pekerjaan: store, snapshotLaporanAman, KUNCI_FITUR,
+      catatFitur: (fitur, target) => catatFitur(fitur, target, store, ++waktu),
+      usePekerjaan: () => React.useSyncExternalStore(store.langganan, store.snapshot, store.snapshot),
+    },
     "../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
     "../../../components/ui/alert-dialog.jsx": {
       ...Object.fromEntries([

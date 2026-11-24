@@ -39,8 +39,7 @@ function renderPapan(dictionary, handlers = {}, work = { siap: true, tersedia: t
   const i18n = { useI18n: () => ({ t: translate, bahasa: dictionary === english ? "en" : "id" }) };
   const Daftar = compile("../src/halaman/Analisa/komponen/nav/daftarPekerjaan.jsx", {
     "../../../../lib/i18n.jsx": i18n,
-    "../../riwayatFitur.js": { daftarRiwayat, KUNCI_FITUR },
-    "../../usePekerjaan.js": { usePekerjaan: () => work },
+    "../../../../modul/pekerjaan/index.js": { daftarRiwayat, KUNCI_FITUR, usePekerjaan: () => work },
   });
   const Papan = compile("../src/halaman/Analisa/komponen/nav/layarPapan.jsx", {
     "./PanelLayar.jsx": { default: ({ children }) => React.createElement("section", null, children) },
