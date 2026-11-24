@@ -7,6 +7,7 @@ export * from "./impor.js";
 export * from "./panel.js";
 export * from "./papan.js";
 export * from "./analisa.js";
+export * from "./mesin.js";
 export { default as AnalyzeContextProvider } from "./analisaProvider.js";
 export { BoardProvider } from "./papanProvider.js";
 export { ImportProvider } from "./imporProvider.js";

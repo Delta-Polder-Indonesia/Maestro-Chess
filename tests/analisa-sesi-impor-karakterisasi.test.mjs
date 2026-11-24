@@ -430,7 +430,7 @@ test("the real Loading component observes import progress and aborts the current
   const muat = buatPemuatJsx({
     "src/modul/pekerjaan/index.js": pekerjaan.ekspor,
     "src/lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
-    "src/halaman/Analisa/konteks/mesinKonteks.js": { useMesin: () => ({ status: "siap" }) },
+    "src/modul/sesi/mesin.js": { useMesin: () => ({ status: "siap" }) },
     "src/halaman/Analisa/komponen/svg/lens.jsx": { default: () => null },
     "src/halaman/Analisa/komponen/loading/DualRingSpinner.jsx": { default: () => null },
     "src/halaman/Analisa/komponen/menu/loading/loadingBar.jsx": {

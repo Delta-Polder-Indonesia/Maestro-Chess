@@ -257,7 +257,7 @@ test("the visible 'analyze again' action bypasses the cache and changing engine 
     "../../../../lib/asets.js": { gambar: (x) => x },
     "../../../../lib/engineCatur.js": { DAFTAR_ENGINE: [{ id: "engine-a", label: "Stockfish 18" }], cariEngine: () => ({ label: "Stockfish 18" }) },
     "../../../../modul/sesi/analisa.js": { AnalyzeContext },
-    "../../konteks/mesinKonteks.js": { useMesin: () => mesin },
+    "../../../../modul/sesi/mesin.js": { useMesin: () => mesin },
     "../../basisData.js": { ambilDaftarPartai: async () => ({ partai: [{ pgn: "1. e4 *" }] }) },
     "../../akun/useAkunKoleksi.js": { useAkunKoleksi: () => ({ akunTersimpan: [], koleksi: [] }) },
     "../../akun/koordinasiAkun.js": koordinasi,

@@ -22,7 +22,7 @@ const dependencies = {
   "../mesin/engine.js": { EngineAnalisis },
   "../mesin/cekWasm.js": { hashUntukEngine: () => 32, wasmSupported: () => true },
   "../../../modul/sesi/preferensi.js": penyimpanan,
-  "./mesinKonteks.js": { KonteksMesin },
+  "../../../modul/sesi/mesin.js": { KonteksMesin },
 };
 const result = { exports: {} };
 runInThisContext(`(function (require, module, exports) {\n${compiled}\n})`)((id) => {

@@ -3,7 +3,7 @@ import { memo, useContext, useEffect, useId, useState } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { cariEngine } from "../../../../lib/engineCatur.js";
 import { gambar } from "../../../../lib/asets.js";
-import { useMesin } from "../../konteks/mesinKonteks.js";
+import { useMesin } from "../../../../modul/sesi/mesin.js";
 import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
 
 import { tulis } from "../../../../modul/sesi/preferensi.js";

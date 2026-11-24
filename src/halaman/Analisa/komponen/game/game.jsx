@@ -8,7 +8,7 @@ import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
 import { ratingTampilan } from "../../mesin/evaluasi.js";
 import { WHITE } from "chess.js";
 import { ErrorsContext, pushPageWarning } from "../../../../modul/sesi/galat.js";
-import { useMesin } from "../../konteks/mesinKonteks.js";
+import { useMesin } from "../../../../modul/sesi/mesin.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { useKartuPemain } from "@/modul/profil/index.js";
 import { maxSisiPapan, minSisiPapan, navTop } from "../../konstanta.js";

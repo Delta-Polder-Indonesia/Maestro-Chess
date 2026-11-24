@@ -12,7 +12,7 @@ import { useI18n } from "../../../../lib/i18n.jsx";
 import { DAFTAR_ENGINE } from "../../../../lib/engineCatur.js";
 import { gambar } from "../../../../lib/asets.js";
 import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
-import { useMesin } from "../../konteks/mesinKonteks.js";
+import { useMesin } from "../../../../modul/sesi/mesin.js";
 import PanelLayar from "./PanelLayar.jsx";
 import PengaturanMesin from "../pengaturan/mesin.jsx";
 import Gambar from "../Gambar.jsx";

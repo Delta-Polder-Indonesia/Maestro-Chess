@@ -168,7 +168,7 @@ test("a hidden detection tab closes its portal and aborts its engine search with
     "../../../../lib/asets.js": { gambar: (x) => x },
     "../../../../lib/engineCatur.js": { DAFTAR_ENGINE: [{ id: "engine", label: "Stockfish 18" }], cariEngine: () => ({ label: "Stockfish 18" }) },
     "../../../../modul/sesi/analisa.js": { AnalyzeContext },
-    "../../konteks/mesinKonteks.js": { useMesin: () => mesin },
+    "../../../../modul/sesi/mesin.js": { useMesin: () => mesin },
     "../../basisData.js": { ambilDaftarPartai: async () => (galatBasis ? { partai: [], galat: true } : { partai: [{ pgn: "1. e4 *" }] }) },
     "../../akun/useAkunKoleksi.js": { useAkunKoleksi: () => ({ akunTersimpan: [], koleksi: [] }) },
     "../../akun/koordinasiAkun.js": koordinasiAkun,

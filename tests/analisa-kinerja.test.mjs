@@ -318,7 +318,7 @@ test("the board observes its workspace from the first mount and resizes when the
     "../../../../modul/sesi/analisa.js": analyzeContext,
     "../../mesin/evaluasi.js": { ratingTampilan: noop },
     "../../../../modul/sesi/galat.js": { ErrorsContext: React.createContext({ errors: [[], noop] }), pushPageWarning: noop },
-    "../../konteks/mesinKonteks.js": { useMesin: () => ({ didukung: true, siapkan: noop, ambilMesin: noop }) },
+    "../../../../modul/sesi/mesin.js": { useMesin: () => ({ didukung: true, siapkan: noop, ambilMesin: noop }) },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
     "@/modul/profil/index.js": { useKartuPemain: () => null },
     "../../konstanta.js": { maxSisiPapan: 1000, minSisiPapan: 160, navTop: 516 },
