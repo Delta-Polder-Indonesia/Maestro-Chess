@@ -51,7 +51,7 @@ test("engine startup failures from settings are visible in the console", async (
     "../../../../lib/asets.js": { gambar: (path) => path },
     "../../konteks/mesinKonteks.js": { useMesin: () => mesin },
     "../../konteks/analyzeKonteks.js": { AnalyzeContext },
-    "../../penyimpanan.js": { tulis: noop },
+    "../../../../modul/sesi/preferensi.js": { tulis: noop },
     "../nav/SelectDaftar.jsx": { default: kosong },
     "../Gambar.jsx": { default: kosong },
   }).default;
@@ -81,7 +81,7 @@ test("engine card ignores unrelated analysis progress but updates its depth", as
     "../../../../lib/asets.js": { gambar: (path) => path },
     "../../konteks/mesinKonteks.js": { useMesin: () => mesin },
     "../../konteks/analyzeKonteks.js": { AnalyzeContext },
-    "../../penyimpanan.js": { tulis: noop },
+    "../../../../modul/sesi/preferensi.js": { tulis: noop },
     "../nav/SelectDaftar.jsx": { default: kosong },
     "../Gambar.jsx": { default: gambarMock },
   }).default;

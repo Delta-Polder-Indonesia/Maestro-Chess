@@ -6,7 +6,7 @@ import { gambar } from "../../../../lib/asets.js";
 import { useMesin } from "../../konteks/mesinKonteks.js";
 import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
 
-import { tulis } from "../../penyimpanan.js";
+import { tulis } from "../../../../modul/sesi/preferensi.js";
 import Gambar from "../Gambar.jsx";
 
 /**

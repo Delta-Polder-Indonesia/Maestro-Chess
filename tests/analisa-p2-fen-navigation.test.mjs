@@ -20,7 +20,7 @@ const compiled = ts.transpileModule(readFileSync(new URL("../src/halaman/Analisa
 }).outputText;
 const dependencies = {
   "../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
-  "../penyimpanan.js": { bacaAngka: (_key, fallback) => fallback },
+  "../../../modul/sesi/preferensi.js": { bacaAngka: (_key, fallback) => fallback },
   "./analyzeKonteks.js": analyzeContext,
   "./boardKonteks.js": boardContext,
 };

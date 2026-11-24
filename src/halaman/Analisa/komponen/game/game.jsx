@@ -13,7 +13,7 @@ import { useI18n } from "../../../../lib/i18n.jsx";
 import { useKartuPemain } from "@/modul/profil/index.js";
 import { ErrorsContext } from "../../konteks/errorsKonteks.js";
 import { maxSisiPapan, minSisiPapan, navTop } from "../../konstanta.js";
-import { ConfigContext } from "../../konteks/configKonteks.js";
+import { ConfigContext } from "../../../../modul/sesi/preferensi.js";
 import GameButtons from "../menu/analysis/gameButtons.jsx";
 import { getMoves, getArrows, getCapturedPieces, getCustomResult, formatPlayerLabel } from "./getMoves.js";
 import { useMuatPartai } from "./useMuatPartai.js";

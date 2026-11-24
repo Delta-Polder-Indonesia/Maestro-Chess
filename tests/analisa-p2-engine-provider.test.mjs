@@ -21,7 +21,7 @@ const dependencies = {
   "../../../lib/engineCatur.js": daftarEngine,
   "../mesin/engine.js": { EngineAnalisis },
   "../mesin/cekWasm.js": { hashUntukEngine: () => 32, wasmSupported: () => true },
-  "../penyimpanan.js": penyimpanan,
+  "../../../modul/sesi/preferensi.js": penyimpanan,
   "./mesinKonteks.js": { KonteksMesin },
 };
 const result = { exports: {} };

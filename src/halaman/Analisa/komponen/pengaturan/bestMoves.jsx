@@ -1,12 +1,10 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
-import { ConfigContext } from "../../konteks/configKonteks.js";
+import { ConfigContext, boardThemes, bacaTeks, tulis } from "../../../../modul/sesi/preferensi.js";
 import { memo, useContext, useEffect } from "react";
-import { boardThemes } from "./boardThemes.js";
 import { Arrow } from "../game/board.jsx";
 import PieceSVG from "../svg/piece.jsx";
 import { QUEEN, WHITE } from "chess.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
-import { bacaTeks, tulis } from "../../penyimpanan.js";
 import SakelarPengaturan from "./sakelarPengaturan.jsx";
 import BarisPengaturan from "./barisPengaturan.jsx";
 const IsiBestMoves = memo(function IsiBestMoves({ boardTheme, showArrows, setShowArrows, arrowAfterMove, setArrowAfterMove, cocok = () => true, deskripsi = () => null }) {

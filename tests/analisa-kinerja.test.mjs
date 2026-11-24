@@ -43,7 +43,7 @@ test("navigation notifies the screen only, while board and analysis still receiv
   const t = (key) => key;
   const board = kompilasi("../src/halaman/Analisa/konteks/board.jsx", {
     "../../../lib/i18n.jsx": { useI18n: () => ({ t }) },
-    "../penyimpanan.js": { bacaAngka: (_key, fallback) => fallback },
+    "../../../modul/sesi/preferensi.js": { bacaAngka: (_key, fallback) => fallback },
     "./analyzeKonteks.js": analyzeContext,
     "./boardKonteks.js": boardContext,
   });
@@ -123,8 +123,7 @@ test("the board ignores unrelated configuration, applies sound/theme, and caches
   const Board = kompilasi("../src/halaman/Analisa/komponen/game/board.jsx", {
     "../../mesin/engine.js": { deformatSquare: noop, formatSquare: noop },
     "../suaraPapan.js": { buatSuara: (nama) => ({ play: () => suara.push(nama) }) },
-    "../../konteks/configKonteks.js": configContext,
-    "../pengaturan/boardThemes.js": { boardThemes },
+    "../../../../modul/sesi/preferensi.js": { ...configContext, boardThemes },
     "../svg/piece.jsx": { default: Bidak },
     "../svg/rating.jsx": { default: kosong },
     "../svg/result.jsx": { default: kosong },
@@ -322,7 +321,7 @@ test("the board observes its workspace from the first mount and resizes when the
     "@/modul/profil/index.js": { useKartuPemain: () => null },
     "../../konteks/errorsKonteks.js": { ErrorsContext: React.createContext({ errors: [[], noop] }) },
     "../../konstanta.js": { maxSisiPapan: 1000, minSisiPapan: 160, navTop: 516 },
-    "../../konteks/configKonteks.js": configContext,
+    "../../../../modul/sesi/preferensi.js": configContext,
     "../menu/analysis/gameButtons.jsx": { default: kosong },
     "./getMoves.js": {
       getMoves: (game, i) => ({ move: game[i] }), getArrows: () => [], getCapturedPieces,

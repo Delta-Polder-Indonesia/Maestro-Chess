@@ -48,10 +48,8 @@ function renderLayar() {
     return React.createElement("button", { "aria-label": label, "aria-checked": checked });
   }
   const umum = {
-    "../../konteks/configKonteks.js": configContext,
-    "./boardThemes.js": { boardThemes },
+    "../../../../modul/sesi/preferensi.js": { ...configContext, boardThemes, bacaTeks: () => null, tulis: () => {} },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate, bahasa: "en", setBahasa: (value) => keadaan.bahasa.push(value) }) },
-    "../../penyimpanan.js": { bacaTeks: () => null, tulis: () => {} },
     "../svg/piece.jsx": { default: kosong },
     "../svg/rating.jsx": { default: kosong },
     "../svg/soundMax.jsx": { default: kosong },
@@ -73,7 +71,7 @@ function renderLayar() {
     "../pengaturan/moves.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/moves.jsx", denganBaris).default },
     "../pengaturan/bestMoves.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/bestMoves.jsx", denganBaris).default },
     "../pengaturan/barisPengaturan.jsx": { default: Baris },
-    "../pengaturan/boardThemes.js": { boardThemes },
+    "../../../../modul/sesi/preferensi.js": { boardThemes },
     "../../../../lib/repo.js": umum["../../../../lib/repo.js"],
     "next/link": umum["next/link"],
     "../svg/github.jsx": { default: kosong },

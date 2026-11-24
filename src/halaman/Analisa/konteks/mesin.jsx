@@ -19,7 +19,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ENGINE_BAKU, cariEngine } from "../../../lib/engineCatur.js";
 import { EngineAnalisis } from "../mesin/engine.js";
 import { hashUntukEngine, wasmSupported } from "../mesin/cekWasm.js";
-import { bacaAngka, bacaTeks, tulis } from "../penyimpanan.js";
+import { bacaAngka, bacaTeks, tulis } from "../../../modul/sesi/preferensi.js";
 import { KonteksMesin } from "./mesinKonteks.js";
 
 /** Batas waktu pencarian (ms). null = tanpa batas waktu tambahan. */

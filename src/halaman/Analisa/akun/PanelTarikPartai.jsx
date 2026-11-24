@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs.jsx";
 import { useI18n } from "../../../lib/i18n.jsx";
-import { bacaTeks, tulis } from "../penyimpanan.js";
+import { bacaTeks, tulis } from "../../../modul/sesi/preferensi.js";
 import { muatPartaiChessCom, muatPartaiLichess } from "./muatPartaiAkun.js";
 import { pesanPenyimpananPartai } from "../database/statusSimpan.js";
 import PemilihRentang from "./PemilihRentang.jsx";

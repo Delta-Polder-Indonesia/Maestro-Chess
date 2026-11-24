@@ -7,7 +7,7 @@
  * tetap ada meski halaman dimuat ulang — persis seperti perilaku akun pada
  * halaman akun referensi.
  */
-import { bacaTeks, cobaBacaTeks, tulis } from "../penyimpanan.js";
+import { bacaTeks, cobaBacaTeks, tulis } from "../../../modul/sesi/preferensi.js";
 
 const KEY = "daftar-akun";
 

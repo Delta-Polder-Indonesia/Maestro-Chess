@@ -208,7 +208,7 @@ test("account fetch panel distinguishes committed, temporary, and failed storage
   const Panel = kompilasi("../src/halaman/Analisa/akun/PanelTarikPartai.jsx", {
     "../../../components/ui/tabs.jsx": { Tabs: wrapper, TabsContent: wrapper, TabsList: wrapper, TabsTrigger: wrapper },
     "../../../lib/i18n.jsx": { useI18n: () => ({ t }) },
-    "../penyimpanan.js": { bacaTeks: () => "", tulis: () => true },
+    "../../../modul/sesi/preferensi.js": { bacaTeks: () => "", tulis: () => true },
     "./muatPartaiAkun.js": {
       muatPartaiChessCom: async () => ({ partai: [{}], penyimpanan }),
       muatPartaiLichess: async () => ({ partai: [{}], penyimpanan }),

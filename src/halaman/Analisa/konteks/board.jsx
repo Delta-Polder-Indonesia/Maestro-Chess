@@ -16,7 +16,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../../../lib/i18n.jsx";
-import { bacaAngka } from "../penyimpanan.js";
+import { bacaAngka } from "../../../modul/sesi/preferensi.js";
 import { normalisasiPemain, TAMPILAN_ANALISA } from "./analyzeKonteks.js";
 import { BoardContext, SetTampilanContext, TampilanContext } from "./boardKonteks.js";
 

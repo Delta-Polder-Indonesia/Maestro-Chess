@@ -64,7 +64,7 @@ function renderNav(dictionary, penyimpanan = { bacaBoolean: (_key, fallback) => 
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
     "../../../../components/ui/tooltip.jsx": { TooltipLabel: ({ children }) => children },
     "../../konstanta.js": { navTop: 516 },
-    "../../penyimpanan.js": penyimpanan,
+    "../../../../modul/sesi/preferensi.js": penyimpanan,
   });
   return TestRenderer.create(React.createElement(Nav));
 }

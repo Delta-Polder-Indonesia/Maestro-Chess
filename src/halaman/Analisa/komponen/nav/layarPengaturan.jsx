@@ -19,7 +19,7 @@ import Ratings from "../pengaturan/ratings.jsx";
 import Moves from "../pengaturan/moves.jsx";
 import BestMoves from "../pengaturan/bestMoves.jsx";
 import BarisPengaturan from "../pengaturan/barisPengaturan.jsx";
-import { boardThemes } from "../pengaturan/boardThemes.js";
+import { boardThemes } from "../../../../modul/sesi/preferensi.js";
 import { daftarRating } from "../pengaturan/ratings.jsx";
 import GitHub from "../svg/github.jsx";
 import Lisensi from "../svg/license.jsx";
