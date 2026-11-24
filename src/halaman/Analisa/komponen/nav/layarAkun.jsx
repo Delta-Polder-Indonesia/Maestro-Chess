@@ -9,7 +9,7 @@ import PanelTarikPartai from "../../akun/PanelTarikPartai.jsx";
 import { bacaDaftarAkun, tambahKeDaftar, hapusDariDaftar } from "../../akun/daftarAkun.js";
 import { bacaRevisiBasis, hapusKoleksi, langgananRevisi, pastikanKoleksi } from "../../basisData.js";
 import { bukaDB } from "../../database/migrasi.js";
-import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
+import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
 import { ErrorsContext, pushPageWarning } from "../../../../modul/sesi/galat.js";
 import { bersihkanCacheAntiCheat } from "../../akun/antiCheatRiwayat.js";
 import { akunSedangDihapus, aktifkanKembaliAkun, denganKunciAkun, mulaiPenghapusanAkun, tandaiPenghapusanAkun } from "../../akun/koordinasiAkun.js";

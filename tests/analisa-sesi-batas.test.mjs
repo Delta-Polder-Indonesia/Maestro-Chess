@@ -26,6 +26,8 @@ const imporProvider = resolve(modul, "imporProvider.js");
 const panel = resolve(modul, "panel.js");
 const papan = resolve(modul, "papan.js");
 const papanProvider = resolve(modul, "papanProvider.js");
+const analisa = resolve(modul, "analisa.js");
+const analisaProvider = resolve(modul, "analisaProvider.js");
 const lamaModel = resolve(src, "halaman/Analisa/tabKerja.js");
 const lamaProvider = resolve(src, "halaman/Analisa/konteks/tabKerja.jsx");
 const legacyTargets = new Map([
@@ -45,6 +47,8 @@ const legacyTargets = new Map([
   [resolve(src, "halaman/Analisa/komponen/nav/useDropdown.js"), resolve(modul, "useDropdown.js")],
   [resolve(src, "halaman/Analisa/konteks/boardKonteks.js"), resolve(modul, "boardKonteks.js")],
   [resolve(src, "halaman/Analisa/konteks/board.jsx"), resolve(modul, "BoardProvider.jsx")],
+  [resolve(src, "halaman/Analisa/konteks/analyzeKonteks.js"), resolve(modul, "analyzeKonteks.js")],
+  [resolve(src, "halaman/Analisa/konteks/analyze.jsx"), resolve(modul, "AnalyzeContextProvider.jsx")],
 ]);
 const legacy = new Set(legacyTargets.keys());
 const ekstensi = [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"];
@@ -64,6 +68,7 @@ const eksporGalatTitipan = [
 const eksporImpor = ["ImportContext", "useImport", "ImportProvider"];
 const eksporPanel = ["PanelAktifContext", "tekanPanahOpsi", "useDropdown"];
 const eksporPapan = ["BoardContext", "TampilanContext", "SetTampilanContext", "useBoard", "useTampilan", "useSetTampilan", "BoardProvider"];
+const eksporAnalisa = ["AnalyzeContext", "TAMPILAN_ANALISA", "normalisasiPemain", "AnalyzeContextProvider"];
 
 function berkasKode(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entri) => {
@@ -133,7 +138,7 @@ test("public and legacy paths expose all original names and the same exported id
   const murni = muat("src/modul/sesi/model.js");
   const lama = muat("src/halaman/Analisa/tabKerja.js");
   const provider = muat("src/halaman/Analisa/konteks/tabKerja.jsx");
-  assert.deepEqual(Object.keys(fasad).sort(), [...eksporModel, ...eksporProvider, ...eksporPreferensi, ...eksporGalatTitipan, ...eksporImpor, ...eksporPanel, ...eksporPapan].sort());
+  assert.deepEqual(Object.keys(fasad).sort(), [...eksporModel, ...eksporProvider, ...eksporPreferensi, ...eksporGalatTitipan, ...eksporImpor, ...eksporPanel, ...eksporPapan, ...eksporAnalisa].sort());
   assert.deepEqual(Object.keys(provider).sort(), eksporProvider);
   for (const nama of eksporModel) {
     assert.strictEqual(fasad[nama], murni[nama], nama);
@@ -231,10 +236,8 @@ test("session module has no new external dependencies and keeps the one tab-sess
   }
   assert.deepEqual([...paket].sort(), ["react"]);
   assert.deepEqual([...keluar].sort(), [
-    "src/modul/sesi/BoardProvider.jsx -> src/halaman/Analisa/konteks/analyzeKonteks.js",
     "src/modul/sesi/BoardProvider.jsx -> src/lib/i18n.jsx",
     "src/modul/sesi/ImportProvider.jsx -> src/modul/pekerjaan/index.js",
-    "src/modul/sesi/TabKerjaProvider.jsx -> src/halaman/Analisa/konteks/analyzeKonteks.js",
     "src/modul/sesi/TabKerjaProvider.jsx -> src/modul/pekerjaan/index.js",
     "src/modul/sesi/tabKerja.js -> src/modul/pekerjaan/index.js",
   ].sort());
@@ -252,15 +255,16 @@ test("application consumers use the public facade, never legacy or private sessi
       assert.equal(legacy.has(target), false, `Import Sesi lama di source: ${relative(akar, source)} -> ${ref}`);
       if (diDalam(target, modul)) {
         if (legacyTargets.has(source)) assert.equal(target, legacyTargets.get(source), `Shim salah: ${relative(akar, source)}`);
-        else assert.ok([api, preferensi, galat, titipan, impor, imporProvider, panel, papan, papanProvider].includes(target), `Import internal Sesi dari luar modul: ${relative(akar, source)} -> ${ref}`);
+        else assert.ok([api, preferensi, galat, titipan, impor, imporProvider, panel, papan, papanProvider, analisa, analisaProvider].includes(target), `Import internal Sesi dari luar modul: ${relative(akar, source)} -> ${ref}`);
         if (!legacy.has(source)) konsumen.add(`${relative(akar, source)} -> ${relative(akar, target)}`);
       }
     }
   }
   // Pemanggil hanya memakai fasad publik yang sesuai; shim galat, titipan,
-  // impor, panel, dropdown, dan papan meneruskan langsung ke implementasi masing-masing.
+  // impor, panel, dropdown, papan, dan Analyze meneruskan langsung ke implementasi masing-masing.
   assert.deepEqual([...konsumen].sort(), [
     "src/halaman/Analisa/Analisa.jsx -> src/modul/sesi/index.js",
+    "src/halaman/Analisa/Analisa.jsx -> src/modul/sesi/analisaProvider.js",
     "src/halaman/Analisa/akun/FormulirAkun.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/akun/PanelTarikPartai.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/akun/daftarAkun.js -> src/modul/sesi/preferensi.js",
@@ -270,34 +274,41 @@ test("application consumers use the public facade, never legacy or private sessi
     "src/halaman/Analisa/komponen/areaKerja.jsx -> src/modul/sesi/impor.js",
     "src/halaman/Analisa/komponen/areaKerja.jsx -> src/modul/sesi/panel.js",
     "src/halaman/Analisa/komponen/areaKerja.jsx -> src/modul/sesi/papan.js",
+    "src/halaman/Analisa/komponen/areaKerja.jsx -> src/modul/sesi/analisa.js",
     "src/halaman/Analisa/komponen/boardMenu/boardMenu.jsx -> src/modul/sesi/papan.js",
+    "src/halaman/Analisa/komponen/boardMenu/boardMenu.jsx -> src/modul/sesi/analisa.js",
     "src/halaman/Analisa/komponen/errors/pageErrors.jsx -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/game/board.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/game/game.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/game/game.jsx -> src/modul/sesi/galat.js",
+    "src/halaman/Analisa/komponen/game/game.jsx -> src/modul/sesi/analisa.js",
+    "src/halaman/Analisa/komponen/game/keyboardPapan.js -> src/modul/sesi/analisa.js",
     "src/halaman/Analisa/komponen/game/pendengarKeyboard.jsx -> src/modul/sesi/papan.js",
     "src/halaman/Analisa/komponen/game/useAnalisisPapan.js -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/game/useMuatPartai.js -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/game/useMuatPartai.js -> src/modul/sesi/titipan.js",
     "src/halaman/Analisa/komponen/menu/analysis/gameButtons.jsx -> src/modul/sesi/papan.js",
     "src/halaman/Analisa/komponen/menu/loading/loading.jsx -> src/modul/sesi/impor.js",
+    "src/halaman/Analisa/komponen/menu/menu.jsx -> src/modul/sesi/analisa.js",
     "src/halaman/Analisa/komponen/nav/SelectDaftar.jsx -> src/modul/sesi/panel.js",
     "src/halaman/Analisa/komponen/nav/database/tabelPartai.jsx -> src/modul/sesi/panel.js",
     "src/halaman/Analisa/komponen/nav/layarAkun.jsx -> src/modul/sesi/galat.js",
+    "src/halaman/Analisa/komponen/nav/layarAkun.jsx -> src/modul/sesi/analisa.js",
+    "src/halaman/Analisa/komponen/nav/layarDeteksiEngine.jsx -> src/modul/sesi/analisa.js",
+    "src/halaman/Analisa/komponen/nav/layarEngine.jsx -> src/modul/sesi/analisa.js",
+    "src/halaman/Analisa/komponen/nav/layarWawasan.jsx -> src/modul/sesi/analisa.js",
     "src/halaman/Analisa/komponen/nav/layarImpor.jsx -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/nav/layarPengaturan.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/nav/nav.jsx -> src/modul/sesi/index.js",
     "src/halaman/Analisa/komponen/nav/nav.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/nav/nav.jsx -> src/modul/sesi/papan.js",
+    "src/halaman/Analisa/komponen/nav/nav.jsx -> src/modul/sesi/analisa.js",
     "src/halaman/Analisa/komponen/pengaturan/bestMoves.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/pengaturan/mesin.jsx -> src/modul/sesi/preferensi.js",
+    "src/halaman/Analisa/komponen/pengaturan/mesin.jsx -> src/modul/sesi/analisa.js",
     "src/halaman/Analisa/komponen/pengaturan/moves.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/pengaturan/ratings.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/pengaturan/themes.jsx -> src/modul/sesi/preferensi.js",
-    "src/halaman/Analisa/konteks/analyze.jsx -> src/modul/sesi/impor.js",
-    "src/halaman/Analisa/konteks/analyze.jsx -> src/modul/sesi/imporProvider.js",
-    "src/halaman/Analisa/konteks/analyze.jsx -> src/modul/sesi/papan.js",
-    "src/halaman/Analisa/konteks/analyze.jsx -> src/modul/sesi/papanProvider.js",
     "src/halaman/Analisa/konteks/mesin.jsx -> src/modul/sesi/preferensi.js",
   ].sort());
 });

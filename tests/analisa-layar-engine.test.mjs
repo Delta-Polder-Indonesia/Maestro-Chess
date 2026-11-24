@@ -47,7 +47,7 @@ function renderLayar({ idEngine = "sf" } = {}) {
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
     "../../../../lib/engineCatur.js": { DAFTAR_ENGINE: DAFTAR },
     "../../../../lib/asets.js": { gambar: (jalur) => jalur },
-    "../../konteks/analyzeKonteks.js": { AnalyzeContext },
+    "../../../../modul/sesi/analisa.js": { AnalyzeContext },
     "../../konteks/mesinKonteks.js": { useMesin: () => mesin },
     "./PanelLayar.jsx": { default: ({ judul, headerKanan, children }) => React.createElement("section", null, React.createElement("h1", null, judul), headerKanan, children) },
     "../pengaturan/mesin.jsx": { default: () => React.createElement("div", { "data-uji": "pengaturan-mesin" }, "Mesin") },

@@ -1,6 +1,6 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 import { startTransition, useContext, useEffect, useId, useRef, useState } from "react";
-import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
+import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import Loading from "./loading/loading.jsx";
 import GrafikMuat from "./loading/grafikMuat.jsx";

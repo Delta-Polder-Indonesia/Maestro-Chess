@@ -251,12 +251,12 @@ test("ImportContext and ImportProvider each have exactly one source definition",
   });
 });
 
-test("all three mapped application consumers import their names from the appropriate public facade", () => {
+test("the mapped application consumers and relocated Analyze provider import the appropriate public facade", () => {
   const konsumen = [
     ["src/halaman/Analisa/komponen/areaKerja.jsx", "src/modul/sesi/impor.js", ["useImport"]],
     ["src/halaman/Analisa/komponen/menu/loading/loading.jsx", "src/modul/sesi/impor.js", ["useImport"]],
-    ["src/halaman/Analisa/konteks/analyze.jsx", "src/modul/sesi/impor.js", ["useImport"]],
-    ["src/halaman/Analisa/konteks/analyze.jsx", "src/modul/sesi/imporProvider.js", ["ImportProvider"]],
+    ["src/modul/sesi/AnalyzeContextProvider.jsx", "src/modul/sesi/impor.js", ["useImport"]],
+    ["src/modul/sesi/AnalyzeContextProvider.jsx", "src/modul/sesi/imporProvider.js", ["ImportProvider"]],
   ];
   assert.equal(new Set(konsumen.map(([file]) => file)).size, 3);
   for (const [file, entry, names] of konsumen) {

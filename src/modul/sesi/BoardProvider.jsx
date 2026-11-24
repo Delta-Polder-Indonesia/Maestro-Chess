@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../../lib/i18n.jsx";
 import { bacaAngka } from "./preferensi.js";
-import { normalisasiPemain, TAMPILAN_ANALISA } from "../../halaman/Analisa/konteks/analyzeKonteks.js";
+import { normalisasiPemain, TAMPILAN_ANALISA } from "./analyzeKonteks.js";
 import { BoardContext, SetTampilanContext, TampilanContext } from "./boardKonteks.js";
 
 export function BoardProvider({ children }) {

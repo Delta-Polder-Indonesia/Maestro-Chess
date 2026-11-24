@@ -204,7 +204,7 @@ test("the light context facade and old context path only load the implementation
 
 test("the provider entry and legacy provider load only the documented closure, not the heavy facade or Pekerjaan", () => {
   const internal = [
-    "src/halaman/Analisa/konteks/analyzeKonteks.js", "src/lib/i18n.jsx",
+    "src/modul/sesi/analyzeKonteks.js", "src/lib/i18n.jsx",
     "src/lib/terjemahan/en/analisa.js", "src/lib/terjemahan/id/analisa.js",
     providerImplementasi, pathImplementasi, "src/modul/sesi/boardThemes.js", "src/modul/sesi/configKonteks.js",
     "src/modul/sesi/penyimpanan.js", "src/modul/sesi/preferensi.js",
@@ -232,15 +232,15 @@ test("each board context, hook and provider has exactly one source definition", 
   assert.deepEqual(definisi.BoardProvider, [providerImplementasi]);
 });
 
-test("all six application consumers and the provider consumer use the correct lightweight facade exports", () => {
+test("five application consumers and the relocated Analyze provider use the correct lightweight Board entries", () => {
   const konsumen = [
     ["src/halaman/Analisa/komponen/areaKerja.jsx", pathRingan, ["useSetTampilan", "useTampilan"]],
     ["src/halaman/Analisa/komponen/boardMenu/boardMenu.jsx", pathRingan, ["useBoard", "useSetTampilan"]],
     ["src/halaman/Analisa/komponen/game/pendengarKeyboard.jsx", pathRingan, ["useTampilan"]],
     ["src/halaman/Analisa/komponen/menu/analysis/gameButtons.jsx", pathRingan, ["useBoard"]],
     ["src/halaman/Analisa/komponen/nav/nav.jsx", pathRingan, ["useTampilan"]],
-    ["src/halaman/Analisa/konteks/analyze.jsx", pathRingan, ["useBoard"]],
-    ["src/halaman/Analisa/konteks/analyze.jsx", providerRingan, ["BoardProvider"]],
+    ["src/modul/sesi/AnalyzeContextProvider.jsx", pathRingan, ["useBoard"]],
+    ["src/modul/sesi/AnalyzeContextProvider.jsx", providerRingan, ["BoardProvider"]],
     ["src/modul/sesi/TabKerjaProvider.jsx", pathImplementasi, ["useTampilan"]],
   ];
   for (const [file, entry, names] of konsumen) {
@@ -252,12 +252,12 @@ test("all six application consumers and the provider consumer use the correct li
     assert.ok(binding && ts.isNamedImports(binding), file);
     assert.deepEqual(binding.elements.map((element) => (element.propertyName ?? element.name).text).sort(), [...names].sort(), file);
   }
-  // Assert the provider's previously mapped external couplings, not just their modules.
+  // Assert the provider's mapped dependencies, including Analyze now internal to Sesi.
   const provider = resolve(akar, providerImplementasi);
   const expected = new Map([
     [resolve(akar, "src/lib/i18n.jsx"), ["useI18n"]],
     [resolve(modul, "preferensi.js"), ["bacaAngka"]],
-    [resolve(akar, "src/halaman/Analisa/konteks/analyzeKonteks.js"), ["normalisasiPemain", "TAMPILAN_ANALISA"]],
+    [resolve(modul, "analyzeKonteks.js"), ["normalisasiPemain", "TAMPILAN_ANALISA"]],
     [resolve(modul, "boardKonteks.js"), ["BoardContext", "SetTampilanContext", "TampilanContext"]],
   ]);
   for (const node of astBerkas(provider).statements.filter(ts.isImportDeclaration)) {

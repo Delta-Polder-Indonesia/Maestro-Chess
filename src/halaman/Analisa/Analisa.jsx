@@ -3,7 +3,7 @@
 /* Standalone analysis workspace adapted from ChessClub (MIT) and Brilliant-Chess (MIT). */
 import { useLayoutEffect, useState } from "react";
 import { I18nProvider } from "../../lib/i18n.jsx";
-import AnalyzeContextProvider from "./konteks/analyze.jsx";
+import AnalyzeContextProvider from "../../modul/sesi/analisaProvider.js";
 import { MesinProvider } from "./konteks/mesin.jsx";
 import { ConfigContextProvider, ErrorsContextProvider, TabKerjaProvider } from "@/modul/sesi/index.js";
 import PageErrors from "./komponen/errors/pageErrors.jsx";

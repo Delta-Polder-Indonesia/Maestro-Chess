@@ -61,7 +61,7 @@ test("account deletion waits for each step; failures retain the account and warn
       bacaRevisiBasis: () => 0, langgananRevisi: () => () => {}, pastikanKoleksi: async () => null,
       hapusKoleksi: () => new Promise((resolve) => { resolveHapus = resolve; }),
     },
-    "../../konteks/analyzeKonteks.js": { AnalyzeContext },
+    "../../../../modul/sesi/analisa.js": { AnalyzeContext },
     "../../../../modul/sesi/galat.js": {
       ErrorsContext: React.createContext({ errors: [[], () => {}] }),
       pushPageWarning: (_set, judul, pesan, opsi) => warnings.push({ judul, pesan, opsi }),
@@ -170,7 +170,7 @@ test("deleting the last account in another tab keeps the account screen open", a
       bacaRevisiBasis: () => 0, langgananRevisi: () => () => {}, pastikanKoleksi: async () => null,
       hapusKoleksi: async () => true,
     },
-    "../../konteks/analyzeKonteks.js": { AnalyzeContext },
+    "../../../../modul/sesi/analisa.js": { AnalyzeContext },
     "../../../../modul/sesi/galat.js": { ErrorsContext: React.createContext({ errors: [[], () => {}] }), pushPageWarning: () => {} },
     "../../akun/antiCheatRiwayat.js": { bersihkanCacheAntiCheat: () => true },
     "../../akun/koordinasiAkun.js": {
@@ -256,7 +256,7 @@ test("the visible 'analyze again' action bypasses the cache and changing engine 
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t }) },
     "../../../../lib/asets.js": { gambar: (x) => x },
     "../../../../lib/engineCatur.js": { DAFTAR_ENGINE: [{ id: "engine-a", label: "Stockfish 18" }], cariEngine: () => ({ label: "Stockfish 18" }) },
-    "../../konteks/analyzeKonteks.js": { AnalyzeContext },
+    "../../../../modul/sesi/analisa.js": { AnalyzeContext },
     "../../konteks/mesinKonteks.js": { useMesin: () => mesin },
     "../../basisData.js": { ambilDaftarPartai: async () => ({ partai: [{ pgn: "1. e4 *" }] }) },
     "../../akun/useAkunKoleksi.js": { useAkunKoleksi: () => ({ akunTersimpan: [], koleksi: [] }) },

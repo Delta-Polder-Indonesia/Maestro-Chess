@@ -16,7 +16,7 @@ const { act } = TestRenderer;
 const muat = buatPemuatJsx({
   "src/lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
   "src/modul/sesi/preferensi.js": { bacaAngka: (_key, fallback) => fallback },
-  "src/halaman/Analisa/konteks/analyzeKonteks.js": analyzeContext,
+  "src/modul/sesi/analyzeKonteks.js": analyzeContext,
   "src/modul/sesi/boardKonteks.js": boardContext,
 });
 const { BoardProvider } = muat("src/halaman/Analisa/konteks/board.jsx");

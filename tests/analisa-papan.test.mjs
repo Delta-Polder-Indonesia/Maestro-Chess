@@ -58,7 +58,7 @@ function renderNav(dictionary, penyimpanan = { bacaBoolean: (_key, fallback) => 
     "../svg/github.jsx": svg,
     "../svg/license.jsx": svg,
     "../svg/profile.jsx": svg,
-    "../../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA: { PAPAN: "papan", BERMAIN: "bermain", AKUN: "akun", BASIS_DATA: "database", ENGINE: "engine", IMPOR: "impor", DETEKSI_ENGINE: "deteksi-engine", WAWASAN: "wawasan", PENGATURAN: "pengaturan" } },
+    "../../../../modul/sesi/analisa.js": { TAMPILAN_ANALISA: { PAPAN: "papan", BERMAIN: "bermain", AKUN: "akun", BASIS_DATA: "database", ENGINE: "engine", IMPOR: "impor", DETEKSI_ENGINE: "deteksi-engine", WAWASAN: "wawasan", PENGATURAN: "pengaturan" } },
     "../../../../modul/sesi/papan.js": { useTampilan: () => [tampilan, onTampilan] },
     "@/modul/sesi/index.js": { useTabKerja: () => ({ bukaImpor() {}, bukaPapan: onBukaPapan, perluPulih: false }) },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },

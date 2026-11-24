@@ -45,7 +45,7 @@ test("navigation notifies the screen only, while board and analysis still receiv
   const muat = buatPemuatJsx({
     "src/lib/i18n.jsx": { useI18n: () => ({ t }) },
     "src/modul/sesi/preferensi.js": { bacaAngka: (_key, fallback) => fallback },
-    "src/halaman/Analisa/konteks/analyzeKonteks.js": analyzeContext,
+    "src/modul/sesi/analyzeKonteks.js": analyzeContext,
     "src/modul/sesi/boardKonteks.js": boardContext,
   });
   const board = muat("src/halaman/Analisa/konteks/board.jsx");
@@ -54,12 +54,12 @@ test("navigation notifies the screen only, while board and analysis still receiv
     progress: [0, noop], langkahSementara: [[], noop],
     analyzeController: [new AbortController(), noop], analyzingMove: [false, noop],
   };
-  const analyze = kompilasi("../src/halaman/Analisa/konteks/analyze.jsx", {
+  const analyze = kompilasi("../src/modul/sesi/AnalyzeContextProvider.jsx", {
     "./analyzeKonteks.js": analyzeContext,
-    "../../../modul/sesi/papanProvider.js": board,
-    "../../../modul/sesi/imporProvider.js": { ImportProvider: ({ children }) => children },
-    "../../../modul/sesi/papan.js": boardContext,
-    "../../../modul/sesi/impor.js": { useImport: () => imp },
+    "./papanProvider.js": board,
+    "./imporProvider.js": { ImportProvider: ({ children }) => children },
+    "./papan.js": boardContext,
+    "./impor.js": { useImport: () => imp },
   });
   const hitung = { papan: 0, analisis: 0, tampilan: 0, setter: 0 };
   const nilai = {};
@@ -224,7 +224,7 @@ test("move navigation defers the side panel without overriding a later tab selec
   const translate = (key) => key;
   const Menu = kompilasi("../src/halaman/Analisa/komponen/menu/menu.jsx", {
     react: reactWithSpy,
-    "../../konteks/analyzeKonteks.js": analyzeContext,
+    "../../../../modul/sesi/analisa.js": analyzeContext,
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
     "./loading/loading.jsx": { default: kosong },
     "./loading/grafikMuat.jsx": { default: kosong },
@@ -315,7 +315,7 @@ test("the board observes its workspace from the first mount and resizes when the
     "./clock.jsx": { default: kosong },
     "./name.jsx": { default: kosong },
     "./evaluation.jsx": { default: kosong },
-    "../../konteks/analyzeKonteks.js": analyzeContext,
+    "../../../../modul/sesi/analisa.js": analyzeContext,
     "../../mesin/evaluasi.js": { ratingTampilan: noop },
     "../../../../modul/sesi/galat.js": { ErrorsContext: React.createContext({ errors: [[], noop] }), pushPageWarning: noop },
     "../../konteks/mesinKonteks.js": { useMesin: () => ({ didukung: true, siapkan: noop, ambilMesin: noop }) },

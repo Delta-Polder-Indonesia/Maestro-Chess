@@ -43,7 +43,7 @@
  * yang relevan, termasuk progres dan langkah sementara selama analisis.
  */
 import { lazy, memo, Suspense, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { TAMPILAN_ANALISA } from "../konteks/analyzeKonteks.js";
+import { TAMPILAN_ANALISA } from "../../../modul/sesi/analisa.js";
 import { useSetTampilan, useTampilan } from "../../../modul/sesi/papan.js";
 import { useImport } from "../../../modul/sesi/impor.js";
 import { useTabKerja } from "@/modul/sesi/index.js";

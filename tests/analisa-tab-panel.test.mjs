@@ -167,7 +167,7 @@ test("a hidden detection tab closes its portal and aborts its engine search with
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t }) },
     "../../../../lib/asets.js": { gambar: (x) => x },
     "../../../../lib/engineCatur.js": { DAFTAR_ENGINE: [{ id: "engine", label: "Stockfish 18" }], cariEngine: () => ({ label: "Stockfish 18" }) },
-    "../../konteks/analyzeKonteks.js": { AnalyzeContext },
+    "../../../../modul/sesi/analisa.js": { AnalyzeContext },
     "../../konteks/mesinKonteks.js": { useMesin: () => mesin },
     "../../basisData.js": { ambilDaftarPartai: async () => (galatBasis ? { partai: [], galat: true } : { partai: [{ pgn: "1. e4 *" }] }) },
     "../../akun/useAkunKoleksi.js": { useAkunKoleksi: () => ({ akunTersimpan: [], koleksi: [] }) },
@@ -380,7 +380,7 @@ test("returning to an account tab refreshes the shared list changed by another t
       bacaRevisiBasis: () => revisi, pastikanKoleksi: async () => {}, hapusKoleksi: async () => {},
       langgananRevisi: (callback) => { pendengar.add(callback); return () => pendengar.delete(callback); },
     },
-    "../../konteks/analyzeKonteks.js": { AnalyzeContext },
+    "../../../../modul/sesi/analisa.js": { AnalyzeContext },
     "../../../../modul/sesi/galat.js": { ErrorsContext: React.createContext({ errors: [[], () => {}] }), pushPageWarning: () => {} },
   });
   const analyze = { akun: [{ platform: "chessCom", username: "" }, () => {}] };
@@ -453,7 +453,7 @@ test("insights reload shared games on activation and revisions while retaining f
   const Wawasan = kompilasi("../src/halaman/Analisa/komponen/nav/layarWawasan.jsx", {
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t, bahasa: "id" }) },
     "../../../../lib/pgnRingan.js": { hashPgn: () => "hash" },
-    "../../konteks/analyzeKonteks.js": { AnalyzeContext },
+    "../../../../modul/sesi/analisa.js": { AnalyzeContext },
     "../../basisData.js": {
       ambilDaftarPartai: () => new Promise((resolve) => pembaca.push(resolve)),
       langgananRevisi: (callback) => { pendengar.add(callback); return () => pendengar.delete(callback); },

@@ -46,7 +46,7 @@ import Link from "next/link";
 
 import Profile from "../svg/profile.jsx";
 import { Settings } from "lucide-react";
-import { TAMPILAN_ANALISA } from "../../konteks/analyzeKonteks.js";
+import { TAMPILAN_ANALISA } from "../../../../modul/sesi/analisa.js";
 import { useTampilan } from "../../../../modul/sesi/papan.js";
 import { useTabKerja } from "@/modul/sesi/index.js";
 import { useI18n } from "../../../../lib/i18n.jsx";

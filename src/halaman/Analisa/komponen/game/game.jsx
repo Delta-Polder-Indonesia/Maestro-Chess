@@ -4,7 +4,7 @@ import Board from "./board.jsx";
 import Clock from "./clock.jsx";
 import Name from "./name.jsx";
 import Evaluation from "./evaluation.jsx";
-import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
+import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
 import { ratingTampilan } from "../../mesin/evaluasi.js";
 import { WHITE } from "chess.js";
 import { ErrorsContext, pushPageWarning } from "../../../../modul/sesi/galat.js";

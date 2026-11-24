@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { adaPgnTitipan } from "./titipanAnalisa.js";
 import { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan } from "../pekerjaan/index.js";
 import { aktifkanTab, bacaSesiTab, hapusPilihanAkun, hapusTabLain, normalisasiAkunTab, perbaruiTab, sesiBaru, simpanSesiTab, tabBaru, tambahTab } from "./tabKerja.js";
-import { TAMPILAN_ANALISA } from "../../halaman/Analisa/konteks/analyzeKonteks.js";
+import { TAMPILAN_ANALISA } from "./analyzeKonteks.js";
 import { useTampilan } from "./boardKonteks.js";
 
 const KonteksTabKerja = createContext(null);

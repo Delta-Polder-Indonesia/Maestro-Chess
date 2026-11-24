@@ -11,7 +11,7 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { hashPgn } from "../../../../lib/pgnRingan.js";
-import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
+import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
 import { ambilDaftarPartai, langgananRevisi } from "../../basisData.js";
 import { useAkunKoleksi } from "../../akun/useAkunKoleksi.js";
 import DashboardAkun from "../../akun/DashboardAkun.jsx";

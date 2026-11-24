@@ -7,7 +7,7 @@ import { InfoIcon } from "lucide-react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { gambar } from "../../../../lib/asets.js";
 import { cariEngine, DAFTAR_ENGINE } from "../../../../lib/engineCatur.js";
-import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
+import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
 import { useMesin } from "../../konteks/mesinKonteks.js";
 import { ambilDaftarPartai } from "../../basisData.js";
 import { useAkunKoleksi } from "../../akun/useAkunKoleksi.js";

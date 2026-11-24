@@ -4,7 +4,7 @@ import { useI18n } from "../../../../lib/i18n.jsx";
 import { cariEngine } from "../../../../lib/engineCatur.js";
 import { gambar } from "../../../../lib/asets.js";
 import { useMesin } from "../../konteks/mesinKonteks.js";
-import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
+import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
 
 import { tulis } from "../../../../modul/sesi/preferensi.js";
 import Gambar from "../Gambar.jsx";
