@@ -119,6 +119,17 @@ test("settings screen uses a search row, a vertical category nav, and only real 
   renderer.unmount();
 });
 
+test("the selected sidebar category turns its name green without a green background", () => {
+  const { renderer } = renderLayar();
+  const tab = () => renderer.root.findByType("nav").findAllByType("button");
+  assert.match(tab()[0].props.className, /text-backgroundBoxBoxHighlighted/);
+  assert.doesNotMatch(tab()[0].props.className, /bg-backgroundBoxBoxHighlighted/);
+  act(() => tab()[3].props.onClick());
+  assert.match(tab()[3].props.className, /text-backgroundBoxBoxHighlighted/);
+  assert.doesNotMatch(tab()[0].props.className, /text-backgroundBoxBoxHighlighted/);
+  renderer.unmount();
+});
+
 test("each tab opens only its own settings groups", () => {
   const { renderer, keadaan } = renderLayar();
   const tab = () => renderer.root.findByType("nav").findAllByType("button");

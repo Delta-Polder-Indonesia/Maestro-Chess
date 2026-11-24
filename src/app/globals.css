@@ -143,8 +143,8 @@ body {
   border-radius: 6px;
 }
 .slanted-tab[data-state="active"] {
-  background-color: #5f873a;
-  color: #ffffff;
+  background-color: var(--backgroundBoxBoxHighlighted);
+  color: var(--foregroundBlackDark);
   font-weight: 600;
 }
 .slanted-tab[data-state="inactive"] {

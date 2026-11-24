@@ -49,10 +49,10 @@ test("account deletion waits for each step; failures retain the account and warn
     "../../akun/PanelTarikPartai.jsx": { default: kosong },
     "../../akun/daftarAkun.js": {
       bacaDaftarAkun: () => [...daftar], tambahKeDaftar: () => [...daftar],
-      hapusDariDaftar: () => {
+      hapusDariDaftar: (platform, nama) => {
         hapusDaftar++;
         if (!daftarBerhasil) return { tersimpan: false, daftar: [] };
-        daftar = daftar.filter((a) => a.username !== "Alice");
+        daftar = daftar.filter((a) => !(a.platform === platform && String(a.username).toLowerCase() === String(nama).toLowerCase()));
         return { tersimpan: true, daftar: [...daftar] };
       },
     },
@@ -126,6 +126,80 @@ test("account deletion waits for each step; failures retain the account and warn
   assert.equal(pemberitahuan.length, 1);
   assert.equal(navigasi, 0);
   assert.equal(renderer.root.findAllByProps({ "data-uji": "hapus-akun-gagal" }).length, 0);
+
+  // Menghapus akun terakhir harus meninggalkan panel Akun dengan daftar kosong,
+  // bukan membuka papan catur.
+  let janjiTerakhir;
+  await act(async () => { janjiTerakhir = panel().onHapus("chessCom", "Bob"); await flush(); });
+  await act(async () => { resolveHapus(true); await janjiTerakhir; });
+  assert.deepEqual(panel().daftar, []);
+  assert.deepEqual(akun[0], { platform: "", username: "" });
+  assert.equal(pemberitahuan.length, 2);
+  assert.equal(navigasi, 0);
+  act(() => renderer.unmount());
+});
+
+test("deleting the last account in another tab keeps the account screen open", async (tes) => {
+  const doc = globalThis.document;
+  const win = globalThis.window;
+  const pendengar = new Map();
+  globalThis.document = { querySelector: () => null };
+  globalThis.window = {
+    addEventListener: (nama, callback) => pendengar.set(nama, callback),
+    removeEventListener: (nama) => pendengar.delete(nama),
+  };
+  tes.after(() => {
+    if (doc === undefined) delete globalThis.document; else globalThis.document = doc;
+    if (win === undefined) delete globalThis.window; else globalThis.window = win;
+  });
+
+  const AnalyzeContext = React.createContext(null);
+  let daftar = [{ platform: "chessCom", username: "Alice" }];
+  let navigasi = 0;
+  const pemberitahuan = [];
+  const Akun = kompilasi("../src/halaman/Analisa/komponen/nav/layarAkun.jsx", {
+    "../../../../lib/i18n.jsx": { useI18n: () => ({ t }) },
+    "./PanelLayar.jsx": { default: wrapper },
+    "../../akun/DaftarAkun.jsx": { default: (props) => React.createElement("div", { "data-uji": "account-list", ...props }) },
+    "../../akun/PanelTarikPartai.jsx": { default: kosong },
+    "../../akun/daftarAkun.js": { bacaDaftarAkun: () => [...daftar], tambahKeDaftar: () => [...daftar], hapusDariDaftar: () => ({ tersimpan: true, daftar: [] }) },
+    "../../database/migrasi.js": { bukaDB: async () => null },
+    "../../basisData.js": {
+      bacaRevisiBasis: () => 0, langgananRevisi: () => () => {}, pastikanKoleksi: async () => null,
+      hapusKoleksi: async () => true,
+    },
+    "../../konteks/analyzeKonteks.js": { AnalyzeContext },
+    "../../konteks/errorsKonteks.js": { ErrorsContext: React.createContext({ errors: [[], () => {}] }) },
+    "../errors/pushPageError.js": { pushPageWarning: () => {} },
+    "../../akun/antiCheatRiwayat.js": { bersihkanCacheAntiCheat: () => true },
+    "../../akun/koordinasiAkun.js": {
+      ...koordinasi,
+      akunSedangDihapus: () => true,
+      denganKunciAkun: async (kerja) => kerja(),
+    },
+  });
+  let akun;
+  function Harness() {
+    akun = React.useState({ platform: "chessCom", username: "Alice" });
+    return React.createElement(AnalyzeContext.Provider, { value: { akun } },
+      React.createElement(Akun, { aktif: true, onTutup: () => { navigasi++; }, onAkunDihapus: (...args) => pemberitahuan.push(args) }));
+  }
+  let renderer;
+  await act(async () => {
+    renderer = TestRenderer.create(React.createElement(Harness));
+    await flush();
+  });
+  const panel = () => renderer.root.findByProps({ "data-uji": "account-list" }).props;
+  assert.deepEqual(panel().daftar.map((item) => item.username), ["Alice"]);
+  daftar = [];
+  await act(async () => {
+    pendengar.get("storage")({ key: "maestro-analisa-daftar-akun", newValue: "[]" });
+    await flush();
+  });
+  assert.deepEqual(panel().daftar, []);
+  assert.equal(pemberitahuan.length, 1);
+  assert.deepEqual(akun[0], { platform: "", username: "" });
+  assert.equal(navigasi, 0);
   act(() => renderer.unmount());
 });
 
@@ -145,6 +219,13 @@ test("account fetch panel distinguishes committed, temporary, and failed storage
   });
   let renderer;
   await act(async () => { renderer = TestRenderer.create(React.createElement(Panel, { akun: { platform: "chessCom", username: "Alice" }, abortRef: { current: null } })); });
+  // Kedua tab memakai hijau yang sama dengan tombol pilihan aktif.
+  const tabSlanted = renderer.root.findAllByType(wrapper).filter((node) => /(?:^|\s)slanted-tab(?:\s|$)/.test(String(node.props.className)));
+  assert.equal(tabSlanted.length, 2);
+  for (const tab of tabSlanted) {
+    assert.match(tab.props.className, /data-\[state=active\]:!bg-backgroundBoxBoxHighlighted/);
+    assert.match(tab.props.className, /data-\[state=active\]:!text-foregroundBlackDark/);
+  }
   const muat = () => renderer.root.findAllByType("button").find((node) => node.children.includes("analisa.akun.tarik.muat"));
   await act(async () => { muat().props.onClick(); await flush(); });
   assert.equal(renderer.root.findAllByProps({ role: "status" }).some((node) => node.children.includes("analisa.akun.tarik.sukses")), true);
