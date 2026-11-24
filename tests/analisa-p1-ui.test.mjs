@@ -62,8 +62,10 @@ test("account deletion waits for each step; failures retain the account and warn
       hapusKoleksi: () => new Promise((resolve) => { resolveHapus = resolve; }),
     },
     "../../konteks/analyzeKonteks.js": { AnalyzeContext },
-    "../../konteks/errorsKonteks.js": { ErrorsContext: React.createContext({ errors: [[], () => {}] }) },
-    "../errors/pushPageError.js": { pushPageWarning: (_set, judul, pesan, opsi) => warnings.push({ judul, pesan, opsi }) },
+    "../../../../modul/sesi/galat.js": {
+      ErrorsContext: React.createContext({ errors: [[], () => {}] }),
+      pushPageWarning: (_set, judul, pesan, opsi) => warnings.push({ judul, pesan, opsi }),
+    },
     "../../akun/antiCheatRiwayat.js": { bersihkanCacheAntiCheat: () => cacheBerhasil },
     "../../akun/koordinasiAkun.js": koordinasi,
   });
@@ -169,8 +171,7 @@ test("deleting the last account in another tab keeps the account screen open", a
       hapusKoleksi: async () => true,
     },
     "../../konteks/analyzeKonteks.js": { AnalyzeContext },
-    "../../konteks/errorsKonteks.js": { ErrorsContext: React.createContext({ errors: [[], () => {}] }) },
-    "../errors/pushPageError.js": { pushPageWarning: () => {} },
+    "../../../../modul/sesi/galat.js": { ErrorsContext: React.createContext({ errors: [[], () => {}] }), pushPageWarning: () => {} },
     "../../akun/antiCheatRiwayat.js": { bersihkanCacheAntiCheat: () => true },
     "../../akun/koordinasiAkun.js": {
       ...koordinasi,
@@ -321,7 +322,7 @@ test("critical background storage warnings remain visible until explicitly dismi
   tes.after(() => { globalThis.setTimeout = timerAsli; globalThis.clearTimeout = clearAsli; });
   const ErrorsContext = React.createContext(null);
   const PageErrors = kompilasi("../src/halaman/Analisa/komponen/errors/pageErrors.jsx", {
-    "../../konteks/errorsKonteks.js": { ErrorsContext },
+    "../../../../modul/sesi/galat.js": { ErrorsContext },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t }) },
   });
   function Harness() {

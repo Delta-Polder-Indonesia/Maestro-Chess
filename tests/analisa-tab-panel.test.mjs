@@ -383,8 +383,7 @@ test("returning to an account tab refreshes the shared list changed by another t
       langgananRevisi: (callback) => { pendengar.add(callback); return () => pendengar.delete(callback); },
     },
     "../../konteks/analyzeKonteks.js": { AnalyzeContext },
-    "../../konteks/errorsKonteks.js": { ErrorsContext: React.createContext({ errors: [[], () => {}] }) },
-    "../errors/pushPageError.js": { pushPageWarning: () => {} },
+    "../../../../modul/sesi/galat.js": { ErrorsContext: React.createContext({ errors: [[], () => {}] }), pushPageWarning: () => {} },
   });
   const analyze = { akun: [{ platform: "chessCom", username: "" }, () => {}] };
   const isi = (aktif) => React.createElement(AnalyzeContext.Provider, { value: analyze }, React.createElement(Akun, { aktif, onTutup() {} }));

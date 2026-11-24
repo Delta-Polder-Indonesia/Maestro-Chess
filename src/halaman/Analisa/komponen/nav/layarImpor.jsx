@@ -15,8 +15,7 @@ import LichessLogo from "../svg/LichessLogo.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { imporPgnKeBasisData } from "../../basisData.js";
 import { pesanPenyimpananPartai } from "../../database/statusSimpan.js";
-import { ErrorsContext } from "../../konteks/errorsKonteks.js";
-import { pushPageWarning } from "../errors/pushPageError.js";
+import { ErrorsContext, pushPageWarning } from "../../../../modul/sesi/galat.js";
 import { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan, simpanDrafImpor, usePekerjaan } from "../../../../modul/pekerjaan/index.js";
 import { BATAS_IMPOR, KODE_GALAT, ambilPgn, galatImpor, validasiFen, validasiPgn } from "./validasiImpor.js";
 

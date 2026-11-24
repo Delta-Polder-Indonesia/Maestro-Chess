@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { adaPgnTitipan } from "../../lib/titipanAnalisa.js";
+import { adaPgnTitipan } from "./titipanAnalisa.js";
 import { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan } from "../pekerjaan/index.js";
 import { aktifkanTab, bacaSesiTab, hapusPilihanAkun, hapusTabLain, normalisasiAkunTab, perbaruiTab, sesiBaru, simpanSesiTab, tabBaru, tambahTab } from "./tabKerja.js";
 import { TAMPILAN_ANALISA } from "../../halaman/Analisa/konteks/analyzeKonteks.js";

@@ -1,6 +1,2 @@
-import { createContext } from "react";
-
-export const ErrorsContext = createContext({
-  errors: [[], () => {
-  }]
-});
+// Kompatibilitas path lama; context galat tidak dibuat ulang.
+export { ErrorsContext } from "../../../modul/sesi/errorsKonteks.js";

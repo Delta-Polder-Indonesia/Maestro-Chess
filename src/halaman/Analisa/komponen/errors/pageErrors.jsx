@@ -1,6 +1,6 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 import { useContext, useEffect, useRef, useState } from "react";
-import { ErrorsContext } from "../../konteks/errorsKonteks.js";
+import { ErrorsContext } from "../../../../modul/sesi/galat.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
 
 const TIME_IN_SCREEN = 7500;

@@ -12,7 +12,7 @@
  * navigasi papan.
  */
 import { useCallback, useMemo, useState } from "react";
-import { adaPgnTitipan } from "../../../lib/titipanAnalisa.js";
+import { adaPgnTitipan } from "../../../modul/sesi/titipan.js";
 import { buatIdPekerjaan, pekerjaan, simpanLaporanAktif } from "../../../modul/pekerjaan/index.js";
 import { ImportContext } from "./importKonteks.js";
 

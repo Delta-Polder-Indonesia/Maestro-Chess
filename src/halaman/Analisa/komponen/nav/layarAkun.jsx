@@ -10,8 +10,7 @@ import { bacaDaftarAkun, tambahKeDaftar, hapusDariDaftar } from "../../akun/daft
 import { bacaRevisiBasis, hapusKoleksi, langgananRevisi, pastikanKoleksi } from "../../basisData.js";
 import { bukaDB } from "../../database/migrasi.js";
 import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
-import { ErrorsContext } from "../../konteks/errorsKonteks.js";
-import { pushPageWarning } from "../errors/pushPageError.js";
+import { ErrorsContext, pushPageWarning } from "../../../../modul/sesi/galat.js";
 import { bersihkanCacheAntiCheat } from "../../akun/antiCheatRiwayat.js";
 import { akunSedangDihapus, aktifkanKembaliAkun, denganKunciAkun, mulaiPenghapusanAkun, tandaiPenghapusanAkun } from "../../akun/koordinasiAkun.js";
 

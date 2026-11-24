@@ -19,6 +19,8 @@ const modul = resolve(src, "modul/sesi");
 const api = resolve(modul, "index.js");
 const model = resolve(modul, "model.js");
 const preferensi = resolve(modul, "preferensi.js");
+const galat = resolve(modul, "galat.js");
+const titipan = resolve(modul, "titipan.js");
 const lamaModel = resolve(src, "halaman/Analisa/tabKerja.js");
 const lamaProvider = resolve(src, "halaman/Analisa/konteks/tabKerja.jsx");
 const legacyTargets = new Map([
@@ -28,6 +30,10 @@ const legacyTargets = new Map([
   [resolve(src, "halaman/Analisa/komponen/pengaturan/boardThemes.js"), resolve(modul, "boardThemes.js")],
   [resolve(src, "halaman/Analisa/konteks/configKonteks.js"), resolve(modul, "configKonteks.js")],
   [resolve(src, "halaman/Analisa/konteks/config.jsx"), resolve(modul, "ConfigContextProvider.jsx")],
+  [resolve(src, "halaman/Analisa/komponen/errors/pushPageError.js"), resolve(modul, "pushPageError.js")],
+  [resolve(src, "halaman/Analisa/konteks/errorsKonteks.js"), resolve(modul, "errorsKonteks.js")],
+  [resolve(src, "halaman/Analisa/konteks/errors.jsx"), resolve(modul, "ErrorsContextProvider.jsx")],
+  [resolve(src, "lib/titipanAnalisa.js"), resolve(modul, "titipanAnalisa.js")],
 ]);
 const legacy = new Set(legacyTargets.keys());
 const ekstensi = [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"];
@@ -39,6 +45,10 @@ const eksporProvider = ["TabKerjaProvider", "useTabKerja"];
 const eksporPreferensi = [
   "bacaAngka", "bacaBoolean", "bacaTeks", "cobaBacaTeks", "tulis", "tulisBoolean",
   "boardThemes", "ConfigContext", "defaultUsedRatings", "ConfigContextProvider",
+];
+const eksporGalatTitipan = [
+  "ErrorsContext", "ErrorsContextProvider", "pushPageError", "pushPageWarning",
+  "KUNCI_PGN_TITIPAN", "adaPgnTitipan", "ambilPgnTitipan",
 ];
 
 function berkasKode(dir) {
@@ -109,7 +119,7 @@ test("public and legacy paths expose all original names and the same exported id
   const murni = muat("src/modul/sesi/model.js");
   const lama = muat("src/halaman/Analisa/tabKerja.js");
   const provider = muat("src/halaman/Analisa/konteks/tabKerja.jsx");
-  assert.deepEqual(Object.keys(fasad).sort(), [...eksporModel, ...eksporProvider, ...eksporPreferensi].sort());
+  assert.deepEqual(Object.keys(fasad).sort(), [...eksporModel, ...eksporProvider, ...eksporPreferensi, ...eksporGalatTitipan].sort());
   assert.deepEqual(Object.keys(provider).sort(), eksporProvider);
   for (const nama of eksporModel) {
     assert.strictEqual(fasad[nama], murni[nama], nama);
@@ -195,7 +205,7 @@ test("separate provider instances keep independent in-memory sessions", async (t
   assert.equal(sesi.dua.daftar[0].drafId, null);
 });
 
-test("session module keeps exactly its prior external dependencies and the one tab-session storage key", () => {
+test("session module has no new external dependencies and keeps the one tab-session storage key", () => {
   const keluar = new Set();
   const paket = new Set();
   for (const source of berkasKode(modul)) {
@@ -209,7 +219,6 @@ test("session module keeps exactly its prior external dependencies and the one t
   assert.deepEqual([...keluar].sort(), [
     "src/modul/sesi/TabKerjaProvider.jsx -> src/halaman/Analisa/konteks/analyzeKonteks.js",
     "src/modul/sesi/TabKerjaProvider.jsx -> src/halaman/Analisa/konteks/boardKonteks.js",
-    "src/modul/sesi/TabKerjaProvider.jsx -> src/lib/titipanAnalisa.js",
     "src/modul/sesi/TabKerjaProvider.jsx -> src/modul/pekerjaan/index.js",
     "src/modul/sesi/tabKerja.js -> src/modul/pekerjaan/index.js",
   ].sort());
@@ -227,21 +236,30 @@ test("application consumers use the public facade, never legacy or private sessi
       assert.equal(legacy.has(target), false, `Import Sesi lama di source: ${relative(akar, source)} -> ${ref}`);
       if (diDalam(target, modul)) {
         if (legacyTargets.has(source)) assert.equal(target, legacyTargets.get(source), `Shim salah: ${relative(akar, source)}`);
-        else assert.ok(target === api || target === preferensi, `Import internal Sesi dari luar modul: ${relative(akar, source)} -> ${ref}`);
+        else assert.ok([api, preferensi, galat, titipan].includes(target), `Import internal Sesi dari luar modul: ${relative(akar, source)} -> ${ref}`);
         if (!legacy.has(source)) konsumen.add(`${relative(akar, source)} -> ${relative(akar, target)}`);
       }
     }
   }
-  // Pertahankan rute fasad utama untuk ketiga konsumen Tab Kerja semula;
-  // pemanggil baru preferensi hanya boleh memakai entry publik yang sesuai.
+  // Pemanggil hanya memakai fasad publik yang sesuai; empat shim Galat dan
+  // titipan meneruskan langsung ke implementasi masing-masing.
   assert.deepEqual([...konsumen].sort(), [
     "src/halaman/Analisa/Analisa.jsx -> src/modul/sesi/index.js",
     "src/halaman/Analisa/akun/FormulirAkun.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/akun/PanelTarikPartai.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/akun/daftarAkun.js -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/areaKerja.jsx -> src/modul/sesi/index.js",
+    "src/halaman/Analisa/komponen/areaKerja.jsx -> src/modul/sesi/galat.js",
+    "src/halaman/Analisa/komponen/areaKerja.jsx -> src/modul/sesi/titipan.js",
+    "src/halaman/Analisa/komponen/errors/pageErrors.jsx -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/game/board.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/game/game.jsx -> src/modul/sesi/preferensi.js",
+    "src/halaman/Analisa/komponen/game/game.jsx -> src/modul/sesi/galat.js",
+    "src/halaman/Analisa/komponen/game/useAnalisisPapan.js -> src/modul/sesi/galat.js",
+    "src/halaman/Analisa/komponen/game/useMuatPartai.js -> src/modul/sesi/galat.js",
+    "src/halaman/Analisa/komponen/game/useMuatPartai.js -> src/modul/sesi/titipan.js",
+    "src/halaman/Analisa/komponen/nav/layarAkun.jsx -> src/modul/sesi/galat.js",
+    "src/halaman/Analisa/komponen/nav/layarImpor.jsx -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/nav/layarPengaturan.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/nav/nav.jsx -> src/modul/sesi/index.js",
     "src/halaman/Analisa/komponen/nav/nav.jsx -> src/modul/sesi/preferensi.js",
@@ -251,6 +269,7 @@ test("application consumers use the public facade, never legacy or private sessi
     "src/halaman/Analisa/komponen/pengaturan/ratings.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/pengaturan/themes.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/konteks/board.jsx -> src/modul/sesi/preferensi.js",
+    "src/halaman/Analisa/konteks/import.jsx -> src/modul/sesi/titipan.js",
     "src/halaman/Analisa/konteks/mesin.jsx -> src/modul/sesi/preferensi.js",
   ].sort());
 });

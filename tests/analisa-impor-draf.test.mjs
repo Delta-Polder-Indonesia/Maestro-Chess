@@ -37,8 +37,7 @@ function komponenImpor(store, onDatabaseImport = async () => ({ tersimpan: 1, di
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
     "../../basisData.js": { imporPgnKeBasisData: onDatabaseImport },
     "../../database/statusSimpan.js": { pesanPenyimpananPartai },
-    "../../konteks/errorsKonteks.js": { ErrorsContext },
-    "../errors/pushPageError.js": { pushPageWarning: (_set, judul, pesan, opsi) => warnings.push({ judul, pesan, opsi }) },
+    "../../../../modul/sesi/galat.js": { ErrorsContext, pushPageWarning: (_set, judul, pesan, opsi) => warnings.push({ judul, pesan, opsi }) },
     "../../../../modul/pekerjaan/index.js": {
       ID_DRAF_IMPOR: "draf:impor", pekerjaan: store,
       buatIdDrafImpor: () => `draf:baru-${++idBaru}`,

@@ -48,21 +48,20 @@ import { useSetTampilan, useTampilan } from "../konteks/boardKonteks.js";
 import { useImport } from "../konteks/importKonteks.js";
 import { useTabKerja } from "@/modul/sesi/index.js";
 import { PanelAktifContext } from "../konteks/panelAktif.js";
-import { ErrorsContext } from "../konteks/errorsKonteks.js";
+import { ErrorsContext, pushPageError, pushPageWarning } from "../../../modul/sesi/galat.js";
 import { catatFitur, KUNCI_FITUR, pekerjaan, snapshotLaporanAman, usePekerjaan } from "../../../modul/pekerjaan/index.js";
 import { useI18n } from "../../../lib/i18n.jsx";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "../../../components/ui/alert-dialog.jsx";
-import { pushPageError, pushPageWarning } from "./errors/pushPageError.js";
 import Game from "./game/game.jsx";
 import TabBar from "./tabBar.jsx";
 import BoardMenu from "./boardMenu/boardMenu.jsx";
 import Menu from "./menu/menu.jsx";
 import GameButtons from "./menu/analysis/gameButtons.jsx";
 import { validasiPgn } from "./nav/validasiImpor.js";
-import { ambilPgnTitipan } from "../../../lib/titipanAnalisa.js";
+import { ambilPgnTitipan } from "../../../modul/sesi/titipan.js";
 import { useUkuranArea } from "./useUkuranArea.js";
 
 /*

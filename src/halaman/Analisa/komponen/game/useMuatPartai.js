@@ -25,11 +25,11 @@ import { useCallback, useEffect, useRef } from "react";
 import { Chess } from "chess.js";
 import { bacaPartaiPGN, formatSquare, parsePGN, parsePosition } from "../../mesin/engine.js";
 import { cariNamaPembukaan } from "../../mesin/buku.js";
-import { pushPageError, pushPageWarning } from "../errors/pushPageError.js";
+import { pushPageError, pushPageWarning } from "../../../../modul/sesi/galat.js";
 import { hashPgn } from "../../../../lib/pgnRingan.js";
 import { ringkasAnalisis } from "../../mesin/ringkasanAnalisis.js";
 import { catatAnalisis } from "../../mesin/analisisTersimpan.js";
-import { adaPgnTitipan } from "../../../../lib/titipanAnalisa.js";
+import { adaPgnTitipan } from "../../../../modul/sesi/titipan.js";
 import { snapshotLaporanAman } from "../../../../modul/pekerjaan/index.js";
 import { gameStartSound } from "./gameStartSound.js";
 
@@ -263,7 +263,7 @@ export function useMuatPartai({
   const handleFEN = useCallback(async (fen, terkini, sinyal, muatan, pertahankan) => {
     /*
      * Halaman dibuka dengan PGN titipan dari teka-teki (lihat
-     * `src/lib/titipanAnalisa.js`): keadaan awal `data` masih `{fen, ""}`, jadi
+     * `src/modul/sesi/titipan.js`): keadaan awal `data` masih `{fen, ""}`, jadi
      * tanpa penjagaan ini jalur "tanpa FEN" di bawah menggambar papan POSISI
      * AWAL sebagai `default` sebelum PGN titipan sempat dibaca. Biarkan
      * `loading` (kerangka papan) — pengimpor di `areaKerja.jsx` mengambil alih

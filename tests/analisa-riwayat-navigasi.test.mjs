@@ -52,7 +52,7 @@ function siapkanAreaKerja(store, navigasi) {
   const Import = React.createContext(null);
   const Errors = React.createContext(null);
   const tab = kompilasi("../src/modul/sesi/TabKerjaProvider.jsx", {
-    "../../lib/titipanAnalisa.js": { adaPgnTitipan: () => Boolean(navigasi.adaTitipan) },
+    "./titipanAnalisa.js": { adaPgnTitipan: () => Boolean(navigasi.adaTitipan) },
     "../pekerjaan/index.js": { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan: store },
     "./tabKerja.js": modelTab,
     "../../halaman/Analisa/konteks/analyzeKonteks.js": { TAMPILAN_ANALISA },
@@ -96,7 +96,7 @@ function siapkanAreaKerja(store, navigasi) {
     "../konteks/importKonteks.js": { useImport: () => React.useContext(Import) },
     "@/modul/sesi/index.js": tab,
     "../konteks/panelAktif.js": { PanelAktifContext: React.createContext(true) },
-    "../konteks/errorsKonteks.js": { ErrorsContext: Errors },
+    "../../../modul/sesi/galat.js": { ErrorsContext: Errors, pushPageError: () => {}, pushPageWarning: () => {} },
     "../../../modul/pekerjaan/index.js": {
       pekerjaan: store, snapshotLaporanAman, KUNCI_FITUR,
       catatFitur: (fitur, target) => catatFitur(fitur, target, store, ++waktu),
@@ -111,7 +111,6 @@ function siapkanAreaKerja(store, navigasi) {
       AlertDialog: (props) => { navigasi.dialog = props; return props.open ? React.createElement(React.Fragment, null, props.children) : null; },
       AlertDialogAction: ({ children, ...props }) => React.createElement("button", props, children),
     },
-    "./errors/pushPageError.js": { pushPageError: () => {}, pushPageWarning: () => {} },
     "./useUkuranArea.js": { useUkuranArea },
     "./game/game.jsx": { default: GameMock },
     "./tabBar.jsx": { default: TabBarMock },
@@ -119,7 +118,7 @@ function siapkanAreaKerja(store, navigasi) {
     "./menu/menu.jsx": { default: kosong },
     "./menu/analysis/gameButtons.jsx": { default: kosong },
     "./nav/validasiImpor.js": { validasiPgn: () => {} },
-    "../../../lib/titipanAnalisa.js": { ambilPgnTitipan: () => "" },
+    "../../../modul/sesi/titipan.js": { ambilPgnTitipan: () => "" },
     "./nav/layarPapan.jsx": { default: layarPapan },
     "./nav/layarImpor.jsx": { default: layarImpor },
     "./nav/layarDatabase.jsx": { default: LayarDatabaseMock },
