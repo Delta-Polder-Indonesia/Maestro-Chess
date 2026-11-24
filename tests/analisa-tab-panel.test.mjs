@@ -7,6 +7,8 @@ import React from "react";
 import TestRenderer from "react-test-renderer";
 import ts from "typescript";
 import * as koordinasiAkun from "../src/halaman/Analisa/akun/koordinasiAkun.js";
+import { PanelAktifContext } from "../src/halaman/Analisa/konteks/panelAktif.js";
+import { useDropdown } from "../src/halaman/Analisa/komponen/nav/useDropdown.js";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -63,10 +65,6 @@ test("dropdown Escape is handled before navigation and hidden panels remove thei
     querySelector: () => (dialogTerbuka ? {} : null),
   };
   tes.after(() => { if (sebelumnya === undefined) delete globalThis.document; else globalThis.document = sebelumnya; });
-  const PanelAktifContext = React.createContext(true);
-  const useDropdown = kompilasi("../src/halaman/Analisa/komponen/nav/useDropdown.js", {
-    "../../konteks/panelAktif.js": { PanelAktifContext },
-  }, "useDropdown");
   function Menu() {
     const state = useDropdown();
     return React.createElement("div", { "data-uji": "dropdown-test", ...state });

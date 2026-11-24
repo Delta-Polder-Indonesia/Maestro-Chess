@@ -95,7 +95,7 @@ function siapkanAreaKerja(store, navigasi) {
     },
     "../../../modul/sesi/impor.js": { useImport: () => React.useContext(Import) },
     "@/modul/sesi/index.js": tab,
-    "../konteks/panelAktif.js": { PanelAktifContext: React.createContext(true) },
+    "../../../modul/sesi/panel.js": { PanelAktifContext: React.createContext(true) },
     "../../../modul/sesi/galat.js": { ErrorsContext: Errors, pushPageError: () => {}, pushPageWarning: () => {} },
     "../../../modul/pekerjaan/index.js": {
       pekerjaan: store, snapshotLaporanAman, KUNCI_FITUR,

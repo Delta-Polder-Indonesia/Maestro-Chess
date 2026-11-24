@@ -23,6 +23,7 @@ const galat = resolve(modul, "galat.js");
 const titipan = resolve(modul, "titipan.js");
 const impor = resolve(modul, "impor.js");
 const imporProvider = resolve(modul, "imporProvider.js");
+const panel = resolve(modul, "panel.js");
 const lamaModel = resolve(src, "halaman/Analisa/tabKerja.js");
 const lamaProvider = resolve(src, "halaman/Analisa/konteks/tabKerja.jsx");
 const legacyTargets = new Map([
@@ -38,6 +39,8 @@ const legacyTargets = new Map([
   [resolve(src, "lib/titipanAnalisa.js"), resolve(modul, "titipanAnalisa.js")],
   [resolve(src, "halaman/Analisa/konteks/importKonteks.js"), resolve(modul, "importKonteks.js")],
   [resolve(src, "halaman/Analisa/konteks/import.jsx"), resolve(modul, "ImportProvider.jsx")],
+  [resolve(src, "halaman/Analisa/konteks/panelAktif.js"), resolve(modul, "panelAktif.js")],
+  [resolve(src, "halaman/Analisa/komponen/nav/useDropdown.js"), resolve(modul, "useDropdown.js")],
 ]);
 const legacy = new Set(legacyTargets.keys());
 const ekstensi = [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"];
@@ -55,6 +58,7 @@ const eksporGalatTitipan = [
   "KUNCI_PGN_TITIPAN", "adaPgnTitipan", "ambilPgnTitipan",
 ];
 const eksporImpor = ["ImportContext", "useImport", "ImportProvider"];
+const eksporPanel = ["PanelAktifContext", "tekanPanahOpsi", "useDropdown"];
 
 function berkasKode(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entri) => {
@@ -124,7 +128,7 @@ test("public and legacy paths expose all original names and the same exported id
   const murni = muat("src/modul/sesi/model.js");
   const lama = muat("src/halaman/Analisa/tabKerja.js");
   const provider = muat("src/halaman/Analisa/konteks/tabKerja.jsx");
-  assert.deepEqual(Object.keys(fasad).sort(), [...eksporModel, ...eksporProvider, ...eksporPreferensi, ...eksporGalatTitipan, ...eksporImpor].sort());
+  assert.deepEqual(Object.keys(fasad).sort(), [...eksporModel, ...eksporProvider, ...eksporPreferensi, ...eksporGalatTitipan, ...eksporImpor, ...eksporPanel].sort());
   assert.deepEqual(Object.keys(provider).sort(), eksporProvider);
   for (const nama of eksporModel) {
     assert.strictEqual(fasad[nama], murni[nama], nama);
@@ -242,13 +246,13 @@ test("application consumers use the public facade, never legacy or private sessi
       assert.equal(legacy.has(target), false, `Import Sesi lama di source: ${relative(akar, source)} -> ${ref}`);
       if (diDalam(target, modul)) {
         if (legacyTargets.has(source)) assert.equal(target, legacyTargets.get(source), `Shim salah: ${relative(akar, source)}`);
-        else assert.ok([api, preferensi, galat, titipan, impor, imporProvider].includes(target), `Import internal Sesi dari luar modul: ${relative(akar, source)} -> ${ref}`);
+        else assert.ok([api, preferensi, galat, titipan, impor, imporProvider, panel].includes(target), `Import internal Sesi dari luar modul: ${relative(akar, source)} -> ${ref}`);
         if (!legacy.has(source)) konsumen.add(`${relative(akar, source)} -> ${relative(akar, target)}`);
       }
     }
   }
   // Pemanggil hanya memakai fasad publik yang sesuai; shim galat, titipan,
-  // dan impor meneruskan langsung ke implementasi masing-masing.
+  // impor, panel dan dropdown meneruskan langsung ke implementasi masing-masing.
   assert.deepEqual([...konsumen].sort(), [
     "src/halaman/Analisa/Analisa.jsx -> src/modul/sesi/index.js",
     "src/halaman/Analisa/akun/FormulirAkun.jsx -> src/modul/sesi/preferensi.js",
@@ -258,6 +262,7 @@ test("application consumers use the public facade, never legacy or private sessi
     "src/halaman/Analisa/komponen/areaKerja.jsx -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/areaKerja.jsx -> src/modul/sesi/titipan.js",
     "src/halaman/Analisa/komponen/areaKerja.jsx -> src/modul/sesi/impor.js",
+    "src/halaman/Analisa/komponen/areaKerja.jsx -> src/modul/sesi/panel.js",
     "src/halaman/Analisa/komponen/errors/pageErrors.jsx -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/game/board.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/game/game.jsx -> src/modul/sesi/preferensi.js",
@@ -266,6 +271,8 @@ test("application consumers use the public facade, never legacy or private sessi
     "src/halaman/Analisa/komponen/game/useMuatPartai.js -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/game/useMuatPartai.js -> src/modul/sesi/titipan.js",
     "src/halaman/Analisa/komponen/menu/loading/loading.jsx -> src/modul/sesi/impor.js",
+    "src/halaman/Analisa/komponen/nav/SelectDaftar.jsx -> src/modul/sesi/panel.js",
+    "src/halaman/Analisa/komponen/nav/database/tabelPartai.jsx -> src/modul/sesi/panel.js",
     "src/halaman/Analisa/komponen/nav/layarAkun.jsx -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/nav/layarImpor.jsx -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/nav/layarPengaturan.jsx -> src/modul/sesi/preferensi.js",

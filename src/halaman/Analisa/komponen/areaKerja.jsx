@@ -47,7 +47,7 @@ import { TAMPILAN_ANALISA } from "../konteks/analyzeKonteks.js";
 import { useSetTampilan, useTampilan } from "../konteks/boardKonteks.js";
 import { useImport } from "../../../modul/sesi/impor.js";
 import { useTabKerja } from "@/modul/sesi/index.js";
-import { PanelAktifContext } from "../konteks/panelAktif.js";
+import { PanelAktifContext } from "../../../modul/sesi/panel.js";
 import { ErrorsContext, pushPageError, pushPageWarning } from "../../../modul/sesi/galat.js";
 import { catatFitur, KUNCI_FITUR, pekerjaan, snapshotLaporanAman, usePekerjaan } from "../../../modul/pekerjaan/index.js";
 import { useI18n } from "../../../lib/i18n.jsx";

@@ -1,4 +1,4 @@
-import { tekanPanahOpsi, useDropdown } from "../useDropdown.js";
+import { tekanPanahOpsi, useDropdown } from "../../../../../modul/sesi/panel.js";
 import Check from "../../svg/check.jsx";
 import { IkonSort } from "./ikonDatabase.jsx";
 import { statusHasil, TINGGI_BARIS, formatTanggal } from "./formatDatabase.js";

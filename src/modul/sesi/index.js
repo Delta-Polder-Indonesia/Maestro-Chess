@@ -4,6 +4,7 @@ export * from "./preferensi.js";
 export * from "./galat.js";
 export * from "./titipan.js";
 export * from "./impor.js";
+export * from "./panel.js";
 export { ImportProvider } from "./imporProvider.js";
 export { TabKerjaProvider, useTabKerja } from "./TabKerjaProvider.jsx";
 export { default as ConfigContextProvider } from "./ConfigContextProvider.jsx";
