@@ -48,7 +48,7 @@ import Profile from "../svg/profile.jsx";
 import { Settings } from "lucide-react";
 import { TAMPILAN_ANALISA } from "../../konteks/analyzeKonteks.js";
 import { useTampilan } from "../../konteks/boardKonteks.js";
-import { useTabKerja } from "../../konteks/tabKerja.jsx";
+import { useTabKerja } from "@/modul/sesi/index.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { TooltipLabel } from "../../../../components/ui/tooltip.jsx";
 import { navTop } from "../../konstanta.js";

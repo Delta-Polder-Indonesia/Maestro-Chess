@@ -60,7 +60,7 @@ function renderNav(dictionary, penyimpanan = { bacaBoolean: (_key, fallback) => 
     "../svg/profile.jsx": svg,
     "../../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA: { PAPAN: "papan", BERMAIN: "bermain", AKUN: "akun", BASIS_DATA: "database", ENGINE: "engine", IMPOR: "impor", DETEKSI_ENGINE: "deteksi-engine", WAWASAN: "wawasan", PENGATURAN: "pengaturan" } },
     "../../konteks/boardKonteks.js": { useTampilan: () => [tampilan, onTampilan] },
-    "../../konteks/tabKerja.jsx": { useTabKerja: () => ({ bukaImpor() {}, bukaPapan: onBukaPapan, perluPulih: false }) },
+    "@/modul/sesi/index.js": { useTabKerja: () => ({ bukaImpor() {}, bukaPapan: onBukaPapan, perluPulih: false }) },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
     "../../../../components/ui/tooltip.jsx": { TooltipLabel: ({ children }) => children },
     "../../konstanta.js": { navTop: 516 },

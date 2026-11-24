@@ -165,9 +165,9 @@ test("all application consumers use the facade, not private files or legacy path
     }
   }
   for (const path of [
-    "src/halaman/Analisa/tabKerja.js",
+    "src/modul/sesi/tabKerja.js",
     "src/halaman/Analisa/konteks/import.jsx",
-    "src/halaman/Analisa/konteks/tabKerja.jsx",
+    "src/modul/sesi/TabKerjaProvider.jsx",
     "src/halaman/Analisa/komponen/areaKerja.jsx",
     "src/halaman/Analisa/komponen/tabBar.jsx",
     "src/halaman/Analisa/komponen/nav/daftarPekerjaan.jsx",

@@ -46,7 +46,7 @@ import { lazy, memo, Suspense, useCallback, useContext, useEffect, useRef, useSt
 import { TAMPILAN_ANALISA } from "../konteks/analyzeKonteks.js";
 import { useSetTampilan, useTampilan } from "../konteks/boardKonteks.js";
 import { useImport } from "../konteks/importKonteks.js";
-import { useTabKerja } from "../konteks/tabKerja.jsx";
+import { useTabKerja } from "@/modul/sesi/index.js";
 import { PanelAktifContext } from "../konteks/panelAktif.js";
 import { ErrorsContext } from "../konteks/errorsKonteks.js";
 import { catatFitur, KUNCI_FITUR, pekerjaan, snapshotLaporanAman, usePekerjaan } from "../../../modul/pekerjaan/index.js";

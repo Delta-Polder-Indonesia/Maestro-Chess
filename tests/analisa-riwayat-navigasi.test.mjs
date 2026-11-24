@@ -51,12 +51,12 @@ function siapkanAreaKerja(store, navigasi) {
   const Board = React.createContext(null);
   const Import = React.createContext(null);
   const Errors = React.createContext(null);
-  const tab = kompilasi("../src/halaman/Analisa/konteks/tabKerja.jsx", {
-    "../../../lib/titipanAnalisa.js": { adaPgnTitipan: () => Boolean(navigasi.adaTitipan) },
-    "../../../modul/pekerjaan/index.js": { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan: store },
-    "../tabKerja.js": modelTab,
-    "./analyzeKonteks.js": { TAMPILAN_ANALISA },
-    "./boardKonteks.js": { useTampilan: () => React.useContext(Board).tampilan },
+  const tab = kompilasi("../src/modul/sesi/TabKerjaProvider.jsx", {
+    "../../lib/titipanAnalisa.js": { adaPgnTitipan: () => Boolean(navigasi.adaTitipan) },
+    "../pekerjaan/index.js": { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan: store },
+    "./tabKerja.js": modelTab,
+    "../../halaman/Analisa/konteks/analyzeKonteks.js": { TAMPILAN_ANALISA },
+    "../../halaman/Analisa/konteks/boardKonteks.js": { useTampilan: () => React.useContext(Board).tampilan },
   });
   let waktu = 0;
   const kosong = () => null;
@@ -94,7 +94,7 @@ function siapkanAreaKerja(store, navigasi) {
       useSetTampilan: () => React.useContext(Board).tampilan[1],
     },
     "../konteks/importKonteks.js": { useImport: () => React.useContext(Import) },
-    "../konteks/tabKerja.jsx": tab,
+    "@/modul/sesi/index.js": tab,
     "../konteks/panelAktif.js": { PanelAktifContext: React.createContext(true) },
     "../konteks/errorsKonteks.js": { ErrorsContext: Errors },
     "../../../modul/pekerjaan/index.js": {

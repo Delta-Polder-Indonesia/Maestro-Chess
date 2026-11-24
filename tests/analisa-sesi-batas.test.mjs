@@ -1,0 +1,227 @@
+import assert from "node:assert/strict";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { dirname, extname, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+import test from "node:test";
+import React from "react";
+import TestRenderer from "react-test-renderer";
+import ts from "typescript";
+import { ID_DRAF_IMPOR, KUNCI_FITUR } from "../src/modul/pekerjaan/index.js";
+import * as modelLama from "../src/halaman/Analisa/tabKerja.js";
+import * as modelPublik from "../src/modul/sesi/model.js";
+import { buatPemuatJsx } from "./bantuImporJsx.mjs";
+
+const { act } = TestRenderer;
+const flush = () => new Promise((resolve) => setImmediate(resolve));
+const akar = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const src = resolve(akar, "src");
+const modul = resolve(src, "modul/sesi");
+const api = resolve(modul, "index.js");
+const model = resolve(modul, "model.js");
+const lamaModel = resolve(src, "halaman/Analisa/tabKerja.js");
+const lamaProvider = resolve(src, "halaman/Analisa/konteks/tabKerja.jsx");
+const legacy = new Set([lamaModel, lamaProvider]);
+const ekstensi = [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"];
+const eksporModel = [
+  "KUNCI_SESI_TAB", "aktifkanTab", "bacaSesiTab", "hapusPilihanAkun", "hapusTabLain", "idTabBaru",
+  "normalisasiAkunTab", "perbaruiTab", "sesiBaru", "simpanSesiTab", "tabBaru", "tambahTab",
+].sort();
+const eksporProvider = ["TabKerjaProvider", "useTabKerja"];
+
+function berkasKode(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entri) => {
+    const path = resolve(dir, entri.name);
+    if (entri.isDirectory()) return berkasKode(path);
+    return entri.isFile() && ekstensi.includes(extname(path)) ? [path] : [];
+  });
+}
+
+function referensi(path) {
+  const ast = ts.createSourceFile(path, readFileSync(path, "utf8"), ts.ScriptTarget.Latest, true);
+  const hasil = [];
+  function kunjungi(node) {
+    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
+      if (ts.isStringLiteralLike(node.moduleSpecifier)) hasil.push(node.moduleSpecifier.text);
+    }
+    if (ts.isCallExpression(node)) {
+      const impor = node.expression.kind === ts.SyntaxKind.ImportKeyword;
+      const require = ts.isIdentifier(node.expression) && node.expression.text === "require";
+      if (impor || require) {
+        const argumen = node.arguments[0];
+        assert.ok(argumen && ts.isStringLiteralLike(argumen), `Import nonliteral: ${relative(akar, path)}`);
+        hasil.push(argumen.text);
+      }
+    }
+    ts.forEachChild(node, kunjungi);
+  }
+  kunjungi(ast);
+  return hasil;
+}
+
+function tujuan(source, ref) {
+  const bersih = ref.split(/[?#]/, 1)[0];
+  let dasar;
+  if (bersih.startsWith("@/")) dasar = resolve(src, bersih.slice(2));
+  else if (bersih.startsWith(".")) dasar = resolve(dirname(source), bersih);
+  else return null;
+  const kandidat = [dasar, ...ekstensi.map((ext) => dasar + ext), ...ekstensi.map((ext) => resolve(dasar, `index${ext}`))];
+  const ditemukan = kandidat.find((path) => existsSync(path) && statSync(path).isFile());
+  assert.ok(ditemukan, `Import tidak terpecahkan: ${relative(akar, source)} -> ${ref}`);
+  return ditemukan;
+}
+
+function diDalam(path, folder) {
+  return path === folder || path.startsWith(folder + sep);
+}
+
+function muatDenganPekerjaanTiruan() {
+  return buatPemuatJsx({
+    "src/modul/pekerjaan/index.js": {
+      ID_DRAF_IMPOR, KUNCI_FITUR,
+      buatIdDrafImpor: () => "draf:uji",
+      pekerjaan: { init: async () => {}, snapshot: () => ({ daftar: [] }), tetapkanDrafAktif: () => {} },
+    },
+  });
+}
+
+test("public and legacy paths expose all original names and the same exported identities", () => {
+  assert.deepEqual(Object.keys(modelPublik).sort(), eksporModel);
+  assert.deepEqual(Object.keys(modelLama).sort(), eksporModel);
+  for (const nama of eksporModel) assert.strictEqual(modelLama[nama], modelPublik[nama], nama);
+
+  // Node tidak mengimpor JSX secara native. Pemuat ini meng-cache modul setelah
+  // transpile sehingga jalur fasad dan shim dievaluasi dalam satu registry.
+  const muat = muatDenganPekerjaanTiruan();
+  const fasad = muat("src/modul/sesi/index.js");
+  const murni = muat("src/modul/sesi/model.js");
+  const lama = muat("src/halaman/Analisa/tabKerja.js");
+  const provider = muat("src/halaman/Analisa/konteks/tabKerja.jsx");
+  assert.deepEqual(Object.keys(fasad).sort(), [...eksporModel, ...eksporProvider].sort());
+  assert.deepEqual(Object.keys(provider).sort(), eksporProvider);
+  for (const nama of eksporModel) {
+    assert.strictEqual(fasad[nama], murni[nama], nama);
+    assert.strictEqual(lama[nama], murni[nama], nama);
+  }
+  for (const nama of eksporProvider) assert.strictEqual(provider[nama], fasad[nama], nama);
+  for (const [path, expected] of [[lamaModel, model], [lamaProvider, api]]) {
+    const ast = ts.createSourceFile(path, readFileSync(path, "utf8"), ts.ScriptTarget.Latest, true);
+    assert.equal(ast.statements.length, 1, `${relative(akar, path)} harus hanya re-export`);
+    assert.ok(ts.isExportDeclaration(ast.statements[0]));
+    assert.equal(tujuan(path, ast.statements[0].moduleSpecifier.text), expected);
+  }
+});
+
+test("facade and legacy hooks observe the same provider context and session state", async (tes) => {
+  const lamaStorage = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage");
+  const nilai = new Map();
+  Object.defineProperty(globalThis, "sessionStorage", { configurable: true, writable: true, value: {
+    getItem: (key) => nilai.get(key) ?? null,
+    setItem: (key, value) => nilai.set(key, value),
+  } });
+  tes.after(() => {
+    if (lamaStorage) Object.defineProperty(globalThis, "sessionStorage", lamaStorage);
+    else delete globalThis.sessionStorage;
+  });
+  const muat = muatDenganPekerjaanTiruan();
+  const fasad = muat("src/modul/sesi/index.js");
+  const legacyApi = muat("src/halaman/Analisa/konteks/tabKerja.jsx");
+  let baru;
+  let lama;
+  function Probe() {
+    baru = fasad.useTabKerja();
+    lama = legacyApi.useTabKerja();
+    return null;
+  }
+  let renderer;
+  tes.after(() => { if (renderer) act(() => renderer.unmount()); });
+  await act(async () => { renderer = TestRenderer.create(React.createElement(legacyApi.TabKerjaProvider, null, React.createElement(Probe))); await flush(); });
+  assert.strictEqual(baru, lama);
+  const id = baru.aktifId;
+  await act(async () => { lama.catat(id, { drafId: "draf:shared" }); await flush(); });
+  assert.strictEqual(baru, lama);
+  assert.equal(baru.daftar[0].drafId, "draf:shared");
+  assert.equal(JSON.parse(nilai.get("maestro-analisa-tab-v1")).daftar[0].drafId, "draf:shared");
+  await act(async () => { renderer.unmount(); renderer = TestRenderer.create(React.createElement(fasad.TabKerjaProvider, null, React.createElement(Probe))); await flush(); });
+  assert.strictEqual(baru, lama);
+  assert.equal(lama.daftar[0].drafId, "draf:shared");
+});
+
+test("separate provider instances keep independent in-memory sessions", async (tes) => {
+  const lamaStorage = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage");
+  const lamaCrypto = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  const nilai = new Map();
+  let nomor = 0;
+  Object.defineProperty(globalThis, "sessionStorage", { configurable: true, writable: true, value: {
+    getItem: (key) => nilai.get(key) ?? null,
+    setItem: (key, value) => nilai.set(key, value),
+  } });
+  Object.defineProperty(globalThis, "crypto", { configurable: true, writable: true, value: { randomUUID: () => `fixed-${++nomor}` } });
+  tes.after(() => {
+    if (lamaStorage) Object.defineProperty(globalThis, "sessionStorage", lamaStorage);
+    else delete globalThis.sessionStorage;
+    if (lamaCrypto) Object.defineProperty(globalThis, "crypto", lamaCrypto);
+    else delete globalThis.crypto;
+  });
+  const fasad = muatDenganPekerjaanTiruan()("src/modul/sesi/index.js");
+  const sesi = {};
+  function Probe({ nama }) { sesi[nama] = fasad.useTabKerja(); return null; }
+  let renderer;
+  tes.after(() => { if (renderer) act(() => renderer.unmount()); });
+  await act(async () => {
+    renderer = TestRenderer.create(React.createElement(React.Fragment, null,
+      React.createElement(fasad.TabKerjaProvider, null, React.createElement(Probe, { nama: "satu" })),
+      React.createElement(fasad.TabKerjaProvider, null, React.createElement(Probe, { nama: "dua" }))));
+    await flush();
+  });
+  assert.notStrictEqual(sesi.satu, sesi.dua);
+  assert.notEqual(sesi.satu.aktifId, sesi.dua.aktifId);
+  const idDua = sesi.dua.aktifId;
+  await act(async () => { sesi.satu.catat(sesi.satu.aktifId, { drafId: "draf:hanya-satu" }); await flush(); });
+  assert.equal(sesi.satu.daftar[0].drafId, "draf:hanya-satu");
+  assert.equal(sesi.dua.aktifId, idDua);
+  assert.equal(sesi.dua.daftar[0].drafId, null);
+});
+
+test("session module keeps exactly its prior external dependencies and the one storage key", () => {
+  const keluar = new Set();
+  const paket = new Set();
+  for (const source of berkasKode(modul)) {
+    for (const ref of referensi(source)) {
+      const target = tujuan(source, ref);
+      if (target === null) paket.add(ref);
+      else if (!diDalam(target, modul)) keluar.add(`${relative(akar, source)} -> ${relative(akar, target)}`);
+    }
+  }
+  assert.deepEqual([...paket].sort(), ["react"]);
+  assert.deepEqual([...keluar].sort(), [
+    "src/modul/sesi/TabKerjaProvider.jsx -> src/halaman/Analisa/konteks/analyzeKonteks.js",
+    "src/modul/sesi/TabKerjaProvider.jsx -> src/halaman/Analisa/konteks/boardKonteks.js",
+    "src/modul/sesi/TabKerjaProvider.jsx -> src/lib/titipanAnalisa.js",
+    "src/modul/sesi/TabKerjaProvider.jsx -> src/modul/pekerjaan/index.js",
+    "src/modul/sesi/tabKerja.js -> src/modul/pekerjaan/index.js",
+  ].sort());
+  const penyimpanKunci = berkasKode(src).filter((path) => readFileSync(path, "utf8").includes('"maestro-analisa-tab-v1"'));
+  assert.deepEqual(penyimpanKunci.map((path) => relative(akar, path)), ["src/modul/sesi/tabKerja.js"]);
+});
+
+test("application consumers use the public facade, never legacy or private session files", () => {
+  const konsumen = new Set();
+  for (const source of berkasKode(src)) {
+    if (diDalam(source, modul)) continue;
+    for (const ref of referensi(source)) {
+      const target = tujuan(source, ref);
+      if (!target) continue;
+      assert.equal(legacy.has(target), false, `Import Sesi lama di source: ${relative(akar, source)} -> ${ref}`);
+      if (diDalam(target, modul)) {
+        if (source === lamaModel) assert.equal(target, model, "shim model harus aman untuk Node tanpa JSX");
+        else assert.equal(target, api, `Import internal Sesi dari luar modul: ${relative(akar, source)} -> ${ref}`);
+        if (!legacy.has(source)) konsumen.add(relative(akar, source));
+      }
+    }
+  }
+  assert.deepEqual([...konsumen].sort(), [
+    "src/halaman/Analisa/Analisa.jsx",
+    "src/halaman/Analisa/komponen/areaKerja.jsx",
+    "src/halaman/Analisa/komponen/nav/nav.jsx",
+  ].sort());
+});
