@@ -16,6 +16,7 @@ import { getCapturedPieces } from "../src/halaman/Analisa/komponen/game/getMoves
 import { useAnalisisPapan } from "../src/halaman/Analisa/komponen/game/useAnalisisPapan.js";
 import { useUkuranArea } from "../src/halaman/Analisa/komponen/useUkuranArea.js";
 import * as navigasiTab from "../src/halaman/Analisa/komponen/navigasiTab.js";
+import { buatPemuatJsx } from "./bantuImporJsx.mjs";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -41,12 +42,13 @@ function kompilasi(path, dependencies) {
 
 test("navigation notifies the screen only, while board and analysis still receive real board changes", async () => {
   const t = (key) => key;
-  const board = kompilasi("../src/halaman/Analisa/konteks/board.jsx", {
-    "../../../lib/i18n.jsx": { useI18n: () => ({ t }) },
-    "../../../modul/sesi/preferensi.js": { bacaAngka: (_key, fallback) => fallback },
-    "./analyzeKonteks.js": analyzeContext,
-    "./boardKonteks.js": boardContext,
+  const muat = buatPemuatJsx({
+    "src/lib/i18n.jsx": { useI18n: () => ({ t }) },
+    "src/modul/sesi/preferensi.js": { bacaAngka: (_key, fallback) => fallback },
+    "src/halaman/Analisa/konteks/analyzeKonteks.js": analyzeContext,
+    "src/modul/sesi/boardKonteks.js": boardContext,
   });
+  const board = muat("src/halaman/Analisa/konteks/board.jsx");
   const imp = {
     data: [{ format: "fen", string: "" }, noop], pageState: ["default", noop],
     progress: [0, noop], langkahSementara: [[], noop],
@@ -54,9 +56,9 @@ test("navigation notifies the screen only, while board and analysis still receiv
   };
   const analyze = kompilasi("../src/halaman/Analisa/konteks/analyze.jsx", {
     "./analyzeKonteks.js": analyzeContext,
-    "./board.jsx": board,
+    "../../../modul/sesi/papanProvider.js": board,
     "../../../modul/sesi/imporProvider.js": { ImportProvider: ({ children }) => children },
-    "./boardKonteks.js": boardContext,
+    "../../../modul/sesi/papan.js": boardContext,
     "../../../modul/sesi/impor.js": { useImport: () => imp },
   });
   const hitung = { papan: 0, analisis: 0, tampilan: 0, setter: 0 };
@@ -389,7 +391,7 @@ test("captured pieces follow the current move and the visible custom line", () =
 
 test("keyboard listener follows the visible screen through a memoized parent and is removed on unmount", async (t) => {
   const Pendengar = kompilasi("../src/halaman/Analisa/komponen/game/pendengarKeyboard.jsx", {
-    "../../konteks/boardKonteks.js": boardContext,
+    "../../../../modul/sesi/papan.js": boardContext,
     "./keyboardPapan.js": { buatHandleKeyDown },
   }).default;
   const previousDocument = globalThis.document;

@@ -1,36 +1,25 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import test from "node:test";
-import { runInThisContext } from "node:vm";
 import React from "react";
 import TestRenderer from "react-test-renderer";
 import { Chess } from "chess.js";
-import ts from "typescript";
 import * as boardContext from "../src/halaman/Analisa/konteks/boardKonteks.js";
 import * as analyzeContext from "../src/halaman/Analisa/konteks/analyzeKonteks.js";
 import { getMoves } from "../src/halaman/Analisa/komponen/game/getMoves.js";
 import { useAnalisisPapan } from "../src/halaman/Analisa/komponen/game/useAnalisisPapan.js";
 import { snapshotLaporanAman } from "../src/halaman/Analisa/pekerjaan.js";
+import { buatPemuatJsx } from "./bantuImporJsx.mjs";
 
-const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
-const compiled = ts.transpileModule(readFileSync(new URL("../src/halaman/Analisa/konteks/board.jsx", import.meta.url), "utf8"), {
-  compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-}).outputText;
-const dependencies = {
-  "../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
-  "../../../modul/sesi/preferensi.js": { bacaAngka: (_key, fallback) => fallback },
-  "./analyzeKonteks.js": analyzeContext,
-  "./boardKonteks.js": boardContext,
-};
-const compiledModule = { exports: {} };
-runInThisContext(`(function (require, module, exports) {\n${compiled}\n})`)((id) => {
-  if (id in dependencies) return dependencies[id];
-  if (id === "react" || id === "react/jsx-runtime") return require(id);
-  throw new Error(`Unexpected dependency: ${id}`);
-}, compiledModule, compiledModule.exports);
-const { BoardProvider } = compiledModule.exports;
+// Load the legacy entry and its real migrated provider in the same module registry;
+// the test's native imports must share the very same React contexts.
+const muat = buatPemuatJsx({
+  "src/lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
+  "src/modul/sesi/preferensi.js": { bacaAngka: (_key, fallback) => fallback },
+  "src/halaman/Analisa/konteks/analyzeKonteks.js": analyzeContext,
+  "src/modul/sesi/boardKonteks.js": boardContext,
+});
+const { BoardProvider } = muat("src/halaman/Analisa/konteks/board.jsx");
 const noop = () => {};
 
 function mount() {

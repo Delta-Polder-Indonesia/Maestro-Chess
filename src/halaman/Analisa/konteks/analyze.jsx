@@ -26,9 +26,9 @@
  */
 import { useMemo, useState } from "react";
 import { AnalyzeContext } from "./analyzeKonteks.js";
-import { BoardProvider } from "./board.jsx";
+import { BoardProvider } from "../../../modul/sesi/papanProvider.js";
 import { ImportProvider } from "../../../modul/sesi/imporProvider.js";
-import { useBoard } from "./boardKonteks.js";
+import { useBoard } from "../../../modul/sesi/papan.js";
 import { useImport } from "../../../modul/sesi/impor.js";
 
 /**

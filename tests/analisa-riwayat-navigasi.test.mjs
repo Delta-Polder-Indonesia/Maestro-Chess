@@ -56,7 +56,7 @@ function siapkanAreaKerja(store, navigasi) {
     "../pekerjaan/index.js": { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan: store },
     "./tabKerja.js": modelTab,
     "../../halaman/Analisa/konteks/analyzeKonteks.js": { TAMPILAN_ANALISA },
-    "../../halaman/Analisa/konteks/boardKonteks.js": { useTampilan: () => React.useContext(Board).tampilan },
+    "./boardKonteks.js": { useTampilan: () => React.useContext(Board).tampilan },
   });
   let waktu = 0;
   const kosong = () => null;
@@ -89,7 +89,7 @@ function siapkanAreaKerja(store, navigasi) {
   layar["./nav/layarEngine.jsx"] = { default: kosong };
   const dependencies = {
     "../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA },
-    "../konteks/boardKonteks.js": {
+    "../../../modul/sesi/papan.js": {
       useTampilan: () => React.useContext(Board).tampilan,
       useSetTampilan: () => React.useContext(Board).tampilan[1],
     },

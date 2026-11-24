@@ -219,7 +219,7 @@ test("the pure facade has no JSX or outgoing feature imports, and the preference
   assert.deepEqual(definisi.map((path) => relative(akar, path)), ["src/modul/sesi/penyimpanan.js"]);
 });
 
-test("all fifteen mapped application consumers use the correct facade exports", () => {
+test("all fifteen mapped consumers, including the relocated board provider, use the correct preference exports", () => {
   const konsumen = new Map([
     ["src/halaman/Analisa/Analisa.jsx", [api, ["ConfigContextProvider"]]],
     ["src/halaman/Analisa/akun/FormulirAkun.jsx", [apiMurni, ["bacaTeks", "tulis"]]],
@@ -234,7 +234,7 @@ test("all fifteen mapped application consumers use the correct facade exports", 
     ["src/halaman/Analisa/komponen/pengaturan/moves.jsx", [apiMurni, ["ConfigContext", "boardThemes", "bacaTeks", "tulis"]]],
     ["src/halaman/Analisa/komponen/pengaturan/ratings.jsx", [apiMurni, ["ConfigContext", "defaultUsedRatings", "boardThemes", "bacaTeks", "tulis"]]],
     ["src/halaman/Analisa/komponen/pengaturan/themes.jsx", [apiMurni, ["ConfigContext", "boardThemes", "bacaTeks", "tulis"]]],
-    ["src/halaman/Analisa/konteks/board.jsx", [apiMurni, ["bacaAngka"]]],
+    ["src/modul/sesi/BoardProvider.jsx", [apiMurni, ["bacaAngka"]]],
     ["src/halaman/Analisa/konteks/mesin.jsx", [apiMurni, ["bacaAngka", "bacaTeks", "tulis"]]],
   ]);
   for (const [file, [expected, names]] of konsumen) {
