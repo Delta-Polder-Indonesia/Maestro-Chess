@@ -553,7 +553,16 @@ function LapisanLayar({
   return (
     <main className="flex min-h-0 min-w-0 w-full flex-1 flex-col">
       {tabTerlihat ? (
-        <TabBar daftar={daftarTab} aktifId={aktifId} sibuk={perluPulih} onPilih={pilihTab} onTutup={tutupTab} onTambah={() => tambahTab()} />
+        <TabBar
+          daftar={daftarTab}
+          aktifId={aktifId}
+          sibuk={perluPulih}
+          tampilanAktif={perluPulih ? null : tampilan}
+          laporanAktifId={perluPulih ? null : data?.pekerjaanId}
+          onPilih={pilihTab}
+          onTutup={tutupTab}
+          onTambah={() => tambahTab()}
+        />
       ) : null}
       <div id="konten-tab-kerja" role={tabTerlihat ? "tabpanel" : undefined} aria-labelledby={tabTerlihat ? `tab-kerja-${aktifId}` : undefined} aria-busy={perluPulih || undefined} className="relative flex min-h-0 w-full flex-1 flex-col">
         {children}
@@ -581,7 +590,7 @@ function LapisanLayar({
                 hidden={!aktif}
                 data-uji={`layar-${layar}`}
                 data-layar={layar}
-                className="absolute inset-0 z-[900] min-h-0 overflow-y-auto overflow-x-hidden bg-backgroundBoxDarker"
+                className="absolute inset-0 z-[900] min-h-0 overflow-y-auto overflow-x-hidden bg-backgroundBoxDarker outline-none"
               >
                 <PanelAktifContext.Provider value={aktif}>
                   <Suspense fallback={<div className="h-full min-h-0 w-full bg-backgroundBox" />}>
