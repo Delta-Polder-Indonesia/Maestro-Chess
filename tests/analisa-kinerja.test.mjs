@@ -319,7 +319,7 @@ test("the board observes its workspace from the first mount and resizes when the
     "../errors/pushPageError.js": { pushPageWarning: noop },
     "../../konteks/mesinKonteks.js": { useMesin: () => ({ didukung: true, siapkan: noop, ambilMesin: noop }) },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
-    "../../../../lib/pemainCatur.js": { useKartuPemain: () => null },
+    "@/modul/profil/index.js": { useKartuPemain: () => null },
     "../../konteks/errorsKonteks.js": { ErrorsContext: React.createContext({ errors: [[], noop] }) },
     "../../konstanta.js": { maxSisiPapan: 1000, minSisiPapan: 160, navTop: 516 },
     "../../konteks/configKonteks.js": configContext,

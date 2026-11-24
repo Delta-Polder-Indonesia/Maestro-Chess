@@ -20,7 +20,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "../../../components/ui/alert-dialog.jsx";
-import { useKartuPemain } from "../../../lib/pemainCatur.js";
+import { useKartuPemain } from "@/modul/profil/index.js";
 import { ambilDaftarPartai, bacaRevisiBasis } from "../basisData.js";
 import Profile from "../komponen/svg/profile.jsx";
 import Trash from "../komponen/svg/trash.jsx";

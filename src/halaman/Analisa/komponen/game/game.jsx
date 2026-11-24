@@ -10,7 +10,7 @@ import { WHITE } from "chess.js";
 import { pushPageWarning } from "../errors/pushPageError.js";
 import { useMesin } from "../../konteks/mesinKonteks.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
-import { useKartuPemain } from "../../../../lib/pemainCatur.js";
+import { useKartuPemain } from "@/modul/profil/index.js";
 import { ErrorsContext } from "../../konteks/errorsKonteks.js";
 import { maxSisiPapan, minSisiPapan, navTop } from "../../konstanta.js";
 import { ConfigContext } from "../../konteks/configKonteks.js";
@@ -354,7 +354,7 @@ const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didu
     formatPlayerLabel(players?.[1], t("analisa.pemain.hitam")),
   ];
   // Kartu profil (avatar, gelar, bendera) untuk kedua pemain — diambil dari
-  // API publik chess.com (lihat lib/pemainCatur.js). Fallback: ikon profil.
+  // API publik chess.com (lihat modul/profil). Fallback: ikon profil.
   // Hanya aktif saat partai benar-benar dimuat (menghemat request ke API).
   /*
    * Papan tidak lagi menjadi kotak kosong selama partai dianalisis. Teks PGN

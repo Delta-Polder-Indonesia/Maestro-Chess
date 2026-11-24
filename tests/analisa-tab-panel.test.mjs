@@ -103,7 +103,7 @@ test("a hidden account tab closes its portaled delete confirmation", async (tes)
     "../../../lib/i18n.jsx": { useI18n: () => ({ t, bahasa: "id" }) },
     "../../../components/ui/tooltip.jsx": { TooltipLabel: wrapper },
     "../../../components/ui/alert-dialog.jsx": dialogMock(),
-    "../../../lib/pemainCatur.js": { useKartuPemain: () => null },
+    "@/modul/profil/index.js": { useKartuPemain: () => null },
     "../basisData.js": { bacaRevisiBasis: () => 0, ambilDaftarPartai: async () => ({ partai: [], total: 0 }) },
     "../komponen/svg/profile.jsx": { default: kosong },
     "../komponen/svg/trash.jsx": { default: kosong },
@@ -128,7 +128,7 @@ test("account cards refresh game counts on revision without accepting stale read
     "../../../lib/i18n.jsx": { useI18n: () => ({ t, bahasa: "id" }) },
     "../../../components/ui/tooltip.jsx": { TooltipLabel: wrapper },
     "../../../components/ui/alert-dialog.jsx": dialogMock(),
-    "../../../lib/pemainCatur.js": { useKartuPemain: () => null },
+    "@/modul/profil/index.js": { useKartuPemain: () => null },
     "../basisData.js": {
       bacaRevisiBasis: () => revisi,
       ambilDaftarPartai: () => new Promise((resolve) => pembaca.push(resolve)),

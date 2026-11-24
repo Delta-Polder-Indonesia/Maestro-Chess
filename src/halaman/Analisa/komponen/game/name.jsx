@@ -3,7 +3,7 @@ import Profile from "../svg/profile.jsx";
 import CapturedPieces from "./capturedPieces.jsx";
 import LencanaGelar from "../LencanaGelar.jsx";
 import { useEffect, useState } from "react";
-import { urlBendera } from "../../../../lib/bendera.js";
+import { urlBendera } from "@/modul/profil/index.js";
 // Data kartu pemain lama di localStorage menyimpan emoji; data baru menyimpan
 // kode dua huruf. Terima keduanya agar cache lama tidak membuat bendera hilang.
 function kodeBendera(nilai) {

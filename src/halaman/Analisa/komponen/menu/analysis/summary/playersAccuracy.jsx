@@ -2,7 +2,7 @@
 import Profile from "../../../svg/profile.jsx";
 import { useEffect } from "react";
 import { useI18n } from "../../../../../../lib/i18n.jsx";
-import { useKartuPemain } from "../../../../../../lib/pemainCatur.js";
+import { useKartuPemain } from "@/modul/profil/index.js";
 import RatingBox from "./ratingBox.jsx";
 import { Chess } from "chess.js";
 /*
