@@ -10,7 +10,7 @@ import ts from "typescript";
 const akar = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
 
-export function buatPemuatJsx(tiruan = {}) {
+export function buatPemuatJsx(tiruan = {}, paket = {}) {
   const cache = new Map();
   const mocks = new Map(Object.entries(tiruan).map(([path, nilai]) => [resolve(akar, path), nilai]));
 
@@ -32,6 +32,7 @@ export function buatPemuatJsx(tiruan = {}) {
       const jalankan = runInThisContext(`(function (require, module, exports) {\n${kode}\n})`, { filename: nama });
       jalankan((ref) => {
         if (ref === "react" || ref === "react/jsx-runtime") return require(ref);
+        if (Object.hasOwn(paket, ref)) return paket[ref];
         if (ref.startsWith("@/")) return muat(resolve(akar, "src", ref.slice(2)));
         if (ref.startsWith(".")) return muat(resolve(dirname(nama), ref));
         throw new Error(`Dependensi pengujian tidak dikenal: ${nama} -> ${ref}`);
