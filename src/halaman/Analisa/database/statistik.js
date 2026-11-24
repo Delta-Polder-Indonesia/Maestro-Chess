@@ -3,12 +3,12 @@
  *
  * Dependensi: `./partai.js` (baca daftar + telusur kursor), `./koleksi.js`
  * (daftar koleksi), `./migrasi.js` (cadangan memori), dan `revisiBasis` dari
- * `./index.js`. Kode dipindahkan apa adanya.
+ * `./revisiBasis.js`. Kode dipindahkan apa adanya.
  */
 import { STORE_PARTAI, memoriPartai, bukaDB } from "./migrasi.js";
 import { ambilDaftarPartai, telusuriKursor } from "./partai.js";
 import { ambilSemuaKoleksi } from "./koleksi.js";
-import { revisiBasis } from "./index.js";
+import { revisiBasis } from "./revisiBasis.js";
 
 /*
  * Cache statistik per koleksi (jumlah/pemain/event/ukuran). Diisi sekali per

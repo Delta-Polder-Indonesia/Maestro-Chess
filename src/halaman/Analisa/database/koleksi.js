@@ -2,7 +2,7 @@
  * CRUD koleksi (satu koleksi = satu akun/platform) + ekspor PGN koleksi.
  *
  * Dependensi: `./migrasi.js` (koneksi, store, cadangan), bus revisi dari
- * `./index.js`, dan `ambilDaftarPartai` dari `./partai.js` untuk ekspor.
+ * `./revisiBasis.js`, dan `ambilDaftarPartai` dari `./partai.js` untuk ekspor.
  * Kode dipindahkan apa adanya dari `basisData.js`.
  */
 import {
@@ -14,7 +14,7 @@ import {
   hapusFallbackKoleksi,
   indexedDBGagalDibuka,
 } from "./migrasi.js";
-import { naikkanRevisi } from "./index.js";
+import { naikkanRevisi } from "./revisiBasis.js";
 import { akunSedangDihapus, daftarkanOperasiAkun, denganKunciAkun } from "../akun/koordinasiAkun.js";
 import { ambilDaftarPartai } from "./partai.js";
 
