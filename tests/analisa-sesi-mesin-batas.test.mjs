@@ -100,9 +100,11 @@ function pemuat() {
       buatIdPekerjaan: () => "laporan:uji", pekerjaan: { snapshot: () => ({ daftar: [], aktif: { id: null } }) },
       simpanLaporanAktif: () => {},
     },
-    "src/lib/engineCatur.js": { ENGINE_BAKU: "utama", cariEngine: (id) => ({ id: id === "kedua" ? "kedua" : "utama" }) },
+    "src/modul/analisis/mesin.js": {
+      ENGINE_BAKU: "utama", cariEngine: (id) => ({ id: id === "kedua" ? "kedua" : "utama" }),
+      hashUntukEngine: () => 32, wasmSupported: () => true,
+    },
     "src/halaman/Analisa/mesin/engine.js": { EngineAnalisis: MesinTiruan },
-    "src/halaman/Analisa/mesin/cekWasm.js": { hashUntukEngine: () => 32, wasmSupported: () => true },
   });
 }
 
@@ -195,6 +197,7 @@ test("the session barrel does not import the engine provider or legacy engine im
   assert.ok(hasil.files.includes(pathImplementasi));
   assert.equal(hasil.files.includes(providerLama), false);
   assert.equal(hasil.files.includes("src/lib/engineCatur.js"), false);
+  assert.equal(hasil.files.some((file) => file.startsWith("src/modul/analisis/")), false);
   assert.equal(hasil.files.some((file) => file.startsWith("src/halaman/Analisa/mesin/")), false);
 });
 
@@ -232,12 +235,11 @@ test("the five mapped components and original provider use the lightweight publi
   }
 });
 
-test("the provider stays at its old path and keeps only its previously mapped dependencies", () => {
+test("the provider stays at its old path and uses the lightweight Analisis engine facade", () => {
   const provider = resolve(akar, providerLama);
   const expected = new Map([
-    [resolve(akar, "src/lib/engineCatur.js"), ["ENGINE_BAKU", "cariEngine"]],
+    [resolve(akar, "src/modul/analisis/mesin.js"), ["ENGINE_BAKU", "cariEngine", "hashUntukEngine", "wasmSupported"]],
     [resolve(akar, "src/halaman/Analisa/mesin/engine.js"), ["EngineAnalisis"]],
-    [resolve(akar, "src/halaman/Analisa/mesin/cekWasm.js"), ["hashUntukEngine", "wasmSupported"]],
     [resolve(modul, "preferensi.js"), ["bacaAngka", "bacaTeks", "tulis"]],
     [resolve(modul, "mesin.js"), ["KonteksMesin"]],
   ]);

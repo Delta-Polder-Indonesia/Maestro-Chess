@@ -9,7 +9,7 @@
  */
 import { useContext, useId, useMemo, useRef, useState } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
-import { DAFTAR_ENGINE } from "../../../../lib/engineCatur.js";
+import { DAFTAR_ENGINE } from "../../../../modul/analisis/mesin.js";
 import { gambar } from "../../../../lib/asets.js";
 import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
 import { useMesin } from "../../../../modul/sesi/mesin.js";

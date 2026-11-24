@@ -255,7 +255,7 @@ test("the visible 'analyze again' action bypasses the cache and changing engine 
   const Deteksi = kompilasi("../src/halaman/Analisa/komponen/nav/layarDeteksiEngine.jsx", {
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t }) },
     "../../../../lib/asets.js": { gambar: (x) => x },
-    "../../../../lib/engineCatur.js": { DAFTAR_ENGINE: [{ id: "engine-a", label: "Stockfish 18" }], cariEngine: () => ({ label: "Stockfish 18" }) },
+    "../../../../modul/analisis/mesin.js": { DAFTAR_ENGINE: [{ id: "engine-a", label: "Stockfish 18" }], cariEngine: () => ({ label: "Stockfish 18" }), hashUntukEngine: () => 32 },
     "../../../../modul/sesi/analisa.js": { AnalyzeContext },
     "../../../../modul/sesi/mesin.js": { useMesin: () => mesin },
     "../../basisData.js": { ambilDaftarPartai: async () => ({ partai: [{ pgn: "1. e4 *" }] }) },
@@ -266,7 +266,6 @@ test("the visible 'analyze again' action bypasses the cache and changing engine 
       analisisRiwayatAntiCheat: async (opsi) => { calls.push(opsi); return { agregat: { jumlahPartai: 1 }, galat: [], dibatalkan: false }; },
     },
     "../../mesin/engine.js": { MULTI_PV: 5 },
-    "../../mesin/cekWasm.js": { hashUntukEngine: () => 32 },
     "../../mesin/laporanPeninjauan.js": { unduhLaporanPeninjauan() {} },
     "./PanelLayar.jsx": { default: wrapper },
     "./ringkasanAntiCheat.jsx": { default: kosong },

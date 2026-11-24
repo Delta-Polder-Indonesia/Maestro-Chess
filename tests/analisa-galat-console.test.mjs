@@ -47,7 +47,7 @@ test("engine startup failures from settings are visible in the console", async (
   const kartu = { id: "lite", label: "Stockfish 18 Lite", url: "/engine/stockfish.js" };
   const PengaturanMesin = kompilasi("../src/halaman/Analisa/komponen/pengaturan/mesin.jsx", {
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
-    "../../../../lib/engineCatur.js": { DAFTAR_ENGINE: [kartu], cariEngine: () => kartu },
+    "../../../../modul/analisis/mesin.js": { DAFTAR_ENGINE: [kartu], cariEngine: () => kartu },
     "../../../../lib/asets.js": { gambar: (path) => path },
     "../../../../modul/sesi/mesin.js": { useMesin: () => mesin },
     "../../../../modul/sesi/analisa.js": { AnalyzeContext },
@@ -77,7 +77,7 @@ test("engine card ignores unrelated analysis progress but updates its depth", as
   const kosong = () => null;
   const PengaturanMesin = kompilasi("../src/halaman/Analisa/komponen/pengaturan/mesin.jsx", {
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
-    "../../../../lib/engineCatur.js": { DAFTAR_ENGINE: [kartu], cariEngine: () => kartu },
+    "../../../../modul/analisis/mesin.js": { DAFTAR_ENGINE: [kartu], cariEngine: () => kartu },
     "../../../../lib/asets.js": { gambar: (path) => path },
     "../../../../modul/sesi/mesin.js": { useMesin: () => mesin },
     "../../../../modul/sesi/analisa.js": { AnalyzeContext },

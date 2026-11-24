@@ -18,9 +18,8 @@ const compiled = ts.transpileModule(readFileSync(new URL("../src/halaman/Analisa
   compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 const dependencies = {
-  "../../../lib/engineCatur.js": daftarEngine,
+  "../../../modul/analisis/mesin.js": { ...daftarEngine, hashUntukEngine: () => 32, wasmSupported: () => true },
   "../mesin/engine.js": { EngineAnalisis },
-  "../mesin/cekWasm.js": { hashUntukEngine: () => 32, wasmSupported: () => true },
   "../../../modul/sesi/preferensi.js": penyimpanan,
   "../../../modul/sesi/mesin.js": { KonteksMesin },
 };

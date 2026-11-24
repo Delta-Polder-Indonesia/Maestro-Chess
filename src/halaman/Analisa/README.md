@@ -9,7 +9,7 @@ Halaman ini mengadaptasi UI dan logika Analisa dari [ChessClub](https://github.c
 - `mesin/`: parser PGN/FEN, klasifikasi langkah, perhitungan ringkasan dan wawasan, serta adaptor UCI.
 - `database/`, `basisData.js`, `akun/`: IndexedDB, fallback, koleksi, statistik, dan pengambilan partai akun publik.
 - `penyimpanan.js`: pembacaan/tulis preferensi aman di bawah awalan `maestro-analisa-`; pengaturan Maestro lama dibaca sebagai fallback tanpa dihapus.
-- `src/lib/engineCatur.js`: enam worker UCI Stockfish single-thread di `public/engine/`, dimuat saat diperlukan. Stockfish 16 menggunakan jaringan `nn-5af11540bbfe.nnue`; lima pilihan lain menggunakan build Lite. Stockfish 18 Lite dan Stockfish 18 Lite (JS 18.0.8) memakai WASM yang identik, tetapi pemuat JavaScript berbeda. Pilihan engine disimpan di peramban, dengan Stockfish 18 Lite sebagai bawaan.
+- `src/modul/analisis/mesin.js`: fasad fondasi untuk enam worker UCI Stockfish single-thread di `public/engine/`, dimuat saat diperlukan; `src/lib/engineCatur.js` tetap menjadi path kompatibilitas. Stockfish 16 menggunakan jaringan `nn-5af11540bbfe.nnue`; lima pilihan lain menggunakan build Lite. Stockfish 18 Lite dan Stockfish 18 Lite (JS 18.0.8) memakai WASM yang identik, tetapi pemuat JavaScript berbeda. Pilihan engine disimpan di peramban, dengan Stockfish 18 Lite sebagai bawaan.
 - `src/lib/asets.js`: URL aset yang menghormati `NEXT_PUBLIC_BASE_PATH`; buku pembukaan di `public/data/`, suara Lichess di `public/sounds/`.
 
 ## Perilaku penting

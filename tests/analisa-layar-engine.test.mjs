@@ -45,7 +45,7 @@ function renderLayar({ idEngine = "sf" } = {}) {
   };
   const Layar = compile("../src/halaman/Analisa/komponen/nav/layarEngine.jsx", {
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
-    "../../../../lib/engineCatur.js": { DAFTAR_ENGINE: DAFTAR },
+    "../../../../modul/analisis/mesin.js": { DAFTAR_ENGINE: DAFTAR },
     "../../../../lib/asets.js": { gambar: (jalur) => jalur },
     "../../../../modul/sesi/analisa.js": { AnalyzeContext },
     "../../../../modul/sesi/mesin.js": { useMesin: () => mesin },

@@ -58,12 +58,12 @@ function lingkungan(tes, { simpanan = [], didukung = true, hashBawaan = 32, serv
     terapkanOpsi(opsi) { this.opsiTerapan.push(opsi); }
   }
   const muat = buatPemuatJsx({
-    "src/lib/engineCatur.js": daftarEngine,
-    "src/halaman/Analisa/mesin/engine.js": { EngineAnalisis: engineAsli ? EngineAnalisis : MesinTiruan },
-    "src/halaman/Analisa/mesin/cekWasm.js": {
+    "src/modul/analisis/mesin.js": {
+      ...daftarEngine,
       hashUntukEngine: () => hashBawaan,
       wasmSupported: () => { pemeriksaanWasm++; return didukung; },
     },
+    "src/halaman/Analisa/mesin/engine.js": { EngineAnalisis: engineAsli ? EngineAnalisis : MesinTiruan },
     ...tambahan,
   });
   const konteks = muat(pathKonteks);
