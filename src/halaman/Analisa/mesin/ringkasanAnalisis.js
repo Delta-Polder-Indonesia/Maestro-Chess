@@ -20,7 +20,7 @@
  * MURNI: tanpa React, tanpa DOM, tanpa pemanggilan engine.
  */
 
-import { langkahTerpaksa } from "./evaluasi.js";
+import { langkahTerpaksa } from "../../../modul/analisis/evaluasi.js";
 import { akurasiMove, pemainDariEntri } from "./akurasi.js";
 
 /**

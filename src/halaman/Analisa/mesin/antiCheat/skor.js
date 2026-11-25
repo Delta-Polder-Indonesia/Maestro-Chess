@@ -6,7 +6,7 @@
  * Bergantung pada `./dasar.js` (metrik mentah) dan `./kalibrasi.js`
  * (komponen 0–100); tidak menyentuh agregat riwayat.
  */
-import { langkahTerpaksa } from "../evaluasi.js";
+import { langkahTerpaksa } from "../../../../modul/analisis/evaluasi.js";
 import { DAFTAR_FASE, FASE_PEMBUKAAN, faseBerikutnya, papanDariFen } from "../../../../modul/analisis/fase.js";
 import {
   akurasiMove,

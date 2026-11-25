@@ -12,7 +12,7 @@ import { Chess } from "chess.js";
  * yang sedang aktif, baru kemudian fasenya dimajukan.
  */
 import { isEndOpening, isEndMiddlegame } from "../../../../../../modul/analisis/fase.js";
-import { langkahTerpaksa } from "../../../../mesin/evaluasi.js";
+import { langkahTerpaksa } from "../../../../../../modul/analisis/evaluasi.js";
 /*
  * Sumber angka baris Akurasi. Sebelumnya komponen ini punya peta label → poin
  * tetap (best 100, excellent 90, good 70, inaccuracy 30, mistake 20, blunder 0)

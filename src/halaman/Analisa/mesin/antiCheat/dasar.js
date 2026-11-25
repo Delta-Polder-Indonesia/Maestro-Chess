@@ -11,7 +11,7 @@
  * berarti ada bagian yang salah tempat.
  */
 import { invertColor } from "../penilaian.js";
-import { tandaMate } from "../evaluasi.js";
+import { tandaMate } from "../../../../modul/analisis/evaluasi.js";
 import { MULTI_PV } from "../engine.js";
 
 /** Skor `["mate", n]` diperlakukan setara keunggulan sebesar ini (centipawn). */

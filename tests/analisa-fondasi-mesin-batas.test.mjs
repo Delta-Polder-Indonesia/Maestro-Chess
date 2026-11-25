@@ -32,6 +32,8 @@ const peluangPath = "src/modul/analisis/peluang.js";
 const kurvaPeluangPath = "src/modul/analisis/kurvaPeluang.js";
 const analisisTersimpanPath = "src/modul/analisis/analisisTersimpan.js";
 const hasilSesiPath = "src/modul/analisis/hasilSesi.js";
+const evaluasiPath = "src/modul/analisis/evaluasi.js";
+const konvensiEvaluasiPath = "src/modul/analisis/konvensiEvaluasi.js";
 
 function berkasKode(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entri) => {
@@ -182,6 +184,8 @@ test("both public entries stay minimal without JSX or legacy engine adapter", ()
       kurvaPeluangPath,
       analisisTersimpanPath,
       hasilSesiPath,
+      evaluasiPath,
+      konvensiEvaluasiPath,
     ].sort(),
     utamaPath,
   );

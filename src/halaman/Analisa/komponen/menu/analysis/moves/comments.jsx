@@ -1,7 +1,7 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 import RatingSVG from "../../../svg/rating.jsx";
 import { useI18n } from "../../../../../../lib/i18n.jsx";
-import { apakahMateTerminal } from "../../../../mesin/evaluasi.js";
+import { apakahMateTerminal } from "../../../../../../modul/analisis/evaluasi.js";
 
 /**
  * Kartu penjelasan satu langkah: label penilaian (brilian/blunder/…),

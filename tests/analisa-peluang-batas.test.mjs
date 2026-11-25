@@ -193,7 +193,7 @@ test("peluang symbols have exactly one source definition", () => {
 
 test("all three mapped application callers import peluang symbols through the lightweight facade", () => {
   const callers = new Map([
-    ["src/halaman/Analisa/mesin/evaluasi.js", ["batasiCp", "CP_CEILING"]],
+    ["src/modul/analisis/konvensiEvaluasi.js", ["batasiCp", "CP_CEILING"]],
     ["src/halaman/Analisa/mesin/penilaian.js", ["peluangMenang"]],
     ["src/halaman/Analisa/mesin/akurasi.js", ["batasiCp", "CP_CEILING", "FAKTOR_PELUANG", "peluangMenang"]],
   ]);

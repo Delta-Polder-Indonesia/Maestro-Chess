@@ -35,7 +35,7 @@
 import { BISHOP, Chess, KNIGHT, PAWN, QUEEN, ROOK } from "chess.js";
 import { penyerangTersembunyi } from "./keamananBidak.js";
 import { peluangMenang } from "../../../modul/analisis/peluang.js";
-import { apakahMateTerminal, normalisasiEval, STATUS_EVALUASI } from "./evaluasi.js";
+import { apakahMateTerminal, normalisasiEval, STATUS_EVALUASI } from "../../../modul/analisis/evaluasi.js";
 
 /** Daftar kunci komentar → `analisa.komentar.<kunci>` di kamus terjemahan. */
 export const KUNCI_KOMENTAR = [

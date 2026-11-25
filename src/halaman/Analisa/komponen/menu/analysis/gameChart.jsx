@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import RatingSVG from "../../svg/rating.jsx";
 import { getLastBookMove } from "./moves/movesData.js";
 import { jalurGrafik, tinggiEval, xGrafik } from "./grafikEval.js";
-import { ratingTampilan } from "../../../mesin/evaluasi.js";
+import { ratingTampilan } from "../../../../../modul/analisis/evaluasi.js";
 
 function isImportantMove(moveNumber, rating, prevRating, lastBookMove) {
   if (!rating) return;

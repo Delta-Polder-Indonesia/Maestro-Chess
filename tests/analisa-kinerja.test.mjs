@@ -316,7 +316,7 @@ test("the board observes its workspace from the first mount and resizes when the
     "./name.jsx": { default: kosong },
     "./evaluation.jsx": { default: kosong },
     "../../../../modul/sesi/analisa.js": analyzeContext,
-    "../../mesin/evaluasi.js": { ratingTampilan: noop },
+    "../../../../modul/analisis/evaluasi.js": { ratingTampilan: noop },
     "../../../../modul/sesi/galat.js": { ErrorsContext: React.createContext({ errors: [[], noop] }), pushPageWarning: noop },
     "../../../../modul/sesi/mesin.js": { useMesin: () => ({ didukung: true, siapkan: noop, ambilMesin: noop }) },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },

@@ -19,6 +19,7 @@ const ringanPath = "src/modul/analisis/analisisTersimpan.js";
 const mesinPath = "src/modul/analisis/mesin.js";
 const fasePath = "src/modul/analisis/fase.js";
 const peluangPath = "src/modul/analisis/peluang.js";
+const evaluasiPath = "src/modul/analisis/evaluasi.js";
 const utamaPath = "src/modul/analisis/index.js";
 const namaHasil = [
   "ambilPetaAnalisis",
@@ -27,6 +28,17 @@ const namaHasil = [
   "hapusAnalisis",
   "jumlahAnalisis",
   "langgananAnalisis",
+];
+const namaEvaluasi = [
+  "MATE_DISAMPAIKAN",
+  "STATUS_EVALUASI",
+  "apakahMateTerminal",
+  "cpBaku",
+  "evalSiap",
+  "langkahTerpaksa",
+  "normalisasiEval",
+  "ratingTampilan",
+  "tandaMate",
 ];
 const namaMesin = [
   "DAFTAR_ENGINE",
@@ -124,7 +136,7 @@ test("legacy, implementation, lightweight and main entries expose exact session-
     assert.deepEqual(Object.keys(api).sort(), namaHasil);
     assert.equal(Object.hasOwn(api, "default"), false);
   }
-  assert.deepEqual(Object.keys(utama).sort(), [...namaMesin, ...namaFase, ...namaPeluang, ...namaHasil].sort());
+  assert.deepEqual(Object.keys(utama).sort(), [...namaMesin, ...namaFase, ...namaPeluang, ...namaHasil, ...namaEvaluasi].sort());
   assert.equal(Object.hasOwn(utama, "default"), false);
   for (const nama of namaHasil) {
     for (const api of [implementasi, ringanHasil, utama]) {
@@ -159,12 +171,13 @@ test("legacy shim, lightweight facade and main barrel use direct named re-export
 
   const path = resolve(akar, utamaPath);
   const statements = astBerkas(path).statements;
-  assert.equal(statements.length, 4);
+  assert.equal(statements.length, 5);
   for (const [index, target, names] of [
     [0, mesinPath, namaMesin],
     [1, fasePath, namaFase],
     [2, peluangPath, namaPeluang],
     [3, ringanPath, namaHasil],
+    [4, evaluasiPath, namaEvaluasi],
   ]) {
     const node = statements[index];
     assert.ok(ts.isExportDeclaration(node));
