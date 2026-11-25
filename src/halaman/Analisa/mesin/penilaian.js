@@ -33,7 +33,7 @@
  */
 
 import { BISHOP, Chess, KNIGHT, PAWN, QUEEN, ROOK } from "chess.js";
-import { penyerangTersembunyi } from "./keamananBidak.js";
+import { penyerangTersembunyi } from "../../../modul/analisis/keamananBidak.js";
 import { peluangMenang } from "../../../modul/analisis/peluang.js";
 import { apakahMateTerminal, normalisasiEval, STATUS_EVALUASI } from "../../../modul/analisis/evaluasi.js";
 
