@@ -39,7 +39,7 @@ import {
   komponenPeringkat,
   komponenWaktu,
   tingkatDariSkor,
-} from "./kalibrasi.js";
+} from "../../../../modul/analisis/antiCheatKalibrasi.js";
 
 /**
  * Gabungkan metrik menjadi satu skor 0–100.

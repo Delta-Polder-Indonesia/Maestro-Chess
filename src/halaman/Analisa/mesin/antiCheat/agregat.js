@@ -15,7 +15,7 @@ import {
   pemainLangkah,
   rataRata,
 } from "../../../../modul/analisis/antiCheatDasar.js";
-import { ratingDariMetadata } from "./kalibrasi.js";
+import { ratingDariMetadata } from "../../../../modul/analisis/antiCheatKalibrasi.js";
 import { hitungSkorKecurigaan, skorKecurigaan } from "./skor.js";
 
 /* ------------------------------------------------ agregat riwayat pemain */

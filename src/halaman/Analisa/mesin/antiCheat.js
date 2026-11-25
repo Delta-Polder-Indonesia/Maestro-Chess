@@ -114,6 +114,15 @@ export {
   statistikWaktu,
   waktuBerpikir,
 } from "../../../modul/analisis/antiCheatDasar.js";
-export * from "./antiCheat/kalibrasi.js";
+export {
+  KALIBRASI_RATING,
+  komponenAcpl,
+  komponenKecocokan,
+  komponenPeringkat,
+  komponenWaktu,
+  pilihKalibrasi,
+  ratingDariMetadata,
+  tingkatDariSkor,
+} from "../../../modul/analisis/antiCheatKalibrasi.js";
 export * from "./antiCheat/skor.js";
 export * from "./antiCheat/agregat.js";
