@@ -792,6 +792,43 @@ test("a completed session report restores its snapshot without requesting a new 
   await act(async () => { renderer.unmount(); await store.tungguTulis(); });
 });
 
+test("workspace supplies saved labels while a session report is still loading", async (t) => {
+  pasangDocument(t);
+  const id = "laporan:pulih-lambat";
+  const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  pasangSession(t, { versi: 1, aktifId: "tab:laporan", daftar: [{ id: "tab:laporan", tampilan: "bermain", laporanId: id }] });
+  const adapter = adapterMemori();
+  const seed = buatPenyimpananPekerjaan(adapter);
+  seed.simpan({ id, jenis: "laporan", status: "selesai", sumber: { format: "fen", string: fen }, snapshot: { versi: 1, game: [{ fen }], customLine: { moves: [] } } });
+  await seed.tungguTulis();
+  const ambilAsli = adapter.ambil;
+  let lanjut;
+  let mulaiBaca = false;
+  const tunggu = new Promise((resolve) => { lanjut = resolve; });
+  t.after(() => lanjut());
+  adapter.ambil = async (key) => {
+    if (key === id) { mulaiBaca = true; await tunggu; }
+    return ambilAsli(key);
+  };
+  const store = buatPenyimpananPekerjaan(adapter);
+  const navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); });
+  assert.equal(mulaiBaca, true);
+  assert.equal(navigasi.tab.perluPulih, true);
+  assert.equal(navigasi.tabBar.sibuk, true);
+  assert.equal(navigasi.tabBar.tampilanAktif, null);
+  assert.equal(navigasi.tabBar.laporanAktifId, null);
+  assert.equal(navigasi.tabBar.daftar[0].laporanId, id);
+
+  await act(async () => { lanjut(); await flush(); await flush(); });
+  assert.equal(navigasi.tab.perluPulih, false);
+  assert.equal(navigasi.tabBar.sibuk, false);
+  assert.equal(navigasi.tabBar.tampilanAktif, "bermain");
+  assert.equal(navigasi.tabBar.laporanAktifId, id);
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+});
+
 test("an unreadable session report is not replaced or overwritten by an empty board", async (t) => {
   pasangDocument(t);
   const galat = tangkapGalatDiuji(t, "Gagal membaca pekerjaan Analisa:");

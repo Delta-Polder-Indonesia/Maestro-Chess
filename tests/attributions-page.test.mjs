@@ -18,12 +18,19 @@ const Link = ({ children, ...props }) => React.createElement("a", props, childre
 
 function renderPage(basePath = "") {
   const pageModule = { exports: {} };
+  let landingStylesheetLoaded = false;
   factory((id) => {
     if (id === "next/link") return { default: Link };
-    if (id === "@fontsource-variable/montserrat/wght.css") return {};
+    if (id === "../../styles/landing.css") {
+      // Node does not load CSS; still fail if the imported stylesheet is missing.
+      readFileSync(new URL(id, filename));
+      landingStylesheetLoaded = true;
+      return {};
+    }
     if (id === "react/jsx-runtime") return nodeRequire(id);
     throw new Error(`Unexpected attribution dependency: ${id}`);
   }, pageModule, pageModule.exports, { env: { NEXT_PUBLIC_BASE_PATH: basePath } });
+  assert.ok(landingStylesheetLoaded, "the attribution page must import its landing stylesheet");
   return {
     renderer: TestRenderer.create(React.createElement(pageModule.exports.default)),
     metadata: pageModule.exports.metadata,

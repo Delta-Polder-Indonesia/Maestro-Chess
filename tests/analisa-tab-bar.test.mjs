@@ -99,6 +99,31 @@ test("active tab follows the live screen before the recorded tab feature catches
   act(() => renderer.unmount());
 });
 
+test("session recovery uses saved tab labels until the live screen is ready", () => {
+  const TabBar = komponenTab();
+  const props = {
+    daftar: [
+      { id: "tab:1", tampilan: "engine" },
+      { id: "tab:2", tampilan: "bermain", laporanId: "laporan:1" },
+    ],
+    aktifId: "tab:2",
+    sibuk: true,
+    tampilanAktif: null,
+    laporanAktifId: null,
+    onPilih() {}, onTutup() {}, onTambah() {},
+  };
+  let renderer;
+  act(() => { renderer = TestRenderer.create(React.createElement(TabBar, props)); });
+  assert.deepEqual(renderer.root.findAll((node) => node.props.role === "tab").map((node) => node.children.join("")), ["Engine", "Alice vs Bob"]);
+  assert.deepEqual(renderer.root.findAllByProps({ "data-uji": "tab-kerja-item" }).map((node) => node.props["data-tab-fitur"]), ["engine", "bermain"]);
+  assert.ok(renderer.root.findAll((node) => ["tab-kerja-pilih", "tab-kerja-tutup", "tab-kerja-tambah"].includes(node.props["data-uji"])).every((node) => node.props.disabled));
+
+  act(() => renderer.update(React.createElement(TabBar, { ...props, sibuk: false, tampilanAktif: "papan", laporanAktifId: "laporan:1" })));
+  assert.deepEqual(renderer.root.findAll((node) => node.props.role === "tab").map((node) => node.children.join("")), ["Engine", "New Tab"]);
+  assert.equal(renderer.root.findAllByProps({ "data-uji": "tab-kerja-tutup" })[1].props["aria-label"], "Tutup tab New Tab");
+  act(() => renderer.unmount());
+});
+
 test("tab list owns only tab controls, while close buttons remain available next to them", () => {
   const TabBar = komponenTab();
   const daftar = [
