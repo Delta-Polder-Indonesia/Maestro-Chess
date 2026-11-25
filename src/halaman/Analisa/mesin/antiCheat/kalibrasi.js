@@ -4,7 +4,7 @@
  *
  * Semua fungsi di sini murni dan hanya bergantung pada `./dasar.js`.
  */
-import { AMBANG, LEVEL_RENDAH, LEVEL_SEDANG, LEVEL_TINGGI, batasi01 } from "./dasar.js";
+import { AMBANG, LEVEL_RENDAH, LEVEL_SEDANG, LEVEL_TINGGI, batasi01 } from "../../../../modul/analisis/antiCheatDasar.js";
 
 /* ------------------------------------------------------------- skor 0-100 */
 

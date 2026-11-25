@@ -14,7 +14,7 @@ import {
   bulat1,
   pemainLangkah,
   rataRata,
-} from "./dasar.js";
+} from "../../../../modul/analisis/antiCheatDasar.js";
 import { ratingDariMetadata } from "./kalibrasi.js";
 import { hitungSkorKecurigaan, skorKecurigaan } from "./skor.js";
 

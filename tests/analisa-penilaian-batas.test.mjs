@@ -257,7 +257,7 @@ test("penilaian symbols have exactly one source definition in penilaianLangkah",
 test("only the three mapped application callers import penilaian symbols through the internal facade", () => {
   const callers = new Map([
     ["src/modul/analisis/metrikAkurasi.js", ["invertColor"]],
-    ["src/halaman/Analisa/mesin/antiCheat/dasar.js", ["invertColor"]],
+    ["src/modul/analisis/dasarAntiCheat.js", ["invertColor"]],
     ["src/halaman/Analisa/mesin/engine.js", ["getMoveRating", "invertColor", "isForced", "isSacrifice"]],
   ]);
   for (const path of berkasKode(src)) {

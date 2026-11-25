@@ -1,5 +1,5 @@
 import { useI18n } from "../../../../lib/i18n.jsx";
-import { MULTI_PV } from "../../mesin/engine.js";
+import { MULTI_PV } from "../../../../modul/analisis/multiPv.js";
 import { DAFTAR_FASE } from "../../../../modul/analisis/fase.js";
 
 /*

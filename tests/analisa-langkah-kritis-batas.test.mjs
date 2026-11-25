@@ -218,8 +218,8 @@ test("langkahKritis symbols have exact expected source definitions in deteksiLan
 
   for (const nama of namaLangkahKritis) {
     if (nama === "cpKandidat") {
-      // antiCheat/dasar.js mendefinisikan cpKandidat versi ±10000 secara terpisah dari versi ±1000 di deteksiLangkahKritis.js.
-      const diharapkan = [implPath, "src/halaman/Analisa/mesin/antiCheat/dasar.js"].sort();
+      // dasarAntiCheat.js mendefinisikan cpKandidat versi ±10000 secara terpisah dari versi ±1000 di deteksiLangkahKritis.js.
+      const diharapkan = [implPath, "src/modul/analisis/dasarAntiCheat.js"].sort();
       assert.deepEqual(definisiEkspor[nama].slice().sort(), diharapkan, `export ${nama}`);
       assert.deepEqual(definisi[nama].slice().sort(), diharapkan, nama);
       continue;

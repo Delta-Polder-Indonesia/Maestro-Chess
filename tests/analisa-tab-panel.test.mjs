@@ -176,7 +176,7 @@ test("a hidden detection tab closes its portal and aborts its engine search with
       BATAS_PARTAI: 50, KEDALAMAN_AGGREGAT: 6, batasPartaiDariInput: (value) => Number(value) || 50,
       analisisRiwayatAntiCheat: ({ sinyal: value }) => { sinyal = value; return new Promise(() => {}); },
     },
-    "../../mesin/engine.js": { MULTI_PV: 1 },
+    "../../../../modul/analisis/multiPv.js": { MULTI_PV: 1 },
     "../../mesin/laporanPeninjauan.js": { unduhLaporanPeninjauan() {} },
     "./PanelLayar.jsx": { default: wrapper },
     "./ringkasanAntiCheat.jsx": { default: kosong },

@@ -213,7 +213,7 @@ test("PlayersAccuracy and antiCheat preserve their respective forced-move phase 
 test("RingkasanAntiCheat renders phase rows in DAFTAR_FASE order", () => {
   const muat = buatPemuatJsx({
     "src/lib/i18n.jsx": { useI18n: () => ({ t: (k) => k }) },
-    "src/halaman/Analisa/mesin/engine.js": { MULTI_PV: 5 },
+    "src/modul/analisis/multiPv.js": { MULTI_PV: 5 },
   }, { "chess.js": { Chess } });
   const RingkasanAntiCheat = muat("src/halaman/Analisa/komponen/nav/ringkasanAntiCheat.jsx").default;
   const agregat = agregatSkorPemain([

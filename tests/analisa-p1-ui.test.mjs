@@ -265,7 +265,7 @@ test("the visible 'analyze again' action bypasses the cache and changing engine 
       BATAS_PARTAI: 12, KEDALAMAN_AGGREGAT: 8, batasPartaiDariInput: (value) => Number(value) || 12,
       analisisRiwayatAntiCheat: async (opsi) => { calls.push(opsi); return { agregat: { jumlahPartai: 1 }, galat: [], dibatalkan: false }; },
     },
-    "../../mesin/engine.js": { MULTI_PV: 5 },
+    "../../../../modul/analisis/multiPv.js": { MULTI_PV: 5 },
     "../../mesin/laporanPeninjauan.js": { unduhLaporanPeninjauan() {} },
     "./PanelLayar.jsx": { default: wrapper },
     "./ringkasanAntiCheat.jsx": { default: kosong },

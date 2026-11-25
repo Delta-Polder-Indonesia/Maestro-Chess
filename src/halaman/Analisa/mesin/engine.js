@@ -22,6 +22,7 @@
 import { Chess } from "chess.js";
 import { pecahMultiPgn } from "../../../lib/pgnRingan.js";
 import { EngineCatur, cariEngine, hashUntukEngine } from "../../../modul/analisis/mesin.js";
+import { MULTI_PV } from "../../../modul/analisis/multiPv.js";
 import { getMoveRating, invertColor, isForced, isSacrifice } from "../../../modul/analisis/penilaian.js";
 import { apakahLangkahKritis, cpKandidat } from "../../../modul/analisis/langkahKritis.js";
 import { MATE_DISAMPAIKAN, STATUS_EVALUASI } from "../../../modul/analisis/evaluasi.js";
@@ -75,17 +76,10 @@ export function moveToSan(move, coronation, fen) {
 
 /**
  * Jumlah kandidat MultiPV yang direkam `parsePGN` untuk tiap posisi.
- *
- * Anti-cheat yang serius tidak menilai langkah dari `bestmove` tunggal saja:
- * setiap posisi dianalisis dengan MultiPV sehingga langkah pemain bisa
- * DIPERINGKAT di antara N kandidat terbaik (rank 1 = langkah terbaik, 2–5 =
- * masih dalam kelompok engine, di luar daftar = paling buruk). Nilai 5 adalah
- * keseimbangan biaya (MultiPV memperlambat pencarian ±20–40% pada kedalaman
- * sama) dan ketajaman sinyal; Lichess memakai pendekat serupa untuk metrik
- * "move match". Konstanta ini juga membentuk AMBANG.peringkatJenuh di
- * ./antiCheat.js — ubah keduanya bersamaan.
+ * Didefinisikan tunggal di `src/modul/analisis/konstantaMesin.js` dan
+ * diteruskan kembali demi kompatibilitas pemanggil `engine.js`.
  */
-export const MULTI_PV = 5;
+export { MULTI_PV };
 
 export class EngineAnalisis {
   /**

@@ -32,7 +32,7 @@ import {
   peringkatLangkahDalam,
   statistikWaktu,
   waktuBerpikir,
-} from "./dasar.js";
+} from "../../../../modul/analisis/antiCheatDasar.js";
 import {
   komponenAcpl,
   komponenKecocokan,

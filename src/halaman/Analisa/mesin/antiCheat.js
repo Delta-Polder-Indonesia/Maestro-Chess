@@ -66,7 +66,7 @@
  * Semua ekspor lama tetap tersedia dari sini, jadi pemanggil tidak berubah.
  */
 
-export { MULTI_PV } from "./engine.js";
+export { MULTI_PV } from "../../../modul/analisis/multiPv.js";
 
 /*
  * Metrik gaya lichess/en-croissant ikut diekspor dari sini: pemanggil
@@ -86,7 +86,34 @@ export {
   rataHarmonik,
 } from "../../../modul/analisis/akurasi.js";
 
-export * from "./antiCheat/dasar.js";
+export {
+  AMBANG,
+  BATAS_KERUGIAN,
+  BOBOT,
+  CP_MATE,
+  LEVEL_RENDAH,
+  LEVEL_SEDANG,
+  LEVEL_SEMENTARA,
+  LEVEL_TINGGI,
+  MIN_LANGKAH_AGGREGAT,
+  MIN_PARTAI_AGGREGAT,
+  SAMPEL_WAKTU_MINIMUM,
+  batasi01,
+  bulat1,
+  cpKandidat,
+  kehilanganMenangPermille,
+  kerugianCentipawn,
+  kerugianKandidatCp,
+  ketajamanKandidat,
+  korelasiSpearman,
+  nilaiCentipawn,
+  normalkanSan,
+  pemainLangkah,
+  peringkatLangkahDalam,
+  rataRata,
+  statistikWaktu,
+  waktuBerpikir,
+} from "../../../modul/analisis/antiCheatDasar.js";
 export * from "./antiCheat/kalibrasi.js";
 export * from "./antiCheat/skor.js";
 export * from "./antiCheat/agregat.js";
