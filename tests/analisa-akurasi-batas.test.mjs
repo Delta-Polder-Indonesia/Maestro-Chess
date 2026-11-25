@@ -280,7 +280,7 @@ test("only the seven mapped application callers import or re-export akurasi symb
     ["src/halaman/Analisa/mesin/antiCheat.js", ["akurasiMove", "anotasiMove", "CP_AWAL", "CP_CEILING", "DAFTAR_ANOTASI", "harmonikDariJumlah", "kerugianMove", "peluangMenang", "petaAnotasiKosong", "rataHarmonik"]],
     ["src/halaman/Analisa/mesin/antiCheat/agregat.js", ["harmonikDariJumlah", "petaAnotasiKosong"]],
     ["src/halaman/Analisa/mesin/antiCheat/skor.js", ["akurasiMove", "anotasiMove", "cpBaku", "harmonikDariJumlah", "inversAkurasi", "kerugianMove", "petaAnotasiKosong"]],
-    ["src/halaman/Analisa/mesin/langkahKritis.js", ["cpBaku", "peluangMenang"]],
+    ["src/modul/analisis/deteksiLangkahKritis.js", ["cpBaku", "peluangMenang"]],
     ["src/halaman/Analisa/mesin/ringkasanAnalisis.js", ["akurasiMove", "pemainDariEntri"]],
   ]);
   for (const path of berkasKode(src)) {

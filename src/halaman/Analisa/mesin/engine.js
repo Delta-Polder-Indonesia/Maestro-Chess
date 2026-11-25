@@ -23,7 +23,7 @@ import { Chess } from "chess.js";
 import { pecahMultiPgn } from "../../../lib/pgnRingan.js";
 import { EngineCatur, cariEngine, hashUntukEngine } from "../../../modul/analisis/mesin.js";
 import { getMoveRating, invertColor, isForced, isSacrifice } from "../../../modul/analisis/penilaian.js";
-import { apakahLangkahKritis, cpKandidat } from "./langkahKritis.js";
+import { apakahLangkahKritis, cpKandidat } from "../../../modul/analisis/langkahKritis.js";
 import { MATE_DISAMPAIKAN, STATUS_EVALUASI } from "../../../modul/analisis/evaluasi.js";
 
 const HURUF_PAPAN = "abcdefgh".split("");
