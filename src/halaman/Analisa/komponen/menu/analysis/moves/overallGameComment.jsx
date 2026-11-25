@@ -14,7 +14,11 @@
  */
 
 const JUMLAH_VARIAN = 4;
-const TEBAL_AWAL = '<span class="font-extrabold" style="color: var(--foregroundBlackDark);">';
+// Warna memakai kelas utilitas Tailwind (bukan atribut style inline) agar
+// HTML yang disuntik lewat dangerouslySetInnerHTML patuh pada CSP
+// style-src-attr 'none'; kelas ini sudah dipakai luas di aplikasi dan
+// menghasilkan color: var(--foregroundBlackDark) yang sama persis.
+const TEBAL_AWAL = '<span class="font-extrabold text-foregroundBlackDark">';
 const TEBAL_AKHIR = "</span>";
 
 function escapeHtml(teks) {
