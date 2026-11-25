@@ -236,7 +236,7 @@ test("all fourteen mapped application callers import evaluation symbols through 
     ["src/halaman/Analisa/mesin/antiCheat/dasar.js", ["tandaMate"]],
     ["src/halaman/Analisa/mesin/antiCheat/skor.js", ["langkahTerpaksa"]],
     ["src/halaman/Analisa/mesin/engine.js", ["MATE_DISAMPAIKAN", "STATUS_EVALUASI"]],
-    ["src/halaman/Analisa/mesin/penilaian.js", ["apakahMateTerminal", "normalisasiEval", "STATUS_EVALUASI"]],
+    ["src/modul/analisis/penilaianLangkah.js", ["apakahMateTerminal", "normalisasiEval", "STATUS_EVALUASI"]],
     ["src/halaman/Analisa/mesin/ringkasanAnalisis.js", ["langkahTerpaksa"]],
   ]);
   for (const path of berkasKode(src)) {

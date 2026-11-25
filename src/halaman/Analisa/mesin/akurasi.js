@@ -63,7 +63,7 @@
  * penurunan lengkapnya ada di komentar `kerugianCentipawn` ./antiCheat.js.
  */
 
-import { invertColor } from "./penilaian.js";
+import { invertColor } from "../../../modul/analisis/penilaian.js";
 import { batasiCp, CP_CEILING, FAKTOR_PELUANG, peluangMenang } from "../../../modul/analisis/peluang.js";
 import { cpBaku, tandaMate } from "../../../modul/analisis/evaluasi.js";
 

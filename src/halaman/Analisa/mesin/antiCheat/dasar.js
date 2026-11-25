@@ -10,7 +10,7 @@
  * Modul ini tidak boleh mengimpor tiga lainnya — kalau suatu saat perlu,
  * berarti ada bagian yang salah tempat.
  */
-import { invertColor } from "../penilaian.js";
+import { invertColor } from "../../../../modul/analisis/penilaian.js";
 import { tandaMate } from "../../../../modul/analisis/evaluasi.js";
 import { MULTI_PV } from "../engine.js";
 

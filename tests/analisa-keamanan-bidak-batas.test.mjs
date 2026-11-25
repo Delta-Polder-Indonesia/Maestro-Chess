@@ -170,8 +170,8 @@ test("keamananBidak symbols have exactly one source definition", () => {
   assert.deepEqual(definisi.BATAS_RANTAI, [implPath]);
 });
 
-test("only penilaian.js imports penyerangTersembunyi through the internal facade", () => {
-  const callers = new Map([["src/halaman/Analisa/mesin/penilaian.js", ["penyerangTersembunyi"]]]);
+test("only penilaianLangkah.js imports penyerangTersembunyi through the internal facade", () => {
+  const callers = new Map([["src/modul/analisis/penilaianLangkah.js", ["penyerangTersembunyi"]]]);
   for (const path of berkasKode(src)) {
     const imports = astBerkas(path).statements.filter((node) => ts.isImportDeclaration(node) && node.moduleSpecifier
       && tujuan(path, node.moduleSpecifier.text) === resolve(akar, fasadPath));
