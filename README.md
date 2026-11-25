@@ -56,6 +56,14 @@ Jika situs diakses lewat subpath seperti `/Maestro-Chess/`, isi `NEXT_PUBLIC_BAS
 
 Untuk Vercel, `vercel.json` mengatur deteksi otomatis Output Directory. Jangan mengarahkan builder Next.js ke `dist`: folder tersebut berisi situs statis, sedangkan manifest build yang dibutuhkan Vercel berada di `.next/`.
 
+### Header keamanan dan hosting
+
+Header keamanan (`Content-Security-Policy`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`) dikonfigurasi di `vercel.json` dan **hanya diterapkan pada deployment Vercel** (produksi maupun preview). `Strict-Transport-Security` pada domain `*.vercel.app` diberikan oleh platform Vercel beserta HSTS preload list, bukan oleh `vercel.json`.
+
+Hosting statis lain (mengunggah isi `dist/`, termasuk skrip `npm run deploy` ke GitHub Pages) **tidak otomatis memperoleh header tersebut**. GitHub Pages tidak dapat mengatur header respons kustom, sehingga proteksi CSP/header tidak hadir di sana; hosting statis lain harus mengonfigurasi header setara sendiri (mis. `_headers` pada Netlify/Cloudflare Pages atau `.htaccess` pada Apache) sesuai platform yang dipakai. Repositori ini tidak menyertakan file konfigurasi header untuk platform yang tidak digunakan. Jika kelak memakai hosting statis dengan dukungan header, salin kebijakan dari `vercel.json` ke mekanisme host tersebut dan pertahankan ketergantungan HSTS pada platform.
+
+Subresource Integrity (SRI) SHA-384 disuntikkan ke HTML ekspor saat build untuk skrip/stylesheet awal (termasuk `dist/`), sehingga ikut terbawa ke hosting statis mana pun; chunk dinamis yang dimuat runtime webpack tidak dicakup. COEP belum diaktifkan (menunggu uji kompatibilitas browser). Verifier lokal `npm run test:build` memeriksa ekspor statis, termasuk kecocokan hash SRI serta ketiadaan inline script/style; `npm run test:vercel` memeriksa manifest build Vercel.
+
 ## Lisensi dan kredit
 
 Lisensi MIT kode proyek tersedia di [LICENSE](LICENSE). Pemberitahuan ChessClub, Brilliant-Chess, ChessGameReviewer, Cburnett, Lichess, flag-icons, Geist, Montserrat, buku pembukaan, serta Stockfish ada di [ATTRIBUTIONS](ATTRIBUTIONS) dan halaman Atribusi di aplikasi. Lisensi pihak ketiga dan sumber Stockfish juga disertakan dalam `public/licenses/` dan `public/engine/source/` agar tersedia pada ekspor statis.
