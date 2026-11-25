@@ -43,7 +43,8 @@ test("vercel.json enforces strict Observatory security headers without breaking 
   assert.equal(headerMap.get("cross-origin-opener-policy"), "same-origin");
   assert.equal(headerMap.get("cross-origin-resource-policy"), "same-origin");
   assert.equal(headerMap.get("permissions-policy"), "camera=(), microphone=(), geolocation=()");
-  // Keep COEP unset per next.config.ts so external player avatars continue loading normally.
+  // COEP stays unset (deferred): require-corp is a candidate but needs browser
+  // compatibility testing (Chrome/Firefox/Safari) before activation. See next.config.ts.
   assert.equal(headerMap.has("cross-origin-embedder-policy"), false);
 
   const cspRaw = headerMap.get("content-security-policy");
