@@ -1,7 +1,28 @@
-import { readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const exportDirectory = process.argv[2] ?? "dist";
+const JS_SCRIPT_TYPES = new Set([
+  "",
+  "text/javascript",
+  "application/javascript",
+  "application/ecmascript",
+  "text/ecmascript",
+  "module",
+]);
+
+function collectHtmlFiles(directory) {
+  const results = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...collectHtmlFiles(path));
+    } else if (entry.isFile() && entry.name.endsWith(".html")) {
+      results.push(path);
+    }
+  }
+  return results.sort();
+}
 const requiredFiles = [
   "index.html",
   "index.txt",
@@ -82,6 +103,44 @@ for (const file of ["index.html", "404.html", "attributions/index.html"]) {
     if (invalidUrl) {
       console.error(`Invalid exported asset URL in ${path}: ${invalidUrl[0]}`);
       failed = true;
+    }
+  } catch {
+    console.error(`Cannot read exported page: ${path}`);
+    failed = true;
+  }
+}
+
+for (const path of collectHtmlFiles(exportDirectory)) {
+  try {
+    const html = readFileSync(path, "utf8");
+    for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
+      const attrs = match[1];
+      const body = match[2];
+      const srcMatch = attrs.match(/\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const src = srcMatch?.[1] ?? srcMatch?.[2] ?? srcMatch?.[3];
+      if (src) {
+        const cspMatch = src.match(/\/_next\/static\/csp\/([^/?#]+\.js)$/);
+        if (cspMatch) {
+          const cspAssetPath = join(exportDirectory, "_next/static/csp", cspMatch[1]);
+          try {
+            const stat = statSync(cspAssetPath);
+            if (!stat.isFile() || stat.size === 0) {
+              throw new Error("Not a non-empty file");
+            }
+          } catch {
+            console.error(`Missing or empty CSP script asset referenced by ${path}: ${cspAssetPath}`);
+            failed = true;
+          }
+        }
+        continue;
+      }
+
+      const typeMatch = attrs.match(/\btype\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const type = (typeMatch?.[1] ?? typeMatch?.[2] ?? typeMatch?.[3] ?? "").trim().toLowerCase();
+      if (JS_SCRIPT_TYPES.has(type) && body.trim().length > 0) {
+        console.error(`Executable inline <script> violates strict CSP in ${path}`);
+        failed = true;
+      }
     }
   } catch {
     console.error(`Cannot read exported page: ${path}`);

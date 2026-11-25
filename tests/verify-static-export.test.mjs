@@ -78,17 +78,34 @@ test("static export validation rejects undefined asset prefixes", () => {
     let result = runCheck();
     assert.equal(result.status, 0, result.stderr);
 
-    for (const [file, markup] of [
-      ["index.html", '<img src="undefined/images/analisa/settings.svg">'],
-      ["404.html", '<img src="undefined/images/error.svg">'],
-      ["attributions/index.html", '<link href="undefined/_next/static/app.css">'],
+    for (const [file, markup, pattern] of [
+      ["index.html", '<img src="/Maestro-Chess/images/analisa/settings.svg">', null],
+      ["index.html", '<img src="undefined/images/analisa/settings.svg">', /Invalid exported asset URL/],
+      ["404.html", '<img src="undefined/images/error.svg">', /Invalid exported asset URL/],
+      ["attributions/index.html", '<link href="undefined/_next/static/app.css">', /Invalid exported asset URL/],
+      ["index.html", "<script>alert(1)</script>", /Executable inline <script>/],
+      ["attributions/index.html", '<script type="module">console.log(1)</script>', /Executable inline <script>/],
+      ["index.html", '<script src="/_next/static/csp/missing.js"></script>', /Missing or empty CSP script asset/],
     ]) {
       writeFileSync(join(fixture, file), markup);
       result = runCheck();
-      assert.equal(result.status, 1);
-      assert.match(result.stderr, /Invalid exported asset URL/);
+      if (pattern === null) {
+        assert.equal(result.status, 0, result.stderr);
+      } else {
+        assert.equal(result.status, 1, file);
+        assert.match(result.stderr, pattern);
+      }
       writeFileSync(join(fixture, file), "fixture");
     }
+
+    writeFileSync(join(fixture, "index.html"), '<script id="__NEXT_DATA__" type="application/json">{"ok":true}</script>');
+    mkdirSync(join(fixture, "_next/static/csp"), { recursive: true });
+    writeFileSync(join(fixture, "_next/static/csp/ok.js"), "self.__next_f=[];");
+    writeFileSync(join(fixture, "404.html"), '<script src="/Maestro-Chess/_next/static/csp/ok.js"></script>');
+    result = runCheck();
+    assert.equal(result.status, 0, result.stderr);
+    writeFileSync(join(fixture, "index.html"), "fixture");
+    writeFileSync(join(fixture, "404.html"), "fixture");
 
     // Client-side navigation, dynamically selected images/sounds, and every
     // distributed Stockfish build must retain their required exported files.
