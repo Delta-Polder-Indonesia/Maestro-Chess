@@ -124,5 +124,5 @@ export {
   ratingDariMetadata,
   tingkatDariSkor,
 } from "../../../modul/analisis/antiCheatKalibrasi.js";
-export * from "./antiCheat/skor.js";
+export { hitungSkorKecurigaan, skorKecurigaan } from "../../../modul/analisis/antiCheatSkor.js";
 export * from "./antiCheat/agregat.js";

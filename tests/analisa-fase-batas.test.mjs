@@ -203,7 +203,7 @@ test("all four mapped application callers import phase symbols through the light
     ["src/halaman/Analisa/komponen/menu/analysis/summary/playersAccuracy.jsx", ["isEndOpening", "isEndMiddlegame"]],
     ["src/halaman/Analisa/komponen/nav/ringkasanAntiCheat.jsx", ["DAFTAR_FASE"]],
     ["src/halaman/Analisa/mesin/antiCheat/agregat.js", ["DAFTAR_FASE"]],
-    ["src/halaman/Analisa/mesin/antiCheat/skor.js", ["DAFTAR_FASE", "FASE_PEMBUKAAN", "faseBerikutnya", "papanDariFen"]],
+    ["src/modul/analisis/skorAntiCheat.js", ["DAFTAR_FASE", "FASE_PEMBUKAAN", "faseBerikutnya", "papanDariFen"]],
   ]);
   for (const path of berkasKode(src)) {
     const imports = astBerkas(path).statements.filter((node) => ts.isImportDeclaration(node) && node.moduleSpecifier

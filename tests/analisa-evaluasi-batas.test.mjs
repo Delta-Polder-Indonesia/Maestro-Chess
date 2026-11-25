@@ -234,7 +234,7 @@ test("all fourteen mapped application callers import evaluation symbols through 
     ["src/halaman/Analisa/komponen/menu/analysis/summary/ratingCount.jsx", ["langkahTerpaksa"]],
     ["src/modul/analisis/metrikAkurasi.js", ["cpBaku", "tandaMate"]],
     ["src/modul/analisis/dasarAntiCheat.js", ["tandaMate"]],
-    ["src/halaman/Analisa/mesin/antiCheat/skor.js", ["langkahTerpaksa"]],
+    ["src/modul/analisis/skorAntiCheat.js", ["langkahTerpaksa"]],
     ["src/halaman/Analisa/mesin/engine.js", ["MATE_DISAMPAIKAN", "STATUS_EVALUASI"]],
     ["src/modul/analisis/penilaianLangkah.js", ["apakahMateTerminal", "normalisasiEval", "STATUS_EVALUASI"]],
     ["src/modul/analisis/ringkasPartai.js", ["langkahTerpaksa"]],

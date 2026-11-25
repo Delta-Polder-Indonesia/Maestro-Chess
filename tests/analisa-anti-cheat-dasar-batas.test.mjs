@@ -336,7 +336,7 @@ test("only mapped application callers import or re-export MULTI_PV and antiCheat
   const callersDasar = new Map([
     ["src/halaman/Analisa/mesin/antiCheat.js", namaDasar],
     ["src/modul/analisis/kalibrasiAntiCheat.js", ["AMBANG", "LEVEL_RENDAH", "LEVEL_SEDANG", "LEVEL_TINGGI", "batasi01"]],
-    ["src/halaman/Analisa/mesin/antiCheat/skor.js", [
+    ["src/modul/analisis/skorAntiCheat.js", [
       "AMBANG", "BOBOT", "LEVEL_SEMENTARA", "bulat1", "kehilanganMenangPermille",
       "kerugianCentipawn", "kerugianKandidatCp", "ketajamanKandidat", "korelasiSpearman",
       "normalkanSan", "pemainLangkah", "peringkatLangkahDalam", "statistikWaktu", "waktuBerpikir",

@@ -241,7 +241,7 @@ test("only the three mapped application callers import or re-export kalibrasi sy
   const callers = new Map([
     ["src/halaman/Analisa/mesin/antiCheat.js", namaKalibrasi],
     ["src/halaman/Analisa/mesin/antiCheat/agregat.js", ["ratingDariMetadata"]],
-    ["src/halaman/Analisa/mesin/antiCheat/skor.js", ["komponenAcpl", "komponenKecocokan", "komponenPeringkat", "komponenWaktu", "tingkatDariSkor"]],
+    ["src/modul/analisis/skorAntiCheat.js", ["komponenAcpl", "komponenKecocokan", "komponenPeringkat", "komponenWaktu", "tingkatDariSkor"]],
   ]);
   for (const path of berkasKode(src)) {
     const nodes = astBerkas(path).statements.filter((node) =>
