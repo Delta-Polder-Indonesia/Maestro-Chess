@@ -11,7 +11,7 @@ import { Chess } from "chess.js";
  * Urutan pemindaian di bawah TIDAK berubah: langkah tetap dicatat ke fase
  * yang sedang aktif, baru kemudian fasenya dimajukan.
  */
-import { isEndOpening, isEndMiddlegame } from "../../../../mesin/fase.js";
+import { isEndOpening, isEndMiddlegame } from "../../../../../../modul/analisis/fase.js";
 import { langkahTerpaksa } from "../../../../mesin/evaluasi.js";
 /*
  * Sumber angka baris Akurasi. Sebelumnya komponen ini punya peta label → poin

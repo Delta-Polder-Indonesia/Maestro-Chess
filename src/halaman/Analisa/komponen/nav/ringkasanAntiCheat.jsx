@@ -1,6 +1,6 @@
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { MULTI_PV } from "../../mesin/engine.js";
-import { DAFTAR_FASE } from "../../mesin/fase.js";
+import { DAFTAR_FASE } from "../../../../modul/analisis/fase.js";
 
 /*
  * Kartu hasil anti-cheat agregat. Warna level memakai token highlight yang

@@ -7,7 +7,7 @@
  * (komponen 0–100); tidak menyentuh agregat riwayat.
  */
 import { langkahTerpaksa } from "../evaluasi.js";
-import { DAFTAR_FASE, FASE_PEMBUKAAN, faseBerikutnya, papanDariFen } from "../fase.js";
+import { DAFTAR_FASE, FASE_PEMBUKAAN, faseBerikutnya, papanDariFen } from "../../../../modul/analisis/fase.js";
 import {
   akurasiMove,
   anotasiMove,

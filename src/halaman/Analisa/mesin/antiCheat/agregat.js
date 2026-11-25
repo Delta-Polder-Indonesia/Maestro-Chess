@@ -5,7 +5,7 @@
  * Lapisan teratas: boleh membaca `./skor.js`, `./kalibrasi.js`, dan
  * `./dasar.js`; tidak ada lapisan lain yang mengimpornya.
  */
-import { DAFTAR_FASE } from "../fase.js";
+import { DAFTAR_FASE } from "../../../../modul/analisis/fase.js";
 import { harmonikDariJumlah, petaAnotasiKosong } from "../akurasi.js";
 import {
   AMBANG,
