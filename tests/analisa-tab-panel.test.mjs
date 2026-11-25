@@ -459,7 +459,7 @@ test("insights reload shared games on activation and revisions while retaining f
     },
     "../../akun/useAkunKoleksi.js": { useAkunKoleksi: () => ({ akunTersimpan: [], koleksi: [] }) },
     "../../akun/DashboardAkun.jsx": { default: kosong },
-    "../../mesin/wawasan.js": {
+    "../../../../modul/analisis/wawasan.js": {
       agregasiWawasan: (daftar) => { agregasi.push(daftar.length); return { totalPartai: daftar.length, trenRating: [], hasilUmum: {}, sebagaiPutih: {}, sebagaiHitam: {} }; },
       filterPartaiWawasan: (daftar) => daftar, hitungPembukaanTeratas: () => [],
     },

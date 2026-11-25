@@ -451,7 +451,7 @@ test("LayarWawasan integrates real wawasan module and analisisTersimpan across f
     },
     "../../akun/useAkunKoleksi.js": { useAkunKoleksi: () => ({ akunTersimpan: [], koleksi: [] }) },
     "../../akun/DashboardAkun.jsx": { default: kosong },
-    "../../mesin/wawasan.js": wawasan,
+    "../../../../modul/analisis/wawasan.js": wawasan,
     "../../../../modul/analisis/analisisTersimpan.js": { ambilPetaAnalisis, langgananAnalisis },
     "./PanelLayar.jsx": { default: wrapper },
     "./SelectDaftar.jsx": { default: kosong },
