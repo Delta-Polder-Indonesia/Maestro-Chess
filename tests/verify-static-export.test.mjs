@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -73,6 +74,12 @@ test("static export validation rejects undefined asset prefixes", () => {
     }
     mkdirSync(join(fixture, "_next/static"), { recursive: true });
 
+    // AsetKnown untuk fixture validasi SRI (hash dihitung dari byte final).
+    const sriIsi = "console.log(1);\n";
+    mkdirSync(join(fixture, "_next/static/chunks"), { recursive: true });
+    writeFileSync(join(fixture, "_next/static/chunks/sri.js"), sriIsi);
+    const sriHash = "sha384-" + createHash("sha384").update(sriIsi, "utf8").digest("base64");
+
     const runCheck = () => spawnSync(process.execPath, [verifyScript, fixture], { encoding: "utf8" });
     writeFileSync(join(fixture, "index.html"), '<img src="/Maestro-Chess/images/analisa/settings.svg">');
     let result = runCheck();
@@ -91,6 +98,9 @@ test("static export validation rejects undefined asset prefixes", () => {
       ["404.html", '<span style="font-weight:700">x</span>', /Inline style attribute/],
       ["index.html", "<style>body{color:red}</style>", /Unexpected inline <style>/],
       ["attributions/index.html", '<style type="text/css">.x{}</style>', /Unexpected inline <style>/],
+      ["index.html", `<script src="/_next/static/chunks/sri.js" integrity="${sriHash}" crossorigin="anonymous"></script>`, null],
+      ["index.html", '<script src="/_next/static/chunks/sri.js" integrity="sha384-salah" crossorigin="anonymous"></script>', /SRI hash mismatch/],
+      ["index.html", '<script src="/_next/static/chunks/hilang.js" integrity="sha384-apa" crossorigin="anonymous"></script>', /SRI references missing asset/],
     ]) {
       writeFileSync(join(fixture, file), markup);
       result = runCheck();

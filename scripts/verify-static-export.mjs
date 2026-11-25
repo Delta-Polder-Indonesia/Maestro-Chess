@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -155,6 +156,32 @@ for (const path of collectHtmlFiles(exportDirectory)) {
     if (/<style[\s>]/i.test(html)) {
       console.error(`Unexpected inline <style> element in exported HTML: ${path}`);
       failed = true;
+    }
+
+    // Validasi SRI: setiap integrity pada skrip/stylesheet/preload lokal harus
+    // cocok dengan hash SHA-384 byte berkas yang dirujuk (injeksi pasca-build).
+    for (const tagMatch of html.matchAll(/<(script|link)\b[^>]*>/gi)) {
+      const tag = tagMatch[0];
+      const integrity = tag.match(/\bintegrity\s*=\s*"([^"]*)"/i)?.[1];
+      if (!integrity) continue;
+      const jenis = tagMatch[1].toLowerCase();
+      const url = tag.match(jenis === "script" ? /\bsrc\s*=\s*"([^"]*)"/i : /\bhref\s*=\s*"([^"]*)"/i)?.[1];
+      const aset = url?.match(/\/_next\/static\/([^?#]+)$/);
+      if (!aset) continue;
+      const file = join(exportDirectory, "_next/static", aset[1]);
+      let benar;
+      try {
+        benar = "sha384-" + createHash("sha384").update(readFileSync(file)).digest("base64");
+      } catch {
+        console.error(`SRI references missing asset in ${path}: ${file}`);
+        failed = true;
+        continue;
+      }
+      const token = integrity.split(/\s+/).find((t) => t.startsWith("sha384-"));
+      if (token !== benar) {
+        console.error(`SRI hash mismatch in ${path} for ${aset[1]}`);
+        failed = true;
+      }
     }
   } catch {
     console.error(`Cannot read exported page: ${path}`);
