@@ -62,7 +62,7 @@ test("account, insights, and board consumers use the real shared profile module 
     }
     const nomor = ++profilCalls;
     return { ok: true, json: async () => ({
-      name: `Profile ${nomor}`, avatar: `https://example.test/avatar-${nomor}.png`,
+      name: `Profile ${nomor}`, avatar: `https://images.chesscomfiles.com/uploads/v1/user/avatar-${nomor}.png`,
       country: "https://api.chess.com/pub/country/ID",
     }) };
   });
@@ -102,7 +102,7 @@ test("account, insights, and board consumers use the real shared profile module 
     await flush();
   });
   assert.equal(profilCalls, 1);
-  assert.ok(akun.root.findAllByType("img").some((node) => node.props.src === "https://example.test/avatar-1.png"));
+  assert.ok(akun.root.findAllByType("img").some((node) => node.props.src === "https://images.chesscomfiles.com/uploads/v1/user/avatar-1.png"));
   await act(async () => {
     wawasan = TestRenderer.create(React.createElement(Wawasan, { username, platform: "chessCom", t: (key) => key, locale: "en" }));
     papan = TestRenderer.create(React.createElement(NamaPapan, { flag: "🇮🇩", white: true }, username));
@@ -115,7 +115,7 @@ test("account, insights, and board consumers use the real shared profile module 
   await act(async () => { await wawasan.root.findByProps({ "data-uji": "wawasan-profil-refresh" }).props.onClick(); await flush(); });
   assert.equal(profilCalls, 2);
   assert.ok(JSON.stringify(wawasan.toJSON()).includes("Profile 2"));
-  assert.ok(akun.root.findAllByType("img").some((node) => node.props.src === "https://example.test/avatar-1.png"),
+  assert.ok(akun.root.findAllByType("img").some((node) => node.props.src === "https://images.chesscomfiles.com/uploads/v1/user/avatar-1.png"),
     "the already mounted account hook does not subscribe to refreshes");
   assert.equal((await profil.ambilKartuPemain(username, "chessCom")).name, "Profile 2");
   assert.equal(JSON.parse(storage.get("maestro-analisa-pemain-v2-chessCom:integration-profile")).name, "Profile 2");

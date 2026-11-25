@@ -44,6 +44,35 @@ function benderaNegara(kode) {
   return /^[a-z]{2}(?:-[a-z]{3})?$/.test(normal) ? normal : null;
 }
 
+/**
+ * Satu-satunya hostname avatar resmi yang dikembalikan API publik Chess.com
+ * (terverifikasi dari beberapa profil live). Lichess tidak menyediakan avatar
+ * publik, jadi tidak ada hostname lain yang sah untuk gambar profil.
+ */
+const HOST_AVATAR_CHESSCOM = "images.chesscomfiles.com";
+
+/**
+ * Validasi URL avatar sebelum dipakai pada <img>. Hanya HTTPS dari hostname
+ * resmi yang diterima; skema lain (http/javascript/data), hostname tiruan,
+ * kredensial pada authority, dan port nonstandar ditolak menjadi `null` agar
+ * komponen jatuh ke ikon profil lokal, bukan crash. Berlaku untuk data API
+ * baru maupun kartu lama yang dibaca dari cache localStorage.
+ */
+function validasiUrlAvatar(nilai) {
+  if (typeof nilai !== "string" || nilai.trim() === "") return null;
+  let url;
+  try {
+    url = new URL(nilai);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:") return null;
+  if (url.hostname !== HOST_AVATAR_CHESSCOM) return null;
+  if (url.username !== "" || url.password !== "") return null;
+  if (url.port !== "") return null;
+  return url.href;
+}
+
 function muatStorage(kunci) {
   try {
     const raw = localStorage.getItem(KUNCI_CACHE + kunci);
@@ -90,7 +119,7 @@ async function ambilDariChessCom(username) {
     exists: true,
     name: profil.name || null,
     title: profil.title || null,
-    avatar: profil.avatar || null,
+    avatar: validasiUrlAvatar(profil.avatar),
     flag: bendera,
     country: bendera ? bendera.toUpperCase() : null,
     joined: Number.isFinite(profil.joined) ? profil.joined : null,
@@ -177,6 +206,12 @@ export async function ambilKartuPemain(username, platform = "chessCom") {
 
   const dariStorage = muatStorage(kunci);
   if (dariStorage) {
+    // Kartu lama di localStorage mungkin menyimpan avatar belum tervalidasi;
+    // bersihkan saat dibaca agar cache lama tidak melewati validasi hostname.
+    // Hanya sentuh bila properti avatar ada supaya bentuk kartu tetap utuh.
+    if (typeof dariStorage === "object" && Object.hasOwn(dariStorage, "avatar")) {
+      dariStorage.avatar = validasiUrlAvatar(dariStorage.avatar);
+    }
     cache.set(kunci, dariStorage);
     return dariStorage;
   }

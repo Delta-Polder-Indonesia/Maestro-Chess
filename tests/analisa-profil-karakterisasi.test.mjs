@@ -63,7 +63,7 @@ test("Chess.com and Lichess normalize distinct cache keys, requests, and full pr
   const storage = lingkungan(tes);
   const calls = [];
   const chess = {
-    name: "Alice Example", title: "GM", avatar: "https://example.test/alice.png",
+    name: "Alice Example", title: "GM", avatar: "https://images.chesscomfiles.com/uploads/v1/user/alice.png",
     country: "https://api.chess.com/pub/country/GB-ENG", joined: 1650000000,
     status: "basic", url: "https://www.chess.com/member/alice",
   };
@@ -90,7 +90,7 @@ test("Chess.com and Lichess normalize distinct cache keys, requests, and full pr
   const kartuChess = await ambilKartuPemain("  CacheUser_A  ");
   assert.deepEqual(kartuChess, {
     username: "  CacheUser_A  ", exists: true, name: "Alice Example", title: "GM",
-    avatar: "https://example.test/alice.png", flag: "gb-eng", country: "GB-ENG",
+    avatar: "https://images.chesscomfiles.com/uploads/v1/user/alice.png", flag: "gb-eng", country: "GB-ENG",
     joined: 1650000000, status: "basic", url: "https://www.chess.com/member/alice", total: 20,
     ratings: { bullet: 1200, blitz: 1400, rapid: 1600, daily: 1800, classical: 1700 },
     peak: { bullet: 1300, blitz: 1500, rapid: null, daily: 1900, classical: 1750 },

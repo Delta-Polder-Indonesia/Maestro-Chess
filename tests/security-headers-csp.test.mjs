@@ -61,7 +61,7 @@ test("vercel.json enforces strict Observatory security headers without breaking 
   assert.deepEqual(csp.get("worker-src"), ["'self'"]);
   assert.deepEqual(csp.get("child-src"), ["'self'"]);
   assert.deepEqual(csp.get("style-src"), ["'self'", "'unsafe-inline'"]);
-  assert.deepEqual(csp.get("img-src"), ["'self'", "data:", "https:"]);
+  assert.deepEqual(csp.get("img-src"), ["'self'", "https://images.chesscomfiles.com"]);
 
   const scriptSrc = csp.get("script-src");
   assert.deepEqual(scriptSrc, ["'self'", "'wasm-unsafe-eval'"]);

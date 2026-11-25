@@ -6,7 +6,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; frame-src 'none'; object-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; media-src 'self'; connect-src 'self' https://api.chess.com https://www.chess.com https://lichess.org blob:; worker-src 'self'; child-src 'self'"
+          "value": "default-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; frame-src 'none'; object-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https://images.chesscomfiles.com; font-src 'self'; media-src 'self'; connect-src 'self' https://api.chess.com https://www.chess.com https://lichess.org blob:; worker-src 'self'; child-src 'self'"
         },
         {
           "key": "X-Content-Type-Options",
