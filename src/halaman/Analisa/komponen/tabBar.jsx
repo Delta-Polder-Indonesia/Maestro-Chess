@@ -1,8 +1,7 @@
 import { Plus, X } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 import { useI18n } from "../../../lib/i18n.jsx";
-import { KUNCI_FITUR } from "../riwayatFitur.js";
-import { usePekerjaan } from "../usePekerjaan.js";
+import { KUNCI_FITUR, usePekerjaan } from "../../../modul/pekerjaan/index.js";
 
 function tampilkanTabAktif(daftar) {
   const tombol = daftar?.querySelector('[aria-selected="true"]');
@@ -11,8 +10,15 @@ function tampilkanTabAktif(daftar) {
   return tombol;
 }
 
-/** Bilah sederhana di atas area kerja; setiap tab mengarah ke satu fitur. */
-export default function TabBar({ daftar, aktifId, sibuk, onPilih, onTutup, onTambah }) {
+/**
+ * Bilah sederhana di atas area kerja; setiap tab mengarah ke satu fitur.
+ *
+ * `tampilanAktif` memakai layar yang sedang benar-benar tampil, bukan catatan
+ * `tampilan` di tab. Catatan itu ditulis oleh efek setelah render, sehingga
+ * saat pengguna kembali dari Engine ke Papan label tab sempat terbaca
+ * "Engine" lebih dulu sebelum berubah menjadi "New Tab".
+ */
+export default function TabBar({ daftar, aktifId, sibuk, tampilanAktif, laporanAktifId, onPilih, onTutup, onTambah }) {
   const { t } = useI18n();
   const { daftar: pekerjaan } = usePekerjaan();
   const idDaftar = useId();
@@ -39,13 +45,22 @@ export default function TabBar({ daftar, aktifId, sibuk, onPilih, onTutup, onTam
     return () => window.removeEventListener("resize", ukur);
   }, []);
 
+  function fiturTab(tab) {
+    // Saat memulihkan sesi `tampilanAktif` sengaja kosong: ikuti tujuan tab
+    // yang tersimpan supaya bilah tidak berkedip sebelum pemulihan selesai.
+    if (tab.id === aktifId && tampilanAktif) return tampilanAktif;
+    return tab.tampilan;
+  }
+
   function namaTab(tab) {
-    if (tab.tampilan === "papan") return t("analisa.tabKerja.baru");
-    if (tab.tampilan === "bermain") {
-      const laporan = pekerjaan.find((item) => item.jenis === "laporan" && item.id === tab.laporanId);
+    const fitur = fiturTab(tab);
+    if (fitur === "papan") return t("analisa.tabKerja.baru");
+    if (fitur === "bermain") {
+      const id = tab.id === aktifId && laporanAktifId ? laporanAktifId : tab.laporanId;
+      const laporan = pekerjaan.find((item) => item.jenis === "laporan" && item.id === id);
       if (laporan?.judul) return laporan.judul;
     }
-    return t(KUNCI_FITUR[tab.tampilan]);
+    return t(KUNCI_FITUR[fitur]);
   }
 
   function tekanPanah(e) {
@@ -81,7 +96,7 @@ export default function TabBar({ daftar, aktifId, sibuk, onPilih, onTutup, onTam
               key={tab.id}
               data-uji="tab-kerja-item"
               data-tab-id={tab.id}
-              data-tab-fitur={tab.tampilan}
+              data-tab-fitur={fiturTab(tab)}
               className={`flex h-9 max-w-[220px] min-w-[118px] shrink-0 items-center border-r border-border ${aktif ? "border-t-2 border-t-backgroundBoxBoxHighlighted bg-backgroundBoxBox" : "border-t-2 border-t-transparent hover:bg-backgroundBoxBoxHover"}`}
             >
               <span id={`${idDaftar}-${indeks}`} role="presentation" className="flex min-w-0 flex-1">

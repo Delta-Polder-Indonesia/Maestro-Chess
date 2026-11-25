@@ -19,7 +19,7 @@ import Ratings from "../pengaturan/ratings.jsx";
 import Moves from "../pengaturan/moves.jsx";
 import BestMoves from "../pengaturan/bestMoves.jsx";
 import BarisPengaturan from "../pengaturan/barisPengaturan.jsx";
-import { boardThemes } from "../pengaturan/boardThemes.js";
+import { boardThemes } from "../../../../modul/sesi/preferensi.js";
 import { daftarRating } from "../pengaturan/ratings.jsx";
 import GitHub from "../svg/github.jsx";
 import Lisensi from "../svg/license.jsx";
@@ -208,7 +208,7 @@ export default function LayarPengaturan({ aktif = true }) {
                   onClick={() => { setTabAktif(tab.id); setPencarian(""); }}
                   className={`relative flex shrink-0 items-center gap-2.5 px-3 py-2.5 text-left text-[14px] font-semibold leading-5 transition-colors ${
                     Dipilih
-                      ? "bg-backgroundBoxBoxHighlighted/15 font-medium text-foreground"
+                      ? "font-medium text-backgroundBoxBoxHighlighted"
                       : "text-foregroundGrey hover:bg-backgroundBoxBox hover:text-foreground"
                   }`}
                 >

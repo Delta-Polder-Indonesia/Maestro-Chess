@@ -4,7 +4,7 @@ import NextMove from "../../svg/nextMove.jsx";
 import Play from "../../svg/play.jsx";
 import SkipGame from "../../svg/skipGame.jsx";
 import Pause from "../../svg/pause.jsx";
-import { useBoard } from "../../../konteks/boardKonteks.js";
+import { useBoard } from "../../../../../modul/sesi/papan.js";
 import { useI18n } from "../../../../../lib/i18n.jsx";
 import { TooltipLabel } from "../../../../../components/ui/tooltip.jsx";
 function GameButtons() {

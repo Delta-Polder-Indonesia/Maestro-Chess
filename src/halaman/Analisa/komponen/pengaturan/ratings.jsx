@@ -1,13 +1,11 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 import { capitalizeFirst } from "../menu/analyze/selectChessComData.js";
-import { ConfigContext, defaultUsedRatings } from "../../konteks/configKonteks.js";
+import { ConfigContext, defaultUsedRatings, boardThemes, bacaTeks, tulis } from "../../../../modul/sesi/preferensi.js";
 import { memo, useContext, useEffect } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
-import { boardThemes } from "./boardThemes.js";
 import { QUEEN, WHITE } from "chess.js";
 import PieceSVG from "../svg/piece.jsx";
 import RatingSVG from "../svg/rating.jsx";
-import { bacaTeks, tulis } from "../../penyimpanan.js";
 import SakelarPengaturan from "./sakelarPengaturan.jsx";
 import BarisPengaturan from "./barisPengaturan.jsx";
 const ratings = [

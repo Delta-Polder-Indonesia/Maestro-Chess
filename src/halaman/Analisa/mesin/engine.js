@@ -21,8 +21,7 @@
 
 import { Chess } from "chess.js";
 import { pecahMultiPgn } from "../../../lib/pgnRingan.js";
-import { EngineCatur, cariEngine } from "../../../lib/engineCatur.js";
-import { hashUntukEngine } from "./cekWasm.js";
+import { EngineCatur, cariEngine, hashUntukEngine } from "../../../modul/analisis/mesin.js";
 import { getMoveRating, invertColor, isForced, isSacrifice } from "./penilaian.js";
 import { apakahLangkahKritis, cpKandidat } from "./langkahKritis.js";
 import { MATE_DISAMPAIKAN, STATUS_EVALUASI } from "./evaluasi.js";

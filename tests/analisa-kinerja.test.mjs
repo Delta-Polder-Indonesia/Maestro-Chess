@@ -16,6 +16,7 @@ import { getCapturedPieces } from "../src/halaman/Analisa/komponen/game/getMoves
 import { useAnalisisPapan } from "../src/halaman/Analisa/komponen/game/useAnalisisPapan.js";
 import { useUkuranArea } from "../src/halaman/Analisa/komponen/useUkuranArea.js";
 import * as navigasiTab from "../src/halaman/Analisa/komponen/navigasiTab.js";
+import { buatPemuatJsx } from "./bantuImporJsx.mjs";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -41,23 +42,24 @@ function kompilasi(path, dependencies) {
 
 test("navigation notifies the screen only, while board and analysis still receive real board changes", async () => {
   const t = (key) => key;
-  const board = kompilasi("../src/halaman/Analisa/konteks/board.jsx", {
-    "../../../lib/i18n.jsx": { useI18n: () => ({ t }) },
-    "../penyimpanan.js": { bacaAngka: (_key, fallback) => fallback },
-    "./analyzeKonteks.js": analyzeContext,
-    "./boardKonteks.js": boardContext,
+  const muat = buatPemuatJsx({
+    "src/lib/i18n.jsx": { useI18n: () => ({ t }) },
+    "src/modul/sesi/preferensi.js": { bacaAngka: (_key, fallback) => fallback },
+    "src/modul/sesi/analyzeKonteks.js": analyzeContext,
+    "src/modul/sesi/boardKonteks.js": boardContext,
   });
+  const board = muat("src/halaman/Analisa/konteks/board.jsx");
   const imp = {
     data: [{ format: "fen", string: "" }, noop], pageState: ["default", noop],
     progress: [0, noop], langkahSementara: [[], noop],
     analyzeController: [new AbortController(), noop], analyzingMove: [false, noop],
   };
-  const analyze = kompilasi("../src/halaman/Analisa/konteks/analyze.jsx", {
+  const analyze = kompilasi("../src/modul/sesi/AnalyzeContextProvider.jsx", {
     "./analyzeKonteks.js": analyzeContext,
-    "./board.jsx": board,
-    "./import.jsx": { ImportProvider: ({ children }) => children },
-    "./boardKonteks.js": boardContext,
-    "./importKonteks.js": { useImport: () => imp },
+    "./papanProvider.js": board,
+    "./imporProvider.js": { ImportProvider: ({ children }) => children },
+    "./papan.js": boardContext,
+    "./impor.js": { useImport: () => imp },
   });
   const hitung = { papan: 0, analisis: 0, tampilan: 0, setter: 0 };
   const nilai = {};
@@ -123,8 +125,7 @@ test("the board ignores unrelated configuration, applies sound/theme, and caches
   const Board = kompilasi("../src/halaman/Analisa/komponen/game/board.jsx", {
     "../../mesin/engine.js": { deformatSquare: noop, formatSquare: noop },
     "../suaraPapan.js": { buatSuara: (nama) => ({ play: () => suara.push(nama) }) },
-    "../../konteks/configKonteks.js": configContext,
-    "../pengaturan/boardThemes.js": { boardThemes },
+    "../../../../modul/sesi/preferensi.js": { ...configContext, boardThemes },
     "../svg/piece.jsx": { default: Bidak },
     "../svg/rating.jsx": { default: kosong },
     "../svg/result.jsx": { default: kosong },
@@ -223,7 +224,7 @@ test("move navigation defers the side panel without overriding a later tab selec
   const translate = (key) => key;
   const Menu = kompilasi("../src/halaman/Analisa/komponen/menu/menu.jsx", {
     react: reactWithSpy,
-    "../../konteks/analyzeKonteks.js": analyzeContext,
+    "../../../../modul/sesi/analisa.js": analyzeContext,
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
     "./loading/loading.jsx": { default: kosong },
     "./loading/grafikMuat.jsx": { default: kosong },
@@ -314,15 +315,14 @@ test("the board observes its workspace from the first mount and resizes when the
     "./clock.jsx": { default: kosong },
     "./name.jsx": { default: kosong },
     "./evaluation.jsx": { default: kosong },
-    "../../konteks/analyzeKonteks.js": analyzeContext,
+    "../../../../modul/sesi/analisa.js": analyzeContext,
     "../../mesin/evaluasi.js": { ratingTampilan: noop },
-    "../errors/pushPageError.js": { pushPageWarning: noop },
-    "../../konteks/mesinKonteks.js": { useMesin: () => ({ didukung: true, siapkan: noop, ambilMesin: noop }) },
+    "../../../../modul/sesi/galat.js": { ErrorsContext: React.createContext({ errors: [[], noop] }), pushPageWarning: noop },
+    "../../../../modul/sesi/mesin.js": { useMesin: () => ({ didukung: true, siapkan: noop, ambilMesin: noop }) },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
-    "../../../../lib/pemainCatur.js": { useKartuPemain: () => null },
-    "../../konteks/errorsKonteks.js": { ErrorsContext: React.createContext({ errors: [[], noop] }) },
+    "@/modul/profil/index.js": { useKartuPemain: () => null },
     "../../konstanta.js": { maxSisiPapan: 1000, minSisiPapan: 160, navTop: 516 },
-    "../../konteks/configKonteks.js": configContext,
+    "../../../../modul/sesi/preferensi.js": configContext,
     "../menu/analysis/gameButtons.jsx": { default: kosong },
     "./getMoves.js": {
       getMoves: (game, i) => ({ move: game[i] }), getArrows: () => [], getCapturedPieces,
@@ -391,7 +391,7 @@ test("captured pieces follow the current move and the visible custom line", () =
 
 test("keyboard listener follows the visible screen through a memoized parent and is removed on unmount", async (t) => {
   const Pendengar = kompilasi("../src/halaman/Analisa/komponen/game/pendengarKeyboard.jsx", {
-    "../../konteks/boardKonteks.js": boardContext,
+    "../../../../modul/sesi/papan.js": boardContext,
     "./keyboardPapan.js": { buatHandleKeyDown },
   }).default;
   const previousDocument = globalThis.document;

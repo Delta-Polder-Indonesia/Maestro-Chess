@@ -110,7 +110,7 @@ for (const [language, dictionary] of [["id", indonesia], ["en", english]]) {
     const dependencies = {
       "../../../components/ui/tabs.jsx": { Tabs: wrapper, TabsContent: wrapper, TabsList: wrapper, TabsTrigger: wrapper },
       "../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
-      "../penyimpanan.js": { bacaTeks: () => "", tulis: () => true },
+      "../../../modul/sesi/preferensi.js": { bacaTeks: () => "", tulis: () => true },
       "./muatPartaiAkun.js": { muatPartaiChessCom: async () => { if (download instanceof Error) throw download; return download; }, muatPartaiLichess: kosong },
       "../database/statusSimpan.js": { pesanPenyimpananPartai },
       "./PemilihRentang.jsx": { default: kosong },

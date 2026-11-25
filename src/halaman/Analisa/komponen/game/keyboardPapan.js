@@ -7,7 +7,7 @@
  * game.jsx mengimpor dari sini; scripts/uji-keyboard-analisa.mjs juga
  * mengimpor dari sini — keduanya menjalankan kode yang identik.
  */
-import { TAMPILAN_ANALISA } from "../../konteks/analyzeKonteks.js";
+import { TAMPILAN_ANALISA } from "../../../../modul/sesi/analisa.js";
 
 export function isElemenInteraktif(el) {
   if (!el) return false;

@@ -133,7 +133,7 @@ export const analisa = {
       tarik: {
         judul: "Tinjau partai Anda",
         isi: "Pilih akun di kolom kiri, atur rentang tanggal, lalu muat partainya. Hasilnya tersimpan otomatis ke basis data.",
-        pilihAkun: "Pilih akun di kolom kiri dulu.",
+        pilihAkun: "Pilih akun",
         rentang: "Rentang tanggal",
         hariIni: "Hari ini",
         kemarin: "Kemarin",

@@ -51,10 +51,10 @@ function siapkanAreaKerja(store, navigasi) {
   const Board = React.createContext(null);
   const Import = React.createContext(null);
   const Errors = React.createContext(null);
-  const tab = kompilasi("../src/halaman/Analisa/konteks/tabKerja.jsx", {
-    "../../../lib/titipanAnalisa.js": { adaPgnTitipan: () => Boolean(navigasi.adaTitipan) },
-    "../pekerjaan.js": { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan: store },
-    "../tabKerja.js": modelTab,
+  const tab = kompilasi("../src/modul/sesi/TabKerjaProvider.jsx", {
+    "./titipanAnalisa.js": { adaPgnTitipan: () => Boolean(navigasi.adaTitipan) },
+    "../pekerjaan/index.js": { ID_DRAF_IMPOR, buatIdDrafImpor, pekerjaan: store },
+    "./tabKerja.js": modelTab,
     "./analyzeKonteks.js": { TAMPILAN_ANALISA },
     "./boardKonteks.js": { useTampilan: () => React.useContext(Board).tampilan },
   });
@@ -88,18 +88,20 @@ function siapkanAreaKerja(store, navigasi) {
   layar["./nav/layarPengaturan.jsx"] = { default: kosong };
   layar["./nav/layarEngine.jsx"] = { default: kosong };
   const dependencies = {
-    "../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA },
-    "../konteks/boardKonteks.js": {
+    "../../../modul/sesi/analisa.js": { TAMPILAN_ANALISA },
+    "../../../modul/sesi/papan.js": {
       useTampilan: () => React.useContext(Board).tampilan,
       useSetTampilan: () => React.useContext(Board).tampilan[1],
     },
-    "../konteks/importKonteks.js": { useImport: () => React.useContext(Import) },
-    "../konteks/tabKerja.jsx": tab,
-    "../konteks/panelAktif.js": { PanelAktifContext: React.createContext(true) },
-    "../konteks/errorsKonteks.js": { ErrorsContext: Errors },
-    "../pekerjaan.js": { pekerjaan: store, snapshotLaporanAman },
-    "../riwayatFitur.js": { KUNCI_FITUR, catatFitur: (fitur, target) => catatFitur(fitur, target, store, ++waktu) },
-    "../usePekerjaan.js": { usePekerjaan: () => React.useSyncExternalStore(store.langganan, store.snapshot, store.snapshot) },
+    "../../../modul/sesi/impor.js": { useImport: () => React.useContext(Import) },
+    "@/modul/sesi/index.js": tab,
+    "../../../modul/sesi/panel.js": { PanelAktifContext: React.createContext(true) },
+    "../../../modul/sesi/galat.js": { ErrorsContext: Errors, pushPageError: () => {}, pushPageWarning: () => {} },
+    "../../../modul/pekerjaan/index.js": {
+      pekerjaan: store, snapshotLaporanAman, KUNCI_FITUR,
+      catatFitur: (fitur, target) => catatFitur(fitur, target, store, ++waktu),
+      usePekerjaan: () => React.useSyncExternalStore(store.langganan, store.snapshot, store.snapshot),
+    },
     "../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
     "../../../components/ui/alert-dialog.jsx": {
       ...Object.fromEntries([
@@ -109,7 +111,6 @@ function siapkanAreaKerja(store, navigasi) {
       AlertDialog: (props) => { navigasi.dialog = props; return props.open ? React.createElement(React.Fragment, null, props.children) : null; },
       AlertDialogAction: ({ children, ...props }) => React.createElement("button", props, children),
     },
-    "./errors/pushPageError.js": { pushPageError: () => {}, pushPageWarning: () => {} },
     "./useUkuranArea.js": { useUkuranArea },
     "./game/game.jsx": { default: GameMock },
     "./tabBar.jsx": { default: TabBarMock },
@@ -117,7 +118,7 @@ function siapkanAreaKerja(store, navigasi) {
     "./menu/menu.jsx": { default: kosong },
     "./menu/analysis/gameButtons.jsx": { default: kosong },
     "./nav/validasiImpor.js": { validasiPgn: () => {} },
-    "../../../lib/titipanAnalisa.js": { ambilPgnTitipan: () => "" },
+    "../../../modul/sesi/titipan.js": { ambilPgnTitipan: () => "" },
     "./nav/layarPapan.jsx": { default: layarPapan },
     "./nav/layarImpor.jsx": { default: layarImpor },
     "./nav/layarDatabase.jsx": { default: LayarDatabaseMock },
@@ -788,6 +789,43 @@ test("a completed session report restores its snapshot without requesting a new 
   assert.equal(navigasi.data.pekerjaanId, id);
   assert.equal(navigasi.data.pemulihan.snapshot.game[0].fen, fen);
   assert.equal(navigasi.data.rekamAwal, undefined);
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+});
+
+test("workspace supplies saved labels while a session report is still loading", async (t) => {
+  pasangDocument(t);
+  const id = "laporan:pulih-lambat";
+  const fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  pasangSession(t, { versi: 1, aktifId: "tab:laporan", daftar: [{ id: "tab:laporan", tampilan: "bermain", laporanId: id }] });
+  const adapter = adapterMemori();
+  const seed = buatPenyimpananPekerjaan(adapter);
+  seed.simpan({ id, jenis: "laporan", status: "selesai", sumber: { format: "fen", string: fen }, snapshot: { versi: 1, game: [{ fen }], customLine: { moves: [] } } });
+  await seed.tungguTulis();
+  const ambilAsli = adapter.ambil;
+  let lanjut;
+  let mulaiBaca = false;
+  const tunggu = new Promise((resolve) => { lanjut = resolve; });
+  t.after(() => lanjut());
+  adapter.ambil = async (key) => {
+    if (key === id) { mulaiBaca = true; await tunggu; }
+    return ambilAsli(key);
+  };
+  const store = buatPenyimpananPekerjaan(adapter);
+  const navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); });
+  assert.equal(mulaiBaca, true);
+  assert.equal(navigasi.tab.perluPulih, true);
+  assert.equal(navigasi.tabBar.sibuk, true);
+  assert.equal(navigasi.tabBar.tampilanAktif, null);
+  assert.equal(navigasi.tabBar.laporanAktifId, null);
+  assert.equal(navigasi.tabBar.daftar[0].laporanId, id);
+
+  await act(async () => { lanjut(); await flush(); await flush(); });
+  assert.equal(navigasi.tab.perluPulih, false);
+  assert.equal(navigasi.tabBar.sibuk, false);
+  assert.equal(navigasi.tabBar.tampilanAktif, "bermain");
+  assert.equal(navigasi.tabBar.laporanAktifId, id);
   await act(async () => { renderer.unmount(); await store.tungguTulis(); });
 });
 

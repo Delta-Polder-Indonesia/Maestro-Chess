@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { buatManajerLaporan } from "../../manajerLaporan.js";
-import { daftarkanPembacaLaporan, simpanLaporanAktif } from "../../pekerjaan.js";
+import { buatManajerLaporan, daftarkanPembacaLaporan, simpanLaporanAktif } from "../../../../modul/pekerjaan/index.js";
 
 /** Simpan tiap perubahan papan, bukan tiap detak progres engine. */
 export function usePekerjaanLaporan(papan) {

@@ -1,8 +1,8 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 /* Tombol gear membuka layar Pengaturan penuh (TAMPILAN_ANALISA.PENGATURAN),
    bukan popup — sama seperti tombol gear di Papan Interaktif. */
-import { TAMPILAN_ANALISA } from "../../konteks/analyzeKonteks.js";
-import { useBoard, useSetTampilan } from "../../konteks/boardKonteks.js";
+import { TAMPILAN_ANALISA } from "../../../../modul/sesi/analisa.js";
+import { useBoard, useSetTampilan } from "../../../../modul/sesi/papan.js";
 import Image from "../Gambar.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { berkasPublik } from "../../../../lib/asets.js";

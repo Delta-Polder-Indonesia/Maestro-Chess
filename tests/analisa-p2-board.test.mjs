@@ -27,8 +27,7 @@ const compiled = ts.transpileModule(source, {
 const dependencies = {
   "../../mesin/engine.js": { deformatSquare, formatSquare },
   "../suaraPapan.js": { buatSuara: () => ({ play: noop }) },
-  "../../konteks/configKonteks.js": configContext,
-  "../pengaturan/boardThemes.js": { boardThemes },
+  "../../../../modul/sesi/preferensi.js": { ...configContext, boardThemes },
   "../svg/piece.jsx": { default: () => React.createElement("span", { "data-piece": true }) },
   "../svg/rating.jsx": { default: () => null },
   "../svg/result.jsx": { default: () => null },

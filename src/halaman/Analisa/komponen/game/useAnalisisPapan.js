@@ -17,7 +17,7 @@ import { Chess } from "chess.js";
 import { formatSquare, getCastle, invertColor, parseMove } from "../../mesin/engine.js";
 import { STATUS_EVALUASI } from "../../mesin/evaluasi.js";
 import { cariNamaPembukaan } from "../../mesin/buku.js";
-import { pushPageError } from "../errors/pushPageError.js";
+import { pushPageError } from "../../../../modul/sesi/galat.js";
 
 function sliceCustomArrows(arrows, moveNumber) {
   const hasil = {};

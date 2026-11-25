@@ -39,8 +39,7 @@ function renderPapan(dictionary, handlers = {}, work = { siap: true, tersedia: t
   const i18n = { useI18n: () => ({ t: translate, bahasa: dictionary === english ? "en" : "id" }) };
   const Daftar = compile("../src/halaman/Analisa/komponen/nav/daftarPekerjaan.jsx", {
     "../../../../lib/i18n.jsx": i18n,
-    "../../riwayatFitur.js": { daftarRiwayat, KUNCI_FITUR },
-    "../../usePekerjaan.js": { usePekerjaan: () => work },
+    "../../../../modul/pekerjaan/index.js": { daftarRiwayat, KUNCI_FITUR, usePekerjaan: () => work },
   });
   const Papan = compile("../src/halaman/Analisa/komponen/nav/layarPapan.jsx", {
     "./PanelLayar.jsx": { default: ({ children }) => React.createElement("section", null, children) },
@@ -59,13 +58,13 @@ function renderNav(dictionary, penyimpanan = { bacaBoolean: (_key, fallback) => 
     "../svg/github.jsx": svg,
     "../svg/license.jsx": svg,
     "../svg/profile.jsx": svg,
-    "../../konteks/analyzeKonteks.js": { TAMPILAN_ANALISA: { PAPAN: "papan", BERMAIN: "bermain", AKUN: "akun", BASIS_DATA: "database", ENGINE: "engine", IMPOR: "impor", DETEKSI_ENGINE: "deteksi-engine", WAWASAN: "wawasan", PENGATURAN: "pengaturan" } },
-    "../../konteks/boardKonteks.js": { useTampilan: () => [tampilan, onTampilan] },
-    "../../konteks/tabKerja.jsx": { useTabKerja: () => ({ bukaImpor() {}, bukaPapan: onBukaPapan, perluPulih: false }) },
+    "../../../../modul/sesi/analisa.js": { TAMPILAN_ANALISA: { PAPAN: "papan", BERMAIN: "bermain", AKUN: "akun", BASIS_DATA: "database", ENGINE: "engine", IMPOR: "impor", DETEKSI_ENGINE: "deteksi-engine", WAWASAN: "wawasan", PENGATURAN: "pengaturan" } },
+    "../../../../modul/sesi/papan.js": { useTampilan: () => [tampilan, onTampilan] },
+    "@/modul/sesi/index.js": { useTabKerja: () => ({ bukaImpor() {}, bukaPapan: onBukaPapan, perluPulih: false }) },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
     "../../../../components/ui/tooltip.jsx": { TooltipLabel: ({ children }) => children },
     "../../konstanta.js": { navTop: 516 },
-    "../../penyimpanan.js": penyimpanan,
+    "../../../../modul/sesi/preferensi.js": penyimpanan,
   });
   return TestRenderer.create(React.createElement(Nav));
 }

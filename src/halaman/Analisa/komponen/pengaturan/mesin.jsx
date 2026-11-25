@@ -1,12 +1,12 @@
 /* Bagian pengaturan fitur Analisa — ditulis untuk ChessClub (bukan port). */
 import { memo, useContext, useEffect, useId, useState } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
-import { cariEngine } from "../../../../lib/engineCatur.js";
+import { cariEngine } from "../../../../modul/analisis/mesin.js";
 import { gambar } from "../../../../lib/asets.js";
-import { useMesin } from "../../konteks/mesinKonteks.js";
-import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
+import { useMesin } from "../../../../modul/sesi/mesin.js";
+import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
 
-import { tulis } from "../../penyimpanan.js";
+import { tulis } from "../../../../modul/sesi/preferensi.js";
 import Gambar from "../Gambar.jsx";
 
 /**

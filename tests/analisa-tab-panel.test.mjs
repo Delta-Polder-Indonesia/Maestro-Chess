@@ -7,6 +7,8 @@ import React from "react";
 import TestRenderer from "react-test-renderer";
 import ts from "typescript";
 import * as koordinasiAkun from "../src/halaman/Analisa/akun/koordinasiAkun.js";
+import { PanelAktifContext } from "../src/halaman/Analisa/konteks/panelAktif.js";
+import { useDropdown } from "../src/halaman/Analisa/komponen/nav/useDropdown.js";
 
 const require = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -63,10 +65,6 @@ test("dropdown Escape is handled before navigation and hidden panels remove thei
     querySelector: () => (dialogTerbuka ? {} : null),
   };
   tes.after(() => { if (sebelumnya === undefined) delete globalThis.document; else globalThis.document = sebelumnya; });
-  const PanelAktifContext = React.createContext(true);
-  const useDropdown = kompilasi("../src/halaman/Analisa/komponen/nav/useDropdown.js", {
-    "../../konteks/panelAktif.js": { PanelAktifContext },
-  }, "useDropdown");
   function Menu() {
     const state = useDropdown();
     return React.createElement("div", { "data-uji": "dropdown-test", ...state });
@@ -103,7 +101,7 @@ test("a hidden account tab closes its portaled delete confirmation", async (tes)
     "../../../lib/i18n.jsx": { useI18n: () => ({ t, bahasa: "id" }) },
     "../../../components/ui/tooltip.jsx": { TooltipLabel: wrapper },
     "../../../components/ui/alert-dialog.jsx": dialogMock(),
-    "../../../lib/pemainCatur.js": { useKartuPemain: () => null },
+    "@/modul/profil/index.js": { useKartuPemain: () => null },
     "../basisData.js": { bacaRevisiBasis: () => 0, ambilDaftarPartai: async () => ({ partai: [], total: 0 }) },
     "../komponen/svg/profile.jsx": { default: kosong },
     "../komponen/svg/trash.jsx": { default: kosong },
@@ -128,7 +126,7 @@ test("account cards refresh game counts on revision without accepting stale read
     "../../../lib/i18n.jsx": { useI18n: () => ({ t, bahasa: "id" }) },
     "../../../components/ui/tooltip.jsx": { TooltipLabel: wrapper },
     "../../../components/ui/alert-dialog.jsx": dialogMock(),
-    "../../../lib/pemainCatur.js": { useKartuPemain: () => null },
+    "@/modul/profil/index.js": { useKartuPemain: () => null },
     "../basisData.js": {
       bacaRevisiBasis: () => revisi,
       ambilDaftarPartai: () => new Promise((resolve) => pembaca.push(resolve)),
@@ -168,9 +166,9 @@ test("a hidden detection tab closes its portal and aborts its engine search with
   const Deteksi = kompilasi("../src/halaman/Analisa/komponen/nav/layarDeteksiEngine.jsx", {
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t }) },
     "../../../../lib/asets.js": { gambar: (x) => x },
-    "../../../../lib/engineCatur.js": { DAFTAR_ENGINE: [{ id: "engine", label: "Stockfish 18" }], cariEngine: () => ({ label: "Stockfish 18" }) },
-    "../../konteks/analyzeKonteks.js": { AnalyzeContext },
-    "../../konteks/mesinKonteks.js": { useMesin: () => mesin },
+    "../../../../modul/analisis/mesin.js": { DAFTAR_ENGINE: [{ id: "engine", label: "Stockfish 18" }], cariEngine: () => ({ label: "Stockfish 18" }), hashUntukEngine: () => 32 },
+    "../../../../modul/sesi/analisa.js": { AnalyzeContext },
+    "../../../../modul/sesi/mesin.js": { useMesin: () => mesin },
     "../../basisData.js": { ambilDaftarPartai: async () => (galatBasis ? { partai: [], galat: true } : { partai: [{ pgn: "1. e4 *" }] }) },
     "../../akun/useAkunKoleksi.js": { useAkunKoleksi: () => ({ akunTersimpan: [], koleksi: [] }) },
     "../../akun/koordinasiAkun.js": koordinasiAkun,
@@ -179,7 +177,6 @@ test("a hidden detection tab closes its portal and aborts its engine search with
       analisisRiwayatAntiCheat: ({ sinyal: value }) => { sinyal = value; return new Promise(() => {}); },
     },
     "../../mesin/engine.js": { MULTI_PV: 1 },
-    "../../mesin/cekWasm.js": { hashUntukEngine: () => 32 },
     "../../mesin/laporanPeninjauan.js": { unduhLaporanPeninjauan() {} },
     "./PanelLayar.jsx": { default: wrapper },
     "./ringkasanAntiCheat.jsx": { default: kosong },
@@ -382,9 +379,8 @@ test("returning to an account tab refreshes the shared list changed by another t
       bacaRevisiBasis: () => revisi, pastikanKoleksi: async () => {}, hapusKoleksi: async () => {},
       langgananRevisi: (callback) => { pendengar.add(callback); return () => pendengar.delete(callback); },
     },
-    "../../konteks/analyzeKonteks.js": { AnalyzeContext },
-    "../../konteks/errorsKonteks.js": { ErrorsContext: React.createContext({ errors: [[], () => {}] }) },
-    "../errors/pushPageError.js": { pushPageWarning: () => {} },
+    "../../../../modul/sesi/analisa.js": { AnalyzeContext },
+    "../../../../modul/sesi/galat.js": { ErrorsContext: React.createContext({ errors: [[], () => {}] }), pushPageWarning: () => {} },
   });
   const analyze = { akun: [{ platform: "chessCom", username: "" }, () => {}] };
   const isi = (aktif) => React.createElement(AnalyzeContext.Provider, { value: analyze }, React.createElement(Akun, { aktif, onTutup() {} }));
@@ -456,7 +452,7 @@ test("insights reload shared games on activation and revisions while retaining f
   const Wawasan = kompilasi("../src/halaman/Analisa/komponen/nav/layarWawasan.jsx", {
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t, bahasa: "id" }) },
     "../../../../lib/pgnRingan.js": { hashPgn: () => "hash" },
-    "../../konteks/analyzeKonteks.js": { AnalyzeContext },
+    "../../../../modul/sesi/analisa.js": { AnalyzeContext },
     "../../basisData.js": {
       ambilDaftarPartai: () => new Promise((resolve) => pembaca.push(resolve)),
       langgananRevisi: (callback) => { pendengar.add(callback); return () => pendengar.delete(callback); },

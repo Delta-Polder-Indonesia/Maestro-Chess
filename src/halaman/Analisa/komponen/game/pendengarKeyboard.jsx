@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { useTampilan } from "../../konteks/boardKonteks.js";
+import { useTampilan } from "../../../../modul/sesi/papan.js";
 import { buatHandleKeyDown } from "./keyboardPapan.js";
 
 /**

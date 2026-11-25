@@ -16,6 +16,7 @@ function komponenTab() {
   const terjemahan = {
     "analisa.tabKerja.baru": "New Tab",
     "analisa.tabKerja.daftar": "Tab area kerja",
+    "analisa.nav.engine": "Engine",
     "analisa.tabKerja.tambah": "Tambah tab",
     "analisa.tabKerja.tutup": "Tutup tab {nama}",
     "analisa.papan.kartu.report.judul": "Report Analisa",
@@ -24,8 +25,7 @@ function komponenTab() {
   const dependencies = {
     "lucide-react": require("lucide-react"),
     "../../../lib/i18n.jsx": { useI18n: () => ({ t: (key, nilai) => (terjemahan[key] ?? key).replace("{nama}", nilai?.nama ?? "") }) },
-    "../riwayatFitur.js": { KUNCI_FITUR },
-    "../usePekerjaan.js": { usePekerjaan: () => ({ daftar: [{ id: "laporan:1", jenis: "laporan", judul: "Alice vs Bob" }] }) },
+    "../../../modul/pekerjaan/index.js": { KUNCI_FITUR, usePekerjaan: () => ({ daftar: [{ id: "laporan:1", jenis: "laporan", judul: "Alice vs Bob" }] }) },
   };
   const filename = new URL("../src/halaman/Analisa/komponen/tabBar.jsx", import.meta.url);
   const compiled = ts.transpileModule(readFileSync(filename, "utf8"), {
@@ -67,6 +67,60 @@ test("tab bar labels features and reports, and exposes select, close and add con
   assert.deepEqual(aksi, [["pilih", "tab:1"], ["tutup", "tab:2"], ["tambah"]]);
   act(() => renderer.update(React.createElement(TabBar, { ...props, sibuk: true })));
   assert.ok(renderer.root.findAll((node) => ["tab-kerja-pilih", "tab-kerja-tutup", "tab-kerja-tambah"].includes(node.props["data-uji"])).every((node) => node.props.disabled));
+  act(() => renderer.unmount());
+});
+
+test("active tab follows the live screen before the recorded tab feature catches up", () => {
+  const TabBar = komponenTab();
+  const daftar = [
+    { id: "tab:1", tampilan: "engine" },
+    { id: "tab:2", tampilan: "bermain", laporanId: "laporan:other" },
+  ];
+  const props = {
+    daftar,
+    aktifId: "tab:1",
+    sibuk: false,
+    tampilanAktif: "papan",
+    onPilih() {}, onTutup() {}, onTambah() {},
+  };
+  let renderer;
+  act(() => { renderer = TestRenderer.create(React.createElement(TabBar, props)); });
+  const tombol = renderer.root.findAll((node) => node.props.role === "tab");
+  assert.deepEqual(tombol.map((node) => node.children.join("")), ["New Tab", "Report Analisa"]);
+  assert.deepEqual(renderer.root.findAllByProps({ "data-uji": "tab-kerja-item" }).map((node) => node.props["data-tab-fitur"]), ["papan", "bermain"]);
+
+  act(() => renderer.update(React.createElement(TabBar, {
+    ...props,
+    aktifId: "tab:2",
+    tampilanAktif: "bermain",
+    laporanAktifId: "laporan:1",
+  })));
+  assert.deepEqual(renderer.root.findAll((node) => node.props.role === "tab").map((node) => node.children.join("")), ["Engine", "Alice vs Bob"]);
+  act(() => renderer.unmount());
+});
+
+test("session recovery uses saved tab labels until the live screen is ready", () => {
+  const TabBar = komponenTab();
+  const props = {
+    daftar: [
+      { id: "tab:1", tampilan: "engine" },
+      { id: "tab:2", tampilan: "bermain", laporanId: "laporan:1" },
+    ],
+    aktifId: "tab:2",
+    sibuk: true,
+    tampilanAktif: null,
+    laporanAktifId: null,
+    onPilih() {}, onTutup() {}, onTambah() {},
+  };
+  let renderer;
+  act(() => { renderer = TestRenderer.create(React.createElement(TabBar, props)); });
+  assert.deepEqual(renderer.root.findAll((node) => node.props.role === "tab").map((node) => node.children.join("")), ["Engine", "Alice vs Bob"]);
+  assert.deepEqual(renderer.root.findAllByProps({ "data-uji": "tab-kerja-item" }).map((node) => node.props["data-tab-fitur"]), ["engine", "bermain"]);
+  assert.ok(renderer.root.findAll((node) => ["tab-kerja-pilih", "tab-kerja-tutup", "tab-kerja-tambah"].includes(node.props["data-uji"])).every((node) => node.props.disabled));
+
+  act(() => renderer.update(React.createElement(TabBar, { ...props, sibuk: false, tampilanAktif: "papan", laporanAktifId: "laporan:1" })));
+  assert.deepEqual(renderer.root.findAll((node) => node.props.role === "tab").map((node) => node.children.join("")), ["Engine", "New Tab"]);
+  assert.equal(renderer.root.findAllByProps({ "data-uji": "tab-kerja-tutup" })[1].props["aria-label"], "Tutup tab New Tab");
   act(() => renderer.unmount());
 });
 

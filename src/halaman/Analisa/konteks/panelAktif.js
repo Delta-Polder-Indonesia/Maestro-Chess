@@ -1,4 +1,2 @@
-import { createContext } from "react";
-
-/** Status visibilitas panel fitur dalam tab workspace. */
-export const PanelAktifContext = createContext(true);
+// Path lama: context tetap satu melalui implementasi Sesi.
+export { PanelAktifContext } from "../../../modul/sesi/panelAktif.js";

@@ -38,10 +38,8 @@ test("a setting updates only the relevant panels while theme changes reach every
     return React.createElement("button", { "aria-label": label, "aria-checked": checked, onClick: () => onCheckedChange(!checked) });
   };
   const umum = {
-    "../../konteks/configKonteks.js": configContext,
-    "./boardThemes.js": { boardThemes },
+    "../../../../modul/sesi/preferensi.js": { ...configContext, boardThemes, bacaTeks: () => null, tulis: noop },
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
-    "../../penyimpanan.js": { bacaTeks: () => null, tulis: noop },
     "../svg/piece.jsx": { default: kosong },
     "../svg/rating.jsx": { default: kosong },
     "./barisPengaturan.jsx": { default: function BarisPengaturanUji({ children }) { return React.createElement("div", null, children); } },
@@ -106,11 +104,9 @@ test("theme switch names match the visible colour labels while state and persist
   for (const dictionary of [indonesia, english]) {
     const saved = [];
     const Themes = kompilasi("../src/halaman/Analisa/komponen/pengaturan/themes.jsx", {
-      "../../konteks/configKonteks.js": configContext,
+      "../../../../modul/sesi/preferensi.js": { ...configContext, boardThemes, bacaTeks: () => "0", tulis: (key, value) => saved.push([key, value]) },
       "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key.split(".").reduce((value, part) => value?.[part], { analisa: dictionary }) }) },
-      "../../penyimpanan.js": { bacaTeks: () => "0", tulis: (key, value) => saved.push([key, value]) },
       "./sakelarPengaturan.jsx": { default: Sakelar },
-      "./boardThemes.js": { boardThemes },
       "./barisPengaturan.jsx": { default: Baris },
     });
     function Harness() {

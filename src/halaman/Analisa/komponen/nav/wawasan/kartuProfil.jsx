@@ -5,13 +5,11 @@
  * Dipindah dari `layarWawasan.jsx` (Fase 3 lanjutan) tanpa perubahan perilaku.
  */
 import { useEffect, useRef, useState } from "react";
-import { segarkanKartuPemain, useKartuPemain } from "../../../../../lib/pemainCatur.js";
+import { segarkanKartuPemain, urlBendera, useKartuPemain } from "@/modul/profil/index.js";
 import LencanaGelar from "../../LencanaGelar.jsx";
 import Refresh from "../../svg/refresh.jsx";
 import { KELAS_RATING } from "./opsiWawasan.js";
 import { TooltipLabel } from "../../../../../components/ui/tooltip.jsx";
-
-import { urlBendera } from "../../../../../lib/bendera.js";
 
 function formatTanggalGabung(detik, locale) {
   if (!Number.isFinite(detik) || detik <= 0) return null;

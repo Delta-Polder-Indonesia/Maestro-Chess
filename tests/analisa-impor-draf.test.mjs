@@ -37,14 +37,13 @@ function komponenImpor(store, onDatabaseImport = async () => ({ tersimpan: 1, di
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
     "../../basisData.js": { imporPgnKeBasisData: onDatabaseImport },
     "../../database/statusSimpan.js": { pesanPenyimpananPartai },
-    "../../konteks/errorsKonteks.js": { ErrorsContext },
-    "../errors/pushPageError.js": { pushPageWarning: (_set, judul, pesan, opsi) => warnings.push({ judul, pesan, opsi }) },
-    "../../pekerjaan.js": {
+    "../../../../modul/sesi/galat.js": { ErrorsContext, pushPageWarning: (_set, judul, pesan, opsi) => warnings.push({ judul, pesan, opsi }) },
+    "../../../../modul/pekerjaan/index.js": {
       ID_DRAF_IMPOR: "draf:impor", pekerjaan: store,
       buatIdDrafImpor: () => `draf:baru-${++idBaru}`,
       simpanDrafImpor: (draf, id) => simpanDrafImpor(draf, id, store),
+      usePekerjaan: () => store.snapshot(),
     },
-    "../../usePekerjaan.js": { usePekerjaan: () => store.snapshot() },
     "./validasiImpor.js": { BATAS_IMPOR: {}, KODE_GALAT: {}, validasiPgn: () => {}, validasiFen: (fen) => fen },
   };
   const filename = new URL("../src/halaman/Analisa/komponen/nav/layarImpor.jsx", import.meta.url);

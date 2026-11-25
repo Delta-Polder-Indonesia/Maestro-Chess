@@ -1,11 +1,2 @@
-let errorKey = 0;
-
-export async function pushPageError(setErrors, title, description) {
-  errorKey++;
-  setErrors((prev) => [...prev, { title, description, type: "error", errorKey }]);
-}
-
-export async function pushPageWarning(setErrors, title, description, { persisten = false } = {}) {
-  errorKey++;
-  setErrors((prev) => [...prev, { title, description, type: "warning", errorKey, persisten }]);
-}
+// Kompatibilitas path lama; penghitung kunci galat tetap satu.
+export { pushPageError, pushPageWarning } from "../../../../modul/sesi/pushPageError.js";

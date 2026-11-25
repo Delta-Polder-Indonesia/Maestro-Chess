@@ -45,10 +45,10 @@ function renderLayar({ idEngine = "sf" } = {}) {
   };
   const Layar = compile("../src/halaman/Analisa/komponen/nav/layarEngine.jsx", {
     "../../../../lib/i18n.jsx": { useI18n: () => ({ t: translate }) },
-    "../../../../lib/engineCatur.js": { DAFTAR_ENGINE: DAFTAR },
+    "../../../../modul/analisis/mesin.js": { DAFTAR_ENGINE: DAFTAR },
     "../../../../lib/asets.js": { gambar: (jalur) => jalur },
-    "../../konteks/analyzeKonteks.js": { AnalyzeContext },
-    "../../konteks/mesinKonteks.js": { useMesin: () => mesin },
+    "../../../../modul/sesi/analisa.js": { AnalyzeContext },
+    "../../../../modul/sesi/mesin.js": { useMesin: () => mesin },
     "./PanelLayar.jsx": { default: ({ judul, headerKanan, children }) => React.createElement("section", null, React.createElement("h1", null, judul), headerKanan, children) },
     "../pengaturan/mesin.jsx": { default: () => React.createElement("div", { "data-uji": "pengaturan-mesin" }, "Mesin") },
     "../Gambar.jsx": { default: (props) => React.createElement("img", props) },

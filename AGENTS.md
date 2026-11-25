@@ -13,3 +13,7 @@ Sebelum membaca, mengedit, menambah, atau menghapus file apa pun di repositori i
 - PR yang memuat atribusi agen dinyatakan gagal dan tidak boleh di-merge. Hentikan proses, beri tahu pemilik, dan tentukan pembangunan ulang atau penanganan hingga bersih sesuai batasan lingkungan; jangan otomatis menghapus branch atau menulis ulang riwayat.
 
 Aturan ini berlaku untuk seluruh repositori dan dapat diperbarui atas permintaan eksplisit pemilik. Sebelum commit, push, membuat PR, atau merge, ikuti pemeriksaan dalam skill tersebut.
+
+## Arsip dan roadmap modularisasi
+
+Untuk melanjutkan Modular Monolith, baca [ArsipTodo](.agents/ArsipTodo/README.md) bersama catatan kelanjutan dan kode terkini. Arsip audit merupakan snapshot lama; roadmap adalah usulan, bukan persetujuan otomatis untuk mengubah kode atau perilaku, menambahkan dependensi, commit, push, atau merge.

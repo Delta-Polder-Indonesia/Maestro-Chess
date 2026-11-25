@@ -6,15 +6,14 @@ import { useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, us
 import { InfoIcon } from "lucide-react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { gambar } from "../../../../lib/asets.js";
-import { cariEngine, DAFTAR_ENGINE } from "../../../../lib/engineCatur.js";
-import { AnalyzeContext } from "../../konteks/analyzeKonteks.js";
-import { useMesin } from "../../konteks/mesinKonteks.js";
+import { cariEngine, DAFTAR_ENGINE, hashUntukEngine } from "../../../../modul/analisis/mesin.js";
+import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
+import { useMesin } from "../../../../modul/sesi/mesin.js";
 import { ambilDaftarPartai } from "../../basisData.js";
 import { useAkunKoleksi } from "../../akun/useAkunKoleksi.js";
 import { daftarkanOperasiAkun, langgananPenghapusanAkun, penandaMilikAkun } from "../../akun/koordinasiAkun.js";
 import { analisisRiwayatAntiCheat, BATAS_PARTAI, batasPartaiDariInput, KEDALAMAN_AGGREGAT } from "../../akun/antiCheatRiwayat.js";
 import { MULTI_PV } from "../../mesin/engine.js";
-import { hashUntukEngine } from "../../mesin/cekWasm.js";
 import { unduhLaporanPeninjauan } from "../../mesin/laporanPeninjauan.js";
 import PanelLayar from "./PanelLayar.jsx";
 import RingkasanAntiCheat from "./ringkasanAntiCheat.jsx";

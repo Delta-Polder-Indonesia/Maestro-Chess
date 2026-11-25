@@ -43,28 +43,25 @@
  * yang relevan, termasuk progres dan langkah sementara selama analisis.
  */
 import { lazy, memo, Suspense, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { TAMPILAN_ANALISA } from "../konteks/analyzeKonteks.js";
-import { useSetTampilan, useTampilan } from "../konteks/boardKonteks.js";
-import { useImport } from "../konteks/importKonteks.js";
-import { useTabKerja } from "../konteks/tabKerja.jsx";
-import { PanelAktifContext } from "../konteks/panelAktif.js";
-import { ErrorsContext } from "../konteks/errorsKonteks.js";
-import { pekerjaan, snapshotLaporanAman } from "../pekerjaan.js";
-import { catatFitur, KUNCI_FITUR } from "../riwayatFitur.js";
-import { usePekerjaan } from "../usePekerjaan.js";
+import { TAMPILAN_ANALISA } from "../../../modul/sesi/analisa.js";
+import { useSetTampilan, useTampilan } from "../../../modul/sesi/papan.js";
+import { useImport } from "../../../modul/sesi/impor.js";
+import { useTabKerja } from "@/modul/sesi/index.js";
+import { PanelAktifContext } from "../../../modul/sesi/panel.js";
+import { ErrorsContext, pushPageError, pushPageWarning } from "../../../modul/sesi/galat.js";
+import { catatFitur, KUNCI_FITUR, pekerjaan, snapshotLaporanAman, usePekerjaan } from "../../../modul/pekerjaan/index.js";
 import { useI18n } from "../../../lib/i18n.jsx";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "../../../components/ui/alert-dialog.jsx";
-import { pushPageError, pushPageWarning } from "./errors/pushPageError.js";
 import Game from "./game/game.jsx";
 import TabBar from "./tabBar.jsx";
 import BoardMenu from "./boardMenu/boardMenu.jsx";
 import Menu from "./menu/menu.jsx";
 import GameButtons from "./menu/analysis/gameButtons.jsx";
 import { validasiPgn } from "./nav/validasiImpor.js";
-import { ambilPgnTitipan } from "../../../lib/titipanAnalisa.js";
+import { ambilPgnTitipan } from "../../../modul/sesi/titipan.js";
 import { useUkuranArea } from "./useUkuranArea.js";
 
 /*
@@ -556,7 +553,16 @@ function LapisanLayar({
   return (
     <main className="flex min-h-0 min-w-0 w-full flex-1 flex-col">
       {tabTerlihat ? (
-        <TabBar daftar={daftarTab} aktifId={aktifId} sibuk={perluPulih} onPilih={pilihTab} onTutup={tutupTab} onTambah={() => tambahTab()} />
+        <TabBar
+          daftar={daftarTab}
+          aktifId={aktifId}
+          sibuk={perluPulih}
+          tampilanAktif={perluPulih ? null : tampilan}
+          laporanAktifId={perluPulih ? null : data?.pekerjaanId}
+          onPilih={pilihTab}
+          onTutup={tutupTab}
+          onTambah={() => tambahTab()}
+        />
       ) : null}
       <div id="konten-tab-kerja" role={tabTerlihat ? "tabpanel" : undefined} aria-labelledby={tabTerlihat ? `tab-kerja-${aktifId}` : undefined} aria-busy={perluPulih || undefined} className="relative flex min-h-0 w-full flex-1 flex-col">
         {children}
@@ -584,7 +590,7 @@ function LapisanLayar({
                 hidden={!aktif}
                 data-uji={`layar-${layar}`}
                 data-layar={layar}
-                className="absolute inset-0 z-[900] min-h-0 overflow-y-auto overflow-x-hidden bg-backgroundBoxDarker"
+                className="absolute inset-0 z-[900] min-h-0 overflow-y-auto overflow-x-hidden bg-backgroundBoxDarker outline-none"
               >
                 <PanelAktifContext.Provider value={aktif}>
                   <Suspense fallback={<div className="h-full min-h-0 w-full bg-backgroundBox" />}>
@@ -598,7 +604,7 @@ function LapisanLayar({
                       />
                     ) : null}
                     {layar === TAMPILAN_ANALISA.AKUN ? (
-                      <LayarAkun aktif={aktif} akunTab={akunTab} onAkunDihapus={hapusAkunTerpilih} onTutup={() => { if (masihAktif()) void bukaLaporanAktif(); }} />
+                      <LayarAkun aktif={aktif} akunTab={akunTab} onAkunDihapus={hapusAkunTerpilih} />
                     ) : null}
                     {layar === TAMPILAN_ANALISA.PENGATURAN ? <LayarPengaturan aktif={aktif} /> : null}
                     {layar === TAMPILAN_ANALISA.DETEKSI_ENGINE ? (

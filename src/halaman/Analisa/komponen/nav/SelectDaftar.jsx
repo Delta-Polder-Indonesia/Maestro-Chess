@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import Check from "../svg/check.jsx";
-import { tekanPanahOpsi, useDropdown } from "./useDropdown.js";
+import { tekanPanahOpsi, useDropdown } from "../../../../modul/sesi/panel.js";
 
 /**
  * Dropdown daftar bergaya panel Analisa (dipakai layar Deteksi Engine dan

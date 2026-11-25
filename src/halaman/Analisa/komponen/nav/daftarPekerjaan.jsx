@@ -1,7 +1,6 @@
 import { useId, useState } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
-import { daftarRiwayat, KUNCI_FITUR } from "../../riwayatFitur.js";
-import { usePekerjaan } from "../../usePekerjaan.js";
+import { daftarRiwayat, KUNCI_FITUR, usePekerjaan } from "../../../../modul/pekerjaan/index.js";
 
 const BATAS_TERBARU = 10;
 // Formatter Intl mahal dibuat berulang untuk tiap baris saat riwayat berubah.

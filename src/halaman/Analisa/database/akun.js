@@ -3,7 +3,7 @@
  * nama pemain dalam satu koleksi dan mengosongkan seluruh basis data.
  *
  * Dependensi: `./migrasi.js` (koneksi, store, cadangan) dan bus revisi dari
- * `./index.js`. Kode dipindahkan apa adanya dari `basisData.js`.
+ * `./revisiBasis.js`. Kode dipindahkan apa adanya dari `basisData.js`.
  */
 import {
   STORE_PARTAI,
@@ -14,7 +14,7 @@ import {
   hapusSeluruhFallback,
   indexedDBGagalDibuka,
 } from "./migrasi.js";
-import { naikkanRevisi } from "./index.js";
+import { naikkanRevisi } from "./revisiBasis.js";
 import { denganKunciAkun } from "../akun/koordinasiAkun.js";
 
 /**

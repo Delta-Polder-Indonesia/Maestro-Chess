@@ -17,7 +17,7 @@ import LichessLogo from "../komponen/svg/LichessLogo.jsx";
 import ChessComLogo from "../komponen/svg/ChessComLogo.jsx";
 import { useI18n } from "../../../lib/i18n.jsx";
 import { berkasPublik } from "../../../lib/asets.js";
-import { bacaTeks, tulis } from "../penyimpanan.js";
+import { bacaTeks, tulis } from "../../../modul/sesi/preferensi.js";
 
 const ASET = (nama) => berkasPublik(`images/analisa/${nama}.svg`);
 

@@ -1,10 +1,8 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
-import { ConfigContext } from "../../konteks/configKonteks.js";
+import { ConfigContext, boardThemes, bacaTeks, tulis } from "../../../../modul/sesi/preferensi.js";
 import { memo, useContext, useEffect } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
-import { bacaTeks, tulis } from "../../penyimpanan.js";
 import SakelarPengaturan from "./sakelarPengaturan.jsx";
-import { boardThemes } from "./boardThemes.js";
 import BarisPengaturan from "./barisPengaturan.jsx";
 
 const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, cocok = () => true, deskripsi = () => null }) {

@@ -46,13 +46,13 @@ import Link from "next/link";
 
 import Profile from "../svg/profile.jsx";
 import { Settings } from "lucide-react";
-import { TAMPILAN_ANALISA } from "../../konteks/analyzeKonteks.js";
-import { useTampilan } from "../../konteks/boardKonteks.js";
-import { useTabKerja } from "../../konteks/tabKerja.jsx";
+import { TAMPILAN_ANALISA } from "../../../../modul/sesi/analisa.js";
+import { useTampilan } from "../../../../modul/sesi/papan.js";
+import { useTabKerja } from "@/modul/sesi/index.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { TooltipLabel } from "../../../../components/ui/tooltip.jsx";
 import { navTop } from "../../konstanta.js";
-import { bacaBoolean, tulisBoolean } from "../../penyimpanan.js";
+import { bacaBoolean, tulisBoolean } from "../../../../modul/sesi/preferensi.js";
 
 /** Dipakai ulang oleh tab Dokumentasi di layar Pengaturan. */
 export { URL_REPO } from "../../../../lib/repo.js";

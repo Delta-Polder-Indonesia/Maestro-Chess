@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs.jsx";
 import { useI18n } from "../../../lib/i18n.jsx";
-import { bacaTeks, tulis } from "../penyimpanan.js";
+import { bacaTeks, tulis } from "../../../modul/sesi/preferensi.js";
 import { muatPartaiChessCom, muatPartaiLichess } from "./muatPartaiAkun.js";
 import { pesanPenyimpananPartai } from "../database/statusSimpan.js";
 import PemilihRentang from "./PemilihRentang.jsx";
@@ -242,14 +242,14 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai, disabled =
             <TabsList className="slanted-tabs-container">
               <TabsTrigger
                 value="rentang"
-                className="slanted-tab flex-1 cursor-pointer !transition-none px-3 py-2 text-xs data-[state=active]:!bg-[#5F873A] data-[state=active]:!text-white data-[state=active]:!shadow-none data-[state=inactive]:!bg-transparent data-[state=inactive]:!text-foregroundGrey sm:flex-initial sm:px-4 sm:text-sm"
+                className="slanted-tab flex-1 cursor-pointer !transition-none px-3 py-2 text-xs data-[state=active]:!bg-backgroundBoxBoxHighlighted data-[state=active]:!text-foregroundBlackDark data-[state=active]:!shadow-none data-[state=inactive]:!bg-transparent data-[state=inactive]:!text-foregroundGrey sm:flex-initial sm:px-4 sm:text-sm"
               >
                 Tanggal
               </TabsTrigger>
               <div className="h-5 w-[1px] shrink-0 bg-[#45474b]" aria-hidden="true" />
               <TabsTrigger
                 value="filter"
-                className="slanted-tab flex-1 cursor-pointer !transition-none px-3 py-2 text-xs data-[state=active]:!bg-[#5F873A] data-[state=active]:!text-white data-[state=active]:!shadow-none data-[state=inactive]:!bg-transparent data-[state=inactive]:!text-foregroundGrey sm:flex-initial sm:px-4 sm:text-sm"
+                className="slanted-tab flex-1 cursor-pointer !transition-none px-3 py-2 text-xs data-[state=active]:!bg-backgroundBoxBoxHighlighted data-[state=active]:!text-foregroundBlackDark data-[state=active]:!shadow-none data-[state=inactive]:!bg-transparent data-[state=inactive]:!text-foregroundGrey sm:flex-initial sm:px-4 sm:text-sm"
               >
                 Filter
               </TabsTrigger>

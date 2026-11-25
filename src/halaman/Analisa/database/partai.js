@@ -6,7 +6,7 @@
  * satu partai, hapus partai, dan impor PGN.
  *
  * Dependensi: `./migrasi.js` (koneksi, konstanta store, cadangan) dan bus
- * revisi dari `./index.js`. Tidak ada perubahan perilaku dari `basisData.js`
+ * revisi dari `./revisiBasis.js`. Tidak ada perubahan perilaku dari `basisData.js`
  * lama — kode dipindahkan apa adanya.
  */
 import { Chess } from "chess.js";
@@ -22,7 +22,7 @@ import {
   bukaDB,
   simpanFallbackKeStorage,
 } from "./migrasi.js";
-import { naikkanRevisi } from "./index.js";
+import { naikkanRevisi } from "./revisiBasis.js";
 import { tanggalDariHeaderPgn } from "./tanggalPgn.js";
 
 export function buatIdPartai(p, platform = "chessCom", username = "") {
