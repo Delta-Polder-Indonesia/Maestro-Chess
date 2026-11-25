@@ -27,7 +27,7 @@ import { bacaPartaiPGN, formatSquare, parsePGN, parsePosition } from "../../mesi
 import { cariNamaPembukaan } from "../../../../modul/analisis/buku.js";
 import { pushPageError, pushPageWarning } from "../../../../modul/sesi/galat.js";
 import { hashPgn } from "../../../../lib/pgnRingan.js";
-import { ringkasAnalisis } from "../../mesin/ringkasanAnalisis.js";
+import { ringkasAnalisis } from "../../../../modul/analisis/ringkasanAnalisis.js";
 import { catatAnalisis } from "../../../../modul/analisis/analisisTersimpan.js";
 import { adaPgnTitipan } from "../../../../modul/sesi/titipan.js";
 import { snapshotLaporanAman } from "../../../../modul/pekerjaan/index.js";

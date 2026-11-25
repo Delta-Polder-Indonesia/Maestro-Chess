@@ -281,7 +281,7 @@ test("only the seven mapped application callers import or re-export akurasi symb
     ["src/halaman/Analisa/mesin/antiCheat/agregat.js", ["harmonikDariJumlah", "petaAnotasiKosong"]],
     ["src/halaman/Analisa/mesin/antiCheat/skor.js", ["akurasiMove", "anotasiMove", "cpBaku", "harmonikDariJumlah", "inversAkurasi", "kerugianMove", "petaAnotasiKosong"]],
     ["src/modul/analisis/deteksiLangkahKritis.js", ["cpBaku", "peluangMenang"]],
-    ["src/halaman/Analisa/mesin/ringkasanAnalisis.js", ["akurasiMove", "pemainDariEntri"]],
+    ["src/modul/analisis/ringkasPartai.js", ["akurasiMove", "pemainDariEntri"]],
   ]);
   for (const path of berkasKode(src)) {
     const nodes = astBerkas(path).statements.filter((node) =>
