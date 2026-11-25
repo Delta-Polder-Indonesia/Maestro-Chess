@@ -26,6 +26,14 @@ const assetPath = "src/lib/asets.js";
 const namaEngine = ["DAFTAR_ENGINE", "ENGINE_BAKU", "EngineCatur", "cariEngine"];
 const namaWasm = ["hashUntukEngine", "wasmSupported", "wasmThreadsSupported"];
 const namaSemua = [...namaEngine, ...namaWasm].sort();
+const fasePath = "src/modul/analisis/fase.js";
+const deteksiFasePath = "src/modul/analisis/deteksiFase.js";
+const peluangPath = "src/modul/analisis/peluang.js";
+const kurvaPeluangPath = "src/modul/analisis/kurvaPeluang.js";
+const analisisTersimpanPath = "src/modul/analisis/analisisTersimpan.js";
+const hasilSesiPath = "src/modul/analisis/hasilSesi.js";
+const evaluasiPath = "src/modul/analisis/evaluasi.js";
+const konvensiEvaluasiPath = "src/modul/analisis/konvensiEvaluasi.js";
 
 function berkasKode(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entri) => {
@@ -100,7 +108,8 @@ function deklarasiReexport(file, target, names) {
 test("legacy, implementation, lightweight and main entries retain the exact named exports and identities", () => {
   for (const api of [lamaEngine, engine]) assert.deepEqual(Object.keys(api), namaEngine);
   for (const api of [lamaWasm, wasm]) assert.deepEqual(Object.keys(api), namaWasm);
-  for (const api of [ringan, utama]) assert.deepEqual(Object.keys(api), namaSemua);
+  assert.deepEqual(Object.keys(ringan), namaSemua);
+  for (const nama of namaSemua) assert.ok(Object.hasOwn(utama, nama), nama);
   for (const nama of namaEngine) {
     for (const api of [engine, ringan, utama]) assert.strictEqual(api[nama], lamaEngine[nama], nama);
   }
@@ -134,8 +143,14 @@ test("both legacy paths directly re-export only their original named APIs", () =
   deklarasiReexport(lamaWasmPath, wasmPath, namaWasm);
 });
 
-test("the main entry directly re-exports exactly the lightweight engine facade", () => {
-  deklarasiReexport(utamaPath, ringanPath, namaSemua);
+test("the main entry directly re-exports the lightweight engine facade", () => {
+  const utamaFile = resolve(akar, utamaPath);
+  const utamaStatements = astBerkas(utamaFile).statements;
+  assert.ok(utamaStatements.every((node) => ts.isExportDeclaration(node)));
+  const reexportMesin = utamaStatements.find((node) => tujuan(utamaFile, node.moduleSpecifier.text) === resolve(akar, ringanPath));
+  assert.ok(reexportMesin && reexportMesin.exportClause && ts.isNamedExports(reexportMesin.exportClause));
+  assert.deepEqual(reexportMesin.exportClause.elements.map((element) => (element.propertyName ?? element.name).text).sort(), namaSemua);
+  assert.ok(reexportMesin.exportClause.elements.every((element) => element.propertyName === undefined));
   const path = resolve(akar, ringanPath);
   const statements = astBerkas(path).statements;
   assert.equal(statements.length, 2);
@@ -148,15 +163,34 @@ test("the main entry directly re-exports exactly the lightweight engine facade",
   }
 });
 
-test("both public entries load only the two implementations and the shared asset URL utility", () => {
-  for (const awal of [ringanPath, utamaPath]) {
-    const expected = [ringanPath, enginePath, wasmPath, assetPath];
-    if (awal === utamaPath) expected.push(utamaPath);
-    const graph = grafDari(awal);
-    assert.deepEqual(graph.files, expected.sort(), awal);
-    assert.deepEqual(graph.paket, [], awal);
-    assert.ok(graph.files.every((file) => extname(file) === ".js"), awal);
-  }
+test("both public entries stay minimal without JSX or legacy engine adapter", () => {
+  const graphRingan = grafDari(ringanPath);
+  assert.deepEqual(graphRingan.files, [ringanPath, enginePath, wasmPath, assetPath].sort(), ringanPath);
+  assert.deepEqual(graphRingan.paket, [], ringanPath);
+  assert.ok(graphRingan.files.every((file) => extname(file) === ".js"), ringanPath);
+
+  const graphUtama = grafDari(utamaPath);
+  assert.deepEqual(
+    graphUtama.files,
+    [
+      utamaPath,
+      ringanPath,
+      enginePath,
+      wasmPath,
+      assetPath,
+      fasePath,
+      deteksiFasePath,
+      peluangPath,
+      kurvaPeluangPath,
+      analisisTersimpanPath,
+      hasilSesiPath,
+      evaluasiPath,
+      konvensiEvaluasiPath,
+    ].sort(),
+    utamaPath,
+  );
+  assert.deepEqual(graphUtama.paket, ["chess.js"], utamaPath);
+  assert.ok(graphUtama.files.every((file) => extname(file) === ".js"), utamaPath);
 });
 
 test("legacy entry graphs stay as small as their previous independent APIs", () => {

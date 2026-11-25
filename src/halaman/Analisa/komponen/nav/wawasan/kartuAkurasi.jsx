@@ -7,7 +7,7 @@
 import { useId, useMemo, useRef, useState } from "react";
 import { useI18n } from "../../../../../lib/i18n.jsx";
 import { TooltipLabel } from "../../../../../components/ui/tooltip.jsx";
-import { akurasiMove, kerugianMove, pemainDariEntri, rataHarmonik, cpBaku, nilaiGrafikCp } from "../../../mesin/akurasi.js";
+import { akurasiMove, kerugianMove, pemainDariEntri, rataHarmonik, cpBaku, nilaiGrafikCp } from "../../../../../modul/analisis/akurasi.js";
 
 function KartuAkurasiPartai({ moves, players }) {
   const { t } = useI18n();

@@ -2,7 +2,7 @@
 import RatingSVG from "../../../svg/rating.jsx";
 import { useEffect, useState } from "react";
 import { useI18n } from "../../../../../../lib/i18n.jsx";
-import { langkahTerpaksa } from "../../../../mesin/evaluasi.js";
+import { langkahTerpaksa } from "../../../../../../modul/analisis/evaluasi.js";
 const ratings = [
   "brilliant",
   // text-highlightBrilliant

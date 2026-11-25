@@ -176,7 +176,7 @@ test("a hidden detection tab closes its portal and aborts its engine search with
       BATAS_PARTAI: 50, KEDALAMAN_AGGREGAT: 6, batasPartaiDariInput: (value) => Number(value) || 50,
       analisisRiwayatAntiCheat: ({ sinyal: value }) => { sinyal = value; return new Promise(() => {}); },
     },
-    "../../mesin/engine.js": { MULTI_PV: 1 },
+    "../../../../modul/analisis/multiPv.js": { MULTI_PV: 1 },
     "../../mesin/laporanPeninjauan.js": { unduhLaporanPeninjauan() {} },
     "./PanelLayar.jsx": { default: wrapper },
     "./ringkasanAntiCheat.jsx": { default: kosong },
@@ -459,11 +459,11 @@ test("insights reload shared games on activation and revisions while retaining f
     },
     "../../akun/useAkunKoleksi.js": { useAkunKoleksi: () => ({ akunTersimpan: [], koleksi: [] }) },
     "../../akun/DashboardAkun.jsx": { default: kosong },
-    "../../mesin/wawasan.js": {
+    "../../../../modul/analisis/wawasan.js": {
       agregasiWawasan: (daftar) => { agregasi.push(daftar.length); return { totalPartai: daftar.length, trenRating: [], hasilUmum: {}, sebagaiPutih: {}, sebagaiHitam: {} }; },
       filterPartaiWawasan: (daftar) => daftar, hitungPembukaanTeratas: () => [],
     },
-    "../../mesin/analisisTersimpan.js": { ambilPetaAnalisis: () => ({}), langgananAnalisis: () => () => {} },
+    "../../../../modul/analisis/analisisTersimpan.js": { ambilPetaAnalisis: () => ({}), langgananAnalisis: () => () => {} },
     "./PanelLayar.jsx": { default: wrapper },
     "./SelectDaftar.jsx": { default: kosong },
     "./wawasan/kartuProfil.jsx": { default: kosong },

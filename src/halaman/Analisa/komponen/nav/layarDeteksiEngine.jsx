@@ -13,7 +13,7 @@ import { ambilDaftarPartai } from "../../basisData.js";
 import { useAkunKoleksi } from "../../akun/useAkunKoleksi.js";
 import { daftarkanOperasiAkun, langgananPenghapusanAkun, penandaMilikAkun } from "../../akun/koordinasiAkun.js";
 import { analisisRiwayatAntiCheat, BATAS_PARTAI, batasPartaiDariInput, KEDALAMAN_AGGREGAT } from "../../akun/antiCheatRiwayat.js";
-import { MULTI_PV } from "../../mesin/engine.js";
+import { MULTI_PV } from "../../../../modul/analisis/multiPv.js";
 import { unduhLaporanPeninjauan } from "../../mesin/laporanPeninjauan.js";
 import PanelLayar from "./PanelLayar.jsx";
 import RingkasanAntiCheat from "./ringkasanAntiCheat.jsx";

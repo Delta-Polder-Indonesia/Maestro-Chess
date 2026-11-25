@@ -5,8 +5,8 @@
  * Lapisan teratas: boleh membaca `./skor.js`, `./kalibrasi.js`, dan
  * `./dasar.js`; tidak ada lapisan lain yang mengimpornya.
  */
-import { DAFTAR_FASE } from "../fase.js";
-import { harmonikDariJumlah, petaAnotasiKosong } from "../akurasi.js";
+import { DAFTAR_FASE } from "../../../../modul/analisis/fase.js";
+import { harmonikDariJumlah, petaAnotasiKosong } from "../../../../modul/analisis/akurasi.js";
 import {
   AMBANG,
   MIN_LANGKAH_AGGREGAT,
@@ -14,9 +14,9 @@ import {
   bulat1,
   pemainLangkah,
   rataRata,
-} from "./dasar.js";
-import { ratingDariMetadata } from "./kalibrasi.js";
-import { hitungSkorKecurigaan, skorKecurigaan } from "./skor.js";
+} from "../../../../modul/analisis/antiCheatDasar.js";
+import { ratingDariMetadata } from "../../../../modul/analisis/antiCheatKalibrasi.js";
+import { hitungSkorKecurigaan, skorKecurigaan } from "../../../../modul/analisis/antiCheatSkor.js";
 
 /* ------------------------------------------------ agregat riwayat pemain */
 

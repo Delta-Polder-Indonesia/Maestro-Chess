@@ -1,5 +1,5 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
-import { apakahMateTerminal } from "../../mesin/evaluasi.js";
+import { apakahMateTerminal } from "../../../../modul/analisis/evaluasi.js";
 function Evaluation(props) {
   const { size, white, advantage, whiteMoving, navTop } = props;
   const OLD_PERCENTS = [-400, 400];

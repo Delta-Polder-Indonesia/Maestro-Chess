@@ -5,7 +5,7 @@ import { WHITE } from "chess.js";
 import GameChart from "../gameChart.jsx";
 import RatingSVG from "../../../svg/rating.jsx";
 import { getMoves } from "../../../game/getMoves.js";
-import { langkahTerpaksa, ratingTampilan } from "../../../../mesin/evaluasi.js";
+import { langkahTerpaksa, ratingTampilan } from "../../../../../../modul/analisis/evaluasi.js";
 import { useI18n } from "../../../../../../lib/i18n.jsx";
 import { RATING_TEXT_COLORS, getLastBookMove } from "./movesData.js";
 

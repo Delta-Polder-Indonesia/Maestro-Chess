@@ -11,8 +11,8 @@ import { Chess } from "chess.js";
  * Urutan pemindaian di bawah TIDAK berubah: langkah tetap dicatat ke fase
  * yang sedang aktif, baru kemudian fasenya dimajukan.
  */
-import { isEndOpening, isEndMiddlegame } from "../../../../mesin/fase.js";
-import { langkahTerpaksa } from "../../../../mesin/evaluasi.js";
+import { isEndOpening, isEndMiddlegame } from "../../../../../../modul/analisis/fase.js";
+import { langkahTerpaksa } from "../../../../../../modul/analisis/evaluasi.js";
 /*
  * Sumber angka baris Akurasi. Sebelumnya komponen ini punya peta label → poin
  * tetap (best 100, excellent 90, good 70, inaccuracy 30, mistake 20, blunder 0)
@@ -22,7 +22,7 @@ import { langkahTerpaksa } from "../../../../mesin/evaluasi.js";
  * dikalibrasi ulang — supaya satu partai punya satu angka akurasi.
  * Lihat docs/PERBANDINGAN-METRIK-AKURASI.md bagian 5.
  */
-import { akurasiMove, pemainDariEntri } from "../../../../mesin/akurasi.js";
+import { akurasiMove, pemainDariEntri } from "../../../../../../modul/analisis/akurasi.js";
 import { avg } from "./playersAccuracyData.js";
 import { TooltipLabel } from "../../../../../../components/ui/tooltip.jsx";
 

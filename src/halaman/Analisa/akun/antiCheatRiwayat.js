@@ -28,8 +28,9 @@
  */
 
 import { hashPgn } from "../../../lib/pgnRingan.js";
-import { GALAT_BATAL, MULTI_PV, parsePGN } from "../mesin/engine.js";
-import { cariNamaPembukaan } from "../mesin/buku.js";
+import { GALAT_BATAL, parsePGN } from "../mesin/engine.js";
+import { MULTI_PV } from "../../../modul/analisis/multiPv.js";
+import { cariNamaPembukaan } from "../../../modul/analisis/buku.js";
 import { agregatSkorPemain, hitungSkorKecurigaan, ratingDariMetadata, warnaPemainDariMetadata } from "../mesin/antiCheat.js";
 import { denganKunciAkun, langgananPenghapusanAkun, periksaSinyalAkun } from "./koordinasiAkun.js";
 
