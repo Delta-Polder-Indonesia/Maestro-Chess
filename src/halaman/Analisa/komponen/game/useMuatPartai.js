@@ -24,7 +24,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Chess } from "chess.js";
 import { bacaPartaiPGN, formatSquare, parsePGN, parsePosition } from "../../mesin/engine.js";
-import { cariNamaPembukaan } from "../../mesin/buku.js";
+import { cariNamaPembukaan } from "../../../../modul/analisis/buku.js";
 import { pushPageError, pushPageWarning } from "../../../../modul/sesi/galat.js";
 import { hashPgn } from "../../../../lib/pgnRingan.js";
 import { ringkasAnalisis } from "../../mesin/ringkasanAnalisis.js";
