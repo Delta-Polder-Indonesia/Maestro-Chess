@@ -16,7 +16,7 @@ import { ambilDaftarPartai, langgananRevisi } from "../../basisData.js";
 import { useAkunKoleksi } from "../../akun/useAkunKoleksi.js";
 import DashboardAkun from "../../akun/DashboardAkun.jsx";
 import { agregasiWawasan, filterPartaiWawasan, hitungPembukaanTeratas } from "../../mesin/wawasan.js";
-import { ambilPetaAnalisis, langgananAnalisis } from "../../mesin/analisisTersimpan.js";
+import { ambilPetaAnalisis, langgananAnalisis } from "../../../../modul/analisis/analisisTersimpan.js";
 import PanelLayar from "./PanelLayar.jsx";
 import SelectDaftar from "./SelectDaftar.jsx";
 import KartuProfilWawasan from "./wawasan/kartuProfil.jsx";

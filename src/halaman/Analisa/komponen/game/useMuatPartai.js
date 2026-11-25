@@ -28,7 +28,7 @@ import { cariNamaPembukaan } from "../../mesin/buku.js";
 import { pushPageError, pushPageWarning } from "../../../../modul/sesi/galat.js";
 import { hashPgn } from "../../../../lib/pgnRingan.js";
 import { ringkasAnalisis } from "../../mesin/ringkasanAnalisis.js";
-import { catatAnalisis } from "../../mesin/analisisTersimpan.js";
+import { catatAnalisis } from "../../../../modul/analisis/analisisTersimpan.js";
 import { adaPgnTitipan } from "../../../../modul/sesi/titipan.js";
 import { snapshotLaporanAman } from "../../../../modul/pekerjaan/index.js";
 import { gameStartSound } from "./gameStartSound.js";

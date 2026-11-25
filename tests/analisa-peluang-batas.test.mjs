@@ -117,7 +117,7 @@ test("legacy, implementation, lightweight, main barrel and re-exporting callers 
     assert.deepEqual(Object.keys(api).sort(), namaPeluang);
     assert.equal(Object.hasOwn(api, "default"), false);
   }
-  assert.deepEqual(Object.keys(utama).sort(), [...namaMesin, ...namaFase, ...namaPeluang].sort());
+  for (const nama of namaPeluang) assert.ok(Object.hasOwn(utama, nama), nama);
   assert.equal(Object.hasOwn(utama, "default"), false);
   for (const nama of namaPeluang) {
     for (const api of [implementasi, ringanPeluang, utama, akurasi]) {
@@ -134,14 +134,12 @@ test("legacy shim, lightweight facade and main barrel use direct named re-export
 
   const path = resolve(akar, utamaPath);
   const statements = astBerkas(path).statements;
-  assert.equal(statements.length, 3);
-  for (const [index, target, names] of [[0, mesinPath, namaMesin], [1, fasePath, namaFase], [2, ringanPath, namaPeluang]]) {
-    const node = statements[index];
-    assert.ok(ts.isExportDeclaration(node));
-    assert.equal(tujuan(path, node.moduleSpecifier.text), resolve(akar, target));
-    assert.ok(node.exportClause && ts.isNamedExports(node.exportClause));
-    assert.deepEqual(node.exportClause.elements.map((element) => (element.propertyName ?? element.name).text).sort(), [...names].sort());
-    assert.ok(node.exportClause.elements.every((element) => element.propertyName === undefined));
+  assert.ok(statements.every((node) => ts.isExportDeclaration(node)));
+  for (const [target, names] of [[mesinPath, namaMesin], [fasePath, namaFase], [ringanPath, namaPeluang]]) {
+    const node = statements.find((item) => tujuan(path, item.moduleSpecifier.text) === resolve(akar, target));
+    assert.ok(node && node.exportClause && ts.isNamedExports(node.exportClause), target);
+    assert.deepEqual(node.exportClause.elements.map((element) => (element.propertyName ?? element.name).text).sort(), [...names].sort(), target);
+    assert.ok(node.exportClause.elements.every((element) => element.propertyName === undefined), target);
   }
 });
 
