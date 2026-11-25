@@ -60,8 +60,22 @@ test("vercel.json enforces strict Observatory security headers without breaking 
   assert.deepEqual(csp.get("media-src"), ["'self'"]);
   assert.deepEqual(csp.get("worker-src"), ["'self'"]);
   assert.deepEqual(csp.get("child-src"), ["'self'"]);
-  assert.deepEqual(csp.get("style-src"), ["'self'", "'unsafe-inline'"]);
+  // Style: atribut style inline diblokir penuh (style-src-attr 'none'). Elemen
+  // <style> masih mengizinkan 'unsafe-inline' karena react-remove-scroll-bar
+  // (modal Radix AlertDialog modal:true) menyuntik <style> scroll-lock dinamis
+  // saat runtime yang tidak dapat di-hash/nonce secara aman pada static export.
+  // Seluruh styling aplikasi lain berjalan via CSSOM runtime (tidak diatur CSP).
+  assert.deepEqual(csp.get("style-src"), ["'self'"]);
+  assert.deepEqual(csp.get("style-src-elem"), ["'self'", "'unsafe-inline'"]);
+  assert.deepEqual(csp.get("style-src-attr"), ["'none'"]);
+  for (const forbidden of ["'unsafe-inline'", "'unsafe-eval'", "*", "http:", "https:", "data:"]) {
+    assert.equal(csp.get("style-src").includes(forbidden), false, `Forbidden style-src token: ${forbidden}`);
+    assert.equal(csp.get("style-src-attr").includes(forbidden), false, `Forbidden style-src-attr token: ${forbidden}`);
+  }
   assert.deepEqual(csp.get("img-src"), ["'self'", "https://images.chesscomfiles.com"]);
+  for (const forbidden of ["data:", "https:", "http:", "*"]) {
+    assert.equal(csp.get("img-src").includes(forbidden), false, `Forbidden img-src token: ${forbidden}`);
+  }
 
   const scriptSrc = csp.get("script-src");
   assert.deepEqual(scriptSrc, ["'self'", "'wasm-unsafe-eval'"]);
@@ -85,6 +99,24 @@ test("vercel.json enforces strict Observatory security headers without breaking 
     const code = readFileSync(file, "utf8");
     for (const match of code.matchAll(/\bfetch\(\s*`?(https:\/\/[^/`"'?\s]+)/g)) {
       assert.ok(allowedOrigins.has(match[1]), `Unpermitted fetch origin ${match[1]} in ${file}`);
+    }
+  }
+});
+
+test("src avoids inline style forms blocked by style-src-attr 'none' (attribute, cssText, <style> element)", () => {
+  // React style={{...}} diterapikan lewat CSSOM runtime dan TIDAK diblokir CSP,
+  // jadi pola itu sengaja tidak dilarang. Yang dilarang: atribut style pada
+  // markup/setAttribute, penugasan cssText, dan elemen <style> inline di src.
+  const srcFiles = walkFiles(resolve("src"), (p) => /\.(js|jsx|ts|tsx)$/.test(p));
+  const pola = [
+    [/setAttribute\(\s*["']style["']/, "setAttribute('style', ...) diblokir style-src-attr 'none'"],
+    [/\.cssText\s*=(?!=)/, "style.cssText = ... diblokir style-src-attr 'none'"],
+    [/<style[\s>]/, "elemen <style> inline tidak boleh ditambahkan ke src"],
+  ];
+  for (const file of srcFiles) {
+    const code = readFileSync(file, "utf8");
+    for (const [re, pesan] of pola) {
+      assert.equal(re.test(code), false, `${pesan}: ${file}`);
     }
   }
 });

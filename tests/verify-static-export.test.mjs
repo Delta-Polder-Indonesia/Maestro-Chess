@@ -86,6 +86,11 @@ test("static export validation rejects undefined asset prefixes", () => {
       ["index.html", "<script>alert(1)</script>", /Executable inline <script>/],
       ["attributions/index.html", '<script type="module">console.log(1)</script>', /Executable inline <script>/],
       ["index.html", '<script src="/_next/static/csp/missing.js"></script>', /Missing or empty CSP script asset/],
+      ["index.html", '<div class="text-foregroundBlackDark">nama</div>', null],
+      ["index.html", '<div style="color: var(--foregroundBlackDark)">nama</div>', /Inline style attribute/],
+      ["404.html", '<span style="font-weight:700">x</span>', /Inline style attribute/],
+      ["index.html", "<style>body{color:red}</style>", /Unexpected inline <style>/],
+      ["attributions/index.html", '<style type="text/css">.x{}</style>', /Unexpected inline <style>/],
     ]) {
       writeFileSync(join(fixture, file), markup);
       result = runCheck();

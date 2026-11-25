@@ -142,6 +142,20 @@ for (const path of collectHtmlFiles(exportDirectory)) {
         failed = true;
       }
     }
+
+    // Shell statis tidak boleh memuat inline style: atribut style diblokir oleh
+    // style-src-attr 'none', dan elemen <style> tidak dihasilkan aplikasi (semua
+    // styling runtime berjalan via CSSOM). Penjagaan ini menangkap regresi bila
+    // suatu komponen kelak dirender SSR dengan style inline.
+    const styleAttr = html.match(/<[a-zA-Z][^>]*\sstyle\s*=/i);
+    if (styleAttr) {
+      console.error(`Inline style attribute violates style-src-attr 'none' in ${path}: ${styleAttr[0].slice(0, 80)}`);
+      failed = true;
+    }
+    if (/<style[\s>]/i.test(html)) {
+      console.error(`Unexpected inline <style> element in exported HTML: ${path}`);
+      failed = true;
+    }
   } catch {
     console.error(`Cannot read exported page: ${path}`);
     failed = true;
