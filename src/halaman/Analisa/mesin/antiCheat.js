@@ -84,7 +84,7 @@ export {
   peluangMenang,
   petaAnotasiKosong,
   rataHarmonik,
-} from "./akurasi.js";
+} from "../../../modul/analisis/akurasi.js";
 
 export * from "./antiCheat/dasar.js";
 export * from "./antiCheat/kalibrasi.js";

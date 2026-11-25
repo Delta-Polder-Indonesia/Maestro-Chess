@@ -39,7 +39,7 @@
  */
 
 import { Chess } from "chess.js";
-import { cpBaku, peluangMenang } from "./akurasi.js";
+import { cpBaku, peluangMenang } from "../../../modul/analisis/akurasi.js";
 
 /**
  * Kerugian peluang menang (poin persen, 0–100) antara kandidat #1 dan #2 yang

@@ -21,7 +21,7 @@
  */
 
 import { langkahTerpaksa } from "../../../modul/analisis/evaluasi.js";
-import { akurasiMove, pemainDariEntri } from "./akurasi.js";
+import { akurasiMove, pemainDariEntri } from "../../../modul/analisis/akurasi.js";
 
 /**
  * Kunci `breakdown` — SALINAN `REVIEW_MOVE_QUALITIES` acuan plus `book`,

@@ -22,7 +22,7 @@ import { langkahTerpaksa } from "../../../../../../modul/analisis/evaluasi.js";
  * dikalibrasi ulang — supaya satu partai punya satu angka akurasi.
  * Lihat docs/PERBANDINGAN-METRIK-AKURASI.md bagian 5.
  */
-import { akurasiMove, pemainDariEntri } from "../../../../mesin/akurasi.js";
+import { akurasiMove, pemainDariEntri } from "../../../../../../modul/analisis/akurasi.js";
 import { avg } from "./playersAccuracyData.js";
 import { TooltipLabel } from "../../../../../../components/ui/tooltip.jsx";
 

@@ -195,7 +195,7 @@ test("all three mapped application callers import peluang symbols through the li
   const callers = new Map([
     ["src/modul/analisis/konvensiEvaluasi.js", ["batasiCp", "CP_CEILING"]],
     ["src/modul/analisis/penilaianLangkah.js", ["peluangMenang"]],
-    ["src/halaman/Analisa/mesin/akurasi.js", ["batasiCp", "CP_CEILING", "FAKTOR_PELUANG", "peluangMenang"]],
+    ["src/modul/analisis/metrikAkurasi.js", ["batasiCp", "CP_CEILING", "FAKTOR_PELUANG", "peluangMenang"]],
   ]);
   for (const path of berkasKode(src)) {
     const imports = astBerkas(path).statements.filter((node) => ts.isImportDeclaration(node) && node.moduleSpecifier

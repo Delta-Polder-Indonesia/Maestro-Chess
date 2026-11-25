@@ -16,7 +16,7 @@ import {
   inversAkurasi,
   kerugianMove,
   petaAnotasiKosong,
-} from "../akurasi.js";
+} from "../../../../modul/analisis/akurasi.js";
 import {
   AMBANG,
   BOBOT,

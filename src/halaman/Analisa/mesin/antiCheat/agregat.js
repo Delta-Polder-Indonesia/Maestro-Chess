@@ -6,7 +6,7 @@
  * `./dasar.js`; tidak ada lapisan lain yang mengimpornya.
  */
 import { DAFTAR_FASE } from "../../../../modul/analisis/fase.js";
-import { harmonikDariJumlah, petaAnotasiKosong } from "../akurasi.js";
+import { harmonikDariJumlah, petaAnotasiKosong } from "../../../../modul/analisis/akurasi.js";
 import {
   AMBANG,
   MIN_LANGKAH_AGGREGAT,
