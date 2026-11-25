@@ -1,4 +1,4 @@
-// Fasad publik modul Analisis; cakupan saat ini mencakup fondasi engine dan deteksi fase permainan.
+// Fasad publik modul Analisis; mencakup fondasi engine, deteksi fase permainan, dan kurva peluang menang.
 export { DAFTAR_ENGINE, ENGINE_BAKU, EngineCatur, cariEngine, hashUntukEngine, wasmSupported, wasmThreadsSupported } from "./mesin.js";
 export {
   DAFTAR_FASE,
@@ -10,3 +10,4 @@ export {
   isEndOpening,
   papanDariFen,
 } from "./fase.js";
+export { CP_CEILING, FAKTOR_PELUANG, batasiCp, peluangMenang } from "./peluang.js";

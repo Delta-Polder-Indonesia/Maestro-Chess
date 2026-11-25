@@ -43,7 +43,7 @@
  * ./akurasi.js, ./antiCheat.js, atau ./engine.js dari sini (lingkaran impor).
  */
 
-import { batasiCp, CP_CEILING } from "./peluang.js";
+import { batasiCp, CP_CEILING } from "../../../modul/analisis/peluang.js";
 
 /**
  * Status evaluasi satu langkah — lihat kepala modul.

@@ -64,7 +64,7 @@
  */
 
 import { invertColor } from "./penilaian.js";
-import { batasiCp, CP_CEILING, FAKTOR_PELUANG, peluangMenang } from "./peluang.js";
+import { batasiCp, CP_CEILING, FAKTOR_PELUANG, peluangMenang } from "../../../modul/analisis/peluang.js";
 import { cpBaku, tandaMate } from "./evaluasi.js";
 
 /*

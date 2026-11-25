@@ -28,6 +28,8 @@ const namaWasm = ["hashUntukEngine", "wasmSupported", "wasmThreadsSupported"];
 const namaSemua = [...namaEngine, ...namaWasm].sort();
 const fasePath = "src/modul/analisis/fase.js";
 const deteksiFasePath = "src/modul/analisis/deteksiFase.js";
+const peluangPath = "src/modul/analisis/peluang.js";
+const kurvaPeluangPath = "src/modul/analisis/kurvaPeluang.js";
 
 function berkasKode(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entri) => {
@@ -164,7 +166,7 @@ test("both public entries stay minimal without JSX or legacy engine adapter", ()
   assert.ok(graphRingan.files.every((file) => extname(file) === ".js"), ringanPath);
 
   const graphUtama = grafDari(utamaPath);
-  assert.deepEqual(graphUtama.files, [utamaPath, ringanPath, enginePath, wasmPath, assetPath, fasePath, deteksiFasePath].sort(), utamaPath);
+  assert.deepEqual(graphUtama.files, [utamaPath, ringanPath, enginePath, wasmPath, assetPath, fasePath, deteksiFasePath, peluangPath, kurvaPeluangPath].sort(), utamaPath);
   assert.deepEqual(graphUtama.paket, ["chess.js"], utamaPath);
   assert.ok(graphUtama.files.every((file) => extname(file) === ".js"), utamaPath);
 });

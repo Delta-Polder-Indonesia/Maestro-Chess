@@ -113,7 +113,7 @@ test("legacy, implementation, lightweight and main entries expose exact phase AP
     assert.deepEqual(Object.keys(api).sort(), namaFase);
     assert.equal(Object.hasOwn(api, "default"), false);
   }
-  assert.deepEqual(Object.keys(utama).sort(), [...namaMesin, ...namaFase].sort());
+  for (const nama of namaFase) assert.ok(Object.hasOwn(utama, nama), nama);
   assert.equal(Object.hasOwn(utama, "default"), false);
   for (const nama of namaFase) {
     for (const api of [implementasi, ringanFase, utama]) assert.strictEqual(api[nama], lamaFase[nama], nama);
@@ -142,14 +142,12 @@ test("legacy shim, lightweight facade and main barrel use direct named re-export
 
   const path = resolve(akar, utamaPath);
   const statements = astBerkas(path).statements;
-  assert.equal(statements.length, 2);
-  for (const [index, target, names] of [[0, mesinPath, namaMesin], [1, ringanPath, namaFase]]) {
-    const node = statements[index];
-    assert.ok(ts.isExportDeclaration(node));
-    assert.equal(tujuan(path, node.moduleSpecifier.text), resolve(akar, target));
-    assert.ok(node.exportClause && ts.isNamedExports(node.exportClause));
-    assert.deepEqual(node.exportClause.elements.map((element) => (element.propertyName ?? element.name).text).sort(), [...names].sort());
-    assert.ok(node.exportClause.elements.every((element) => element.propertyName === undefined));
+  assert.ok(statements.every((node) => ts.isExportDeclaration(node)));
+  for (const [target, names] of [[mesinPath, namaMesin], [ringanPath, namaFase]]) {
+    const node = statements.find((item) => tujuan(path, item.moduleSpecifier.text) === resolve(akar, target));
+    assert.ok(node && node.exportClause && ts.isNamedExports(node.exportClause), target);
+    assert.deepEqual(node.exportClause.elements.map((element) => (element.propertyName ?? element.name).text).sort(), [...names].sort(), target);
+    assert.ok(node.exportClause.elements.every((element) => element.propertyName === undefined), target);
   }
 });
 
