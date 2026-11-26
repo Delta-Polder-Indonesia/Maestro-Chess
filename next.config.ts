@@ -24,7 +24,11 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   // Stockfish Lite is single-threaded and does not need cross-origin isolation.
-  // Avoid COEP so public player avatars from external sites can load normally.
+  // COEP require-corp is a hardening candidate: the only cross-origin embedded
+  // resource (Chess.com avatars, images.chesscomfiles.com) is verified to send
+  // Cross-Origin-Resource-Policy: cross-origin. Activation is deferred until
+  // browser compatibility testing (Chrome/Firefox/Safari) confirms avatars,
+  // workers and WASM still load; header evidence alone is not sufficient.
 }
 
 export default nextConfig
