@@ -354,7 +354,7 @@ export default function LayarDeteksiEngine({ onBukaAkun, akunTab, aktif = true }
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         <span className="text-xs font-bold text-foregroundGrey">{t("analisa.antiCheat.riwayat.versiMesin")}</span>
-                        <div className="rounded-borderRoundness border border-border bg-[#272727] px-2 py-1 text-sm text-foreground">{versiEngine}</div>
+                        <div className="rounded-borderRoundness border border-border bg-backgroundDropdown px-2 py-1 text-sm text-foreground">{versiEngine}</div>
                       </div>
                     </div>
                     <div className="flex flex-col gap-1">
@@ -374,7 +374,7 @@ export default function LayarDeteksiEngine({ onBukaAkun, akunTab, aktif = true }
                         onChange={(e) => ubahKedalamanInput(e.currentTarget.value)}
                         onBlur={selesaikanKedalaman}
                         disabled={ac.berjalan}
-                        className="rounded-borderRoundness border border-border bg-[#272727] px-2 py-1 text-sm text-foreground outline-none"
+                        className="rounded-borderRoundness border border-border bg-backgroundDropdown px-2 py-1 text-sm text-foreground outline-none"
                       />
                     </div>
                   </div>
@@ -432,7 +432,7 @@ export default function LayarDeteksiEngine({ onBukaAkun, akunTab, aktif = true }
                     disabled={ac.berjalan}
                     aria-invalid={ac.batas === null}
                     aria-describedby={`${jumlahId}-petunjuk${ac.batas === null ? ` ${jumlahId}-galat` : ""}`}
-                    className="rounded-borderRoundness border border-border bg-[#272727] px-2 py-1 text-sm text-foreground outline-none"
+                    className="rounded-borderRoundness border border-border bg-backgroundDropdown px-2 py-1 text-sm text-foreground outline-none"
                   />
                   {ac.batas === null ? <p id={`${jumlahId}-galat`} role="alert" className="text-xs leading-4 text-warning">{t("analisa.antiCheat.riwayat.jumlahTidakValid")}</p> : null}
                 </div>
@@ -472,7 +472,7 @@ export default function LayarDeteksiEngine({ onBukaAkun, akunTab, aktif = true }
                       onChange={(e) => ubahHashInput(e.currentTarget.value)}
                       onBlur={selesaikanHash}
                       disabled={ac.berjalan}
-                      className="rounded-borderRoundness border border-border bg-[#272727] px-2 py-1 text-sm text-foreground outline-none"
+                      className="rounded-borderRoundness border border-border bg-backgroundDropdown px-2 py-1 text-sm text-foreground outline-none"
                     />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-1 text-xs font-bold text-foregroundGrey">
@@ -484,7 +484,7 @@ export default function LayarDeteksiEngine({ onBukaAkun, akunTab, aktif = true }
                       value={1}
                       readOnly
                       aria-describedby={`${threadsId}-petunjuk`}
-                      className="rounded-borderRoundness border border-border bg-[#272727] px-2 py-1 text-sm text-foreground outline-none"
+                      className="rounded-borderRoundness border border-border bg-backgroundDropdown px-2 py-1 text-sm text-foreground outline-none"
                     />
                     <p id={`${threadsId}-petunjuk`} className="font-normal">{t("analisa.antiCheat.riwayat.threadsLite")}</p>
                   </div>
@@ -540,11 +540,11 @@ export default function LayarDeteksiEngine({ onBukaAkun, akunTab, aktif = true }
       </div>
       {aktif && infoDialog ? (
         <AlertDialog open onOpenChange={(b) => { if (!b) setInfoTerbuka(null); }}>
-          <AlertDialogContent container={wadahDialog} className="bg-[#1e1d1c] border-[#5d5d5d] text-[#dedede] shadow-2xl">
+          <AlertDialogContent container={wadahDialog} className="bg-backgroundBoxDarker border-border text-foreground shadow-2xl">
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-white">{infoDialog.judul}</AlertDialogTitle>
+              <AlertDialogTitle className="text-foregroundHighlighted">{infoDialog.judul}</AlertDialogTitle>
               <AlertDialogDescription asChild>
-                <div id={infoTerbuka === "jumlah" ? `${jumlahId}-petunjuk` : undefined} className="flex flex-col gap-2 text-[#939291]">
+                <div id={infoTerbuka === "jumlah" ? `${jumlahId}-petunjuk` : undefined} className="flex flex-col gap-2 text-foregroundGrey">
                   {infoDialog.paragraf.map((teks) => (
                     <p key={teks} className="text-sm leading-5">{teks}</p>
                   ))}
@@ -552,7 +552,7 @@ export default function LayarDeteksiEngine({ onBukaAkun, akunTab, aktif = true }
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogAction className="bg-[#81b64c] hover:bg-[#8bc550] text-black font-bold">
+              <AlertDialogAction className="bg-backgroundBoxBoxHighlighted hover:bg-backgroundBoxBoxHighlightedHover text-black font-bold">
                 {t("analisa.antiCheat.riwayat.mengerti")}
               </AlertDialogAction>
             </AlertDialogFooter>

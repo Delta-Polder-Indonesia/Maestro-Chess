@@ -93,12 +93,14 @@ export default function Attributions() {
                 <p className="kartu-paragraf"><External href="https://creativecommons.org/licenses/by-sa/3.0/">Lisensi CC BY-SA 3.0</External></p>
               }>
                 <p className="kartu-paragraf">Desain bidak oleh <External href="https://en.wikipedia.org/wiki/User:Cburnett">Cburnett</External>, diadaptasi sebagai komponen SVG.</p>
+                <p className="kartu-paragraf">Set bidak tambahan (Alpha, California, Cardinal, Chessnut, Merida, Maestro, dan lainnya) disalin dari repositori ChessClub milik pemilik yang bersumber dari koleksi aset lichess-org/lila. Lisensi tiap set berbeda (CC BY-SA, Apache 2.0, atau CC BY-NC-SA untuk beberapa set); rincian penulis dan lisensi ada di public/bidak/CREDITS.md.</p>
               </AttributionCard>
 
               <AttributionCard id="suara" number="05" title="Suara papan" resources={
                 <p className="kartu-paragraf"><Local href="licenses/lichess-AGPL-3.0.txt">Lisensi AGPL-3.0</Local></p>
               }>
                 <p className="kartu-paragraf">Suara dari set standar <External href="https://github.com/lichess-org/lila/tree/master/public/sound/standard">Lichess</External>, AGPL-3.0. Beberapa nama berkas menggunakan suara yang sama.</p>
+                <p className="kartu-paragraf">Koleksi suara tambahan (Futuristic, Lisp, NES, Piano, Robot, SFX, WoodLand) disalin dari <External href="https://github.com/franciscoBSalgueiro/en-croissant">En Croissant</External> (GPL-3.0), yang mendistribusikan ulang set suara <External href="https://github.com/lichess-org/lila/tree/master/public/sound">Lichess</External> (AGPL-3.0). Tiap koleksi menyediakan Move/Capture/Check (lisp juga Castles); peristiwa papan lainnya tetap memakai suara standar.</p>
               </AttributionCard>
 
               <AttributionCard id="pembukaan" number="06" title="Buku pembukaan" resources={

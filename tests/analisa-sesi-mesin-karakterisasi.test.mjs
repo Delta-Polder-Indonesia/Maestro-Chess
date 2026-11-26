@@ -165,8 +165,8 @@ test("the original named provider and hook expose the same value with lazy engin
   assert.equal(app.nilai.status, "mati");
   assert.equal(app.nilai.galat, "");
   assert.equal(app.nilai.didukung, true);
-  assert.deepEqual(app.nilai.opsi, { hash: 32, threads: 1, skill: null, movetime: null, mode: "kedalaman", nodes: 250000 });
-  assert.deepEqual(app.nilai.opsiBawaan, { hash: 32, skill: null, movetime: null, mode: "kedalaman", nodes: 250000 });
+  assert.deepEqual(app.nilai.opsi, { hash: 32, threads: 1, skill: null, movetime: null, mode: "kedalaman", nodes: 250000, limitStrength: false, elo: 2000 });
+  assert.deepEqual(app.nilai.opsiBawaan, { hash: 32, skill: null, movetime: null, mode: "kedalaman", nodes: 250000, limitStrength: false, elo: 2000 });
   for (const nama of ["gantiEngine", "siapkan", "setop", "ubahOpsi", "ambilMesin"]) assert.equal(typeof app.nilai[nama], "function", nama);
   assert.equal(app.nilai.ambilMesin(), null);
   assert.equal(ling.mesinDibuat.length, 0);
@@ -183,8 +183,8 @@ test("saved engine and options are restored and clamped without writing storage 
   ] });
   const app = ling.mount();
   assert.equal(app.nilai.idEngine, "stockfish-16");
-  assert.deepEqual(app.nilai.opsi, { hash: 128, threads: 1, skill: 0, movetime: 1000, mode: "waktu", nodes: 250000 });
-  assert.deepEqual(app.nilai.opsiBawaan, { hash: 48, skill: null, movetime: null, mode: "kedalaman", nodes: 250000 });
+  assert.deepEqual(app.nilai.opsi, { hash: 128, threads: 1, skill: 0, movetime: 1000, mode: "waktu", nodes: 250000, limitStrength: false, elo: 2000 });
+  assert.deepEqual(app.nilai.opsiBawaan, { hash: 48, skill: null, movetime: null, mode: "kedalaman", nodes: 250000, limitStrength: false, elo: 2000 });
   assert.equal(ling.operasi.some(([metode]) => metode !== "getItem"), false);
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-threads"), "12");
 });
@@ -266,18 +266,18 @@ test("option updates clamp values, keep one thread, and preserve existing storag
   const ling = lingkungan(tes);
   const app = ling.mount();
   act(() => app.nilai.ubahOpsi({ hash: 200.6, skill: 25.5, movetime: 42, threads: 8 }));
-  assert.deepEqual(app.nilai.opsi, { hash: 128, threads: 1, skill: 20, movetime: 1000, mode: "kedalaman", nodes: 250000 });
+  assert.deepEqual(app.nilai.opsi, { hash: 128, threads: 1, skill: 20, movetime: 1000, mode: "kedalaman", nodes: 250000, limitStrength: false, elo: 2000 });
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-hash"), "128");
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-skill"), "20");
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-movetime"), "1000");
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-threads"), null);
   assert.equal(ling.mesinDibuat.length, 0);
   act(() => app.nilai.ubahOpsi({ hash: NaN, skill: "bukan-angka", movetime: "" }));
-  assert.deepEqual(app.nilai.opsi, { hash: 128, threads: 1, skill: 20, movetime: null, mode: "kedalaman", nodes: 250000 });
+  assert.deepEqual(app.nilai.opsi, { hash: 128, threads: 1, skill: 20, movetime: null, mode: "kedalaman", nodes: 250000, limitStrength: false, elo: 2000 });
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-skill"), "20");
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-movetime"), "");
   act(() => app.nilai.ubahOpsi({ hash: -4.4, skill: null, movetime: 60000.8 }));
-  assert.deepEqual(app.nilai.opsi, { hash: 16, threads: 1, skill: null, movetime: 60000, mode: "kedalaman", nodes: 250000 });
+  assert.deepEqual(app.nilai.opsi, { hash: 16, threads: 1, skill: null, movetime: 60000, mode: "kedalaman", nodes: 250000, limitStrength: false, elo: 2000 });
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-skill"), "");
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-movetime"), "60000");
 });
@@ -287,7 +287,7 @@ test("inherited skill and movetime properties are currently accepted and persist
   const app = ling.mount();
   const perubahan = Object.create({ skill: 7.6, movetime: 2345.6 });
   act(() => app.nilai.ubahOpsi(perubahan));
-  assert.deepEqual(app.nilai.opsi, { hash: 32, threads: 1, skill: 8, movetime: 2346, mode: "kedalaman", nodes: 250000 });
+  assert.deepEqual(app.nilai.opsi, { hash: 32, threads: 1, skill: 8, movetime: 2346, mode: "kedalaman", nodes: 250000, limitStrength: false, elo: 2000 });
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-skill"), "8");
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-movetime"), "2346");
 });
@@ -328,7 +328,7 @@ test("option changes are passed to the existing engine without creating or start
   act(() => app.nilai.ubahOpsi({ hash: 64, skill: 9, movetime: 3000 }));
   assert.equal(ling.mesinDibuat.length, 1);
   assert.equal(mesin.pending.length, 0);
-  assert.deepEqual(mesin.opsiTerapan, [{ hash: 64, threads: 1, skill: 9, movetime: 3000, mode: "kedalaman", nodes: 250000 }]);
+  assert.deepEqual(mesin.opsiTerapan, [{ hash: 64, threads: 1, skill: 9, movetime: 3000, mode: "kedalaman", nodes: 250000, limitStrength: false, elo: 2000 }]);
   assert.strictEqual(app.nilai.ambilMesin(), mesin);
 });
 
@@ -338,7 +338,7 @@ test("blocked storage leaves changed engine and options usable in memory", (tes)
   ling.penyimpanan.gagalTulis = true;
   tanpaLog(() => act(() => { app.nilai.gantiEngine("stockfish-19-lite"); app.nilai.ubahOpsi({ hash: 64, skill: 5, movetime: 2200 }); }));
   assert.equal(app.nilai.idEngine, "stockfish-19-lite");
-  assert.deepEqual(app.nilai.opsi, { hash: 64, threads: 1, skill: 5, movetime: 2200, mode: "kedalaman", nodes: 250000 });
+  assert.deepEqual(app.nilai.opsi, { hash: 64, threads: 1, skill: 5, movetime: 2200, mode: "kedalaman", nodes: 250000, limitStrength: false, elo: 2000 });
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-engine"), null);
   assert.equal(ling.penyimpanan.getItem("maestro-analisa-hash"), null);
   assert.equal(ling.mesinDibuat[0].dihancurkan, 0);

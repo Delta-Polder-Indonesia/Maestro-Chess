@@ -11,7 +11,7 @@ import * as boardContext from "../src/halaman/Analisa/konteks/boardKonteks.js";
 import * as analyzeContext from "../src/halaman/Analisa/konteks/analyzeKonteks.js";
 import * as configContext from "../src/halaman/Analisa/konteks/configKonteks.js";
 import { boardThemes } from "../src/halaman/Analisa/komponen/pengaturan/boardThemes.js";
-import { buatHandleKeyDown } from "../src/halaman/Analisa/komponen/game/keyboardPapan.js";
+import { buatHandleKeyDown, buatHandleWheel } from "../src/halaman/Analisa/komponen/game/keyboardPapan.js";
 import { getCapturedPieces } from "../src/halaman/Analisa/komponen/game/getMoves.js";
 import { useAnalisisPapan } from "../src/halaman/Analisa/komponen/game/useAnalisisPapan.js";
 import { useUkuranArea } from "../src/halaman/Analisa/komponen/useUkuranArea.js";
@@ -125,6 +125,7 @@ test("the board ignores unrelated configuration, applies sound/theme, and caches
   const Board = kompilasi("../src/halaman/Analisa/komponen/game/board.jsx", {
     "../../mesin/engine.js": { deformatSquare: noop, formatSquare: noop },
     "../suaraPapan.js": { buatSuara: (nama) => ({ play: () => suara.push(nama) }) },
+    "../../../../lib/suara.js": { aturVolumePengguna: noop, aturKoleksiPengguna: noop },
     "../../../../modul/sesi/preferensi.js": { ...configContext, boardThemes },
     "../svg/piece.jsx": { default: Bidak },
     "../svg/rating.jsx": { default: kosong },
@@ -248,7 +249,7 @@ test("move navigation defers the side panel without overriding a later tab selec
       tab, pageState, moveNumber, data: [{ format: "pgn" }, noop], game: [[], noop],
       langkahSementara: [[], noop], players: [[{ name: "" }, { name: "" }], noop],
       result: ["", noop], analyzeController: [new AbortController(), noop], analyzingMove: [false, noop],
-      animation: [false, noop], forward: [true, noop],
+      animation: [false, noop], forward: [true, noop], white: [true, noop],
       customLine: [{ moveNumber: -1, moves: [], arrows: {} }, noop], returnedToNormalGame: [null, noop],
     };
     return React.createElement(analyzeContext.AnalyzeContext.Provider, { value }, React.createElement(Menu));
@@ -324,6 +325,7 @@ test("the board observes its workspace from the first mount and resizes when the
     "../../konstanta.js": { maxSisiPapan: 1000, minSisiPapan: 160, navTop: 516 },
     "../../../../modul/sesi/preferensi.js": configContext,
     "../menu/analysis/gameButtons.jsx": { default: kosong },
+    "../menu/analysis/tablebase.jsx": { default: kosong },
     "./getMoves.js": {
       getMoves: (game, i) => ({ move: game[i] }), getArrows: () => [], getCapturedPieces,
       getCustomResult: () => "", formatPlayerLabel: (player) => player.name,
@@ -332,6 +334,7 @@ test("the board observes its workspace from the first mount and resizes when the
     "./useAnalisisPapan.js": { useAnalisisPapan: () => ({ analyzeMove: noop, analyzingMoveRef: {} }) },
     "./usePekerjaanLaporan.js": { usePekerjaanLaporan: () => ({}) },
     "./pendengarKeyboard.jsx": { default: kosong },
+    "./keyboardPapan.js": { buatHandleKeyDown, buatHandleWheel },
   }).default;
   const state = {
     players: [{ name: "Alice" }, { name: "Bob" }], time: 0, moveNumber: 0,

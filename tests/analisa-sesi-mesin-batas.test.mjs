@@ -240,7 +240,8 @@ test("the provider stays at its old path and uses the lightweight Analisis engin
   const expected = new Map([
     [resolve(akar, "src/modul/analisis/mesin.js"), ["ENGINE_BAKU", "cariEngine", "hashUntukEngine", "wasmSupported"]],
     [resolve(akar, "src/halaman/Analisa/mesin/engine.js"), ["EngineAnalisis"]],
-    [resolve(modul, "preferensi.js"), ["bacaAngka", "bacaTeks", "tulis"]],
+    [resolve(akar, "src/halaman/Analisa/mesin/rentangElo.js"), ["RENTANG_ELO"]],
+    [resolve(modul, "preferensi.js"), ["bacaAngka", "bacaBoolean", "bacaTeks", "tulis", "tulisBoolean"]],
     [resolve(modul, "mesin.js"), ["KonteksMesin"]],
   ]);
   let react = 0;

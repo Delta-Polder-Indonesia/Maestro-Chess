@@ -55,11 +55,15 @@ export class EngineCatur {
    *   `skill` — Skill Level Stockfish 0–20 (null = bawaan engine),
    *   `onError` — callback ketika worker gagal, termasuk saat pencarian.
    */
-  constructor({ url = URL_ENGINE, hash = 16, threads = 1, skill = null, onError = null } = {}) {
+  constructor({ url = URL_ENGINE, hash = 16, threads = 1, skill = null, limitStrength = false, elo = null, onError = null } = {}) {
     this.url = url;
     this.hash = hash;
     this.threads = threads;
     this.skill = skill;
+    // Batas kekuatan berbasis Elo (UCI_LimitStrength + UCI_Elo). Saat aktif,
+    // Stockfish mengabaikan Skill Level dan bermain mendekati Elo target.
+    this.limitStrength = Boolean(limitStrength);
+    this.elo = elo;
     this.onError = onError;
     this.worker = null;
     this.siap = false;
@@ -106,6 +110,11 @@ export class EngineCatur {
       this.kirim(`setoption name Hash value ${this.hash}`);
       this.kirim(`setoption name Threads value ${this.threads}`);
       if (this.skill !== null) this.kirim(`setoption name Skill Level value ${this.skill}`);
+      // Batas Elo (opsional). UCI_LimitStrength selalu dikirim agar bisa mati;
+      // UCI_Elo hanya saat aktif. Build lama tanpa opsi ini membalas
+      // "No such option" dan pencarian tetap normal.
+      this.kirim(`setoption name UCI_LimitStrength value ${this.limitStrength ? "true" : "false"}`);
+      if (this.limitStrength && Number.isFinite(this.elo)) this.kirim(`setoption name UCI_Elo value ${this.elo}`);
       this.kirim("setoption name Ponder value false");
       // Tampilkan WDL (win/draw/loss permille) pada baris info. Dipakai fitur
       // anti-cheat untuk mengukur kehilangan peluang menang per langkah.
@@ -136,6 +145,19 @@ export class EngineCatur {
   terapkanSkill(skill) {
     this.skill = skill;
     this.kirim(`setoption name Skill Level value ${skill === null ? 20 : skill}`);
+  }
+
+  /**
+   * Ubah batas kekuatan Elo tanpa membuat ulang worker. `limitStrength` false
+   * mematikan UCI_LimitStrength (Stockfish kembali ke kekuatan penuh / Skill
+   * Level); true mengirim UCI_Elo bila nilainya sah. Worker yang belum dimuat
+   * memakai nilai ini saat `mulai()` mengirim setoption awal.
+   */
+  terapkanElo({ limitStrength, elo }) {
+    if (typeof limitStrength === "boolean") this.limitStrength = limitStrength;
+    if (Number.isFinite(elo)) this.elo = elo;
+    this.kirim(`setoption name UCI_LimitStrength value ${this.limitStrength ? "true" : "false"}`);
+    if (this.limitStrength && Number.isFinite(this.elo)) this.kirim(`setoption name UCI_Elo value ${this.elo}`);
   }
 
   /** Resolve all waiters on a worker error, including errors reported as UCI text. */

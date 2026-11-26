@@ -62,6 +62,7 @@ const eksporProvider = ["TabKerjaProvider", "useTabKerja"];
 const eksporPreferensi = [
   "bacaAngka", "bacaBoolean", "bacaTeks", "cobaBacaTeks", "tulis", "tulisBoolean",
   "boardThemes", "ConfigContext", "defaultUsedRatings", "ConfigContextProvider",
+  "DAFTAR_AKSEN", "DAFTAR_KOLEKSI_SUARA",
 ];
 const eksporGalatTitipan = [
   "ErrorsContext", "ErrorsContextProvider", "pushPageError", "pushPageWarning",
@@ -282,6 +283,7 @@ test("application consumers use the public facade, never legacy or private sessi
     "src/halaman/Analisa/komponen/boardMenu/boardMenu.jsx -> src/modul/sesi/analisa.js",
     "src/halaman/Analisa/komponen/errors/pageErrors.jsx -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/game/board.jsx -> src/modul/sesi/preferensi.js",
+    "src/halaman/Analisa/komponen/game/capturedPieces.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/game/game.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/game/game.jsx -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/game/game.jsx -> src/modul/sesi/analisa.js",
@@ -292,6 +294,9 @@ test("application consumers use the public facade, never legacy or private sessi
     "src/halaman/Analisa/komponen/game/useMuatPartai.js -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/game/useMuatPartai.js -> src/modul/sesi/titipan.js",
     "src/halaman/Analisa/komponen/menu/analysis/gameButtons.jsx -> src/modul/sesi/papan.js",
+    "src/halaman/Analisa/komponen/menu/analysis/moves/comments.jsx -> src/modul/sesi/preferensi.js",
+    "src/halaman/Analisa/komponen/menu/analysis/moves/moves.jsx -> src/modul/sesi/preferensi.js",
+    "src/halaman/Analisa/komponen/menu/analysis/tablebase.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/menu/loading/loading.jsx -> src/modul/sesi/impor.js",
     "src/halaman/Analisa/komponen/menu/loading/loading.jsx -> src/modul/sesi/mesin.js",
     "src/halaman/Analisa/komponen/menu/menu.jsx -> src/modul/sesi/analisa.js",
@@ -316,6 +321,7 @@ test("application consumers use the public facade, never legacy or private sessi
     "src/halaman/Analisa/komponen/pengaturan/mesin.jsx -> src/modul/sesi/mesin.js",
     "src/halaman/Analisa/komponen/pengaturan/moves.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/pengaturan/ratings.jsx -> src/modul/sesi/preferensi.js",
+    "src/halaman/Analisa/komponen/pengaturan/tampilan.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/pengaturan/themes.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/konteks/mesin.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/konteks/mesin.jsx -> src/modul/sesi/mesin.js",

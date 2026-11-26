@@ -54,6 +54,8 @@ test("engine startup failures from settings are visible in the console", async (
     "../../../../modul/sesi/preferensi.js": { tulis: noop },
     "../nav/SelectDaftar.jsx": { default: kosong },
     "../Gambar.jsx": { default: kosong },
+    "../../mesin/rentangElo.js": { RENTANG_ELO: { min: 1320, max: 3190, bawaan: 2000 } },
+    "./sakelarPengaturan.jsx": { default: kosong },
   }).default;
   let renderer;
   await act(async () => {
@@ -84,6 +86,8 @@ test("engine card ignores unrelated analysis progress but updates its depth", as
     "../../../../modul/sesi/preferensi.js": { tulis: noop },
     "../nav/SelectDaftar.jsx": { default: kosong },
     "../Gambar.jsx": { default: gambarMock },
+    "../../mesin/rentangElo.js": { RENTANG_ELO: { min: 1320, max: 3190, bawaan: 2000 } },
+    "./sakelarPengaturan.jsx": { default: kosong },
   }).default;
   const kendali = {};
   function Harness() {
@@ -101,7 +105,7 @@ test("engine card ignores unrelated analysis progress but updates its depth", as
   assert.equal(gambarRenders, awal);
   await act(async () => { kendali.depth[1](8); });
   assert.ok(gambarRenders > awal);
-  assert.equal(renderer.root.findByType("input").props.value, "8");
+  assert.equal(renderer.root.findAllByType("input").find((n) => n.props.min === 6).props.value, "8");
   await act(async () => { renderer.unmount(); });
 });
 

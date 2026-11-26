@@ -163,7 +163,7 @@ export default function KolomKoleksi({
                   e.stopPropagation();
                   tanganiHapusKoleksi(k.id);
                 }}
-                className="inline-flex flex-1 items-center justify-center gap-1 rounded-borderRoundness border border-border bg-backgroundBoxBox px-2 py-1 text-[10px] font-semibold text-[#ffaaa2] transition-colors hover:bg-backgroundBoxBoxHover cursor-pointer"
+                className="inline-flex flex-1 items-center justify-center gap-1 rounded-borderRoundness border border-border bg-backgroundBoxBox px-2 py-1 text-[10px] font-semibold text-foregroundDestructive transition-colors hover:bg-backgroundBoxBoxHover cursor-pointer"
               >
                 <Trash className="h-3 w-3 shrink-0" />
                 <span>{t("analisa.basisData.hapusKoleksi")}</span>

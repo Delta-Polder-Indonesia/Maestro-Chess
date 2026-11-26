@@ -37,7 +37,7 @@ function Loading(props) {
             <div className="text-lg font-bold text-foregroundGrey px-5 pb-3 w-full">
                 {status === "memuat" ? t("analisa.status.memuat") : `${t("analisa.muat.menganalisa")}${ellipsis}`}
             </div>
-            <hr className="border-neutral-600" />
+            <hr className="border-border" />
             <div className="flex justify-center py-3">
                 <div className="w-[85%] bg-backgroundBox rounded-borderExtraRoundness text-foregroundGrey flex flex-col gap-3 px-4 py-3">
                     <div className="w-full flex flex-col gap-2">

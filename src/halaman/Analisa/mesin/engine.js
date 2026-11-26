@@ -85,13 +85,13 @@ export class EngineAnalisis {
   /**
    * @param {{idEngine?: string, kedalaman?: number, threads?: number, hash?: number, skill?: number|null, onError?: Function}} [opsi]
    */
-  constructor({ idEngine, kedalaman = 8, threads = 1, hash = hashUntukEngine(), skill = null, movetime = null, onError } = {}) {
+  constructor({ idEngine, kedalaman = 8, threads = 1, hash = hashUntukEngine(), skill = null, limitStrength = false, elo = null, movetime = null, onError } = {}) {
     const pilihan = cariEngine(idEngine);
     this.idEngine = pilihan.id;
     this.labelEngine = pilihan.label;
     this.kedalaman = kedalaman;
     this.movetime = movetime;
-    this.engine = new EngineCatur({ url: pilihan.url, hash, threads, skill, onError });
+    this.engine = new EngineCatur({ url: pilihan.url, hash, threads, skill, limitStrength, elo, onError });
   }
 
   /**
@@ -109,7 +109,7 @@ export class EngineAnalisis {
    * `mulai()`, lalu setoption dikirim ke worker yang sudah hidup (kirim aman
    * bila belum ada).
    */
-  terapkanOpsi({ hash, threads, skill, movetime }) {
+  terapkanOpsi({ hash, threads, skill, movetime, limitStrength, elo }) {
     if (Number.isFinite(hash)) {
       this.engine.hash = hash;
       this.engine.kirim(`setoption name Hash value ${hash}`);
@@ -120,6 +120,9 @@ export class EngineAnalisis {
     }
     if (skill === null || Number.isFinite(skill)) {
       this.engine.terapkanSkill(skill);
+    }
+    if (typeof limitStrength === "boolean" || Number.isFinite(elo)) {
+      this.engine.terapkanElo({ limitStrength, elo });
     }
     if (movetime === null || Number.isFinite(movetime)) this.movetime = movetime;
   }

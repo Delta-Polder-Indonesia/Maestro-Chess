@@ -814,7 +814,7 @@ export default function LayarDatabase({
                       ? "var(--analisa-foregroundGrey)"
                       : "var(--analisa-winGreen)",
               }}
-              className="shrink-0 bg-transparent text-white text-[11px] leading-tight px-2 py-1 gap-x-1.5 [&>svg]:size-3 [&>svg]:translate-y-px rounded-sm"
+              className="shrink-0 bg-transparent text-foregroundHighlighted text-[11px] leading-tight px-2 py-1 gap-x-1.5 [&>svg]:size-3 [&>svg]:translate-y-px rounded-sm"
             >
               {notifikasi.variasi === "gagal" ? (
                 <AlertCircleIcon style={{ color: "var(--analisa-lossRed)" }} />

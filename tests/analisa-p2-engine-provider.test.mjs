@@ -20,6 +20,7 @@ const compiled = ts.transpileModule(readFileSync(new URL("../src/halaman/Analisa
 const dependencies = {
   "../../../modul/analisis/mesin.js": { ...daftarEngine, hashUntukEngine: () => 32, wasmSupported: () => true },
   "../mesin/engine.js": { EngineAnalisis },
+  "../mesin/rentangElo.js": { RENTANG_ELO: { min: 1320, max: 3190, bawaan: 2000 } },
   "../../../modul/sesi/preferensi.js": penyimpanan,
   "../../../modul/sesi/mesin.js": { KonteksMesin },
 };

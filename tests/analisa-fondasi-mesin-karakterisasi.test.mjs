@@ -129,7 +129,8 @@ test("startup sends the original UCI initialization sequence including Stockfish
   assert.equal(worker.url, cariEngine("stockfish-16").url);
   assert.deepEqual(worker.perintah, [
     "uci", "setoption name Hash value 64", "setoption name Threads value 1",
-    "setoption name Skill Level value 7", "setoption name Ponder value false",
+    "setoption name Skill Level value 7", "setoption name UCI_LimitStrength value false",
+    "setoption name Ponder value false",
     "setoption name UCI_ShowWDL value true", "setoption name Use NNUE value true", "isready",
   ]);
   worker.kirim("uciok");

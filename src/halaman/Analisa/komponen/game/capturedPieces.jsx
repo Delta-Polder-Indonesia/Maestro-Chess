@@ -1,9 +1,10 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo).
  * Bidak yang dimakan menggunakan SVG Cburnett yang sama dengan papan. */
 
-import { useMemo } from "react";
+import { useContext, useMemo } from "react";
 import { BISHOP, KNIGHT, PAWN, QUEEN, ROOK } from "chess.js";
 import { ChessPiece } from "../../../../components/chess/ChessPiece.jsx";
+import { ConfigContext } from "../../../../modul/sesi/preferensi.js";
 
 const PIECES_ORDER = [PAWN, BISHOP, KNIGHT, ROOK, QUEEN];
 
@@ -12,6 +13,11 @@ function formatAdvantage(advantage = 0) {
 }
 
 export default function CapturedPieces({ white = false, pieces = [], advantage = 0 }) {
+  const config = useContext(ConfigContext);
+  const pieceSet = config.pieceSet?.[0] ?? "cburnett";
+  // Tampilan material (adopsi En Croissant): "all" = bidak tertangkap + selisih
+  // (perilaku semula), "diff" = hanya angka selisih, "none" = sembunyikan.
+  const materialDisplay = config.materialDisplay?.[0] ?? "all";
   // Kelompokkan dan urutkan bidak berdasarkan urutan nilai catur
   const sortedGroupedPieces = useMemo(() => {
     const counts = pieces.reduce((acc, piece) => {
@@ -28,9 +34,11 @@ export default function CapturedPieces({ white = false, pieces = [], advantage =
   const displayAdvantage = white ? advantage : -advantage;
   const advantageText = formatAdvantage(displayAdvantage);
 
+  if (materialDisplay === "none") return null;
+
   return (
     <div className="flex flex-row h-full items-end gap-1 group-data-[panel-sejajar=true]/papan:gap-1.5">
-      <div className="flex flex-row h-full w-fit -ml-[3px]">
+      {materialDisplay === "all" ? <div className="flex flex-row h-full w-fit -ml-[3px]">
         {sortedGroupedPieces.map(([piece, count]) => (
           <div key={piece} className="mb-[1px] flex flex-row items-end">
             {Array.from({ length: count }, (_, idx) => {
@@ -50,13 +58,14 @@ export default function CapturedPieces({ white = false, pieces = [], advantage =
                 <ChessPiece
                   key={`${piece}-${idx}`}
                   piece={pieceChar}
+                  set={pieceSet}
                   className={`w-[10px] h-[10px] group-data-[panel-sejajar=true]/papan:w-[17px] group-data-[panel-sejajar=true]/papan:h-[17px] ${marginX} ${overlapClass}`}
                 />
               );
             })}
           </div>
         ))}
-      </div>
+      </div> : null}
 
       {/* Ukuran angka disamakan proporsinya dengan bidak */}
       {advantageText && (

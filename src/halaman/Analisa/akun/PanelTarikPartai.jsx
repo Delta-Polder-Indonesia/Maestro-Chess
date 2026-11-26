@@ -246,7 +246,7 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai, disabled =
               >
                 Tanggal
               </TabsTrigger>
-              <div className="h-5 w-[1px] shrink-0 bg-[#45474b]" aria-hidden="true" />
+              <div className="h-5 w-[1px] shrink-0 bg-borderSlanted" aria-hidden="true" />
               <TabsTrigger
                 value="filter"
                 className="slanted-tab flex-1 cursor-pointer !transition-none px-3 py-2 text-xs data-[state=active]:!bg-backgroundBoxBoxHighlighted data-[state=active]:!text-foregroundBlackDark data-[state=active]:!shadow-none data-[state=inactive]:!bg-transparent data-[state=inactive]:!text-foregroundGrey sm:flex-initial sm:px-4 sm:text-sm"
@@ -259,7 +259,7 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai, disabled =
           <div className="user-title-section">
             <div className="flex max-w-full items-center text-center">
               <h2
-                className="mx-auto min-w-0 break-words text-[25px] font-bold leading-tight tracking-tight text-white [overflow-wrap:anywhere]"
+                className="mx-auto min-w-0 break-words text-[25px] font-bold leading-tight tracking-tight text-foregroundHighlighted [overflow-wrap:anywhere]"
                 title={akunAktif ? akunAktif.username : t("analisa.akun.tarik.pilihAkun")}
               >
                 {akunAktif ? akunAktif.username : t("analisa.akun.tarik.pilihAkun")}
@@ -278,7 +278,7 @@ export default function PanelTarikPartai({ akun, abortRef, onSelesai, disabled =
         </TabsContent>
 
         <TabsContent value="filter" forceMount className="mt-0 data-[state=inactive]:hidden">
-          <div className="flex flex-col gap-3 rounded-b-lg border border-t-0 border-[#52555a] bg-backgroundBoxBox px-4 py-4">
+          <div className="flex flex-col gap-3 rounded-b-lg border border-t-0 border-borderSlanted bg-backgroundBoxBox px-4 py-4">
             <label className="flex flex-col gap-1">
               <span className="text-[10px] font-bold uppercase tracking-wide text-foregroundGrey">
                 {t("analisa.akun.tarik.maksPartai")}

@@ -8,6 +8,11 @@ import PieceSVG from "../svg/piece.jsx";
 import RatingSVG from "../svg/rating.jsx";
 import SakelarPengaturan from "./sakelarPengaturan.jsx";
 import BarisPengaturan from "./barisPengaturan.jsx";
+import PilihRingkas from "./pilihRingkas.jsx";
+
+// Fallback konteks beridentitas stabil (memo) bila provider lama tanpa evalDisplay.
+const BAWAAN_EVAL = ["cp", () => {}];
+const BAWAAN_TABLEBASE = [false, () => {}];
 const ratings = [
   "brilliant",
   "great",
@@ -42,7 +47,7 @@ function unserializeRatings(serializedUsedRatings) {
   }
   return unserializedRatings;
 }
-const IsiRatings = memo(function IsiRatings({ usedRatings2, setUsedRatings, boardTheme, highlightByRating, setHighlightByRating, cocok = () => true, deskripsi = () => null }) {
+const IsiRatings = memo(function IsiRatings({ usedRatings2, setUsedRatings, boardTheme, highlightByRating, setHighlightByRating, evalDisplay, setEvalDisplay, tablebase, setTablebase, cocok = () => true, deskripsi = () => null }) {
   const { t } = useI18n();
   useEffect(() => {
     const serializedUsedRatings = bacaTeks("usedRatings");
@@ -72,9 +77,33 @@ const IsiRatings = memo(function IsiRatings({ usedRatings2, setUsedRatings, boar
     tulis("highlightByRating", String(Number(newHighlightByRating)));
     setHighlightByRating(newHighlightByRating);
   }
+  function changeEvalDisplay(id) {
+    const sah = id === "wdl" ? "wdl" : "cp";
+    setEvalDisplay(sah);
+    tulis("evalDisplay", sah);
+  }
+  function toggleTablebase() {
+    const baru = !tablebase;
+    setTablebase(baru);
+    tulis("tablebase", String(Number(baru)));
+  }
+  const labelTablebase = t("analisa.pengaturan.tablebase");
+  const labelFormat = t("analisa.pengaturan.formatSkor");
   const labelSorot = t("analisa.pengaturan.sorotLabel");
   return <section>
-            {cocok("sorotLabel", labelSorot) ? <BarisPengaturan
+    {cocok("formatSkor", labelFormat) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelFormat}</span>}
+      deskripsi={deskripsi("formatSkor")}
+    >
+      <PilihRingkas nilai={evalDisplay} onChange={changeEvalDisplay} ariaLabel={labelFormat} lebar="w-[150px]" pilihan={[{ id: "cp", label: t("analisa.pengaturan.opsiEval.cp") }, { id: "wdl", label: t("analisa.pengaturan.opsiEval.wdl") }]} />
+    </BarisPengaturan> : null}
+            {cocok("tablebase", labelTablebase) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelTablebase}</span>}
+      deskripsi={deskripsi("tablebase")}
+    >
+      <SakelarPengaturan checked={tablebase} onCheckedChange={toggleTablebase} aria-label={labelTablebase} />
+    </BarisPengaturan> : null}
+    {cocok("sorotLabel", labelSorot) ? <BarisPengaturan
       judul={<button onClick={toggleHighlightByRating} type="button" className="flex flex-1 flex-row gap-2 items-center text-left font-medium text-foreground">
         <div className="grid grid-cols-2 w-fit">
           {Array.from({ length: 4 }).map((_, i) => {
@@ -130,6 +159,8 @@ function Ratings({ cocok, deskripsi }) {
   const [usedRatings2, setUsedRatings] = config.usedRatings;
   const [boardTheme] = config.boardTheme;
   const [highlightByRating, setHighlightByRating] = config.highlightByRating;
-  return <IsiRatings usedRatings2={usedRatings2} setUsedRatings={setUsedRatings} boardTheme={boardTheme} highlightByRating={highlightByRating} setHighlightByRating={setHighlightByRating} cocok={cocok} deskripsi={deskripsi} />;
+  const [evalDisplay, setEvalDisplay] = config.evalDisplay ?? BAWAAN_EVAL;
+  const [tablebase, setTablebase] = config.tablebase ?? BAWAAN_TABLEBASE;
+  return <IsiRatings usedRatings2={usedRatings2} setUsedRatings={setUsedRatings} boardTheme={boardTheme} highlightByRating={highlightByRating} setHighlightByRating={setHighlightByRating} evalDisplay={evalDisplay} setEvalDisplay={setEvalDisplay} tablebase={tablebase} setTablebase={setTablebase} cocok={cocok} deskripsi={deskripsi} />;
 }
 export default memo(Ratings);

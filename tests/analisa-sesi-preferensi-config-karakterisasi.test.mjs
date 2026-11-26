@@ -203,33 +203,42 @@ test("blocked reads log failures and the provider keeps its default state", asyn
   assert.equal(config.amatan.nilai.boardTheme[0], 0);
   assert.strictEqual(config.amatan.nilai.usedRatings[0], config.konteks.defaultUsedRatings);
   assert.equal(config.amatan.nilai.boardSounds[0], true);
-  assert.equal(galat.length, 8);
+  // 25 preferensi dibaca (pieceSet + Tier 1 koordinat/sorotLangkah/autoPromosi/
+  // hapusPanah + Tier 2 volume/kecepatanAnimasi/material/notasi + Tier 3
+  // pratinjauHover/gulirLangkah/koleksiSuara/ukuranFont/warnaAksen + tema
+  // terang/gelap + format skor WDL + tablebase); semuanya gagal saat storage diblokir.
+  assert.equal(galat.length, 25);
   assert.ok(galat.every(([, error]) => /read blocked/.test(String(error))));
 });
 
 test("real theme settings use the provider context and persist the chosen index", async (tes) => {
   const storage = pasangStorage(tes, [["maestro-analisa-boardTheme", "2"]]);
   function Baris({ judul, children }) { return React.createElement("div", null, judul, children); }
-  function Sakelar({ checked, onCheckedChange, "aria-label": label }) {
-    return React.createElement("button", { "data-uji": "sakelar-tema", "aria-label": label, "aria-checked": checked, onClick: () => onCheckedChange(!checked) });
+  // Tema kini dropdown ringkas; stub ini memetakan tiap pilihan ke tombol uji
+  // per grup agar indeks tema dan persistensinya tetap terarakterisasi.
+  function Pilih({ nilai, pilihan, onChange, ariaLabel }) {
+    return React.createElement("div", null, pilihan.map((p) => React.createElement("button", {
+      key: p.id, "data-uji": "opsi-ringkas", "data-grup": ariaLabel, "data-id": p.id,
+      "aria-selected": p.id === nilai, onClick: () => onChange(p.id),
+    })));
   }
   const muat = pemuat({
     "src/lib/i18n.jsx": { useI18n: () => ({ t: (key) => key }) },
     "src/halaman/Analisa/komponen/pengaturan/barisPengaturan.jsx": { default: Baris },
-    "src/halaman/Analisa/komponen/pengaturan/sakelarPengaturan.jsx": { default: Sakelar },
+    "src/halaman/Analisa/komponen/pengaturan/pilihRingkas.jsx": { default: Pilih },
   });
   const Themes = muat("src/halaman/Analisa/komponen/pengaturan/themes.jsx").default;
   const config = siapkanConfig(tes, muat, React.createElement(Themes));
   await config.mount();
   assert.equal(config.amatan.nilai.boardTheme[0], 2);
   assert.deepEqual(storage.tulisan, []);
-  const tombol = config.renderer.root.findAllByProps({ "data-uji": "sakelar-tema" });
-  assert.equal(tombol.length, 7);
-  assert.equal(tombol[2].props["aria-checked"], true);
-  await act(async () => { tombol[6].props.onClick(); await flush(); });
+  const opsiTema = () => config.renderer.root.findAllByProps({ "data-uji": "opsi-ringkas", "data-grup": "analisa.pengaturan.temaPapan" });
+  assert.equal(opsiTema().length, 7);
+  assert.equal(opsiTema()[2].props["aria-selected"], true);
+  await act(async () => { opsiTema()[6].props.onClick(); await flush(); });
   assert.equal(config.amatan.nilai.boardTheme[0], 6);
   assert.deepEqual(storage.tulisan.at(-1), ["maestro-analisa-boardTheme", "6"]);
-  assert.equal(tombol[6].props["aria-checked"], true);
+  assert.equal(opsiTema()[6].props["aria-selected"], true);
   await config.unmount();
   await config.mount();
   assert.equal(config.amatan.nilai.boardTheme[0], 6);

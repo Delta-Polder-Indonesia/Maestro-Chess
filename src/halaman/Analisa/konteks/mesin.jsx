@@ -17,14 +17,22 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ENGINE_BAKU, cariEngine, hashUntukEngine, wasmSupported } from "../../../modul/analisis/mesin.js";
+import { RENTANG_ELO } from "../mesin/rentangElo.js";
 import { EngineAnalisis } from "../mesin/engine.js";
-import { bacaAngka, bacaTeks, tulis } from "../../../modul/sesi/preferensi.js";
+import { bacaAngka, bacaBoolean, bacaTeks, tulis, tulisBoolean } from "../../../modul/sesi/preferensi.js";
 import { KonteksMesin } from "../../../modul/sesi/mesin.js";
 
 /** Batas waktu pencarian (ms). null = tanpa batas waktu tambahan. */
 function jepitBatasWaktu(nilai) {
   if (nilai === null || nilai === undefined || nilai === "") return null;
   return Number.isFinite(nilai) ? Math.min(60000, Math.max(1000, Math.round(nilai))) : null;
+}
+
+/** Jepit Elo target ke rentang UCI_Elo Stockfish (null/NaN → bawaan). */
+function jepitElo(nilai) {
+  return Number.isFinite(nilai)
+    ? Math.min(RENTANG_ELO.max, Math.max(RENTANG_ELO.min, Math.round(nilai)))
+    : RENTANG_ELO.bawaan;
 }
 
 /**
@@ -76,11 +84,13 @@ export function MesinProvider({ children }) {
       movetime,
       mode: bacaModeCari(bacaTeks("mode", ""), movetime),
       nodes: jepitBatasNode(bacaAngka("nodes", NODE_BAWAAN)),
+      limitStrength: bacaBoolean("limitStrength", false),
+      elo: jepitElo(bacaAngka("elo", RENTANG_ELO.bawaan)),
     };
   })());
   const [opsi, setOpsiState] = useState(opsiRef.current);
   // Nilai bawaan dipakai panel pengaturan untuk tombol "Reset".
-  const opsiBawaan = useRef({ hash: hashUntukEngine(), skill: null, movetime: null, mode: "kedalaman", nodes: NODE_BAWAAN }).current;
+  const opsiBawaan = useRef({ hash: hashUntukEngine(), skill: null, movetime: null, mode: "kedalaman", nodes: NODE_BAWAAN, limitStrength: false, elo: RENTANG_ELO.bawaan }).current;
 
   const ubahOpsi = useCallback((perubahan) => {
     const hash = Number.isFinite(perubahan.hash)
@@ -102,8 +112,14 @@ export function MesinProvider({ children }) {
     const nodes = "nodes" in perubahan
       ? jepitBatasNode(perubahan.nodes)
       : opsiRef.current.nodes;
+    const limitStrength = "limitStrength" in perubahan
+      ? Boolean(perubahan.limitStrength)
+      : opsiRef.current.limitStrength;
+    const elo = "elo" in perubahan
+      ? jepitElo(perubahan.elo)
+      : opsiRef.current.elo;
     // The distributed Lite build is single-threaded regardless of saved UI state.
-    const aman = { hash, threads: 1, skill, movetime, mode, nodes };
+    const aman = { hash, threads: 1, skill, movetime, mode, nodes, limitStrength, elo };
     opsiRef.current = aman;
     setOpsiState(aman);
     mesinRef.current?.terapkanOpsi?.(aman);
@@ -112,6 +128,8 @@ export function MesinProvider({ children }) {
     if ("movetime" in perubahan) tulis("movetime", movetime === null ? "" : movetime);
     if ("mode" in perubahan) tulis("mode", mode);
     if ("nodes" in perubahan) tulis("nodes", nodes);
+    if ("limitStrength" in perubahan) tulisBoolean("limitStrength", limitStrength);
+    if ("elo" in perubahan) tulis("elo", elo);
   }, []);
 
   const buat = useCallback((id) => {
@@ -125,6 +143,8 @@ export function MesinProvider({ children }) {
       hash: opsiRef.current.hash,
       threads: opsiRef.current.threads,
       skill: opsiRef.current.skill,
+      limitStrength: opsiRef.current.limitStrength,
+      elo: opsiRef.current.elo,
       movetime: opsiRef.current.movetime,
       onError: (error) => {
         if (generasiRef.current !== generasi || mesinRef.current !== mesin) return;

@@ -8,6 +8,8 @@ import TestRenderer from "react-test-renderer";
 import ts from "typescript";
 import * as configContext from "../src/halaman/Analisa/konteks/configKonteks.js";
 import { boardThemes } from "../src/halaman/Analisa/komponen/pengaturan/boardThemes.js";
+import * as setBidak from "../src/halaman/Analisa/komponen/pengaturan/setBidak.js";
+import * as katalog from "../src/halaman/Analisa/komponen/pengaturan/katalogPengaturan.js";
 import { analisa as english } from "../src/lib/terjemahan/en/analisa.js";
 
 const nodeRequire = createRequire(import.meta.url);
@@ -61,7 +63,10 @@ function renderLayar() {
     "next/link": { default: TautanUji },
   };
   const Baris = compile("../src/halaman/Analisa/komponen/pengaturan/barisPengaturan.jsx", {}).default;
-  const denganBaris = { ...umum, "./barisPengaturan.jsx": { default: Baris } };
+  const PilihRingkas = compile("../src/halaman/Analisa/komponen/pengaturan/pilihRingkas.jsx", {}).default;
+  const Geser = compile("../src/halaman/Analisa/komponen/pengaturan/geserPengaturan.jsx", {}).default;
+  const PilihTema = compile("../src/halaman/Analisa/komponen/pengaturan/pilihTema.jsx", {}).default;
+  const denganBaris = { ...umum, "./barisPengaturan.jsx": { default: Baris }, "./pilihRingkas.jsx": { default: PilihRingkas }, "./geserPengaturan.jsx": { default: Geser }, "./pilihTema.jsx": { default: PilihTema }, "./setBidak.js": setBidak };
   const modulRatings = compile("../src/halaman/Analisa/komponen/pengaturan/ratings.jsx", denganBaris);
   const modulLayar = compile("../src/halaman/Analisa/komponen/nav/layarPengaturan.jsx", {
     "../../../../lib/i18n.jsx": umum["../../../../lib/i18n.jsx"],
@@ -69,8 +74,10 @@ function renderLayar() {
     "../pengaturan/themes.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/themes.jsx", denganBaris).default },
     "../pengaturan/ratings.jsx": modulRatings,
     "../pengaturan/moves.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/moves.jsx", denganBaris).default },
+    "../pengaturan/tampilan.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/tampilan.jsx", denganBaris).default },
     "../pengaturan/bestMoves.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/bestMoves.jsx", denganBaris).default },
     "../pengaturan/barisPengaturan.jsx": { default: Baris },
+    "../pengaturan/katalogPengaturan.js": katalog,
     "../../../../modul/sesi/preferensi.js": { boardThemes },
     "../../../../lib/repo.js": umum["../../../../lib/repo.js"],
     "next/link": umum["next/link"],
@@ -82,6 +89,7 @@ function renderLayar() {
   function Harness() {
     const nilai = {
       boardTheme: React.useState(0),
+      pieceSet: React.useState("cburnett"),
       usedRatings: React.useState(configContext.defaultUsedRatings),
       highlightByRating: React.useState(true),
       showArrows: React.useState(true),
@@ -109,11 +117,11 @@ function saklar(renderer) {
 test("settings screen uses a search row, a vertical category nav, and only real tabs", () => {
   const { renderer } = renderLayar();
   assert.equal(teks(renderer.root.findByType("h1")), "Settings");
-  assert.equal(renderer.root.findByType("input").props.placeholder, "Search settings");
+  assert.equal(renderer.root.findByProps({ type: "search" }).props.placeholder, "Search settings");
   const tab = renderer.root.findByType("nav").findAllByType("button");
   assert.deepEqual(tab.map(teks), ["Board", "Ratings", "Moves", "Language", "Documentation"]);
   assert.equal(tab[0].props["aria-current"], "page");
-  assert.deepEqual(judulGrup(renderer), ["Board theme", "Board behaviour"]);
+  assert.deepEqual(judulGrup(renderer), ["Board theme", "Board behaviour", "Appearance"]);
   renderer.unmount();
 });
 
@@ -141,16 +149,16 @@ test("each tab opens only its own settings groups", () => {
 
   act(() => tab()[2].props.onClick());
   assert.deepEqual(judulGrup(renderer), ["Best moves"]);
-  assert.deepEqual(saklar(renderer), ["Show arrows", "Arrow after opponent's move"]);
+  assert.deepEqual(saklar(renderer), ["Show arrows", "Arrow after opponent's move", "Erase arrows on click", "Move notation"]);
   renderer.unmount();
 });
 
 test("search filters rows across tabs and clears when another tab is chosen", () => {
   const { renderer } = renderLayar();
-  const cari = renderer.root.findByType("input");
+  const cari = renderer.root.findByProps({ type: "search" });
   act(() => cari.props.onChange({ target: { value: "sound" } }));
   assert.deepEqual(judulGrup(renderer), ["Board behaviour"]);
-  assert.deepEqual(saklar(renderer), ["Board sounds"]);
+  assert.deepEqual(saklar(renderer), ["Board sounds", "Sound collection"]);
 
   act(() => cari.props.onChange({ target: { value: "brilliant" } }));
   assert.deepEqual(judulGrup(renderer), ["Ratings"]);
@@ -161,10 +169,10 @@ test("search filters rows across tabs and clears when another tab is chosen", ()
   assert.match(teks(renderer.root), /No settings found for "tidak ada"/);
 
   act(() => cari.props.onChange({ target: { value: "animasi" } }));
-  assert.deepEqual(saklar(renderer), ["Animate moves"]);
+  assert.deepEqual(saklar(renderer), ["Animate moves", "Animation speed"]);
   act(() => renderer.root.findByType("nav").findAllByType("button")[0].props.onClick());
-  assert.equal(renderer.root.findByType("input").props.value, "");
-  assert.deepEqual(judulGrup(renderer), ["Board theme", "Board behaviour"]);
+  assert.equal(renderer.root.findByProps({ type: "search" }).props.value, "");
+  assert.deepEqual(judulGrup(renderer), ["Board theme", "Board behaviour", "Appearance"]);
   renderer.unmount();
 });
 

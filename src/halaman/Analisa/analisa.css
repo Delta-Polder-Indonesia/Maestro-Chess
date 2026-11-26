@@ -66,6 +66,19 @@
   --analisa-error: #fa412d;
   --analisa-warning: #b8860b;
 
+  /* Permukaan tema tambahan (pass palet terang/gelap) — nilai gelap persis
+     warna hard-coded lama sehingga tema gelap tidak berubah. */
+  --analisa-backgroundDropdown: #272727;
+  --analisa-backgroundDropdownHover: #090909;
+  --analisa-backgroundPanel: #2a2a2a;
+  --analisa-backgroundPanelHover: #3a3a3a;
+  --analisa-backgroundTrack: #363636;
+  --analisa-foregroundMuted: #aaaaaa;
+  --analisa-foregroundSwitchOff: #b8b8b8;
+  --analisa-foregroundDestructive: #ffaaa2;
+  --analisa-backgroundSlanted: #2c2d30;
+  --analisa-borderSlanted: #52555a;
+
   --analisa-borderRoundness: 0.25rem;
   --analisa-borderExtraRoundness: 0.5rem;
 
@@ -121,11 +134,62 @@
   --blackBoard: var(--analisa-blackBoard);
   --backgroundBoxBoxHighlighted: var(--analisa-backgroundBoxBoxHighlighted);
   --backgroundBoxBoxHighlightedHover: var(--analisa-backgroundBoxBoxHighlightedHover);
+  --backgroundDropdown: var(--analisa-backgroundDropdown);
+  --backgroundDropdownHover: var(--analisa-backgroundDropdownHover);
+  --backgroundPanel: var(--analisa-backgroundPanel);
+  --backgroundPanelHover: var(--analisa-backgroundPanelHover);
+  --backgroundTrack: var(--analisa-backgroundTrack);
+  --foregroundMuted: var(--analisa-foregroundMuted);
+  --foregroundSwitchOff: var(--analisa-foregroundSwitchOff);
+  --foregroundDestructive: var(--analisa-foregroundDestructive);
+  --backgroundSlanted: var(--analisa-backgroundSlanted);
+  --borderSlanted: var(--analisa-borderSlanted);
   --scrollbarColor: #494949;
   --scrollbarSize: 8px;
 
   color: var(--analisa-foreground);
   background: var(--analisa-background);
+}
+
+/*
+ * Tema TERANG (adopsi En Croissant ThemeButton: auto/light/dark). Provider
+ * menyetel data-tema="terang" pada .analisa-root hanya saat preferensi terang
+ * (atau auto mengikuti sistem). Hanya variabel permukaan yang dipetakan ulang;
+ * warna semantik tetap: papan (boardThemes), bidak, label penilaian, panah,
+ * jam/profil/evaluation-bar (entitas catur), menang/kalah, error/warning, dan
+ * aksen (dikendalikan terpisah lewat preferensi warnaAksen). foregroundBlack
+ * (teks di kartu kertas putih) dan foregroundBlackDark (teks di tombol aksen)
+ * sengaja tetap gelap di kedua tema.
+ */
+.analisa-root[data-tema="terang"] {
+  --analisa-background: #f5f4f2;
+  --analisa-foreground: #262421;
+  --analisa-foregroundHighlighted: #000000;
+  --analisa-foregroundGrey: #666563;
+  --analisa-placeholder: #8a8987;
+
+  --analisa-backgroundBox: #0000000d;
+  --analisa-backgroundBoxDarker: #e9e8e5;
+  --analisa-backgroundBoxHover: #00000014;
+  --analisa-backgroundBoxBox: #0000000f;
+  --analisa-backgroundBoxBoxDisabled: #0000000a;
+  --analisa-backgroundBoxBoxHover: #0000001f;
+
+  --analisa-border: #cfcdc9;
+  --analisa-borderHighlighted: #a9a7a3;
+
+  --analisa-backgroundDropdown: #ffffff;
+  --analisa-backgroundDropdownHover: #ececea;
+  --analisa-backgroundPanel: #efeeec;
+  --analisa-backgroundPanelHover: #e2e1de;
+  --analisa-backgroundTrack: #c9c7c3;
+  --analisa-foregroundMuted: #666563;
+  --analisa-foregroundSwitchOff: #5c5b59;
+  --analisa-foregroundDestructive: #b3261e;
+  --analisa-backgroundSlanted: #e4e3e0;
+  --analisa-borderSlanted: #c5c3bf;
+
+  --scrollbarColor: #c9c7c3;
 }
 
 /* Warna papan dari tema terpilih (board.jsx menulis variabel ini langsung). */
@@ -211,4 +275,51 @@
 
 .analisa-root .wawasan-dot:hover {
   r: 5.5;
+}
+
+/*
+ * Slider pengaturan (GeserPengaturan) — track 4px + thumb bulat 14px, pola
+ * "Slider with tick marks" reui.io. Thumb memakai --foreground agar kontras di
+ * kedua tema (terang di tema gelap, gelap di tema terang); track --backgroundTrack.
+ * Pusat thumb berada 7px dari tepi sehingga deret tick px-[7px] sejajar.
+ */
+.analisa-root .geser-pengaturan {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  background: transparent;
+  cursor: pointer;
+}
+.analisa-root .geser-pengaturan::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--backgroundTrack);
+}
+.analisa-root .geser-pengaturan::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 9999px;
+  background: var(--foreground);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.analisa-root .geser-pengaturan::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--backgroundTrack);
+}
+.analisa-root .geser-pengaturan::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--foreground);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.analisa-root .geser-pengaturan:focus-visible {
+  outline: 2px solid var(--backgroundBoxBoxHighlighted);
+  outline-offset: 2px;
+  border-radius: 9999px;
 }

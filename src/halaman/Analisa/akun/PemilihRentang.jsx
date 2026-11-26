@@ -221,7 +221,7 @@ export default function PemilihRentang({ preset, dari, sampai, onPilih }) {
        seperti contoh. Di layar sempit keduanya bertumpuk dan preset bisa
        digeser horizontal supaya kalender tetap mendapat lebar penuh.
       */}
-      <div className="grid grid-cols-1 overflow-hidden rounded-b-lg border border-t-0 border-[#52555a] bg-backgroundBoxBox md:grid-cols-12">
+      <div className="grid grid-cols-1 overflow-hidden rounded-b-lg border border-t-0 border-borderSlanted bg-backgroundBoxBox md:grid-cols-12">
         <div className="flex flex-row gap-1 overflow-x-auto border-b border-border p-3 md:col-span-4 md:flex-col md:overflow-visible md:border-b-0 md:border-r">
           {PRESET_RENTANG.map((nilai) => (
             <button

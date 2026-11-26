@@ -183,16 +183,16 @@ export default function KartuAkun({ platform, username, aktif = false, tabAktif 
         </div>
       </div>
       <AlertDialog open={tabAktif && konfirmasiHapus} onOpenChange={setKonfirmasiHapus}>
-        <AlertDialogContent className="border-[#5d5d5d] bg-[#1e1d1c] text-[#dedede] shadow-2xl">
+        <AlertDialogContent className="border-border bg-backgroundBoxDarker text-foreground shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">{t("analisa.akun.hapus")}</AlertDialogTitle>
-            <AlertDialogDescription className="break-words text-[#aaa]">
+            <AlertDialogTitle className="text-foregroundHighlighted">{t("analisa.akun.hapus")}</AlertDialogTitle>
+            <AlertDialogDescription className="break-words text-foregroundMuted">
               {t("analisa.akun.konfirmasiHapus", { nama: user })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-[#5d5d5d] bg-[#2a2a2a] text-[#dedede] hover:bg-[#3a3a3a] hover:text-white">{t("analisa.akun.batal")}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => onHapus?.()} className="bg-[#81b64c] font-bold text-black hover:bg-[#8bc550]">
+            <AlertDialogCancel className="border-border bg-backgroundPanel text-foreground hover:bg-backgroundPanelHover hover:text-foregroundHighlighted">{t("analisa.akun.batal")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => onHapus?.()} className="bg-backgroundBoxBoxHighlighted font-bold text-black hover:bg-backgroundBoxBoxHighlightedHover">
               {t("analisa.akun.hapus")}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -14,13 +14,13 @@ export default function SakelarPengaturan({ checked, onCheckedChange, "aria-labe
       aria-label={label}
       onClick={() => onCheckedChange(!checked)}
       className={`relative inline-flex h-[30px] w-[56px] shrink-0 cursor-pointer items-center rounded-full transition-colors duration-150 ease-in-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-backgroundBoxBoxHighlighted ${
-        checked ? "bg-backgroundBoxBoxHighlighted" : "bg-foregroundBlackDark"
+        checked ? "bg-backgroundBoxBoxHighlighted" : "bg-backgroundTrack"
       }`}
     >
       <span
         aria-hidden="true"
         className={`pointer-events-none absolute top-1/2 h-[22px] w-[31px] -translate-y-1/2 text-center text-[9px] font-semibold leading-[22px] transition-all duration-150 ease-in-out ${
-          checked ? "left-[3px] text-white" : "left-[25px] text-[#b8b8b8]"
+          checked ? "left-[3px] text-white" : "left-[25px] text-foregroundSwitchOff"
         }`}
       >
         {checked ? "ON" : "OFF"}

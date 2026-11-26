@@ -7,7 +7,13 @@ import { QUEEN, WHITE } from "chess.js";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import SakelarPengaturan from "./sakelarPengaturan.jsx";
 import BarisPengaturan from "./barisPengaturan.jsx";
-const IsiBestMoves = memo(function IsiBestMoves({ boardTheme, showArrows, setShowArrows, arrowAfterMove, setArrowAfterMove, cocok = () => true, deskripsi = () => null }) {
+import PilihRingkas from "./pilihRingkas.jsx";
+// Fallback konteks beridentitas stabil agar memo IsiBestMoves tidak bocor.
+const SETTER_KOSONG = () => {};
+const BAWAAN_HAPUS_PANAH = [true, SETTER_KOSONG];
+const BAWAAN_NOTASI = ["letters", SETTER_KOSONG];
+const OPSI_NOTASI = ["letters", "symbols", "lan"];
+const IsiBestMoves = memo(function IsiBestMoves({ boardTheme, showArrows, setShowArrows, arrowAfterMove, setArrowAfterMove, eraseArrowsOnClick, setEraseArrowsOnClick, moveNotation, setMoveNotation, cocok = () => true, deskripsi = () => null }) {
   const { t } = useI18n();
   useEffect(() => {
     const showArrows2 = bacaTeks("showArrows");
@@ -41,8 +47,23 @@ const IsiBestMoves = memo(function IsiBestMoves({ boardTheme, showArrows, setSho
     tulis("arrowAfterMove", String(Number(newArrowAfterMove)));
     setArrowAfterMove(newArrowAfterMove);
   }
+  // Tier 1 adopsi En Croissant: klik kiri menghapus panah/coretan bila aktif.
+  function toggleEraseArrowsOnClick() {
+    const baru = !eraseArrowsOnClick;
+    tulis("eraseArrowsOnClick", String(Number(baru)));
+    setEraseArrowsOnClick(baru);
+  }
+  // Tier 2: notasi daftar langkah (letters/symbols/lan).
+  function changeMoveNotation(nilai) {
+    const sah = OPSI_NOTASI.includes(nilai) ? nilai : "letters";
+    setMoveNotation(sah);
+    tulis("moveNotation", sah);
+  }
   const labelPanah = t("analisa.pengaturan.tampilPanah");
   const labelSetelah = t("analisa.pengaturan.panahSetelahLangkah");
+  const labelHapusPanah = t("analisa.pengaturan.hapusPanahKlik");
+  const labelNotasi = t("analisa.pengaturan.notasiLangkah");
+  const pilihanNotasi = OPSI_NOTASI.map((o) => ({ id: o, label: t(`analisa.pengaturan.notasi.${o === "letters" ? "huruf" : o === "symbols" ? "simbol" : "lan"}`) }));
   return <section>
             {cocok("tampilPanah", labelPanah) ? <BarisPengaturan
       judul={<button onClick={toggleShowArrows} type="button" className="flex flex-1 flex-row gap-2 items-center text-left font-medium text-foreground">
@@ -84,6 +105,18 @@ const IsiBestMoves = memo(function IsiBestMoves({ boardTheme, showArrows, setSho
     >
       <SakelarPengaturan checked={arrowAfterMove} onCheckedChange={toggleArrowAfterMove} aria-label={labelSetelah} />
     </BarisPengaturan> : null}
+    {cocok("hapusPanahKlik", labelHapusPanah) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelHapusPanah}</span>}
+      deskripsi={deskripsi("hapusPanahKlik")}
+    >
+      <SakelarPengaturan checked={eraseArrowsOnClick} onCheckedChange={toggleEraseArrowsOnClick} aria-label={labelHapusPanah} />
+    </BarisPengaturan> : null}
+    {cocok("notasiLangkah", labelNotasi) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelNotasi}</span>}
+      deskripsi={deskripsi("notasiLangkah")}
+    >
+      <PilihRingkas ariaLabel={labelNotasi} lebar="w-[160px]" nilai={OPSI_NOTASI.includes(moveNotation) ? moveNotation : "letters"} pilihan={pilihanNotasi} onChange={changeMoveNotation} />
+    </BarisPengaturan> : null}
         </section>;
 });
 
@@ -92,6 +125,8 @@ function BestMoves({ cocok, deskripsi }) {
   const [boardTheme] = config.boardTheme;
   const [showArrows, setShowArrows] = config.showArrows;
   const [arrowAfterMove, setArrowAfterMove] = config.arrowAfterMove;
-  return <IsiBestMoves boardTheme={boardTheme} showArrows={showArrows} setShowArrows={setShowArrows} arrowAfterMove={arrowAfterMove} setArrowAfterMove={setArrowAfterMove} cocok={cocok} deskripsi={deskripsi} />;
+  const [eraseArrowsOnClick, setEraseArrowsOnClick] = config.eraseArrowsOnClick ?? BAWAAN_HAPUS_PANAH;
+  const [moveNotation, setMoveNotation] = config.moveNotation ?? BAWAAN_NOTASI;
+  return <IsiBestMoves boardTheme={boardTheme} showArrows={showArrows} setShowArrows={setShowArrows} arrowAfterMove={arrowAfterMove} setArrowAfterMove={setArrowAfterMove} eraseArrowsOnClick={eraseArrowsOnClick} setEraseArrowsOnClick={setEraseArrowsOnClick} moveNotation={moveNotation} setMoveNotation={setMoveNotation} cocok={cocok} deskripsi={deskripsi} />;
 }
 export default memo(BestMoves);

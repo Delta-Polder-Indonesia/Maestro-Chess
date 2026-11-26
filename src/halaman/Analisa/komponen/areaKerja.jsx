@@ -638,17 +638,17 @@ function LapisanLayar({
           });
         })}
         <AlertDialog open={Boolean(dialog)} onOpenChange={(terbuka) => { if (!terbuka) setDialog(null); }}>
-          <AlertDialogContent container={wadahDialog} className="border-[#5d5d5d] bg-[#1e1d1c] text-[#dedede] shadow-2xl">
+          <AlertDialogContent container={wadahDialog} className="border-border bg-backgroundBoxDarker text-foreground shadow-2xl">
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-white">
+              <AlertDialogTitle className="text-foregroundHighlighted">
                 {t(dialog?.jenis === "hentikan" ? "analisa.pekerjaan.hentikanJudul" : dialog?.jenis === "rusak" ? "analisa.pekerjaan.rusakJudul" : "analisa.pekerjaan.terputusJudul")}
               </AlertDialogTitle>
-              <AlertDialogDescription className="text-[#aaa]">
+              <AlertDialogDescription className="text-foregroundMuted">
                 {t(dialog?.jenis === "hentikan" ? "analisa.pekerjaan.hentikanIsi" : dialog?.jenis === "rusak" ? "analisa.pekerjaan.rusakUlang" : "analisa.pekerjaan.ulangIsi")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="border-[#5d5d5d] bg-[#2a2a2a] text-[#dedede] hover:bg-[#3a3a3a] hover:text-white">{t("analisa.akun.batal")}</AlertDialogCancel>
+              <AlertDialogCancel className="border-border bg-backgroundPanel text-foreground hover:bg-backgroundPanelHover hover:text-foregroundHighlighted">{t("analisa.akun.batal")}</AlertDialogCancel>
               <AlertDialogAction
                 data-uji="pekerjaan-konfirmasi"
                 onClick={() => {
@@ -656,7 +656,7 @@ function LapisanLayar({
                   setDialog(null);
                   if (aksi) jalankan(aksi, ++permintaanRef.current);
                 }}
-                className="bg-[#81b64c] font-bold text-black hover:bg-[#8bc550]"
+                className="bg-backgroundBoxBoxHighlighted font-bold text-black hover:bg-backgroundBoxBoxHighlightedHover"
               >
                 {t(dialog?.jenis === "hentikan" ? "analisa.pekerjaan.hentikanLanjut" : "analisa.pekerjaan.ulang")}
               </AlertDialogAction>

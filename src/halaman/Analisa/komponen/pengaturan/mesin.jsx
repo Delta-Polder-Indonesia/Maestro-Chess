@@ -2,12 +2,14 @@
 import { memo, useContext, useEffect, useId, useState } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { cariEngine } from "../../../../modul/analisis/mesin.js";
+import { RENTANG_ELO } from "../../mesin/rentangElo.js";
 import { gambar } from "../../../../lib/asets.js";
 import { useMesin } from "../../../../modul/sesi/mesin.js";
 import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
 
 import { tulis } from "../../../../modul/sesi/preferensi.js";
 import Gambar from "../Gambar.jsx";
+import SakelarPengaturan from "./sakelarPengaturan.jsx";
 
 /**
  * Pilihan engine + kedalaman analisis.
@@ -35,6 +37,7 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
   const waktuId = useId();
   const modeId = useId();
   const nodeId = useId();
+  const eloId = useId();
 
   const aktif = cariEngine(idEngine) ?? cariEngine(undefined);
   const siapDipakai = status === "siap";
@@ -48,6 +51,8 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
   const movetime = opsi && Number.isFinite(opsi.movetime) ? opsi.movetime : null;
   const mode = opsi?.mode === "waktu" || opsi?.mode === "node" ? opsi.mode : "kedalaman";
   const nodes = Number.isFinite(opsi?.nodes) ? opsi.nodes : 250000;
+  const limitStrength = Boolean(opsi?.limitStrength);
+  const elo = Number.isFinite(opsi?.elo) ? opsi.elo : RENTANG_ELO.bawaan;
   const PILIHAN_WAKTU = [1000, 2000, 4000, 8000, 15000, 30000, 60000];
   const PILIHAN_NODE = [50000, 100000, 250000, 500000, 1000000, 2000000];
   const labelNode = (n) => (n >= 1000000
@@ -55,7 +60,7 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
     : t("analisa.pengaturan.nodeRibu", { n: n / 1000 }));
   // Samakan tinggi dan lebar semua kontrol (pola .text-input/.number-input-wrapper
   // di prompt.md) supaya kolomnya rapi walaupun isinya input atau select.
-  const kelasKontrol = "h-[30px] w-full rounded-borderRoundness border border-border bg-[#272727] px-2 text-sm text-foreground outline-none";
+  const kelasKontrol = "h-[30px] w-full rounded-borderRoundness border border-border bg-backgroundDropdown px-2 text-sm text-foreground outline-none";
 
   /* State string lokal untuk input angka. Masalah sebelumnya:
      - `terapkanAngka` menolak teks kosong (return), jadi Backspace tidak
@@ -79,6 +84,15 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
     tulis("kedalaman", n);
   }
 
+  // Elo target: string lokal saat mengetik (pola yang sama dengan kedalaman),
+  // parse+jepit ke rentang UCI_Elo saat valid; blur memulihkan nilai sah.
+  const [eloMentah, setEloMentah] = useState(String(elo));
+  useEffect(() => setEloMentah(String(elo)), [elo]);
+  function simpanElo(angka) {
+    const n = Math.min(RENTANG_ELO.max, Math.max(RENTANG_ELO.min, Math.round(Number(angka))));
+    ubahOpsi?.({ elo: n });
+  }
+
   /* Ganti mode pencarian. Mode "waktu" memastikan ada nilai batas waktu
      (bawaan 4 dtk bila belum pernah diset); mode lain menihilkan movetime
      supaya tidak ikut membatasi pencarian. Kedalaman tetap tersimpan di
@@ -98,6 +112,8 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
       movetime: null,
       mode: "kedalaman",
       nodes: opsiBawaan?.nodes ?? 250000,
+      limitStrength: false,
+      elo: opsiBawaan?.elo ?? RENTANG_ELO.bawaan,
     });
   }
 
@@ -109,7 +125,7 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
         </p>
       )}
 
-      <div className="flex items-center gap-3 rounded-borderRoundness border border-[#81b64c] bg-backgroundBoxBox p-3">
+      <div className="flex items-center gap-3 rounded-borderRoundness border border-backgroundBoxBoxHighlighted bg-backgroundBoxBox p-3">
         <Gambar
           src={gambar("/images/stockfish.webp")}
           alt="Stockfish"
@@ -288,6 +304,37 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
               ))}
             </select>
           </div>
+        </div>
+        <div className="mt-3 flex flex-col gap-2 rounded-borderRoundness border border-border bg-backgroundBoxBox p-3">
+          <div className="flex items-center justify-between gap-3">
+            <label htmlFor={eloId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.batasiElo")}</label>
+            <SakelarPengaturan checked={limitStrength} onCheckedChange={(v) => ubahOpsi?.({ limitStrength: v })} aria-label={t("analisa.pengaturan.batasiElo")} />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id={eloId}
+              type="number"
+              min={RENTANG_ELO.min}
+              max={RENTANG_ELO.max}
+              step={10}
+              disabled={!limitStrength}
+              value={eloMentah}
+              onChange={(e) => {
+                setEloMentah(e.target.value);
+                const n = Number(e.target.value);
+                if (e.target.value !== "" && Number.isFinite(n) && n >= RENTANG_ELO.min && n <= RENTANG_ELO.max) simpanElo(n);
+              }}
+              onBlur={() => {
+                const n = Number(eloMentah);
+                const sah = eloMentah !== "" && Number.isFinite(n) ? Math.min(RENTANG_ELO.max, Math.max(RENTANG_ELO.min, Math.round(n))) : elo;
+                setEloMentah(String(sah));
+                simpanElo(sah);
+              }}
+              className={`${kelasKontrol} disabled:opacity-50`}
+            />
+            <span className="shrink-0 text-xs text-foregroundGrey">{RENTANG_ELO.min}–{RENTANG_ELO.max}</span>
+          </div>
+          <p className="text-[11px] leading-4 text-foregroundGrey">{t(limitStrength ? "analisa.pengaturan.batasiEloAktif" : "analisa.pengaturan.batasiEloDeskripsi")}</p>
         </div>
         <div className="mt-2 flex justify-end">
           <button

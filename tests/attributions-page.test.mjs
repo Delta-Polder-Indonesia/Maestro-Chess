@@ -73,6 +73,8 @@ const externalUrls = [
   "https://en.wikipedia.org/wiki/User:Cburnett",
   "https://creativecommons.org/licenses/by-sa/3.0/",
   "https://github.com/lichess-org/lila/tree/master/public/sound/standard",
+  "https://github.com/lichess-org/lila/tree/master/public/sound",
+  "https://github.com/franciscoBSalgueiro/en-croissant",
   "https://github.com/lichess-org/chess-openings",
   "https://github.com/lipis/flag-icons",
   "https://github.com/vercel/geist-font",

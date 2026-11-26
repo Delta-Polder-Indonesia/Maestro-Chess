@@ -9,7 +9,7 @@
  *  - ikon           : 60px, monokrom mengikuti warna teks;
  *  - judul          : 16px / 500;
  *  - deskripsi      : 14px / dimmed;
- *  - tombol         : hijau solid #8BC550 dengan teks hitam, tinggi 42px, full width;
+ *  - tombol         : hijau solid aksen (token backgroundBoxBoxHighlightedHover) dengan teks hitam, tinggi 42px, full width;
  *  - tata letak     : lima kartu per baris pada layar lebar, sisanya lanjut di bawah.
  *
  * Fitur yang sudah tersedia langsung membuka layarnya; fitur yang belum
@@ -135,7 +135,7 @@ function Kartu({ kunci, ikon, judul, deskripsi, labelTombol, segera, onClick, t 
       className="relative flex h-full flex-col items-center justify-between rounded-[6px] border-2 border-border bg-backgroundBoxBox p-6 text-center shadow-sm"
     >
       {segera ? (
-        <span className="absolute right-2.5 top-2.5 rounded bg-backgroundBoxBoxHover px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#e2e2e2]">
+        <span className="absolute right-2.5 top-2.5 rounded bg-backgroundBoxBoxHover px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground">
           {t("analisa.papan.segera")}
         </span>
       ) : null}
@@ -157,7 +157,7 @@ function Kartu({ kunci, ikon, judul, deskripsi, labelTombol, segera, onClick, t 
         className={`mt-4 h-[42px] w-full rounded-lg px-4 text-sm font-medium transition-colors ${
           segera
             ? "cursor-not-allowed bg-backgroundBoxBoxHover text-foregroundGrey opacity-60"
-            : "cursor-pointer bg-[#8BC550] font-bold text-black hover:bg-[#81b64c]"
+            : "cursor-pointer bg-backgroundBoxBoxHighlightedHover font-bold text-black hover:bg-backgroundBoxBoxHighlighted"
         }`}
       >
         {labelTombol}

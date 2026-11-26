@@ -34,8 +34,16 @@ import { cariNamaPembukaan } from "../../../modul/analisis/buku.js";
 import { agregatSkorPemain, hitungSkorKecurigaan, ratingDariMetadata, warnaPemainDariMetadata } from "../mesin/antiCheat.js";
 import { denganKunciAkun, langgananPenghapusanAkun, periksaSinyalAkun } from "./koordinasiAkun.js";
 
-/** Jumlah partai bawaan jika kolom jumlah dikosongkan. */
-export const BATAS_PARTAI = 12;
+/**
+ * Jumlah partai bawaan jika kolom jumlah dikosongkan.
+ *
+ * Skrining turnamen butuh sampel cukup besar agar sinyal agregat (kecocokan
+ * engine, ACPL, anomali kekuatan vs Elo) stabil — sekitar 15 partai atau lebih.
+ * Bawaan 20 memberi ruang di atas itu tanpa membuat analisis terlalu lama pada
+ * kedalaman agregat yang dangkal; pengguna tetap bisa menaikkan/menurunkan
+ * lewat kolom jumlah.
+ */
+export const BATAS_PARTAI = 20;
 
 /** Jumlah tidak sah tidak boleh berubah menjadi `limit: 0` (seluruh arsip). */
 export function batasPartaiDariInput(nilai) {

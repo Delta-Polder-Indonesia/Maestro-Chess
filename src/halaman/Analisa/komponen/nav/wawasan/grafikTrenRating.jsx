@@ -62,8 +62,8 @@ function GrafikTrenRating({ points, t }) {
         <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full" role="img" aria-label={`${firstRating} to ${lastRating}`}>
           <defs>
             <linearGradient id={warnaId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#81b64c" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#81b64c" stopOpacity="0.02" />
+              <stop offset="0%" stopColor="var(--backgroundBoxBoxHighlighted)" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="var(--backgroundBoxBoxHighlighted)" stopOpacity="0.02" />
             </linearGradient>
           </defs>
           {/* Grid lines */}
@@ -76,7 +76,7 @@ function GrafikTrenRating({ points, t }) {
           {/* Area fill */}
           <polygon points={areaPoints} fill={`url(#${warnaId})`} />
           {/* Trend line */}
-          <polyline points={polylinePoints} fill="none" stroke="#81b64c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <polyline points={polylinePoints} fill="none" stroke="var(--backgroundBoxBoxHighlighted)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           {/* Data points */}
           {coords.map((c, i) => {
             const label = `${c.point.date ? new Date(c.point.date * 1000).toLocaleDateString() : ""}: ${c.point.rating} (${c.point.result || "—"})`;

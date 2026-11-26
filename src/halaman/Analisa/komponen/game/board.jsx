@@ -12,6 +12,11 @@ import { berkasPublik } from "../../../../lib/asets.js";
 // Kecepatan luncuran bidak: SATU sumber untuk semua papan (lihat penjelasan
 // panjang di animasiBidak.js). Nilai isepic-chess-ui: 300 ms, kurva `ease`.
 import { GESER_ISEPIC } from "../../../TekaTeki/animasiBidak.js";
+import { aturVolumePengguna, aturKoleksiPengguna } from "../../../../lib/suara.js";
+// Kecepatan animasi bidak (adopsi En Croissant: fast/normal/slow). "normal"
+// memakai durasi isepic-chess-ui semula; sakelar animateMoves tetap menjadi
+// sakelar nyala/mati terpisah sehingga perilaku bawaan tidak berubah.
+const DURASI_KECEPATAN = { fast: 150, normal: GESER_ISEPIC.durasi, slow: 600 };
 const HIGHLIGHT_COLORS = {
   forced: "",
   brilliant: "var(--highlightBrilliant)",
@@ -173,7 +178,7 @@ function Arrow(props) {
         </svg>;
 }
 function Coronation(props) {
-  const { white, column, coroningWhite, squareSize, clearCoronation, coronate, fokusKembali, t } = props;
+  const { white, column, coroningWhite, squareSize, clearCoronation, coronate, fokusKembali, t, pieceSet } = props;
   const coronationRef = useRef(null);
   const pieces = [
     QUEEN,
@@ -205,7 +210,7 @@ function Coronation(props) {
     coronate(piece);
     fokusKembali();
   }} key={piece} className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-700">
-                    <PieceSVG piece={piece} color={color} size={squareSize} />
+                    <PieceSVG piece={piece} color={color} size={squareSize} set={pieceSet} />
                 </button>)}
             <button type="button" aria-label={t("analisa.papanKeyboard.batalPromosi")} onClick={() => { clearCoronation(); fokusKembali(); }} className="bg-neutral-200 w-full flex justify-center items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-700" style={{ height: squareSize / 2 }}>
                 <Image draggable={false} src={berkasPublik("images/analisa/cross.svg")} alt="" aria-hidden="true" width={squareSize / 4.5} height={squareSize / 4.5} />
@@ -213,7 +218,7 @@ function Coronation(props) {
         </div>;
 }
 function Piece(props) {
-  const { boardRef, pieceRef, castleRookRef, moved, isCastleRook, pieceColor, pieceSymbol, drag, setDrag, id, squareSize, setPlaying, isCoronating, bolehSeret, kotakDariKursor, onLepasSentuh, cleanArrows } = props;
+  const { boardRef, pieceRef, castleRookRef, moved, isCastleRook, pieceColor, pieceSymbol, pieceSet, drag, setDrag, id, squareSize, setPlaying, isCoronating, bolehSeret, kotakDariKursor, onLepasSentuh, cleanArrows } = props;
   const [movement, setMovement] = useState({ x: 0, y: 0 });
   const wasSelectedRef = useRef(false);
   const pindahKotakRef = useRef(false);
@@ -419,7 +424,7 @@ function Piece(props) {
     className="w-full relative h-full z-[20] cursor-grab"
     style={{ top: movement.y || "", left: movement.x || "", zIndex: drag.is && drag.id === id ? 100 : "", touchAction: bolehSeret ? "none" : "auto" }}
   >
-            <PieceSVG className="*:pointer-events-none" dataset={{ "dontcleandrag": true }} piece={pieceSymbol} color={pieceColor} size={squareSize} />
+            <PieceSVG className="*:pointer-events-none" dataset={{ "dontcleandrag": true }} piece={pieceSymbol} color={pieceColor} size={squareSize} set={pieceSet} />
         </div>;
 }
 function Board(props) {
@@ -428,7 +433,7 @@ function Board(props) {
   const [kotakFokus, setKotakFokus] = useState("e2");
   const idPetunjuk = useId();
   const t = props.t || ((kunci) => kunci);
-  const { boardTheme, usedRatings, highlightByRating, showArrows, arrowAfterMove, showLegalMoves, animateMoves, boardSoundsRef } = props;
+  const { boardTheme, pieceSet, usedRatings, highlightByRating, showArrows, arrowAfterMove, showLegalMoves, animateMoves, boardSoundsRef, coordinates = "edge", moveHighlight = true, autoPromote = false, eraseArrowsOnClick = true, animationSpeed = "normal" } = props;
   const boardRef = useRef(null);
   const pieceRef = useRef(null);
   const castleRookRef = useRef(null);
@@ -586,7 +591,7 @@ function Board(props) {
     kunciAnimasiRef.current = kunci;
     if (pieceRef.current) animateMove(pieceRef.current, gerakanAnimasi, 60, forward, white, squareSize);
     if (castleRookRef.current) animateMove(castleRookRef.current, castleRookMove, 50, forward, white, squareSize);
-  }, [move, animation, animateMoves, castleRookMove, forward, nextMove, squareSize, white, fen]);
+  }, [move, animation, animateMoves, animationSpeed, castleRookMove, forward, nextMove, squareSize, white, fen]);
   let newMaterialAdvantage = 0;
   useEffect(() => setMaterialAdvantage(newMaterialAdvantage), [fen, newMaterialAdvantage, setMaterialAdvantage]);
   function startArrow(x, y) {
@@ -640,7 +645,12 @@ function Board(props) {
     const formattedFrom = formatSquare(from);
     const formattedTo = formatSquare(to);
     if (chess.get(from)?.type === PAWN && [0, 7].includes(formattedTo.row)) {
-      setCoronation({ choosing: true, movement: [formattedFrom, formattedTo] });
+      // Auto-promosi (adopsi En Croissant): langsung menteri tanpa pemilih.
+      if (autoPromote) {
+        analyzeMove(fen, { from, to, promotion: QUEEN }, sacrifice ?? false, previousStaticEvals ?? [], animasi, bestMoveSan, kandidat ?? []);
+      } else {
+        setCoronation({ choosing: true, movement: [formattedFrom, formattedTo] });
+      }
     } else {
       analyzeMove(fen, { from, to }, sacrifice ?? false, previousStaticEvals ?? [], animasi, bestMoveSan, kandidat ?? []);
     }
@@ -669,7 +679,8 @@ function Board(props) {
       const element = e.currentTarget;
       const elementRect = element.getBoundingClientRect();
       startArrow(e.clientX - elementRect.x, e.clientY - elementRect.y);
-    } else {
+    } else if (eraseArrowsOnClick) {
+      // Klik kiri menghapus panah/coretan hanya bila sakelar aktif (adopsi EC).
       cleanArrows();
     }
   }
@@ -717,7 +728,7 @@ function Board(props) {
         { transform: `translate(${!forward2 ? distance.x : 0}px, ${!forward2 ? -distance.y : 0}px)` }
       ],
       {
-        duration: GESER_ISEPIC.durasi,
+        duration: DURASI_KECEPATAN[animationSpeed] ?? GESER_ISEPIC.durasi,
         easing: GESER_ISEPIC.kurva,
         direction: forward2 ? "normal" : "reverse",
       }
@@ -789,7 +800,7 @@ function Board(props) {
 
   const boardColors = [boardThemes[boardTheme].white, boardThemes[boardTheme].black];
   const adaptedCoronationSquare = coronation.movement[0] ? adaptSquare(coronation.movement[0]) : null;
-  return <div ref={boardRef} role="group" aria-label={t("analisa.papanKeyboard.nama")} aria-describedby={idPetunjuk} onContextMenu={(e) => e.preventDefault()} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} className="grid w-fit h-fit relative" style={{ gridTemplateColumns: `repeat(8, ${squareSize}px)`, pointerEvents: drag.is ? "none" : "unset" }}>
+  return <div ref={boardRef} role="group" aria-label={t("analisa.papanKeyboard.nama")} aria-describedby={idPetunjuk} onContextMenu={(e) => e.preventDefault()} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onWheel={props.onWheel} className="grid w-fit h-fit relative" style={{ gridTemplateColumns: `repeat(8, ${squareSize}px)`, pointerEvents: drag.is ? "none" : "unset" }}>
             <span id={idPetunjuk} className="sr-only">{t("analisa.papanKeyboard.petunjuk")}</span>
             {(() => {
     const squares = [];
@@ -816,11 +827,16 @@ function Board(props) {
             guideColor = boardColors[1];
           }
         }
+        // Koordinat papan (adopsi En Croissant: no/edge/all). "edge" adalah
+        // perilaku Maestro semula — file di baris terbawah, rank di kolom
+        // terluar; "all" melabeli tiap petak; "no" menyembunyikan keduanya.
         let squareNumGuide, squareLetterGuide;
-        if (rowNumber === (white ? 7 : 0)) {
+        const tampilFile = coordinates === "all" || (coordinates === "edge" && rowNumber === (white ? 7 : 0));
+        const tampilRank = coordinates === "all" || (coordinates === "edge" && columnNumber === (white ? 0 : 7));
+        if (tampilFile) {
           squareLetterGuide = <span aria-hidden="true" style={{ right: rightSize, color: guideColor }} className={`absolute bottom-0`}>{squareId[0]}</span>;
         }
-        if (columnNumber === (white ? 0 : 7)) {
+        if (tampilRank) {
           squareNumGuide = <span aria-hidden="true" style={{ left: leftSize, color: guideColor }} className={`absolute top-0`}>{squareId[1]}</span>;
         }
         let rounded = "";
@@ -832,7 +848,9 @@ function Board(props) {
         const iconTranslateY = (white ? rowNumber === 0 : rowNumber === 7) ? 5 : -35;
         const iconSize = squareSize / 2.4;
         let highlighted, highlightedIcon;
-        move.forEach((square3, i) => {
+        // Sorot langkah terakhir bisa dimatikan (adopsi En Croissant). Sorotan
+        // pilihan seret/promosi di bawah tetap berjalan independen.
+        if (moveHighlight) move.forEach((square3, i) => {
           const highlightedSquare = adaptSquare(square3);
           if (highlightedSquare.col === columnNumber && highlightedSquare.row === rowNumber) {
             highlighted = <div style={{ backgroundColor: highlightColor }} className={`absolute z-[10] top-0 left-0 w-full h-full opacity-50 ${rounded}`} />;
@@ -878,6 +896,7 @@ function Board(props) {
             castleRookRef={castleRookRef}
             pieceColor={pieceColor}
             pieceSymbol={pieceType}
+            pieceSet={pieceSet}
             boardRef={boardRef}
             bolehSeret={!props.pratinjau && pieceColor === chess.turn()}
             kotakDariKursor={kotakDariKursor}
@@ -941,7 +960,7 @@ function Board(props) {
       setCoronation({ choosing: false, movement: [] });
     }
     const to = coronation.movement[1];
-    return <Coronation white={white} squareSize={squareSize} column={to.col} coroningWhite={!whiteMoving} t={t} fokusKembali={() => boardRef.current?.querySelector(`[data-square="${deformatSquare(to)}"]`)?.focus()} clearCoronation={() => setCoronation({ choosing: false, movement: [] })} coronate={coronate} />;
+    return <Coronation white={white} squareSize={squareSize} column={to.col} coroningWhite={!whiteMoving} t={t} fokusKembali={() => boardRef.current?.querySelector(`[data-square="${deformatSquare(to)}"]`)?.focus()} clearCoronation={() => setCoronation({ choosing: false, movement: [] })} coronate={coronate} pieceSet={pieceSet} />;
   })()}
         </div>;
 }
@@ -956,15 +975,30 @@ function BoardDenganConfig(props) {
   // Suara hanya dibaca saat posisi berubah; sakelarnya sendiri tidak perlu
   // membangun ulang 64 petak. Sinkron sebelum efek suara berikutnya berjalan.
   useLayoutEffect(() => { boardSoundsRef.current = boardSounds; }, [boardSounds]);
+  // Master volume pengguna ("1 pintu") diterapkan ke seluruh suara papan.
+  // Disinkron di sini karena papan selalu terpasang saat halaman Analisa aktif.
+  const volume = config.volume?.[0] ?? 100;
+  useLayoutEffect(() => { aturVolumePengguna(volume / 100); }, [volume]);
+  // Koleksi suara aktif ("1 pintu") disinkron di tempat yang sama dengan
+  // volume: papan selalu terpasang saat halaman Analisa aktif, dan modul
+  // suara bersama membaca koleksi saat memuat bunyi berikutnya.
+  const koleksiSuara = config.soundCollection?.[0] ?? "standard";
+  useLayoutEffect(() => { aturKoleksiPengguna(koleksiSuara); }, [koleksiSuara]);
   return <BoardMemo
     {...props}
     boardTheme={config.boardTheme[0]}
+    pieceSet={config.pieceSet?.[0] ?? "cburnett"}
     usedRatings={config.usedRatings[0]}
     highlightByRating={config.highlightByRating[0]}
     showArrows={config.showArrows[0]}
     arrowAfterMove={config.arrowAfterMove[0]}
     showLegalMoves={config.showLegalMoves[0]}
     animateMoves={config.animateMoves[0]}
+    coordinates={config.coordinates?.[0] ?? "edge"}
+    moveHighlight={config.moveHighlight?.[0] ?? true}
+    autoPromote={config.autoPromote?.[0] ?? false}
+    eraseArrowsOnClick={config.eraseArrowsOnClick?.[0] ?? true}
+    animationSpeed={config.animationSpeed?.[0] ?? "normal"}
     boardSoundsRef={boardSoundsRef}
   />;
 }

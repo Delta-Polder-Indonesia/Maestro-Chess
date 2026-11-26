@@ -21,7 +21,7 @@ function Statistik({ label, nilai }) {
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-[10px] font-bold uppercase tracking-wide text-foregroundGrey">{label}</span>
-      <span className="text-sm font-bold text-white">{nilai || "?"}</span>
+      <span className="text-sm font-bold text-foregroundHighlighted">{nilai || "?"}</span>
     </div>
   );
 }
@@ -35,9 +35,9 @@ function KartuEngine({ entri, terpilih, onPilih, labelVersi, labelElo, dataUji }
       data-uji={dataUji}
       aria-pressed={terpilih}
       onClick={onPilih}
-      className={`flex w-full flex-col gap-3.5 rounded-[6px] border-2 bg-[#2A2A2A] p-3.5 text-left transition-colors ${
+      className={`flex w-full flex-col gap-3.5 rounded-[6px] border-2 bg-backgroundPanel p-3.5 text-left transition-colors ${
         terpilih
-          ? "border-[#8BC550] shadow-[0_0_0_1px_rgba(139,197,80,0.18)]"
+          ? "border-backgroundBoxBoxHighlightedHover shadow-[0_0_0_1px_color-mix(in_srgb,var(--backgroundBoxBoxHighlightedHover)_18%,transparent)]"
           : "border-transparent hover:border-border"
       }`}
     >
@@ -50,7 +50,7 @@ function KartuEngine({ entri, terpilih, onPilih, labelVersi, labelElo, dataUji }
           className="h-12 w-12 shrink-0 rounded-[0.25rem] border border-border object-cover"
         />
         <div className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-bold text-white">{entri.label}</span>
+          <span className="block truncate text-sm font-bold text-foregroundHighlighted">{entri.label}</span>
           <span className="block truncate text-[11px] text-foregroundGrey">{berkas}</span>
         </div>
       </div>

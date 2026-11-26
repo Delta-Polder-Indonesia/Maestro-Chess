@@ -23,7 +23,7 @@ const apiMurni = resolve(modul, "preferensi.js");
 const ekstensi = [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"];
 const eksporStorage = ["bacaAngka", "bacaBoolean", "bacaTeks", "cobaBacaTeks", "tulis", "tulisBoolean"];
 const eksporTema = ["boardThemes"];
-const eksporContext = ["ConfigContext", "defaultUsedRatings"];
+const eksporContext = ["ConfigContext", "defaultUsedRatings", "DAFTAR_AKSEN", "DAFTAR_KOLEKSI_SUARA"];
 
 function berkasKode(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entri) => {

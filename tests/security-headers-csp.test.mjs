@@ -90,6 +90,7 @@ test("vercel.json enforces strict Observatory security headers without breaking 
     "https://api.chess.com",
     "https://www.chess.com",
     "https://lichess.org",
+    "https://tablebase.lichess.org",
     "blob:",
   ]);
 
