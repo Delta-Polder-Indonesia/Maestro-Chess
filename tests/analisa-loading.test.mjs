@@ -254,3 +254,44 @@ test("restored unevaluated variation remains visible and produces an interruptio
   assert.equal(snapshot.current.customLine.moves[0].statusEvaluasi, "dibatalkan");
   assert.ok(snapshot.current.errors.some((e) => e.title === "id:analisa.pekerjaan.variasiJudul" && e.type === "warning"));
 });
+
+test("starting a new game clears the previous analysis before the engine finishes", async (t) => {
+  mockBook(t);
+  const engine = fakeEngine();
+  let release;
+  let setups = 0;
+  const siapkan = () => {
+    setups++;
+    // Muatan pertama selesai segera; muatan kedua tertahan supaya jendela
+    // `loading` (papan pratinjau) bisa diamati sebelum engine selesai.
+    return setups === 1 ? Promise.resolve(engine) : new Promise((resolve) => { release = () => resolve(engine); });
+  };
+  const snapshot = {};
+  let props = { data: pgn("Alice", "Bob", "e4 e5"), depth: 6, boardSounds: false, t: translateId, siapkan, snapshot };
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(Harness, props)); await flush(); });
+  t.after(() => renderer.unmount());
+  assert.equal(snapshot.current.pageState, "analyze");
+  assert.equal(snapshot.current.game.length, 3);
+  assert.deepEqual(snapshot.current.players.map((p) => p.name), ["Alice", "Bob"]);
+
+  // Partai baru dari daftar database: engine tertahan → papan di jendela loading.
+  props = { ...props, data: pgn("Carol", "Dan", "d4 d5") };
+  await act(async () => { renderer.update(React.createElement(Harness, props)); await flush(); });
+  assert.equal(snapshot.current.pageState, "loading");
+  // Analisis lama dibersihkan TOTAL sebelum engine selesai. `game` yang basi
+  // adalah sumber panah analisis (bestMove) lama; `arrows` sumber panah custom.
+  assert.deepEqual(snapshot.current.game, []);
+  assert.deepEqual(snapshot.current.arrows, { 0: [] });
+  assert.equal(snapshot.current.moveNumber, 0);
+  assert.equal(snapshot.current.customLine.moveNumber, -1);
+  assert.deepEqual(snapshot.current.customLine.moves, []);
+  assert.deepEqual(snapshot.current.players, []);
+  assert.equal(snapshot.current.result, "");
+
+  // Setelah engine selesai, partai baru terisi normal.
+  await act(async () => { release(); await flush(); });
+  assert.equal(snapshot.current.pageState, "analyze");
+  assert.deepEqual(snapshot.current.players.map((p) => p.name), ["Carol", "Dan"]);
+  assert.equal(snapshot.current.game.length, 3);
+});
