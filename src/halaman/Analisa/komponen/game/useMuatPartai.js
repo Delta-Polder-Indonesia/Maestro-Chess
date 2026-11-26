@@ -33,9 +33,21 @@ import { adaPgnTitipan } from "../../../../modul/sesi/titipan.js";
 import { snapshotLaporanAman } from "../../../../modul/pekerjaan/index.js";
 import { gameStartSound } from "./gameStartSound.js";
 
+/* Batas pencarian efektif sesuai mode Report. "kedalaman" memakai depth
+   papan; "waktu" memakai movetime; "node" memakai nodes. Mode lain/null
+   jatuh ke kedalaman. Deteksi Engine tidak lewat sini (tetap depth murni). */
+function batasMode(mode, depth, movetime, nodes) {
+  if (mode === "waktu") return { depth: null, movetime: movetime ?? 4000, nodes: null };
+  if (mode === "node") return { depth: null, movetime: null, nodes: nodes ?? 250000 };
+  return { depth, movetime: null, nodes: null };
+}
+
 export function useMuatPartai({
   data,
   depth,
+  mode,
+  nodes,
+  movetime,
   pekerjaanLaporan,
   analyzeController,
   boardSoundsRef,
@@ -219,8 +231,9 @@ export function useMuatPartai({
       const laporkanProgres = (nilai) => {
         if (terkini() && !signal.aborted) setProgress(nilai);
       };
-      const { metadata, moves } = await parsePGN(mesin, pgn, depth2, buku, laporkanProgres, signal, {
-        partai, onLangkah: laporkanLangkah,
+      const batas = batasMode(mode, depth2, movetime, nodes);
+      const { metadata, moves } = await parsePGN(mesin, pgn, batas.depth, buku, laporkanProgres, signal, {
+        partai, onLangkah: laporkanLangkah, movetime: batas.movetime, nodes: batas.nodes,
       });
       if (!terkini() || signal.aborted) return;
       setTime(metadata.time);
@@ -282,7 +295,7 @@ export function useMuatPartai({
         if (!pertahankan) setMoveNumber(0);
       }
     }
-  }, [t, siapkan, pekerjaanLaporan, boardSoundsRef, setErrors, setAnalyzeController, setPageState, setPlaying, setTab, setProgress, setLangkahSementara, setTime, setPlayers, setGame, setResult, setAnimation, setArrows, setCustomLine, setAnalyzingMove, setMoveNumber, setWhite, setForward, setReturnedToNormalGame]);
+  }, [t, mode, nodes, movetime, siapkan, pekerjaanLaporan, boardSoundsRef, setErrors, setAnalyzeController, setPageState, setPlaying, setTab, setProgress, setLangkahSementara, setTime, setPlayers, setGame, setResult, setAnimation, setArrows, setCustomLine, setAnalyzingMove, setMoveNumber, setWhite, setForward, setReturnedToNormalGame]);
   const handleFEN = useCallback(async (fen, terkini, sinyal, muatan, pertahankan) => {
     /*
      * Halaman dibuka dengan PGN titipan dari teka-teki (lihat
@@ -351,7 +364,8 @@ export function useMuatPartai({
             reject(new Error("canceled"));
             signal.removeEventListener("abort", handleAbort);
           }
-          return parsePosition(mesin, chess, depth, signal, handleAbort);
+          const batas = batasMode(mode, depth, movetime, nodes);
+          return parsePosition(mesin, chess, batas.depth, signal, handleAbort, 1, batas.movetime, batas.nodes);
         })().then(resolve, reject);
       });
     } catch (e) {
@@ -392,7 +406,7 @@ export function useMuatPartai({
       id: muatan.pekerjaanId, metadata: { players: [{ name: "", elo: "?" }, { name: "", elo: "?" }], time: 0, result: "" },
       moves, pageState: "analyzeCustom", depth, pertahankan,
     });
-  }, [t, depth, siapkan, cleanArrows, pekerjaanLaporan, setErrors, setAnalyzeController, setPageState, setTime, setPlayers, setWhite, setPlaying, setMoveNumber, setResult, setTab, setProgress, setCustomLine, setAnalyzingMove, setGame]);
+  }, [t, depth, mode, nodes, movetime, siapkan, cleanArrows, pekerjaanLaporan, setErrors, setAnalyzeController, setPageState, setTime, setPlayers, setWhite, setPlaying, setMoveNumber, setResult, setTab, setProgress, setCustomLine, setAnalyzingMove, setGame]);
 
   // Bahasa/suara tidak boleh memulai ulang analisis. Snapshot yang dipulihkan
   // adalah satu-satunya pengecualian saat data berganti: pasang hasilnya

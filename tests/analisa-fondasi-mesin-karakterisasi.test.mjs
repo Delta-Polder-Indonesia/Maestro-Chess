@@ -209,6 +209,19 @@ test("UCI results keep ranked clean MultiPV lines while discarding bounds and em
   mesin.tamat();
 });
 
+test("node limit is sent as go nodes and combines with depth/time limits", async (t) => {
+  const workers = pasangWorker(t);
+  const mesin = new EngineCatur();
+  const worker = await mulaiSiap(mesin, workers);
+  mesin.analisis("posisi", { kedalaman: null, movetime: null, nodes: 250000, padaSelesai: () => {} });
+  worker.kirim("bestmove e2e4");
+  assert.deepEqual(worker.perintah.slice(-2), ["position fen posisi", "go nodes 250000"]);
+  mesin.analisis("posisi2", { kedalaman: 9, movetime: 1200, nodes: 100000, padaSelesai: () => {} });
+  worker.kirim("bestmove d2d4");
+  assert.deepEqual(worker.perintah.slice(-2), ["position fen posisi2", "go depth 9 movetime 1200 nodes 100000"]);
+  mesin.tamat();
+});
+
 test("searches serialize: only the latest pending request starts after the active bestmove", async (t) => {
   const workers = pasangWorker(t);
   const mesin = new EngineCatur();

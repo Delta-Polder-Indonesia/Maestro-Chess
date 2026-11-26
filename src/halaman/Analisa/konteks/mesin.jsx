@@ -27,6 +27,25 @@ function jepitBatasWaktu(nilai) {
   return Number.isFinite(nilai) ? Math.min(60000, Math.max(1000, Math.round(nilai))) : null;
 }
 
+/**
+ * Mode pencarian Report: "kedalaman" (go depth), "waktu" (go movetime),
+ * "node" (go nodes). Hanya memengaruhi alur Report — Deteksi Engine tetap
+ * memakai kedalamannya sendiri. Nilai tersimpan yang tak dikenal jatuh ke
+ * bawaan; bila pengguna lama punya batas waktu tersimpan, mode awal "waktu"
+ * agar pilihannya tetap dihormati.
+ */
+const MODE_CARI = ["kedalaman", "waktu", "node"];
+const NODE_BAWAAN = 250000;
+function bacaModeCari(tersimpan, movetime) {
+  if (MODE_CARI.includes(tersimpan)) return tersimpan;
+  return movetime === null ? "kedalaman" : "waktu";
+}
+/** Batas node pencarian. null = pakai bawaan; dijepit ke rentang wajar. */
+function jepitBatasNode(nilai) {
+  if (nilai === null || nilai === undefined || nilai === "") return NODE_BAWAAN;
+  return Number.isFinite(nilai) ? Math.min(10000000, Math.max(10000, Math.round(nilai))) : NODE_BAWAAN;
+}
+
 export function MesinProvider({ children }) {
   // The visible state starts with the same value on the server and during
   // hydration. Restore the ref immediately, however: a child effect can ask
@@ -45,18 +64,23 @@ export function MesinProvider({ children }) {
    * berubah. Pilihan pengguna bertahan di localStorage; bila penyimpanan
    * diblokir, nilai state tetap berlaku untuk sesi ini.
    */
-  const opsiRef = useRef({
-    hash: Math.min(128, Math.max(16, Math.round(bacaAngka("hash", hashUntukEngine())))),
-    threads: 1,
-    skill: (() => {
-      const nilai = bacaAngka("skill", null);
-      return nilai === null ? null : Math.min(20, Math.max(0, Math.round(nilai)));
-    })(),
-    movetime: jepitBatasWaktu(bacaAngka("movetime", null)),
-  });
+  const opsiRef = useRef((() => {
+    const movetime = jepitBatasWaktu(bacaAngka("movetime", null));
+    return {
+      hash: Math.min(128, Math.max(16, Math.round(bacaAngka("hash", hashUntukEngine())))),
+      threads: 1,
+      skill: (() => {
+        const nilai = bacaAngka("skill", null);
+        return nilai === null ? null : Math.min(20, Math.max(0, Math.round(nilai)));
+      })(),
+      movetime,
+      mode: bacaModeCari(bacaTeks("mode", ""), movetime),
+      nodes: jepitBatasNode(bacaAngka("nodes", NODE_BAWAAN)),
+    };
+  })());
   const [opsi, setOpsiState] = useState(opsiRef.current);
   // Nilai bawaan dipakai panel pengaturan untuk tombol "Reset".
-  const opsiBawaan = useRef({ hash: hashUntukEngine(), skill: null, movetime: null }).current;
+  const opsiBawaan = useRef({ hash: hashUntukEngine(), skill: null, movetime: null, mode: "kedalaman", nodes: NODE_BAWAAN }).current;
 
   const ubahOpsi = useCallback((perubahan) => {
     const hash = Number.isFinite(perubahan.hash)
@@ -72,14 +96,22 @@ export function MesinProvider({ children }) {
     const movetime = "movetime" in perubahan
       ? jepitBatasWaktu(perubahan.movetime)
       : opsiRef.current.movetime;
+    const mode = "mode" in perubahan && MODE_CARI.includes(perubahan.mode)
+      ? perubahan.mode
+      : opsiRef.current.mode;
+    const nodes = "nodes" in perubahan
+      ? jepitBatasNode(perubahan.nodes)
+      : opsiRef.current.nodes;
     // The distributed Lite build is single-threaded regardless of saved UI state.
-    const aman = { hash, threads: 1, skill, movetime };
+    const aman = { hash, threads: 1, skill, movetime, mode, nodes };
     opsiRef.current = aman;
     setOpsiState(aman);
     mesinRef.current?.terapkanOpsi?.(aman);
     if (Number.isFinite(perubahan.hash)) tulis("hash", hash);
     if ("skill" in perubahan) tulis("skill", skill === null ? "" : skill);
     if ("movetime" in perubahan) tulis("movetime", movetime === null ? "" : movetime);
+    if ("mode" in perubahan) tulis("mode", mode);
+    if ("nodes" in perubahan) tulis("nodes", nodes);
   }, []);
 
   const buat = useCallback((id) => {

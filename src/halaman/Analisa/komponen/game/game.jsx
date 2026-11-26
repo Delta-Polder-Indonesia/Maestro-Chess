@@ -20,7 +20,7 @@ import { useAnalisisPapan } from "./useAnalisisPapan.js";
 import { usePekerjaanLaporan } from "./usePekerjaanLaporan.js";
 import PendengarKeyboard from "./pendengarKeyboard.jsx";
 
-const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didukung, siapkan, ambilMesin, setErrors }) {
+const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didukung, siapkan, ambilMesin, setErrors, mode, nodes, movetime }) {
   const [boardSize, setBoardSize] = useState(750);
   const [gameHeight, setGameHeight] = useState(850);
   const [arrows, setArrows] = useState({ 0: [] });
@@ -78,6 +78,9 @@ const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didu
   const muatPartai = useMuatPartai({
     data,
     depth,
+    mode,
+    nodes,
+    movetime,
     pekerjaanLaporan,
     analyzeController,
     boardSoundsRef,
@@ -109,6 +112,9 @@ const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didu
     openingsRef: muatPartai.openingsRef,
     data,
     depth,
+    mode,
+    nodes,
+    movetime,
     time,
     move2,
     siapkan,
@@ -457,8 +463,8 @@ function Game({ wadah, ukuranWadah }) {
   const boardSoundsRef = useRef(boardSounds);
   useLayoutEffect(() => { boardSoundsRef.current = boardSounds; }, [boardSounds]);
   const setErrors = useContext(ErrorsContext).errors[1];
-  const { didukung, siapkan, ambilMesin } = useMesin();
-  return <IsiGame wadah={wadah} ukuranWadah={ukuranWadah} boardSoundsRef={boardSoundsRef} didukung={didukung} siapkan={siapkan} ambilMesin={ambilMesin} setErrors={setErrors} />;
+  const { didukung, siapkan, ambilMesin, opsi } = useMesin();
+  return <IsiGame wadah={wadah} ukuranWadah={ukuranWadah} boardSoundsRef={boardSoundsRef} didukung={didukung} siapkan={siapkan} ambilMesin={ambilMesin} setErrors={setErrors} mode={opsi?.mode} nodes={opsi?.nodes} movetime={opsi?.movetime} />;
 }
 
 export default memo(Game);

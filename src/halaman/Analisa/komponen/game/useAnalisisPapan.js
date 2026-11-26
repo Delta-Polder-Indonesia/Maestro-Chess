@@ -25,12 +25,22 @@ function sliceCustomArrows(arrows, moveNumber) {
   return hasil;
 }
 
+/* Batas pencarian efektif sesuai mode Report (lihat useMuatPartai). */
+function batasMode(mode, depth, movetime, nodes) {
+  if (mode === "waktu") return { depth: null, movetime: movetime ?? 4000, nodes: null };
+  if (mode === "node") return { depth: null, movetime: null, nodes: nodes ?? 250000 };
+  return { depth, movetime: null, nodes: null };
+}
+
 export function useAnalisisPapan({
   controllerRef,
   muatSeqRef,
   openingsRef,
   data,
   depth,
+  mode,
+  nodes,
+  movetime,
   time,
   move2,
   siapkan,
@@ -129,9 +139,10 @@ export function useAnalisisPapan({
       } else if (mesin) {
         const chess2 = new Chess(previousFen);
         const move4 = chess2.move(movement);
+        const batas = batasMode(mode, depth, movetime, nodes);
         move3 = await parseMove(
           mesin,
-          depth,
+          batas.depth,
           move4,
           chess2,
           previousStaticEvals,
@@ -143,7 +154,9 @@ export function useAnalisisPapan({
           },
           signal,
           undefined,
-          previousKandidat ?? []
+          previousKandidat ?? [],
+          batas.movetime,
+          batas.nodes
         );
       }
     } catch (e) {
@@ -210,7 +223,7 @@ export function useAnalisisPapan({
       return { ...prev, moves: daftar };
     });
   }, [
-    controllerRef, muatSeqRef, openingsRef, data.format, depth, time, move2,
+    controllerRef, muatSeqRef, openingsRef, data.format, depth, mode, nodes, movetime, time, move2,
     siapkan, ambilMesin, t, setErrors, setAnalyzeController, setPageState,
     setAnimation, setForward, setCustomLine, setAnalyzingMove,
   ]);

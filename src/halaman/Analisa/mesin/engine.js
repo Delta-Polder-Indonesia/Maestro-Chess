@@ -131,7 +131,7 @@ export class EngineAnalisis {
    * `multiPv > 1` mengaktifkan MultiPV: hasilnya berupa `daftarKandidat`,
    * kandidat terbaik terurut peringkat — bahan metrik peringkat anti-cheat.
    */
-  async cari(fen, { kedalaman = this.kedalaman, sinyal = null, multiPv = 1, movetime = this.movetime } = {}) {
+  async cari(fen, { kedalaman = this.kedalaman, sinyal = null, multiPv = 1, movetime = this.movetime, nodes = null } = {}) {
     if (sinyal?.aborted) throw galat(GALAT_BATAL);
     await this.siapkan();
     /*
@@ -147,7 +147,7 @@ export class EngineAnalisis {
 
     let hasil;
     try {
-      hasil = await this.engine.cari({ fen, kedalaman, multiPv, movetime });
+      hasil = await this.engine.cari({ fen, kedalaman, multiPv, movetime, nodes });
     } finally {
       if (sinyal) sinyal.removeEventListener("abort", hentikan);
     }
@@ -393,13 +393,13 @@ function muatPgn(chess, rawPgn) {
 /* ------------------------------------------------------------ per langkah */
 
 /** Posisi sebelum langkah pertama dianalisis agar rating langkah 1 adil. */
-export async function parsePosition(mesin, chess, depth, sinyal, handleAbort, multiPv = 1, movetime) {
+export async function parsePosition(mesin, chess, depth, sinyal, handleAbort, multiPv = 1, movetime, nodes = null) {
   const fen = chess.fen();
   const color = chess.turn();
 
   let hasil;
   try {
-    hasil = await mesin.cari(fen, { kedalaman: depth, sinyal, multiPv, movetime });
+    hasil = await mesin.cari(fen, { kedalaman: depth, sinyal, multiPv, movetime, nodes });
   } catch (e) {
     // Pembatalan oleh pengguna → serahkan ke handleAbort (menghentikan
     // seluruh alur). Kegagalan engine yang sesungguhnya TIDAK boleh
@@ -435,7 +435,7 @@ export async function parsePosition(mesin, chess, depth, sinyal, handleAbort, mu
  * label "kritis"). Pola yang sama dipakai ./antiCheat.js saat membaca
  * `moves[i - 1].kandidat`.
  */
-export async function parseMove(mesin, depth, move, chess, previousStaticEvals, previousBestMoveSan, previousSacrifice, openings, handleAbort, sinyal, multiPv = 1, previousKandidat = [], movetime) {
+export async function parseMove(mesin, depth, move, chess, previousStaticEvals, previousBestMoveSan, previousSacrifice, openings, handleAbort, sinyal, multiPv = 1, previousKandidat = [], movetime, nodes = null) {
   if (sinyal?.aborted) handleAbort?.();
 
   const movement = [move.from, move.to].map((kotak) => formatSquare(kotak));
@@ -476,6 +476,7 @@ export async function parseMove(mesin, depth, move, chess, previousStaticEvals, 
         sinyal,
         multiPv,
         movetime,
+        nodes,
       }));
     } catch (e) {
       // Lihat catatan yang sama di parsePosition: hanya pembatalan yang
@@ -625,7 +626,7 @@ export function bacaPartaiPGN(rawPgn) {
  * grafik; `onLangkah` menerima posisi yang telah dinilai setelah tiap langkah.
  * `multiPv` (bawaan MULTI_PV) merekam kandidat untuk penilaian langkah.
  */
-export async function parsePGN(mesin, rawPgn, depth, openings, setProgress, sinyal, { multiPv = MULTI_PV, onLangkah, partai, movetime } = {}) {
+export async function parsePGN(mesin, rawPgn, depth, openings, setProgress, sinyal, { multiPv = MULTI_PV, onLangkah, partai, movetime, nodes = null } = {}) {
   const { riwayat, metadata, daftarClock, jumlahPartai = 1 } = partai ?? bacaPartaiPGN(rawPgn);
 
   const hentikan = () => mesin.setop();
@@ -654,7 +655,7 @@ export async function parsePGN(mesin, rawPgn, depth, openings, setProgress, siny
     // Langkah pembuka dianalisis dari posisi awal supaya diff eval langkah
     // pertama punya pembanding.
     const chessAwal = new Chess(riwayat[0].before);
-    const awal = await parsePosition(mesin, chessAwal, depth, sinyal, gagalkan, multiPv, movetime);
+    const awal = await parsePosition(mesin, chessAwal, depth, sinyal, gagalkan, multiPv, movetime, nodes);
     moves.push({ ...awal, clock: daftarClock[0] ?? { white: metadata.time || null, black: metadata.time || null } });
     onLangkah?.([...moves]);
     previousStaticEvals = awal.previousStaticEvals;
@@ -679,7 +680,8 @@ export async function parsePGN(mesin, rawPgn, depth, openings, setProgress, siny
         sinyal,
         multiPv,
         previousKandidat,
-        movetime
+        movetime,
+        nodes
       );
 
       if (sinyal?.aborted) throw galat(GALAT_BATAL);
