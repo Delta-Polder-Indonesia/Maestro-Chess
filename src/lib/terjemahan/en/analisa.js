@@ -587,6 +587,16 @@ export const analisa = {
         "Hard positions = the engine's top candidates are close (gap ≤ {sulit} cp); engine users stand out there while humans err. Long best-move streaks and a time↔quality correlation near 0 (not negative) further support suspicion.",
       disclaimer:
         "The numbers above are a statistical indication for human review, not evidence or an accusation. Strong players, long time controls, and simple endgames all raise engine agreement. Any decision must come from reviewing the original games.",
+      anomali: {
+        judul: "Strength anomaly (performance vs Elo)",
+        harapan: "Expected for Elo {rating}: agreement ≥ {kecocokan}%, ACPL ≤ {acpl} cp",
+        capaiGM: "Performance at the Grandmaster band",
+        wajar: "Performance within the Elo range",
+        diAtasWajar: "Performance above the Elo range — review",
+        jauhDiAtas: "Performance far above Elo — review closely",
+        catatan:
+          "Compares engine agreement and ACPL against the expectation for this Elo. A low-rated player consistently performing at Grandmaster level warrants review. This is a review signal, not evidence; opening books, weak opponents, and simple endgames can look anomalous naturally.",
+      },
       riwayat: {
         judul: "Engine indications across history",
         pengaturan: "Settings",

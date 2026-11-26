@@ -587,6 +587,16 @@ export const analisa = {
         "Posisi sulit = kandidat terbaik engine berdekatan (selisih ≤ {sulit} cp); pemakai engine paling menonjol di sana, manusia justru sering keliru. Rentetan panjang langkah terbaik dan korelasi waktu↔kualitas mendekati 0 (bukan negatif) turut memperkuat kecurigaan.",
       disclaimer:
         "Angka di atas adalah indikasi statistik untuk ditinjau manusia, bukan bukti atau tuduhan. Pemain kuat, kontrol waktu yang panjang, dan akhirpartai sederhana sama-sama menaikkan kecocokan langkah dengan engine. Keputusan apa pun harus lewat peninjauan partai aslinya.",
+      anomali: {
+        judul: "Anomali kekuatan (kinerja vs Elo)",
+        harapan: "Harapan Elo {rating}: kecocokan ≥ {kecocokan}%, ACPL ≤ {acpl} cp",
+        capaiGM: "Kinerja setara band Grandmaster",
+        wajar: "Kinerja sesuai rentang Elo",
+        diAtasWajar: "Kinerja di atas rentang Elo — tinjau",
+        jauhDiAtas: "Kinerja jauh di atas Elo — tinjau serius",
+        catatan:
+          "Membandingkan kecocokan engine dan ACPL dengan harapan untuk Elo ini. Pemain ber-Elo rendah yang konsisten bermain setara Grandmaster patut ditinjau. Ini sinyal tinjauan, bukan bukti; jalur buku, lawan lemah, dan akhirpartai sederhana dapat tampak anomali secara alami.",
+      },
       riwayat: {
         judul: "Indikasi engine lintas riwayat",
         pengaturan: "Pengaturan",

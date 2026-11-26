@@ -1,6 +1,7 @@
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { MULTI_PV } from "../../../../modul/analisis/multiPv.js";
 import { DAFTAR_FASE } from "../../../../modul/analisis/fase.js";
+import { nilaiAnomaliKekuatan } from "../../mesin/antiCheat/anomaliKekuatan.js";
 
 /*
  * Kartu hasil anti-cheat agregat. Warna level memakai token highlight yang
@@ -11,6 +12,13 @@ const KELAS_LEVEL = {
   rendah: "text-highlightBest",
   sedang: "text-highlightInaccuracy",
   tinggi: "text-highlightBlunder",
+};
+
+// Warna sinyal anomali kekuatan memakai bahasa warna yang sama (hijau → kuning → merah).
+const KELAS_ANOMALI = {
+  wajar: "text-highlightBest",
+  diAtasWajar: "text-highlightInaccuracy",
+  jauhDiAtas: "text-highlightBlunder",
 };
 
 function BarisAntiCheat({ label, nilai, kelas }) {
@@ -29,6 +37,7 @@ export default function RingkasanAntiCheat({ agregat }) {
   const rasio = (n) => (Number.isFinite(n) ? `${Math.round(n * 100)}%` : "-");
   const level = agregat.level ?? "tidakAda";
   const arah = agregat.tren?.arah ?? "tidakAda";
+  const anomali = nilaiAnomaliKekuatan(agregat);
   const jumlahBuktiTerbanyak = Math.max(
     0,
     ...Object.values(agregat.sampelMetrik ?? { kecocokan: agregat.jumlahLangkah }).filter(Number.isFinite)
@@ -63,6 +72,28 @@ export default function RingkasanAntiCheat({ agregat }) {
         <p className="text-xs leading-4 text-foregroundGrey">
           {t("analisa.antiCheat.riwayat.kalibrasi", { n: Math.round(agregat.rating) })}
         </p>
+      ) : null}
+
+      {anomali.level !== "tidakAda" ? (
+        <div className="flex flex-col gap-1.5 border-t border-border pt-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold text-foregroundGrey">{t("analisa.antiCheat.anomali.judul")}</span>
+            <span className={`text-xs font-bold ${KELAS_ANOMALI[anomali.level] ?? "text-foregroundGrey"}`}>
+              {t(`analisa.antiCheat.anomali.${anomali.level}`)}
+            </span>
+          </div>
+          <span className="text-xs leading-4 text-foregroundGrey">
+            {t("analisa.antiCheat.anomali.harapan", {
+              rating: Math.round(anomali.rating),
+              kecocokan: anomali.harapanKecocokan,
+              acpl: anomali.harapanAcpl,
+            })}
+          </span>
+          {anomali.capaiGM && anomali.level !== "wajar" ? (
+            <span className="text-xs font-bold text-highlightBlunder">{t("analisa.antiCheat.anomali.capaiGM")}</span>
+          ) : null}
+          <p className="text-xs leading-4 text-foregroundGrey">{t("analisa.antiCheat.anomali.catatan")}</p>
+        </div>
       ) : null}
 
       <div className="flex flex-col gap-1.5 border-t border-border pt-3">

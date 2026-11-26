@@ -237,10 +237,11 @@ test("kalibrasi symbols have exactly one source definition in kalibrasiAntiCheat
   }
 });
 
-test("only the three mapped application callers import or re-export kalibrasi symbols through the internal facade", () => {
+test("only the four mapped application callers import or re-export kalibrasi symbols through the internal facade", () => {
   const callers = new Map([
     ["src/halaman/Analisa/mesin/antiCheat.js", namaKalibrasi],
     ["src/halaman/Analisa/mesin/antiCheat/agregat.js", ["ratingDariMetadata"]],
+    ["src/halaman/Analisa/mesin/antiCheat/anomaliKekuatan.js", ["KALIBRASI_RATING", "pilihKalibrasi"]],
     ["src/modul/analisis/skorAntiCheat.js", ["komponenAcpl", "komponenKecocokan", "komponenPeringkat", "komponenWaktu", "tingkatDariSkor"]],
   ]);
   for (const path of berkasKode(src)) {
