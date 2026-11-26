@@ -71,6 +71,10 @@ function ConfigContextProvider(props) {
     const nilai = bacaTeks("accentColor", "hijau");
     return DAFTAR_AKSEN.some((aksen) => aksen.id === nilai) ? nilai : "hijau";
   });
+  const [theme, setTheme] = useState(() => {
+    const nilai = bacaTeks("theme", "dark");
+    return nilai === "auto" || nilai === "light" || nilai === "dark" ? nilai : "dark";
+  });
   // Ukuran font akar dan warna aksen diterapkan ke root dokumen seperti
   // App.tsx En Croissant (fontSize %) dan Mantine primaryColor. Hanya selama
   // provider Analisa terpasang; cleanup memulihkan tampilan semula sehingga
@@ -81,24 +85,50 @@ function ConfigContextProvider(props) {
     akar.style.fontSize = fontSize === 100 ? "" : `${fontSize}%`;
     return () => { akar.style.fontSize = ""; };
   }, [fontSize]);
+  // Aksen diterapkan ke elemen .analisa-root (bukan root dokumen): halaman
+  // Analisa mendefinisikan ulang --backgroundBoxBoxHighlighted dari
+  // --analisa-backgroundBoxBoxHighlighted di analisa.css, sehingga override
+  // harus berada pada elemen itu sendiri (inline mengalahkan stylesheet).
+  // Dialog Analisa di-portal ke .analisa-root sehingga ikut mewarisi aksen.
   useEffect(() => {
     if (typeof document === "undefined") return undefined;
-    const akar = document.documentElement;
+    const akar = document.querySelector(".analisa-root");
+    if (!akar) return undefined;
     const aksen = DAFTAR_AKSEN.find((entri) => entri.id === accentColor);
     if (aksen && aksen.id !== "hijau") {
-      akar.style.setProperty("--backgroundBoxBoxHighlighted", aksen.dasar);
-      akar.style.setProperty("--backgroundBoxBoxHighlightedHover", aksen.hover);
+      akar.style.setProperty("--analisa-backgroundBoxBoxHighlighted", aksen.dasar);
+      akar.style.setProperty("--analisa-backgroundBoxBoxHighlightedHover", aksen.hover);
     } else {
-      akar.style.removeProperty("--backgroundBoxBoxHighlighted");
-      akar.style.removeProperty("--backgroundBoxBoxHighlightedHover");
+      akar.style.removeProperty("--analisa-backgroundBoxBoxHighlighted");
+      akar.style.removeProperty("--analisa-backgroundBoxBoxHighlightedHover");
     }
     return () => {
-      akar.style.removeProperty("--backgroundBoxBoxHighlighted");
-      akar.style.removeProperty("--backgroundBoxBoxHighlightedHover");
+      akar.style.removeProperty("--analisa-backgroundBoxBoxHighlighted");
+      akar.style.removeProperty("--analisa-backgroundBoxBoxHighlightedHover");
     };
   }, [accentColor]);
+  // Tema terang/gelap: data-tema pada .analisa-root mengaktifkan blok palet
+  // terang di analisa.css. "auto" mengikuti prefers-color-scheme dan berubah
+  // saat sistem berganti. Cleanup melepas atribut agar halaman lain tetap gelap.
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    const akar = document.querySelector(".analisa-root");
+    if (!akar) return undefined;
+    const media = typeof window !== "undefined" && window.matchMedia ? window.matchMedia("(prefers-color-scheme: light)") : null;
+    const terapkan = () => {
+      const terang = theme === "light" || (theme === "auto" && Boolean(media?.matches));
+      if (terang) akar.setAttribute("data-tema", "terang");
+      else akar.removeAttribute("data-tema");
+    };
+    terapkan();
+    if (theme === "auto" && media?.addEventListener) {
+      media.addEventListener("change", terapkan);
+      return () => { media.removeEventListener("change", terapkan); akar.removeAttribute("data-tema"); };
+    }
+    return () => akar.removeAttribute("data-tema");
+  }, [theme]);
   const boardMenuSettingsRef = useRef(null);
-  return <ConfigContext.Provider value={{ boardTheme: [boardTheme, setBoardTheme], pieceSet: [pieceSet, setPieceSet], openedMenu: [openedMenu, setOpenedMenu], usedRatings: [usedRatings, setUsedRatings], highlightByRating: [highlightByRating, setHighlightByRating], showArrows: [showArrows, setShowArrows], arrowAfterMove: [arrowAfterMove, setArrowAfterMove], showLegalMoves: [showLegalMoves, setShowLegalMoves], animateMoves: [animateMoves, setAnimateMoves], boardSounds: [boardSounds, setBoardSounds], coordinates: [coordinates, setCoordinates], moveHighlight: [moveHighlight, setMoveHighlight], autoPromote: [autoPromote, setAutoPromote], eraseArrowsOnClick: [eraseArrowsOnClick, setEraseArrowsOnClick], volume: [volume, setVolume], animationSpeed: [animationSpeed, setAnimationSpeed], materialDisplay: [materialDisplay, setMaterialDisplay], moveNotation: [moveNotation, setMoveNotation], previewBoardOnHover: [previewBoardOnHover, setPreviewBoardOnHover], boardScroll: [boardScroll, setBoardScroll], soundCollection: [soundCollection, setSoundCollection], fontSize: [fontSize, setFontSize], accentColor: [accentColor, setAccentColor], boardMenuSettingsRef }}>
+  return <ConfigContext.Provider value={{ boardTheme: [boardTheme, setBoardTheme], pieceSet: [pieceSet, setPieceSet], openedMenu: [openedMenu, setOpenedMenu], usedRatings: [usedRatings, setUsedRatings], highlightByRating: [highlightByRating, setHighlightByRating], showArrows: [showArrows, setShowArrows], arrowAfterMove: [arrowAfterMove, setArrowAfterMove], showLegalMoves: [showLegalMoves, setShowLegalMoves], animateMoves: [animateMoves, setAnimateMoves], boardSounds: [boardSounds, setBoardSounds], coordinates: [coordinates, setCoordinates], moveHighlight: [moveHighlight, setMoveHighlight], autoPromote: [autoPromote, setAutoPromote], eraseArrowsOnClick: [eraseArrowsOnClick, setEraseArrowsOnClick], volume: [volume, setVolume], animationSpeed: [animationSpeed, setAnimationSpeed], materialDisplay: [materialDisplay, setMaterialDisplay], moveNotation: [moveNotation, setMoveNotation], previewBoardOnHover: [previewBoardOnHover, setPreviewBoardOnHover], boardScroll: [boardScroll, setBoardScroll], soundCollection: [soundCollection, setSoundCollection], fontSize: [fontSize, setFontSize], accentColor: [accentColor, setAccentColor], theme: [theme, setTheme], boardMenuSettingsRef }}>
             {props.children}
         </ConfigContext.Provider>;
 }

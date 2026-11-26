@@ -65,7 +65,8 @@ function renderLayar() {
   const Baris = compile("../src/halaman/Analisa/komponen/pengaturan/barisPengaturan.jsx", {}).default;
   const PilihRingkas = compile("../src/halaman/Analisa/komponen/pengaturan/pilihRingkas.jsx", {}).default;
   const Geser = compile("../src/halaman/Analisa/komponen/pengaturan/geserPengaturan.jsx", {}).default;
-  const denganBaris = { ...umum, "./barisPengaturan.jsx": { default: Baris }, "./pilihRingkas.jsx": { default: PilihRingkas }, "./geserPengaturan.jsx": { default: Geser }, "./setBidak.js": setBidak };
+  const PilihTema = compile("../src/halaman/Analisa/komponen/pengaturan/pilihTema.jsx", {}).default;
+  const denganBaris = { ...umum, "./barisPengaturan.jsx": { default: Baris }, "./pilihRingkas.jsx": { default: PilihRingkas }, "./geserPengaturan.jsx": { default: Geser }, "./pilihTema.jsx": { default: PilihTema }, "./setBidak.js": setBidak };
   const modulRatings = compile("../src/halaman/Analisa/komponen/pengaturan/ratings.jsx", denganBaris);
   const modulLayar = compile("../src/halaman/Analisa/komponen/nav/layarPengaturan.jsx", {
     "../../../../lib/i18n.jsx": umum["../../../../lib/i18n.jsx"],

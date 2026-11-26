@@ -78,6 +78,20 @@ export default {
 
         error: "var(--error)",
         warning: "var(--warning)",
+
+        // Permukaan tema tambahan (pass palet terang/gelap). Nilai gelapnya
+        // persis warna hard-coded lama sehingga tema gelap tidak berubah;
+        // tema terang memetakan ulang lewat --analisa-* di analisa.css.
+        backgroundDropdown: variableColor("backgroundDropdown"),
+        backgroundDropdownHover: variableColor("backgroundDropdownHover"),
+        backgroundPanel: variableColor("backgroundPanel"),
+        backgroundPanelHover: variableColor("backgroundPanelHover"),
+        backgroundTrack: variableColor("backgroundTrack"),
+        foregroundMuted: variableColor("foregroundMuted"),
+        foregroundSwitchOff: variableColor("foregroundSwitchOff"),
+        foregroundDestructive: variableColor("foregroundDestructive"),
+        backgroundSlanted: variableColor("backgroundSlanted"),
+        borderSlanted: variableColor("borderSlanted"),
       },
       borderRadius: {
         borderRoundness: "var(--borderRoundness)",

@@ -33,14 +33,14 @@ export default function SelectDaftar({ labelTeks, dataUji, nilai, opsi, onPilih,
         aria-haspopup="listbox"
         aria-controls={terbuka ? idDaftar : undefined}
         aria-expanded={terbuka}
-        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-borderRoundness border border-border bg-[#272727] px-2 py-1 text-sm text-foreground outline-none transition-colors hover:border-borderHighlighted disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-borderRoundness border border-border bg-backgroundDropdown px-2 py-1 text-sm text-foreground outline-none transition-colors hover:border-borderHighlighted disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span className="truncate">{aktif?.label ?? ""}</span>
         <ChevronDown className={`h-3 w-3 shrink-0 text-foregroundGrey transition-transform ${terbuka ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
 
       {terbuka ? (
-        <ul id={idDaftar} role="listbox" aria-label={labelTeks} onKeyDown={tekanPanahOpsi} className="absolute left-0 top-full z-[1200] mt-1 w-max min-w-full max-w-[320px] rounded-borderRoundness border border-border bg-[#272727] py-1 shadow-2xl">
+        <ul id={idDaftar} role="listbox" aria-label={labelTeks} onKeyDown={tekanPanahOpsi} className="absolute left-0 top-full z-[1200] mt-1 w-max min-w-full max-w-[320px] rounded-borderRoundness border border-border bg-backgroundDropdown py-1 shadow-2xl">
           {opsi.map((o) => {
             const dipilih = String(o.nilai) === kini;
             return (
@@ -54,7 +54,7 @@ export default function SelectDaftar({ labelTeks, dataUji, nilai, opsi, onPilih,
                     onPilih(o.nilai);
                     tutupDanFokus();
                   }}
-                  className={`flex w-full cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-3 py-1.5 text-left text-sm transition-colors hover:bg-[#090909] hover:text-white ${dipilih ? "bg-[#090909] font-semibold text-white" : "text-foreground"}`}
+                  className={`flex w-full cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-3 py-1.5 text-left text-sm transition-colors hover:bg-backgroundDropdownHover hover:text-foregroundHighlighted ${dipilih ? "bg-backgroundDropdownHover font-semibold text-foregroundHighlighted" : "text-foreground"}`}
                 >
                   <span className="truncate">{o.label}</span>
                   {dipilih ? <Check className="h-3 w-3 shrink-0 text-foregroundHighlighted" /> : null}

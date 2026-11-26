@@ -55,7 +55,7 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
     : t("analisa.pengaturan.nodeRibu", { n: n / 1000 }));
   // Samakan tinggi dan lebar semua kontrol (pola .text-input/.number-input-wrapper
   // di prompt.md) supaya kolomnya rapi walaupun isinya input atau select.
-  const kelasKontrol = "h-[30px] w-full rounded-borderRoundness border border-border bg-[#272727] px-2 text-sm text-foreground outline-none";
+  const kelasKontrol = "h-[30px] w-full rounded-borderRoundness border border-border bg-backgroundDropdown px-2 text-sm text-foreground outline-none";
 
   /* State string lokal untuk input angka. Masalah sebelumnya:
      - `terapkanAngka` menolak teks kosong (return), jadi Backspace tidak

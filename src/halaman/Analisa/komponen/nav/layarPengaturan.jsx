@@ -103,7 +103,7 @@ function BarisBahasa({ bahasa, setBahasa, label, cocok, deskripsi }) {
         aria-label={label}
         value={bahasa}
         onChange={(event) => setBahasa(event.target.value)}
-        className="rounded-borderRoundness border border-border bg-[#272727] px-2 py-1 text-sm text-foreground"
+        className="rounded-borderRoundness border border-border bg-backgroundDropdown px-2 py-1 text-sm text-foreground"
       >
         <option value="id">Bahasa Indonesia</option>
         <option value="en">English</option>

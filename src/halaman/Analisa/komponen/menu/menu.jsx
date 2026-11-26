@@ -168,7 +168,7 @@ function Menu() {
 
       {modeAnalisis ? (
         <div className="flex-col gap-1 pb-1 items-center hidden group-data-[panel-sejajar=true]/papan:flex">
-          <hr className="border-neutral-600 w-[85%]" />
+          <hr className="border-border w-[85%]" />
           <GameButtons />
         </div>
       ) : ""}

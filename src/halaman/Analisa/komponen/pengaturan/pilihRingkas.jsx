@@ -47,7 +47,7 @@ export default function PilihRingkas({ nilai, pilihan, onChange, ariaLabel, leba
         aria-haspopup="listbox"
         aria-expanded={buka}
         onClick={() => { setAktif(Math.max(0, pilihan.findIndex((p) => p.id === nilai))); setBuka((b) => !b); }}
-        className="flex w-full items-center gap-2 rounded-borderRoundness border border-border bg-[#272727] px-2.5 py-1.5 text-left text-foreground hover:border-foregroundGrey focus-visible:border-backgroundBoxBoxHighlightedHover focus-visible:outline-none"
+        className="flex w-full items-center gap-2 rounded-borderRoundness border border-border bg-backgroundDropdown px-2.5 py-1.5 text-left text-foreground hover:border-foregroundGrey focus-visible:border-backgroundBoxBoxHighlightedHover focus-visible:outline-none"
       >
         {terpilih?.preview ? <span className="flex shrink-0 items-center">{terpilih.preview}</span> : null}
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{terpilih?.label}</span>

@@ -24,7 +24,7 @@ import { ArrowUpDown, ChevronDown } from "lucide-react";
  * Dropdown pilihan untuk toolbar. Pengganti <select> native: dropdown
  * bawaan peramban digambar oleh OS dan warna sorotannya (biru) tidak bisa
  * diganti CSS — makanya "gantung" sendiri. Panel ini milik kita sendiri:
- * latar hitam-abu (#2a2a2a) dan sorotan/item terpilih warna HITAM.
+ * latar panel (token backgroundPanel) dan sorotan/item terpilih token backgroundDropdownHover.
  */
 export function DropdownPilih({ ariaLabel, nilai, opsi, onPilih, sejajar = "kiri", keAtas = false, labelKhusus, kontenAtas }) {
   const { terbuka, wadahRef, pemicuRef, idDaftar, tekanPemicu, toggle, keluarFokus, tutupDanFokus } = useDropdown();
@@ -64,7 +64,7 @@ export function DropdownPilih({ ariaLabel, nilai, opsi, onPilih, sejajar = "kiri
 
       {terbuka ? (
         <div
-          className={`absolute z-[1200] w-max min-w-full max-w-[320px] rounded-borderRoundness border border-border bg-[#2a2a2a] shadow-2xl ${
+          className={`absolute z-[1200] w-max min-w-full max-w-[320px] rounded-borderRoundness border border-border bg-backgroundPanel shadow-2xl ${
             keAtas ? "bottom-full mb-1" : "top-full mt-1"
           } ${
             sejajar === "kanan" ? "right-0" : "left-0"
@@ -85,8 +85,8 @@ export function DropdownPilih({ ariaLabel, nilai, opsi, onPilih, sejajar = "kiri
                     onPilih(o.nilai);
                     tutupDanFokus();
                   }}
-                  className={`flex w-full cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-3 py-1.5 text-left text-xs transition-colors hover:bg-black hover:text-white ${
-                    dipilih ? "bg-black font-semibold text-white" : "text-foreground"
+                  className={`flex w-full cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-3 py-1.5 text-left text-xs transition-colors hover:bg-backgroundDropdownHover hover:text-foregroundHighlighted ${
+                    dipilih ? "bg-backgroundDropdownHover font-semibold text-foregroundHighlighted" : "text-foreground"
                   }`}
                 >
                   <span className="truncate">{o.label}</span>
@@ -395,7 +395,7 @@ export function MenuKolom({ t, nilai, onPilih }) {
           role="listbox"
           aria-label={t("analisa.basisData.kolom")}
           onKeyDown={tekanPanahOpsi}
-          className="absolute right-0 top-full z-[1200] mt-1 w-max min-w-[140px] overflow-hidden rounded-borderRoundness border border-border bg-[#2a2a2a] py-1 shadow-2xl"
+          className="absolute right-0 top-full z-[1200] mt-1 w-max min-w-[140px] overflow-hidden rounded-borderRoundness border border-border bg-backgroundPanel py-1 shadow-2xl"
         >
           {opsi.map((o) => {
             const dipilih = o.nilai === nilai;
@@ -410,8 +410,8 @@ export function MenuKolom({ t, nilai, onPilih }) {
                     onPilih(o.nilai);
                     tutupDanFokus();
                   }}
-                  className={`flex w-full cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-3 py-1.5 text-left text-xs transition-colors hover:bg-black hover:text-white ${
-                    dipilih ? "bg-black font-semibold text-white" : "text-foreground"
+                  className={`flex w-full cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-3 py-1.5 text-left text-xs transition-colors hover:bg-backgroundDropdownHover hover:text-foregroundHighlighted ${
+                    dipilih ? "bg-backgroundDropdownHover font-semibold text-foregroundHighlighted" : "text-foreground"
                   }`}
                 >
                   <span>{o.label}</span>

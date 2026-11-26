@@ -1,24 +1,30 @@
 /**
- * Grup "Tampilan" (adopsi En Croissant kategori appearance): ukuran font
- * (slider 50–200%, FontSizeSlider) dan warna aksen (kisi swatch, ColorControl).
+ * Grup "Tampilan" (adopsi En Croissant kategori appearance): tema antarmuka
+ * (segmented auto/light/dark, ThemeButton), ukuran font (slider 50–200%,
+ * FontSizeSlider) dan warna aksen (kisi swatch, ColorControl).
  *
- * Ukuran font diterapkan ke root dokumen oleh provider selama Analisa aktif;
- * warna aksen menulis pasangan variabel --backgroundBoxBoxHighlighted(Hover)
- * sehingga seluruh kontrol beraksen (sakelar, tab aktif, tombol, slider)
- * ikut berubah. Bawaan: 100% dan hijau asli Maestro — tanpa regresi visual.
+ * Tema dan aksen diterapkan ke elemen .analisa-root oleh provider selama
+ * Analisa aktif (halaman mendefinisikan ulang variabel warna dari namespace
+ * --analisa-*); ukuran font ke root dokumen. Tema mengubah palet permukaan;
+ * aksen menulis --analisa-backgroundBoxBoxHighlighted(Hover) sehingga seluruh
+ * kontrol beraksen ikut berubah. Bawaan: dark, 100%, hijau asli Maestro —
+ * tanpa regresi visual.
  */
 import { ConfigContext, tulis, DAFTAR_AKSEN } from "../../../../modul/sesi/preferensi.js";
 import { memo, useContext } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import BarisPengaturan from "./barisPengaturan.jsx";
 import GeserPengaturan from "./geserPengaturan.jsx";
+import PilihTema from "./pilihTema.jsx";
 
 // Fallback konteks beridentitas stabil agar memo IsiTampilan tidak bocor.
 const SETTER_KOSONG = () => {};
 const BAWAAN_FONT = [100, SETTER_KOSONG];
 const BAWAAN_AKSEN = ["hijau", SETTER_KOSONG];
+const BAWAAN_TEMA = ["dark", SETTER_KOSONG];
+const DAFTAR_TEMA = ["auto", "light", "dark"];
 
-const IsiTampilan = memo(function IsiTampilan({ fontSize, setFontSize, accentColor, setAccentColor, cocok = () => true, deskripsi = () => null }) {
+const IsiTampilan = memo(function IsiTampilan({ fontSize, setFontSize, accentColor, setAccentColor, theme, setTheme, cocok = () => true, deskripsi = () => null }) {
   const { t } = useI18n();
   function changeFontSize(nilai) {
     const angka = Math.min(200, Math.max(50, Math.round(Number(nilai) || 100)));
@@ -30,9 +36,21 @@ const IsiTampilan = memo(function IsiTampilan({ fontSize, setFontSize, accentCol
     setAccentColor(sah);
     tulis("accentColor", sah);
   }
+  function changeTheme(id) {
+    const sah = DAFTAR_TEMA.includes(id) ? id : "dark";
+    setTheme(sah);
+    tulis("theme", sah);
+  }
+  const labelTema = t("analisa.pengaturan.tema");
   const labelFont = t("analisa.pengaturan.ukuranFont");
   const labelAksen = t("analisa.pengaturan.warnaAksen");
   return <section>
+    {cocok("tema", labelTema) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelTema}</span>}
+      deskripsi={deskripsi("tema")}
+    >
+      <PilihTema nilai={theme} onChange={changeTheme} ariaLabel={labelTema} pilihan={DAFTAR_TEMA.map((id) => ({ id, label: t(`analisa.pengaturan.opsiTema.${id}`) }))} />
+    </BarisPengaturan> : null}
     {cocok("ukuranFont", labelFont) ? <BarisPengaturan
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelFont}</span>}
       deskripsi={deskripsi("ukuranFont")}
@@ -68,6 +86,7 @@ function Tampilan({ cocok, deskripsi }) {
   const config = useContext(ConfigContext);
   const [fontSize, setFontSize] = config.fontSize ?? BAWAAN_FONT;
   const [accentColor, setAccentColor] = config.accentColor ?? BAWAAN_AKSEN;
-  return <IsiTampilan fontSize={fontSize} setFontSize={setFontSize} accentColor={accentColor} setAccentColor={setAccentColor} cocok={cocok} deskripsi={deskripsi} />;
+  const [theme, setTheme] = config.theme ?? BAWAAN_TEMA;
+  return <IsiTampilan fontSize={fontSize} setFontSize={setFontSize} accentColor={accentColor} setAccentColor={setAccentColor} theme={theme} setTheme={setTheme} cocok={cocok} deskripsi={deskripsi} />;
 }
 export default memo(Tampilan);

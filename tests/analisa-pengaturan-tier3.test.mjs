@@ -1,7 +1,8 @@
 // Karakterisasi preferensi Tier 3 adopsi En Croissant: pratinjau papan saat
-// hover, gulir langkah dengan roda mouse, koleksi suara, ukuran font, dan
-// warna aksen — plus penerapannya ke perilaku nyata (papan, daftar langkah,
-// root dokumen) dan persistensi kontrol lewat katalog "1 pintu".
+// hover, gulir langkah dengan roda mouse, koleksi suara, ukuran font, warna
+// aksen, dan tema terang/gelap — plus penerapannya ke perilaku nyata (papan,
+// daftar langkah, root dokumen, .analisa-root) dan persistensi kontrol lewat
+// katalog "1 pintu".
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -114,38 +115,99 @@ test("invalid Tier 3 values fall back to defaults; font clamps to 50..200", asyn
   assert.equal(config.amatan.nilai.fontSize[0], 100);
 });
 
-test("provider applies font size and accent to the document root and restores on unmount", async (tes) => {
-  pasangStorage(tes, [["maestro-analisa-fontSize", "150"], ["maestro-analisa-accentColor", "biru"]]);
+// Stub DOM untuk efek provider: font di root dokumen, aksen & tema di elemen
+// .analisa-root (halaman Analisa mendefinisikan ulang variabel warna dari
+// namespace --analisa-* sehingga override harus di elemen itu sendiri).
+function pasangDom(tes) {
   const lama = Object.getOwnPropertyDescriptor(globalThis, "document");
   const style = {
-    fontSize: "lama",
+    fontSize: "",
     props: new Map(),
     setProperty(k, v) { this.props.set(k, v); },
     removeProperty(k) { this.props.delete(k); },
   };
-  Object.defineProperty(globalThis, "document", { configurable: true, writable: true, value: { documentElement: { style } } });
+  const akar = {
+    style: { props: new Map(), setProperty(k, v) { this.props.set(k, v); }, removeProperty(k) { this.props.delete(k); } },
+    attrs: new Map(),
+    setAttribute(k, v) { this.attrs.set(k, v); },
+    removeAttribute(k) { this.attrs.delete(k); },
+    getAttribute(k) { return this.attrs.get(k) ?? null; },
+  };
+  Object.defineProperty(globalThis, "document", {
+    configurable: true, writable: true,
+    value: { documentElement: { style }, querySelector: (sel) => (sel === ".analisa-root" ? akar : null) },
+  });
   tes.after(() => { if (lama) Object.defineProperty(globalThis, "document", lama); else delete globalThis.document; });
+  return { style, akar };
+}
+
+test("provider applies font size to the document root and accent to the analisa root, restoring on unmount", async (tes) => {
+  pasangStorage(tes, [["maestro-analisa-fontSize", "150"], ["maestro-analisa-accentColor", "biru"]]);
+  const { style, akar } = pasangDom(tes);
   const config = siapkanProvider(tes);
   await config.mount();
   assert.equal(style.fontSize, "150%");
-  assert.equal(style.props.get("--backgroundBoxBoxHighlighted"), "#3b82f6");
-  assert.equal(style.props.get("--backgroundBoxBoxHighlightedHover"), "#60a5fa");
+  assert.equal(akar.style.props.get("--analisa-backgroundBoxBoxHighlighted"), "#3b82f6");
+  assert.equal(akar.style.props.get("--analisa-backgroundBoxBoxHighlightedHover"), "#60a5fa");
+  assert.equal(style.props.size, 0, "aksen tidak ditulis ke root dokumen (akan terbayangi .analisa-root)");
   await config.unmount();
   assert.equal(style.fontSize, "", "font dipulihkan saat provider dilepas");
-  assert.equal(style.props.size, 0, "variabel aksen dipulihkan");
+  assert.equal(akar.style.props.size, 0, "variabel aksen dipulihkan");
 });
 
 test("default font and green accent leave the root stylesheet untouched", async (tes) => {
   pasangStorage(tes);
-  const lama = Object.getOwnPropertyDescriptor(globalThis, "document");
-  const style = { fontSize: "", props: new Map(), setProperty(k, v) { this.props.set(k, v); }, removeProperty(k) { this.props.delete(k); } };
-  Object.defineProperty(globalThis, "document", { configurable: true, writable: true, value: { documentElement: { style } } });
-  tes.after(() => { if (lama) Object.defineProperty(globalThis, "document", lama); else delete globalThis.document; });
+  const { style, akar } = pasangDom(tes);
   const config = siapkanProvider(tes);
   await config.mount();
   assert.equal(style.fontSize, "", "100% tidak menulis override");
-  assert.equal(style.props.size, 0, "hijau memakai variabel CSS bawaan");
+  assert.equal(akar.style.props.size, 0, "hijau memakai variabel CSS bawaan");
+  assert.equal(akar.getAttribute("data-tema"), null, "tema bawaan gelap tidak menulis atribut");
   await config.unmount();
+});
+
+/* ------------------------------- Tema ------------------------------- */
+
+test("theme defaults to dark, validates the enum, and toggles data-tema on the analisa root", async (tes) => {
+  const storage = pasangStorage(tes, [["maestro-analisa-theme", "pelangi"]]);
+  const { akar } = pasangDom(tes);
+  const config = siapkanProvider(tes);
+  await config.mount();
+  assert.equal(config.amatan.nilai.theme[0], "dark", "nilai tidak sah jatuh ke dark");
+  assert.equal(akar.getAttribute("data-tema"), null);
+  await act(async () => { config.amatan.nilai.theme[1]("light"); await flush(); });
+  assert.equal(akar.getAttribute("data-tema"), "terang", "tema terang menyalakan palet terang");
+  await act(async () => { config.amatan.nilai.theme[1]("dark"); await flush(); });
+  assert.equal(akar.getAttribute("data-tema"), null, "kembali gelap melepas atribut");
+  await act(async () => { config.amatan.nilai.theme[1]("light"); await flush(); });
+  await config.unmount();
+  assert.equal(akar.getAttribute("data-tema"), null, "atribut tema dibersihkan saat provider dilepas");
+  storage.data.set("maestro-analisa-theme", "auto");
+  await config.mount();
+  assert.equal(config.amatan.nilai.theme[0], "auto");
+});
+
+test("auto theme follows prefers-color-scheme and reacts to system changes", async (tes) => {
+  pasangStorage(tes, [["maestro-analisa-theme", "auto"]]);
+  const { akar } = pasangDom(tes);
+  const lamaWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const pendengar = new Set();
+  const media = {
+    matches: true,
+    addEventListener(_, fn) { pendengar.add(fn); },
+    removeEventListener(_, fn) { pendengar.delete(fn); },
+  };
+  Object.defineProperty(globalThis, "window", { configurable: true, writable: true, value: { matchMedia: (kueri) => (kueri === "(prefers-color-scheme: light)" ? media : null) } });
+  tes.after(() => { if (lamaWindow) Object.defineProperty(globalThis, "window", lamaWindow); else delete globalThis.window; });
+  const config = siapkanProvider(tes);
+  await config.mount();
+  assert.equal(akar.getAttribute("data-tema"), "terang", "sistem terang -> tema terang");
+  assert.equal(pendengar.size, 1, "auto mendengarkan perubahan sistem");
+  media.matches = false;
+  await act(async () => { for (const fn of pendengar) fn(); await flush(); });
+  assert.equal(akar.getAttribute("data-tema"), null, "sistem gelap -> tema gelap");
+  await config.unmount();
+  assert.equal(pendengar.size, 0, "pendengar dilepas saat unmount");
 });
 
 /* --------------------------- Roda mouse --------------------------- */
@@ -462,7 +524,7 @@ test("game wires the wheel handler to the board and the boardScroll preference g
 
 /* ------------------------- Persistensi kontrol ------------------------- */
 
-test("Tier 3 controls persist switches, collection, font size and accent through the catalog rows", async (tes) => {
+test("Tier 3 controls persist switches, collection, font size, accent and theme through the catalog rows", async (tes) => {
   const lamaDocument = globalThis.document;
   globalThis.document = { addEventListener: noop, removeEventListener: noop };
   tes.after(() => { if (lamaDocument === undefined) delete globalThis.document; else globalThis.document = lamaDocument; });
@@ -473,7 +535,8 @@ test("Tier 3 controls persist switches, collection, font size and accent through
   const Sakelar = kompilasi("../src/halaman/Analisa/komponen/pengaturan/sakelarPengaturan.jsx", {}).default;
   const Pilih = kompilasi("../src/halaman/Analisa/komponen/pengaturan/pilihRingkas.jsx", {}).default;
   const Geser = kompilasi("../src/halaman/Analisa/komponen/pengaturan/geserPengaturan.jsx", {}).default;
-  const umum = { "../../../../modul/sesi/preferensi.js": preferensi, "../../../../lib/i18n.jsx": i18n, "./barisPengaturan.jsx": { default: Baris }, "./sakelarPengaturan.jsx": { default: Sakelar }, "./pilihRingkas.jsx": { default: Pilih }, "./geserPengaturan.jsx": { default: Geser }, "../svg/piece.jsx": { default: kosong }, "../svg/soundMax.jsx": { default: kosong }, "../svg/sound-mute.jsx": { default: kosong } };
+  const PilihTema = kompilasi("../src/halaman/Analisa/komponen/pengaturan/pilihTema.jsx", {}).default;
+  const umum = { "../../../../modul/sesi/preferensi.js": preferensi, "../../../../lib/i18n.jsx": i18n, "./barisPengaturan.jsx": { default: Baris }, "./sakelarPengaturan.jsx": { default: Sakelar }, "./pilihRingkas.jsx": { default: Pilih }, "./geserPengaturan.jsx": { default: Geser }, "./pilihTema.jsx": { default: PilihTema }, "../svg/piece.jsx": { default: kosong }, "../svg/soundMax.jsx": { default: kosong }, "../svg/sound-mute.jsx": { default: kosong } };
   const Moves = kompilasi("../src/halaman/Analisa/komponen/pengaturan/moves.jsx", umum).default;
   const Tampilan = kompilasi("../src/halaman/Analisa/komponen/pengaturan/tampilan.jsx", umum).default;
   function Harness() {
@@ -482,7 +545,7 @@ test("Tier 3 controls persist switches, collection, font size and accent through
       highlightByRating: React.useState(true), showArrows: React.useState(true), arrowAfterMove: React.useState(true),
       showLegalMoves: React.useState(true), animateMoves: React.useState(true), boardSounds: React.useState(true),
       previewBoardOnHover: React.useState(false), boardScroll: React.useState(false), soundCollection: React.useState("standard"),
-      fontSize: React.useState(100), accentColor: React.useState("hijau"),
+      fontSize: React.useState(100), accentColor: React.useState("hijau"), theme: React.useState("dark"),
     };
     return React.createElement(configContext.ConfigContext.Provider, { value }, React.createElement(Moves, { aktif: false }), React.createElement(Tampilan));
   }
@@ -512,6 +575,17 @@ test("Tier 3 controls persist switches, collection, font size and accent through
   assert.equal(swatch.props["aria-pressed"], false);
   await act(async () => { swatch.props.onClick(); });
   assert.deepEqual(tulisan.at(-1), ["accentColor", "biru"]);
+  // Pemilih tema: radio terang menulis "light"; panah kanan dari gelap
+  // membungkus ke otomatis (urutan auto, light, dark).
+  const radio = (label) => renderer.root.findAllByProps({ role: "radio" }).find((n) => n.props["aria-label"] === label);
+  assert.equal(radio("analisa.pengaturan.opsiTema.dark").props["aria-checked"], true);
+  await act(async () => { radio("analisa.pengaturan.opsiTema.light").props.onClick(); });
+  assert.deepEqual(tulisan.at(-1), ["theme", "light"]);
+  assert.equal(radio("analisa.pengaturan.opsiTema.light").props["aria-checked"], true);
+  let dicegah = false;
+  await act(async () => { radio("analisa.pengaturan.opsiTema.dark").props.onKeyDown({ key: "ArrowRight", preventDefault: () => { dicegah = true; } }); });
+  assert.ok(dicegah, "panah memanggil preventDefault");
+  assert.deepEqual(tulisan.at(-1), ["theme", "auto"]);
   await act(async () => { renderer.unmount(); });
 });
 
@@ -519,7 +593,7 @@ test("Tier 3 controls persist switches, collection, font size and accent through
 
 test("catalog registers every Tier 3 row and the accent palette keeps the legacy green", () => {
   assert.ok(GRUP_META.some((g) => g.id === "tampilan" && g.tab === "papan"));
-  const harapan = { pratinjauHover: "perilaku", gulirLangkah: "perilaku", koleksiSuara: "perilaku", ukuranFont: "tampilan", warnaAksen: "tampilan" };
+  const harapan = { pratinjauHover: "perilaku", gulirLangkah: "perilaku", koleksiSuara: "perilaku", tema: "tampilan", ukuranFont: "tampilan", warnaAksen: "tampilan" };
   for (const [kunci, grup] of Object.entries(harapan)) {
     const baris = BARIS_STATIS.find((b) => b.kunci === kunci);
     assert.ok(baris, kunci);
@@ -531,10 +605,11 @@ test("catalog registers every Tier 3 row and the accent palette keeps the legacy
   // Semua label baru tersedia di kedua bahasa (label, sub-opsi, deskripsi).
   for (const kamus of [analisaId, analisaEn]) {
     const p = kamus.pengaturan;
-    for (const kunci of ["pratinjauHover", "gulirLangkah", "koleksiSuara", "ukuranFont", "warnaAksen", "tampilan"]) assert.equal(typeof p[kunci], "string", kunci);
+    for (const kunci of ["pratinjauHover", "gulirLangkah", "koleksiSuara", "tema", "ukuranFont", "warnaAksen", "tampilan"]) assert.equal(typeof p[kunci], "string", kunci);
+    for (const id of ["auto", "light", "dark"]) assert.equal(typeof p.opsiTema[id], "string", id);
     for (const id of DAFTAR_KOLEKSI_SUARA) assert.equal(typeof p.koleksi[id], "string", id);
     for (const a of DAFTAR_AKSEN) assert.equal(typeof p.aksen[a.id], "string", a.id);
-    for (const kunci of ["pratinjauHover", "gulirLangkah", "koleksiSuara", "ukuranFont", "warnaAksen", "tampilan"]) assert.equal(typeof p.deskripsi[kunci], "string", kunci);
+    for (const kunci of ["pratinjauHover", "gulirLangkah", "koleksiSuara", "tema", "ukuranFont", "warnaAksen", "tampilan"]) assert.equal(typeof p.deskripsi[kunci], "string", kunci);
   }
   assert.ok(TAB_META.length === 5);
 });

@@ -40,12 +40,12 @@ export default function DialogDatabase({
   return (
     <>
       <AlertDialog open={dialogEksporKosong} onOpenChange={setDialogEksporKosong}>
-  <AlertDialogContent container={wadahDialog} className="bg-[#1e1d1c] border-[#5d5d5d] text-[#dedede] shadow-2xl">
+  <AlertDialogContent container={wadahDialog} className="bg-backgroundBoxDarker border-border text-foreground shadow-2xl">
     <AlertDialogHeader>
-      <AlertDialogTitle className="text-white">
+      <AlertDialogTitle className="text-foregroundHighlighted">
         {t("analisa.basisData.eksporKosongJudul")}
       </AlertDialogTitle>
-      <AlertDialogDescription className="text-[#939291]">
+      <AlertDialogDescription className="text-foregroundGrey">
         {t("analisa.basisData.eksporKosongIsi")}
       </AlertDialogDescription>
     </AlertDialogHeader>
@@ -63,17 +63,17 @@ export default function DialogDatabase({
     if (!o) setTargetHapusPartai(null);
   }}
 >
-  <AlertDialogContent container={wadahDialog} className="bg-[#1e1d1c] border-[#5d5d5d] text-[#dedede] shadow-2xl">
+  <AlertDialogContent container={wadahDialog} className="bg-backgroundBoxDarker border-border text-foreground shadow-2xl">
     <AlertDialogHeader>
-      <AlertDialogTitle className="text-white">
+      <AlertDialogTitle className="text-foregroundHighlighted">
         {t("analisa.basisData.hapusPartai")}
       </AlertDialogTitle>
-      <AlertDialogDescription className="text-[#939291]">
+      <AlertDialogDescription className="text-foregroundGrey">
         {t("analisa.basisData.konfirmasiHapusPartai")}
       </AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>
-      <AlertDialogCancel className="bg-[#2a2a2a] border-[#5d5d5d] text-[#dedede] hover:bg-[#3a3a3a] hover:text-white">{t("analisa.basisData.batal")}</AlertDialogCancel>
+      <AlertDialogCancel className="bg-backgroundPanel border-border text-foreground hover:bg-backgroundPanelHover hover:text-foregroundHighlighted">{t("analisa.basisData.batal")}</AlertDialogCancel>
       <AlertDialogAction onClick={tanganiHapusPartai} className="bg-backgroundBoxBoxHighlighted hover:bg-backgroundBoxBoxHighlightedHover text-black font-bold">
         {t("analisa.basisData.hapus")}
       </AlertDialogAction>
@@ -88,12 +88,12 @@ export default function DialogDatabase({
     if (!o) setDialogHapusKoleksi(null);
   }}
 >
-  <AlertDialogContent container={wadahDialog} className="bg-[#1e1d1c] border-[#5d5d5d] text-[#dedede] shadow-2xl">
+  <AlertDialogContent container={wadahDialog} className="bg-backgroundBoxDarker border-border text-foreground shadow-2xl">
     <AlertDialogHeader>
-      <AlertDialogTitle className="text-white">
+      <AlertDialogTitle className="text-foregroundHighlighted">
         {t("analisa.basisData.hapusKoleksi")}
       </AlertDialogTitle>
-      <AlertDialogDescription className="text-[#939291]">
+      <AlertDialogDescription className="text-foregroundGrey">
         {t("analisa.basisData.konfirmasiHapusKoleksi", {
           koleksi: koleksiHapus?.label || dialogHapusKoleksi,
           jumlah: koleksiHapus?.jumlahPartai ?? totalPartai,
@@ -101,7 +101,7 @@ export default function DialogDatabase({
       </AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>
-      <AlertDialogCancel className="bg-[#2a2a2a] border-[#5d5d5d] text-[#dedede] hover:bg-[#3a3a3a] hover:text-white">{t("analisa.basisData.batal")}</AlertDialogCancel>
+      <AlertDialogCancel className="bg-backgroundPanel border-border text-foreground hover:bg-backgroundPanelHover hover:text-foregroundHighlighted">{t("analisa.basisData.batal")}</AlertDialogCancel>
       <AlertDialogAction onClick={konfirmasiHapusKoleksi} className="bg-backgroundBoxBoxHighlighted hover:bg-backgroundBoxBoxHighlightedHover text-black font-bold">
         {t("analisa.basisData.hapus")}
       </AlertDialogAction>
@@ -111,17 +111,17 @@ export default function DialogDatabase({
 
 {/* ── Konfirmasi kosongkan seluruh basis data ── */}
 <AlertDialog open={dialogKosongkanSemua} onOpenChange={setDialogKosongkanSemua}>
-  <AlertDialogContent container={wadahDialog} className="bg-[#1e1d1c] border-[#5d5d5d] text-[#dedede] shadow-2xl">
+  <AlertDialogContent container={wadahDialog} className="bg-backgroundBoxDarker border-border text-foreground shadow-2xl">
     <AlertDialogHeader>
-      <AlertDialogTitle className="text-white">
+      <AlertDialogTitle className="text-foregroundHighlighted">
         {t("analisa.basisData.hapusSemua")}
       </AlertDialogTitle>
-      <AlertDialogDescription className="text-[#939291]">
+      <AlertDialogDescription className="text-foregroundGrey">
         {t("analisa.basisData.konfirmasiHapusSemua")}
       </AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>
-      <AlertDialogCancel className="bg-[#2a2a2a] border-[#5d5d5d] text-[#dedede] hover:bg-[#3a3a3a] hover:text-white">{t("analisa.basisData.batal")}</AlertDialogCancel>
+      <AlertDialogCancel className="bg-backgroundPanel border-border text-foreground hover:bg-backgroundPanelHover hover:text-foregroundHighlighted">{t("analisa.basisData.batal")}</AlertDialogCancel>
       <AlertDialogAction onClick={konfirmasiKosongkanSemua} className="bg-backgroundBoxBoxHighlighted hover:bg-backgroundBoxBoxHighlightedHover text-black font-bold">
         {t("analisa.basisData.hapusSemuaAksi")}
       </AlertDialogAction>

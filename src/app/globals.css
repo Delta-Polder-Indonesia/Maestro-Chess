@@ -67,6 +67,20 @@
   --error: #fa412d;
   --warning: #b8860b;
 
+  /* Permukaan tema tambahan (pass palet terang/gelap) — nilai gelap persis
+     warna hard-coded lama. Tema terang didefinisikan di analisa.css karena
+     halaman Analisa memakai variabel ber-namespace --analisa-*. */
+  --backgroundDropdown: #272727;
+  --backgroundDropdownHover: #090909;
+  --backgroundPanel: #2a2a2a;
+  --backgroundPanelHover: #3a3a3a;
+  --backgroundTrack: #363636;
+  --foregroundMuted: #aaaaaa;
+  --foregroundSwitchOff: #b8b8b8;
+  --foregroundDestructive: #ffaaa2;
+  --backgroundSlanted: #2c2d30;
+  --borderSlanted: #52555a;
+
   --shadowBoxBoxHighlighted: 0 0 8px;
 
   --borderRoundness: .25rem;
@@ -122,7 +136,7 @@ body {
   display: inline-flex;
   padding: 1px;
   border-radius: 9px 0 0 0;
-  background-color: #52555a;
+  background-color: var(--borderSlanted);
   clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 100%, 0 100%);
 }
 
@@ -135,7 +149,7 @@ body {
   gap: 6px;
   padding: 5px 38px 5px 6px;
   border-radius: 8px 0 0 0;
-  background-color: #2c2d30;
+  background-color: var(--backgroundSlanted);
   clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 100%, 0 100%);
 }
 
@@ -161,7 +175,7 @@ body {
   justify-content: center;
   margin-left: -24px;
   padding: 0 12px 0 28px;
-  border-bottom: 1px solid #52555a;
+  border-bottom: 1px solid var(--borderSlanted);
 }
 
 @media (max-width: 640px) {

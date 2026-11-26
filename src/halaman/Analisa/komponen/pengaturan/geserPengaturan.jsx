@@ -15,7 +15,7 @@ export default function GeserPengaturan({ nilai, onChange, min = 0, max = 100, s
         value={nilai}
         aria-label={ariaLabel}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-foregroundBlackDark accent-backgroundBoxBoxHighlightedHover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-backgroundBoxBoxHighlighted"
+        className="h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-backgroundTrack accent-backgroundBoxBoxHighlightedHover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-backgroundBoxBoxHighlighted"
       />
       <span className="w-10 shrink-0 text-right text-[12px] tabular-nums text-foregroundGrey">{nilai}{satuan}</span>
     </div>

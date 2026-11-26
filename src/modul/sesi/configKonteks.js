@@ -93,5 +93,9 @@ export const ConfigContext = createContext({
   }],
   accentColor: ["hijau", () => {
   }],
+  // Tema antarmuka (adopsi En Croissant ThemeButton: auto/light/dark). Bawaan
+  // "dark" mempertahankan tampilan Maestro semula; "auto" mengikuti sistem.
+  theme: ["dark", () => {
+  }],
   boardMenuSettingsRef: { current: null }
 });

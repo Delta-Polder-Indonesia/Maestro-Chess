@@ -50,6 +50,7 @@ export const BARIS_STATIS = [
   { kunci: "tampilanMaterial", labelKunci: "analisa.pengaturan.tampilanMaterial", grup: "perilaku" },
   { kunci: "pratinjauHover", labelKunci: "analisa.pengaturan.pratinjauHover", grup: "perilaku" },
   { kunci: "gulirLangkah", labelKunci: "analisa.pengaturan.gulirLangkah", grup: "perilaku" },
+  { kunci: "tema", labelKunci: "analisa.pengaturan.tema", grup: "tampilan" },
   { kunci: "ukuranFont", labelKunci: "analisa.pengaturan.ukuranFont", grup: "tampilan" },
   { kunci: "warnaAksen", labelKunci: "analisa.pengaturan.warnaAksen", grup: "tampilan" },
   { kunci: "sorotLabel", labelKunci: "analisa.pengaturan.sorotLabel", grup: "penilaian" },
