@@ -1,8 +1,9 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README.
- * Tema papan & set bidak kini berupa dropdown ringkas (gaya En Croissant)
- * alih-alih deretan baris sakelar per tema, agar tidak memakan tempat. */
+ * Tema papan & set bidak mengikuti bentuk UI En Croissant (BoardSelect/PiecesSelect):
+ * dropdown ringkas; ikon bidak terpilih ditampilkan di baris (di luar dropdown),
+ * dropdown set bidak hanya nama, dropdown tema memakai swatch + nama. */
 import { ConfigContext, boardThemes, bacaTeks, tulis } from "../../../../modul/sesi/preferensi.js";
-import { memo, useContext, useEffect } from "react";
+import { memo, useContext, useEffect, useState } from "react";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import BarisPengaturan from "./barisPengaturan.jsx";
 import PilihRingkas from "./pilihRingkas.jsx";
@@ -10,18 +11,20 @@ import { DAFTAR_SET_BIDAK, BIDAK_PRATINJAU, SET_BAWAAN, idSetBidak, urlBidak } f
 
 function SwatchTema({ theme }) {
   return (
-    <span aria-hidden="true" className="flex h-[18px] w-[26px] shrink-0 overflow-hidden rounded-[3px] border border-border">
+    <span aria-hidden="true" className="flex h-6 w-12 shrink-0 overflow-hidden rounded-[3px] border border-border">
       <span className="h-full w-1/2" style={{ backgroundColor: theme.white }} />
       <span className="h-full w-1/2" style={{ backgroundColor: theme.black }} />
     </span>
   );
 }
 
+// Enam bidak putih set terpilih (urutan En Croissant: benteng, kuda, gajah,
+// menteri, raja, pion) ditampilkan di baris, bukan di dalam dropdown.
 function PratinjauBidak({ set }) {
   return (
-    <span aria-hidden="true" className="flex shrink-0 items-center">
-      {BIDAK_PRATINJAU.map((p, i) => (
-        <img key={p} src={urlBidak(set, p)} alt="" draggable={false} className={`h-4 w-4 select-none object-contain ${i ? "-ml-1" : ""}`} />
+    <span aria-hidden="true" className="hidden shrink-0 items-center gap-1 sm:flex">
+      {BIDAK_PRATINJAU.map((p) => (
+        <img key={p} src={urlBidak(set, p)} alt="" draggable={false} className="h-8 w-8 select-none object-contain" />
       ))}
     </span>
   );
@@ -29,6 +32,8 @@ function PratinjauBidak({ set }) {
 
 const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, pieceSet, setPieceSet, cocok = () => true, deskripsi = () => null }) {
   const { t } = useI18n();
+  // Pratinjau sementara saat hover opsi set bidak (tidak persist sampai diklik).
+  const [pratinjau, setPratinjau] = useState(null);
   useEffect(() => {
     const boardTheme2 = Number(bacaTeks("boardTheme"));
     if (boardThemes[boardTheme2] != null) {
@@ -55,7 +60,8 @@ const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, pieceSet,
   const tampilBidak = cocok("setBidak", labelBidak) || DAFTAR_SET_BIDAK.some((s) => cocok(`bidak.${s.id}`, s.nama));
 
   const pilihanTema = boardThemes.map((theme, i) => ({ id: String(i), label: t(`analisa.tema.${theme.kunci}`), preview: <SwatchTema theme={theme} /> }));
-  const pilihanBidak = DAFTAR_SET_BIDAK.map((s) => ({ id: s.id, label: s.nama, preview: <PratinjauBidak set={s.id} /> }));
+  const pilihanBidak = DAFTAR_SET_BIDAK.map((s) => ({ id: s.id, label: s.nama }));
+  const setTampil = idSetBidak(pratinjau ?? pieceSet);
 
   return (
     <section>
@@ -64,7 +70,7 @@ const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, pieceSet,
           judul={<span className="text-[13.5px] font-medium text-foreground">{labelTema}</span>}
           deskripsi={deskripsi("temaPapan")}
         >
-          <PilihRingkas ariaLabel={labelTema} nilai={String(boardTheme)} pilihan={pilihanTema} onChange={(id) => changeBoardTheme(Number(id))} />
+          <PilihRingkas ariaLabel={labelTema} lebar="w-[192px]" nilai={String(boardTheme)} pilihan={pilihanTema} onChange={(id) => changeBoardTheme(Number(id))} />
         </BarisPengaturan>
       ) : null}
       {tampilBidak ? (
@@ -72,7 +78,10 @@ const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, pieceSet,
           judul={<span className="text-[13.5px] font-medium text-foreground">{labelBidak}</span>}
           deskripsi={deskripsi("setBidak")}
         >
-          <PilihRingkas ariaLabel={labelBidak} nilai={idSetBidak(pieceSet)} pilihan={pilihanBidak} onChange={changePieceSet} />
+          <div className="flex items-center gap-3">
+            <PratinjauBidak set={setTampil} />
+            <PilihRingkas ariaLabel={labelBidak} lebar="w-[160px]" nilai={idSetBidak(pieceSet)} pilihan={pilihanBidak} onChange={changePieceSet} onPratinjau={setPratinjau} />
+          </div>
         </BarisPengaturan>
       ) : null}
     </section>

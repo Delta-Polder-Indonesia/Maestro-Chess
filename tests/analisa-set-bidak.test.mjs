@@ -26,7 +26,7 @@ test("registri memuat set bawaan cburnett dan daftar lengkap ChessClub", () => {
   assert.ok(DAFTAR_SET_BIDAK.some((s) => s.id === "cardinal"));
   assert.ok(DAFTAR_SET_BIDAK.some((s) => s.id === "bidak" && s.nama === "Chessnut"));
   assert.ok(DAFTAR_SET_BIDAK.some((s) => s.id === "3d_wood" && s.png === true));
-  assert.deepEqual(BIDAK_PRATINJAU, ["K", "Q", "R", "B", "N", "P"]);
+  assert.deepEqual(BIDAK_PRATINJAU, ["R", "N", "B", "Q", "K", "P"]);
 });
 
 test("idSetBidak jatuh ke bawaan untuk set tak dikenal", () => {
@@ -112,6 +112,22 @@ test("PilihRingkas menutup dengan Escape", (tes) => {
   const listbox = renderer.root.findByProps({ role: "listbox" });
   act(() => listbox.props.onKeyDown({ key: "Escape", preventDefault() {} }));
   assert.equal(trigger().props["aria-expanded"], false);
+  act(() => renderer.unmount());
+});
+
+test("PilihRingkas meneruskan pratinjau hover dan mengosongkannya saat tertutup", (tes) => {
+  pasangDocument(tes);
+  const pratinjau = [];
+  let renderer;
+  act(() => { renderer = TestRenderer.create(React.createElement(PilihRingkas, { nilai: "satu", pilihan: pilihanUji, onChange: () => {}, ariaLabel: "Set bidak", onPratinjau: (id) => pratinjau.push(id) })); });
+  assert.equal(pratinjau.at(-1), null); // tertutup saat mount
+  const trigger = () => renderer.root.findByProps({ "aria-haspopup": "listbox" });
+  act(() => trigger().props.onClick());
+  const opsi = renderer.root.findByProps({ role: "listbox" }).findAllByProps({ role: "option" });
+  act(() => opsi[1].findByType("button").props.onMouseEnter());
+  assert.equal(pratinjau.at(-1), "dua");
+  act(() => trigger().props.onClick());
+  assert.equal(pratinjau.at(-1), null);
   act(() => renderer.unmount());
 });
 

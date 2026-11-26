@@ -109,5 +109,5 @@ export function urlBidak(set, piece) {
   return jalur ? `${basisPublik()}/${jalur}` : null;
 }
 
-/** Urutan bidak untuk pratinjau baris pemilih (putih: raja→pion). */
-export const BIDAK_PRATINJAU = ["K", "Q", "R", "B", "N", "P"];
+/** Urutan bidak pratinjau baris (putih), mengikuti En Croissant: benteng→pion. */
+export const BIDAK_PRATINJAU = ["R", "N", "B", "Q", "K", "P"];
