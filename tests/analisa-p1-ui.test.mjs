@@ -84,6 +84,9 @@ test("account deletion waits for each step; failures retain the account and warn
     let janji;
     await act(async () => { janji = panel().onHapus("chessCom", "Alice"); await flush(); });
     assert.equal(panel().disabled, true);
+    const statusHapus = renderer.root.findAllByProps({ role: "status" }).find((n) => n.children.includes("analisa.akun.menghapus"));
+    assert.ok(statusHapus, "status menghapus tampil saat penghapusan berjalan");
+    assert.match(statusHapus.props.className, /absolute/, "status menghapus di luar aliran layout agar konten tidak bergeser turun-naik");
     assert.equal(panel().daftar.length, 2);
     assert.equal(pemberitahuan.length, 0);
     return { janji };
