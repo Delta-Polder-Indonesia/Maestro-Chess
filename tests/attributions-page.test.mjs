@@ -76,13 +76,16 @@ const externalUrls = [
   "https://github.com/lichess-org/lila/tree/master/public/sound",
   "https://github.com/franciscoBSalgueiro/en-croissant",
   "https://github.com/lichess-org/chess-openings",
+  "https://database.lichess.org/#puzzles",
+  "https://www.chess.com/daily-puzzle",
+  "https://github.com/samuraitruong/chess.com-daily-puzzle",
   "https://github.com/lipis/flag-icons",
   "https://github.com/vercel/geist-font",
   "https://github.com/JulietaUla/Montserrat",
   "https://github.com/codebucks27/Next.js-Developer-Portfolio-Starter-Code",
 ];
 
-test("attributions are an article with a clear heading hierarchy and six labelled cards", () => {
+test("attributions are an article with a clear heading hierarchy and seven labelled cards", () => {
   const { renderer, metadata } = renderPage();
   assert.equal(metadata.title, "Atribusi & lisensi — Maestro Chess");
   assert.equal(text(renderer.root.findByType("h1")), "Atribusi & lisensi");
@@ -93,7 +96,7 @@ test("attributions are an article with a clear heading hierarchy and six labelle
   assert.match(main.props.className, /\boverflow-y-auto\b/);
   assert.equal(main.props.style, undefined);
   const cards = renderer.root.findAllByType("article").filter((node) => node.props["aria-labelledby"]);
-  const titles = ["Antarmuka & analisis", "Engine Stockfish", "Bendera & huruf", "Bidak catur", "Suara papan", "Buku pembukaan"];
+  const titles = ["Antarmuka & analisis", "Engine Stockfish", "Bendera & huruf", "Bidak catur", "Suara papan", "Buku pembukaan", "Teka-teki"];
   assert.deepEqual(renderer.root.findAllByType("h2").map(text), [titles[0], titles[1], "Komponen & aset lainnya", "Kode sumber dan jaringan NNUE", "Catatan merek", "Tetap terhubung"]);
   assert.deepEqual(renderer.root.findAllByType("h3").map(text), [...titles.slice(2), "Kode sumber Stockfish", "Jaringan NNUE"]);
   assert.equal(cards.length, titles.length);
