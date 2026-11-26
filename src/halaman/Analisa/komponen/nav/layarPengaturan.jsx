@@ -19,6 +19,7 @@ import Ratings from "../pengaturan/ratings.jsx";
 import Moves from "../pengaturan/moves.jsx";
 import BestMoves from "../pengaturan/bestMoves.jsx";
 import BarisPengaturan from "../pengaturan/barisPengaturan.jsx";
+import { TAB_META, GRUP_META, BARIS_STATIS } from "../pengaturan/katalogPengaturan.js";
 import { boardThemes } from "../../../../modul/sesi/preferensi.js";
 import { daftarRating } from "../pengaturan/ratings.jsx";
 import GitHub from "../svg/github.jsx";
@@ -115,59 +116,36 @@ export default function LayarPengaturan({ aktif = true }) {
   const [pencarian, setPencarian] = useState("");
   const [tabAktif, setTabAktif] = useState("papan");
 
-  const daftarTab = [
-    { id: "papan", judul: t("analisa.pengaturan.tab.papan"), deskripsi: t("analisa.pengaturan.tab.papanDeskripsi"), Ikon: IkonPapan },
-    { id: "penilaian", judul: t("analisa.pengaturan.penilaian"), deskripsi: t("analisa.pengaturan.tab.penilaianDeskripsi"), Ikon: IkonLabel },
-    { id: "langkah", judul: t("analisa.pengaturan.langkah"), deskripsi: t("analisa.pengaturan.tab.langkahDeskripsi"), Ikon: IkonPanah },
-    { id: "bahasa", judul: t("analisa.pengaturan.tab.bahasa"), deskripsi: t("analisa.pengaturan.tab.bahasaDeskripsi"), Ikon: IkonBahasa },
-    { id: "dokumentasi", judul: t("analisa.pengaturan.tab.dokumentasi"), deskripsi: t("analisa.pengaturan.tab.dokumentasiDeskripsi"), Ikon: IkonDokumentasi },
-  ];
-
   const labelBahasa = t("analisa.pengaturan.bahasa");
-  const daftarGrup = [
-    { id: "tema", tab: "papan", judul: t("analisa.pengaturan.temaPapan"), deskripsi: t("analisa.pengaturan.deskripsi.temaPapan"), render: (props) => <Themes {...props} /> },
-    { id: "perilaku", tab: "papan", judul: t("analisa.pengaturan.perilakuPapan"), deskripsi: t("analisa.pengaturan.deskripsi.perilakuPapan"), render: (props) => <Moves aktif={aktif} {...props} /> },
-    { id: "penilaian", tab: "penilaian", judul: t("analisa.pengaturan.penilaian"), deskripsi: t("analisa.pengaturan.tab.penilaianDeskripsi"), render: (props) => <Ratings {...props} /> },
-    { id: "langkah", tab: "langkah", judul: t("analisa.pengaturan.langkahTerbaik"), deskripsi: t("analisa.pengaturan.tab.langkahDeskripsi"), render: (props) => <BestMoves {...props} /> },
-    { id: "bahasa", tab: "bahasa", judul: labelBahasa, deskripsi: t("analisa.pengaturan.deskripsi.bahasa"), render: (props) => <BarisBahasa bahasa={bahasa} setBahasa={setBahasa} label={labelBahasa} {...props} /> },
-    {
-      id: "dokumentasi",
-      tab: "dokumentasi",
-      judul: t("analisa.pengaturan.tab.dokumentasi"),
-      deskripsi: t("analisa.pengaturan.tab.dokumentasiDeskripsi"),
-      render: (props) => (
-        <>
-          <BarisTautan kunci="kodeSumber" label={t("analisa.nav.kodeSumber")} href={URL_REPO} eksternal IkonTautan={IkonGitHubTautan} {...props} />
-          <BarisTautan kunci="atribusi" label={t("analisa.nav.atribusi")} href="/attributions" IkonTautan={IkonLisensiTautan} {...props} />
-        </>
-      ),
-    },
-  ];
+  // Metadata tab/grup/baris diturunkan dari katalog tunggal ("1 pintu");
+  // ikon dan render kontrol tetap di sini karena berupa komponen React.
+  const IKON_TAB = { papan: IkonPapan, penilaian: IkonLabel, langkah: IkonPanah, bahasa: IkonBahasa, dokumentasi: IkonDokumentasi };
+  const daftarTab = TAB_META.map((meta) => ({ id: meta.id, judul: t(meta.judulKunci), deskripsi: t(meta.deskripsiKunci), Ikon: IKON_TAB[meta.id] }));
 
+  const renderGrup = {
+    tema: (props) => <Themes {...props} />,
+    perilaku: (props) => <Moves aktif={aktif} {...props} />,
+    penilaian: (props) => <Ratings {...props} />,
+    langkah: (props) => <BestMoves {...props} />,
+    bahasa: (props) => <BarisBahasa bahasa={bahasa} setBahasa={setBahasa} label={labelBahasa} {...props} />,
+    dokumentasi: (props) => (
+      <>
+        <BarisTautan kunci="kodeSumber" label={t("analisa.nav.kodeSumber")} href={URL_REPO} eksternal IkonTautan={IkonGitHubTautan} {...props} />
+        <BarisTautan kunci="atribusi" label={t("analisa.nav.atribusi")} href="/attributions" IkonTautan={IkonLisensiTautan} {...props} />
+      </>
+    ),
+  };
+  const daftarGrup = GRUP_META.map((meta) => ({ id: meta.id, tab: meta.tab, judul: t(meta.judulKunci), deskripsi: t(meta.deskripsiKunci), render: renderGrup[meta.id] }));
+
+  // Indeks pencarian = baris dinamis (tema & rating) + baris statis katalog.
   const daftarBaris = [
     ...boardThemes.map((tema) => ({ kunci: `tema.${tema.kunci}`, label: t(`analisa.tema.${tema.kunci}`), grup: "tema" })),
-    { kunci: "setBidak", label: t("analisa.pengaturan.setBidak"), grup: "tema" },
-    { kunci: "koordinatPapan", label: t("analisa.pengaturan.koordinatPapan"), grup: "tema" },
-    { kunci: "koordinat.no", label: t("analisa.pengaturan.koordinat.tanpa"), grup: "tema" },
-    { kunci: "koordinat.edge", label: t("analisa.pengaturan.koordinat.tepi"), grup: "tema" },
-    { kunci: "koordinat.all", label: t("analisa.pengaturan.koordinat.semua"), grup: "tema" },
-    { kunci: "langkahLegal", label: t("analisa.pengaturan.langkahLegal"), grup: "perilaku" },
-    { kunci: "animasi", label: t("analisa.pengaturan.animasi"), grup: "perilaku" },
-    { kunci: "suara", label: t("analisa.pengaturan.suara"), grup: "perilaku" },
-    { kunci: "sorotLangkah", label: t("analisa.pengaturan.sorotLangkah"), grup: "perilaku" },
-    { kunci: "autoPromosi", label: t("analisa.pengaturan.autoPromosi"), grup: "perilaku" },
-    { kunci: "sorotLabel", label: t("analisa.pengaturan.sorotLabel"), grup: "penilaian" },
+    ...BARIS_STATIS.map((baris) => ({ kunci: baris.kunci, label: t(baris.labelKunci), grup: baris.grup })),
     ...daftarRating.filter((rating) => rating !== "critical").map((rating) => ({
       kunci: `rating.${rating}`,
       label: rating.charAt(0).toUpperCase() + rating.slice(1),
       grup: "penilaian",
     })),
-    { kunci: "tampilPanah", label: t("analisa.pengaturan.tampilPanah"), grup: "langkah" },
-    { kunci: "panahSetelahLangkah", label: t("analisa.pengaturan.panahSetelahLangkah"), grup: "langkah" },
-    { kunci: "hapusPanahKlik", label: t("analisa.pengaturan.hapusPanahKlik"), grup: "langkah" },
-    { kunci: "bahasa", label: labelBahasa, grup: "bahasa" },
-    { kunci: "kodeSumber", label: t("analisa.nav.kodeSumber"), grup: "dokumentasi" },
-    { kunci: "atribusi", label: t("analisa.nav.atribusi"), grup: "dokumentasi" },
   ];
 
   const kueri = pencarian.trim().toLowerCase();

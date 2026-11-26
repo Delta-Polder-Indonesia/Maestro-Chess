@@ -63,10 +63,11 @@ test("a setting updates only the relevant panels while theme changes reach every
   const Moves = kompilasi("../src/halaman/Analisa/komponen/pengaturan/moves.jsx", {
     ...umum, "../svg/soundMax.jsx": { default: kosong }, "../svg/sound-mute.jsx": { default: kosong },
     "./sakelarPengaturan.jsx": { default: saklar("moves") },
+    "./pilihRingkas.jsx": { default: pilih("moves") }, "./geserPengaturan.jsx": { default: kosong },
   });
   const BestMoves = kompilasi("../src/halaman/Analisa/komponen/pengaturan/bestMoves.jsx", {
     ...umum, "../game/board.jsx": { Arrow: kosong },
-    "./sakelarPengaturan.jsx": { default: saklar("best") },
+    "./sakelarPengaturan.jsx": { default: saklar("best") }, "./pilihRingkas.jsx": { default: pilih("best") },
   });
   function Harness() {
     const boardTheme = React.useState(0);

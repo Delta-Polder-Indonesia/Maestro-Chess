@@ -125,6 +125,7 @@ test("the board ignores unrelated configuration, applies sound/theme, and caches
   const Board = kompilasi("../src/halaman/Analisa/komponen/game/board.jsx", {
     "../../mesin/engine.js": { deformatSquare: noop, formatSquare: noop },
     "../suaraPapan.js": { buatSuara: (nama) => ({ play: () => suara.push(nama) }) },
+    "../../../../lib/suara.js": { aturVolumePengguna: noop },
     "../../../../modul/sesi/preferensi.js": { ...configContext, boardThemes },
     "../svg/piece.jsx": { default: Bidak },
     "../svg/rating.jsx": { default: kosong },

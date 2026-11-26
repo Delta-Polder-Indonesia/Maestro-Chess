@@ -13,7 +13,11 @@ function formatAdvantage(advantage = 0) {
 }
 
 export default function CapturedPieces({ white = false, pieces = [], advantage = 0 }) {
-  const pieceSet = useContext(ConfigContext).pieceSet?.[0] ?? "cburnett";
+  const config = useContext(ConfigContext);
+  const pieceSet = config.pieceSet?.[0] ?? "cburnett";
+  // Tampilan material (adopsi En Croissant): "all" = bidak tertangkap + selisih
+  // (perilaku semula), "diff" = hanya angka selisih, "none" = sembunyikan.
+  const materialDisplay = config.materialDisplay?.[0] ?? "all";
   // Kelompokkan dan urutkan bidak berdasarkan urutan nilai catur
   const sortedGroupedPieces = useMemo(() => {
     const counts = pieces.reduce((acc, piece) => {
@@ -30,9 +34,11 @@ export default function CapturedPieces({ white = false, pieces = [], advantage =
   const displayAdvantage = white ? advantage : -advantage;
   const advantageText = formatAdvantage(displayAdvantage);
 
+  if (materialDisplay === "none") return null;
+
   return (
     <div className="flex flex-row h-full items-end gap-1 group-data-[panel-sejajar=true]/papan:gap-1.5">
-      <div className="flex flex-row h-full w-fit -ml-[3px]">
+      {materialDisplay === "all" ? <div className="flex flex-row h-full w-fit -ml-[3px]">
         {sortedGroupedPieces.map(([piece, count]) => (
           <div key={piece} className="mb-[1px] flex flex-row items-end">
             {Array.from({ length: count }, (_, idx) => {
@@ -59,7 +65,7 @@ export default function CapturedPieces({ white = false, pieces = [], advantage =
             })}
           </div>
         ))}
-      </div>
+      </div> : null}
 
       {/* Ukuran angka disamakan proporsinya dengan bidak */}
       {advantageText && (

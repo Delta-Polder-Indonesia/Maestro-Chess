@@ -68,6 +68,23 @@ const VOLUME = {
 
 const VOLUME_UTAMA = 0.7;
 
+// Master volume pengguna (0..1), sumber tunggal "1 pintu" untuk kekerasan
+// suara. Default 1 = perilaku semula (VOLUME_UTAMA yang berlaku). Disetel
+// oleh layar Pengaturan Analisa lewat `aturVolumePengguna`; balancing relatif
+// tiap bunyi (VOLUME) tetap dipertahankan karena hanya dikalikan, bukan diganti.
+let VOLUME_PENGGUNA = 1;
+
+/** Setel master volume pengguna (0..1). Nilai di luar rentang dijepit. */
+export function aturVolumePengguna(nilai) {
+  const angka = Number(nilai);
+  VOLUME_PENGGUNA = Number.isFinite(angka) ? Math.min(1, Math.max(0, angka)) : 1;
+}
+
+/** Baca master volume pengguna saat ini (untuk uji/inspeksi). */
+export function bacaVolumePengguna() {
+  return VOLUME_PENGGUNA;
+}
+
 // Reuse Maestro's existing, attributed Lichess sound set.
 const alamat = (nama) => berkasPublik(`/sounds/${nama}.mp3`);
 
@@ -216,7 +233,7 @@ function bunyikanElemen(nama, volume) {
  */
 export function mainkanSuara(nama, { volume } = {}) {
   if (!nama || typeof window === "undefined") return;
-  const keras = (volume ?? VOLUME[nama] ?? 1) * VOLUME_UTAMA;
+  const keras = (volume ?? VOLUME[nama] ?? 1) * VOLUME_UTAMA * VOLUME_PENGGUNA;
 
   const audio = konteksAudio();
   if (!audio) {

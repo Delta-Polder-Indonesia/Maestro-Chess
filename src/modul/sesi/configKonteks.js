@@ -47,5 +47,16 @@ export const ConfigContext = createContext({
   }],
   eraseArrowsOnClick: [true, () => {
   }],
+  // Tier 2 adopsi En Croissant — sumber tunggal preferensi papan ("1 pintu").
+  // Bawaan mempertahankan perilaku kini: volume penuh, animasi normal,
+  // material tampil semua, notasi huruf (SAN).
+  volume: [100, () => {
+  }],
+  animationSpeed: ["normal", () => {
+  }],
+  materialDisplay: ["all", () => {
+  }],
+  moveNotation: ["letters", () => {
+  }],
   boardMenuSettingsRef: { current: null }
 });

@@ -1,6 +1,8 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Comments, { FormatEval } from "./comments.jsx";
+import { ConfigContext } from "../../../../../../modul/sesi/preferensi.js";
+import { notasiLangkah } from "./notasi.js";
 import { WHITE } from "chess.js";
 import GameChart from "../gameChart.jsx";
 import RatingSVG from "../../../svg/rating.jsx";
@@ -31,6 +33,7 @@ function getRating(moveNumber, rating, prevRating, nextRating, lastBookMove, ter
 
 function Moves(props) {
   const { t } = useI18n();
+  const moveNotation = useContext(ConfigContext).moveNotation?.[0] ?? "letters";
   const { moves, overallGameComment, container, moveNumber, setMoveNumber, setAnimation, setForward, customLine, returnedToNormalGame, analyzingMove } = props;
   const [movesHeight, setMovesHeight] = useState(0);
   const componentRef = useRef(null);
@@ -134,7 +137,7 @@ function Moves(props) {
     return <div key={`${i}-${j}`} className="w-1/2 flex flex-row gap-1 items-center">
                                         <button type="button" onClick={() => handleMoveClick(currentMoveNumber)} className={`flex items-center gap-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-backgroundBoxBoxHighlighted ${fgColorClass}`}>
                                             <span aria-hidden="true" className="w-[18px] shrink-0">{shownRating ? <RatingSVG draggable rating={shownRating.rating} size={18} /> : null}</span>
-                                            <span className={`rounded-borderRoundness border-b-2 px-1.5 ${isSelected ? "bg-backgroundBoxBox border-backgroundBoxBoxHover" : "border-transparent"}`}>{move3}</span>
+                                            <span className={`rounded-borderRoundness border-b-2 px-1.5 ${isSelected ? "bg-backgroundBoxBox border-backgroundBoxBoxHover" : "border-transparent"}`}>{notasiLangkah(move3, entriKini?.movement, moveNotation)}</span>
                                         </button>
                                     </div>;
   })}

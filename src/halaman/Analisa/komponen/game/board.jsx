@@ -12,6 +12,11 @@ import { berkasPublik } from "../../../../lib/asets.js";
 // Kecepatan luncuran bidak: SATU sumber untuk semua papan (lihat penjelasan
 // panjang di animasiBidak.js). Nilai isepic-chess-ui: 300 ms, kurva `ease`.
 import { GESER_ISEPIC } from "../../../TekaTeki/animasiBidak.js";
+import { aturVolumePengguna } from "../../../../lib/suara.js";
+// Kecepatan animasi bidak (adopsi En Croissant: fast/normal/slow). "normal"
+// memakai durasi isepic-chess-ui semula; sakelar animateMoves tetap menjadi
+// sakelar nyala/mati terpisah sehingga perilaku bawaan tidak berubah.
+const DURASI_KECEPATAN = { fast: 150, normal: GESER_ISEPIC.durasi, slow: 600 };
 const HIGHLIGHT_COLORS = {
   forced: "",
   brilliant: "var(--highlightBrilliant)",
@@ -428,7 +433,7 @@ function Board(props) {
   const [kotakFokus, setKotakFokus] = useState("e2");
   const idPetunjuk = useId();
   const t = props.t || ((kunci) => kunci);
-  const { boardTheme, pieceSet, usedRatings, highlightByRating, showArrows, arrowAfterMove, showLegalMoves, animateMoves, boardSoundsRef, coordinates = "edge", moveHighlight = true, autoPromote = false, eraseArrowsOnClick = true } = props;
+  const { boardTheme, pieceSet, usedRatings, highlightByRating, showArrows, arrowAfterMove, showLegalMoves, animateMoves, boardSoundsRef, coordinates = "edge", moveHighlight = true, autoPromote = false, eraseArrowsOnClick = true, animationSpeed = "normal" } = props;
   const boardRef = useRef(null);
   const pieceRef = useRef(null);
   const castleRookRef = useRef(null);
@@ -586,7 +591,7 @@ function Board(props) {
     kunciAnimasiRef.current = kunci;
     if (pieceRef.current) animateMove(pieceRef.current, gerakanAnimasi, 60, forward, white, squareSize);
     if (castleRookRef.current) animateMove(castleRookRef.current, castleRookMove, 50, forward, white, squareSize);
-  }, [move, animation, animateMoves, castleRookMove, forward, nextMove, squareSize, white, fen]);
+  }, [move, animation, animateMoves, animationSpeed, castleRookMove, forward, nextMove, squareSize, white, fen]);
   let newMaterialAdvantage = 0;
   useEffect(() => setMaterialAdvantage(newMaterialAdvantage), [fen, newMaterialAdvantage, setMaterialAdvantage]);
   function startArrow(x, y) {
@@ -723,7 +728,7 @@ function Board(props) {
         { transform: `translate(${!forward2 ? distance.x : 0}px, ${!forward2 ? -distance.y : 0}px)` }
       ],
       {
-        duration: GESER_ISEPIC.durasi,
+        duration: DURASI_KECEPATAN[animationSpeed] ?? GESER_ISEPIC.durasi,
         easing: GESER_ISEPIC.kurva,
         direction: forward2 ? "normal" : "reverse",
       }
@@ -970,6 +975,10 @@ function BoardDenganConfig(props) {
   // Suara hanya dibaca saat posisi berubah; sakelarnya sendiri tidak perlu
   // membangun ulang 64 petak. Sinkron sebelum efek suara berikutnya berjalan.
   useLayoutEffect(() => { boardSoundsRef.current = boardSounds; }, [boardSounds]);
+  // Master volume pengguna ("1 pintu") diterapkan ke seluruh suara papan.
+  // Disinkron di sini karena papan selalu terpasang saat halaman Analisa aktif.
+  const volume = config.volume?.[0] ?? 100;
+  useLayoutEffect(() => { aturVolumePengguna(volume / 100); }, [volume]);
   return <BoardMemo
     {...props}
     boardTheme={config.boardTheme[0]}
@@ -984,6 +993,7 @@ function BoardDenganConfig(props) {
     moveHighlight={config.moveHighlight?.[0] ?? true}
     autoPromote={config.autoPromote?.[0] ?? false}
     eraseArrowsOnClick={config.eraseArrowsOnClick?.[0] ?? true}
+    animationSpeed={config.animationSpeed?.[0] ?? "normal"}
     boardSoundsRef={boardSoundsRef}
   />;
 }

@@ -34,6 +34,7 @@ const dependencies = {
   "../Gambar.jsx": { default: () => null },
   "../../../../lib/asets.js": { berkasPublik: (path) => path },
   "../../../TekaTeki/animasiBidak.js": { GESER_ISEPIC: { durasi: 300, kurva: "ease" } },
+  "../../../../lib/suara.js": { aturVolumePengguna: noop },
 };
 const compiledModule = { exports: {} };
 runInThisContext(`(function (require, module, exports) {\n${compiled}\n})`)((id) => {

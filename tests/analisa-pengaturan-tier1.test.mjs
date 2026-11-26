@@ -115,6 +115,7 @@ const dependencies = {
   "../Gambar.jsx": { default: () => null },
   "../../../../lib/asets.js": { berkasPublik: (path) => path },
   "../../../TekaTeki/animasiBidak.js": { GESER_ISEPIC: { durasi: 300, kurva: "ease" } },
+  "../../../../lib/suara.js": { aturVolumePengguna: noop },
 };
 const compiledModule = { exports: {} };
 runInThisContext(`(function (require, module, exports) {\n${compiled}\n})`)((id) => {
@@ -254,11 +255,12 @@ test("the coordinates dropdown and the three switches persist their choices", as
   const Baris = kompilasi("../src/halaman/Analisa/komponen/pengaturan/barisPengaturan.jsx", {});
   const Sakelar = kompilasi("../src/halaman/Analisa/komponen/pengaturan/sakelarPengaturan.jsx", {});
   const Pilih = kompilasi("../src/halaman/Analisa/komponen/pengaturan/pilihRingkas.jsx", {});
+  const Geser = kompilasi("../src/halaman/Analisa/komponen/pengaturan/geserPengaturan.jsx", {});
   const setBidak = await import("../src/halaman/Analisa/komponen/pengaturan/setBidak.js");
   const umum = { "../../../../modul/sesi/preferensi.js": preferensi, "../../../../lib/i18n.jsx": i18n, "./barisPengaturan.jsx": { default: Baris } };
   const Themes = kompilasi("../src/halaman/Analisa/komponen/pengaturan/themes.jsx", { ...umum, "./pilihRingkas.jsx": { default: Pilih }, "./setBidak.js": setBidak });
-  const Moves = kompilasi("../src/halaman/Analisa/komponen/pengaturan/moves.jsx", { ...umum, "./sakelarPengaturan.jsx": { default: Sakelar }, "../svg/piece.jsx": { default: kosong }, "../svg/soundMax.jsx": { default: kosong }, "../svg/sound-mute.jsx": { default: kosong } });
-  const BestMoves = kompilasi("../src/halaman/Analisa/komponen/pengaturan/bestMoves.jsx", { ...umum, "./sakelarPengaturan.jsx": { default: Sakelar }, "../svg/piece.jsx": { default: kosong }, "../game/board.jsx": { Arrow: kosong } });
+  const Moves = kompilasi("../src/halaman/Analisa/komponen/pengaturan/moves.jsx", { ...umum, "./sakelarPengaturan.jsx": { default: Sakelar }, "./pilihRingkas.jsx": { default: Pilih }, "./geserPengaturan.jsx": { default: Geser }, "../svg/piece.jsx": { default: kosong }, "../svg/soundMax.jsx": { default: kosong }, "../svg/sound-mute.jsx": { default: kosong } });
+  const BestMoves = kompilasi("../src/halaman/Analisa/komponen/pengaturan/bestMoves.jsx", { ...umum, "./sakelarPengaturan.jsx": { default: Sakelar }, "./pilihRingkas.jsx": { default: Pilih }, "../svg/piece.jsx": { default: kosong }, "../game/board.jsx": { Arrow: kosong } });
   function Harness() {
     const value = {
       boardTheme: React.useState(0), pieceSet: React.useState("cburnett"),

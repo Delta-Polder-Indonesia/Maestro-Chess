@@ -8,12 +8,19 @@ import SoundMute from "../svg/sound-mute.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import SakelarPengaturan from "./sakelarPengaturan.jsx";
 import BarisPengaturan from "./barisPengaturan.jsx";
+import PilihRingkas from "./pilihRingkas.jsx";
+import GeserPengaturan from "./geserPengaturan.jsx";
 // Fallback konteks beridentitas stabil agar memo IsiMoves tidak bocor saat
 // konsumen ConfigContext lain berubah (lihat penjelasan di themes.jsx).
 const SETTER_KOSONG = () => {};
 const BAWAAN_SOROT_LANGKAH = [true, SETTER_KOSONG];
 const BAWAAN_AUTO_PROMOSI = [false, SETTER_KOSONG];
-const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, setShowLegalMoves, animateMoves, setAnimateMoves, boardSounds, setBoardSounds, moveHighlight, setMoveHighlight, autoPromote, setAutoPromote, cocok = () => true, deskripsi = () => null }) {
+const BAWAAN_VOLUME = [100, SETTER_KOSONG];
+const BAWAAN_KECEPATAN = ["normal", SETTER_KOSONG];
+const BAWAAN_MATERIAL = ["all", SETTER_KOSONG];
+const OPSI_KECEPATAN = ["fast", "normal", "slow"];
+const OPSI_MATERIAL = ["diff", "all", "none"];
+const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, setShowLegalMoves, animateMoves, setAnimateMoves, boardSounds, setBoardSounds, moveHighlight, setMoveHighlight, autoPromote, setAutoPromote, volume, setVolume, animationSpeed, setAnimationSpeed, materialDisplay, setMaterialDisplay, cocok = () => true, deskripsi = () => null }) {
   const { t } = useI18n();
   const [animateMovesMoved, setAnimateMovesMoved] = useState(false);
   useEffect(() => {
@@ -85,11 +92,32 @@ const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, set
     tulis("autoPromote", String(Number(baru)));
     setAutoPromote(baru);
   }
+  // Tier 2: volume suara, kecepatan animasi, tampilan material.
+  function changeVolume(nilai) {
+    const angka = Math.min(100, Math.max(0, Math.round(Number(nilai) || 0)));
+    setVolume(angka);
+    tulis("volume", String(angka));
+  }
+  function changeAnimationSpeed(nilai) {
+    const sah = OPSI_KECEPATAN.includes(nilai) ? nilai : "normal";
+    setAnimationSpeed(sah);
+    tulis("animationSpeed", sah);
+  }
+  function changeMaterialDisplay(nilai) {
+    const sah = OPSI_MATERIAL.includes(nilai) ? nilai : "all";
+    setMaterialDisplay(sah);
+    tulis("materialDisplay", sah);
+  }
   const labelLegal = t("analisa.pengaturan.langkahLegal");
   const labelAnimasi = t("analisa.pengaturan.animasi");
   const labelSuara = t("analisa.pengaturan.suara");
   const labelSorotLangkah = t("analisa.pengaturan.sorotLangkah");
   const labelAutoPromosi = t("analisa.pengaturan.autoPromosi");
+  const labelVolume = t("analisa.pengaturan.volume");
+  const labelKecepatan = t("analisa.pengaturan.kecepatanAnimasi");
+  const labelMaterial = t("analisa.pengaturan.tampilanMaterial");
+  const pilihanKecepatan = OPSI_KECEPATAN.map((o) => ({ id: o, label: t(`analisa.pengaturan.kecepatan.${o === "fast" ? "cepat" : o === "normal" ? "normal" : "lambat"}`) }));
+  const pilihanMaterial = OPSI_MATERIAL.map((o) => ({ id: o, label: t(`analisa.pengaturan.material.${o === "diff" ? "selisih" : o === "all" ? "semua" : "tanpa"}`) }));
   return <section>
             {cocok("langkahLegal", labelLegal) ? <BarisPengaturan
       judul={<button onClick={toggleShowLegalMoves} type="button" className="flex flex-1 flex-row gap-2 items-center text-left font-medium text-foreground">
@@ -159,6 +187,24 @@ const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, set
     >
       <SakelarPengaturan checked={autoPromote} onCheckedChange={toggleAutoPromote} aria-label={labelAutoPromosi} />
     </BarisPengaturan> : null}
+    {cocok("volume", labelVolume) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelVolume}</span>}
+      deskripsi={deskripsi("volume")}
+    >
+      <GeserPengaturan nilai={volume} onChange={changeVolume} ariaLabel={labelVolume} satuan="%" />
+    </BarisPengaturan> : null}
+    {cocok("kecepatanAnimasi", labelKecepatan) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelKecepatan}</span>}
+      deskripsi={deskripsi("kecepatanAnimasi")}
+    >
+      <PilihRingkas ariaLabel={labelKecepatan} lebar="w-[160px]" nilai={OPSI_KECEPATAN.includes(animationSpeed) ? animationSpeed : "normal"} pilihan={pilihanKecepatan} onChange={changeAnimationSpeed} />
+    </BarisPengaturan> : null}
+    {cocok("tampilanMaterial", labelMaterial) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelMaterial}</span>}
+      deskripsi={deskripsi("tampilanMaterial")}
+    >
+      <PilihRingkas ariaLabel={labelMaterial} lebar="w-[160px]" nilai={OPSI_MATERIAL.includes(materialDisplay) ? materialDisplay : "all"} pilihan={pilihanMaterial} onChange={changeMaterialDisplay} />
+    </BarisPengaturan> : null}
           </section>;
 });
 
@@ -170,6 +216,9 @@ function Moves({ aktif = true, cocok, deskripsi }) {
   const [boardSounds, setBoardSounds] = config.boardSounds;
   const [moveHighlight, setMoveHighlight] = config.moveHighlight ?? BAWAAN_SOROT_LANGKAH;
   const [autoPromote, setAutoPromote] = config.autoPromote ?? BAWAAN_AUTO_PROMOSI;
-  return <IsiMoves aktif={aktif} boardTheme={boardTheme} showLegalMoves={showLegalMoves} setShowLegalMoves={setShowLegalMoves} animateMoves={animateMoves} setAnimateMoves={setAnimateMoves} boardSounds={boardSounds} setBoardSounds={setBoardSounds} moveHighlight={moveHighlight} setMoveHighlight={setMoveHighlight} autoPromote={autoPromote} setAutoPromote={setAutoPromote} cocok={cocok} deskripsi={deskripsi} />;
+  const [volume, setVolume] = config.volume ?? BAWAAN_VOLUME;
+  const [animationSpeed, setAnimationSpeed] = config.animationSpeed ?? BAWAAN_KECEPATAN;
+  const [materialDisplay, setMaterialDisplay] = config.materialDisplay ?? BAWAAN_MATERIAL;
+  return <IsiMoves aktif={aktif} boardTheme={boardTheme} showLegalMoves={showLegalMoves} setShowLegalMoves={setShowLegalMoves} animateMoves={animateMoves} setAnimateMoves={setAnimateMoves} boardSounds={boardSounds} setBoardSounds={setBoardSounds} moveHighlight={moveHighlight} setMoveHighlight={setMoveHighlight} autoPromote={autoPromote} setAutoPromote={setAutoPromote} volume={volume} setVolume={setVolume} animationSpeed={animationSpeed} setAnimationSpeed={setAnimationSpeed} materialDisplay={materialDisplay} setMaterialDisplay={setMaterialDisplay} cocok={cocok} deskripsi={deskripsi} />;
 }
 export default memo(Moves);

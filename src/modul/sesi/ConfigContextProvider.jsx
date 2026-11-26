@@ -37,8 +37,25 @@ function ConfigContextProvider(props) {
   const [moveHighlight, setMoveHighlight] = useState(() => bacaBoolean("moveHighlight", true));
   const [autoPromote, setAutoPromote] = useState(() => bacaBoolean("autoPromote", false));
   const [eraseArrowsOnClick, setEraseArrowsOnClick] = useState(() => bacaBoolean("eraseArrowsOnClick", true));
+  // Tier 2: volume (0..100), kecepatan animasi, tampilan material, notasi langkah.
+  const [volume, setVolume] = useState(() => {
+    const nilai = bacaAngka("volume", 100);
+    return Number.isFinite(nilai) ? Math.min(100, Math.max(0, Math.round(nilai))) : 100;
+  });
+  const [animationSpeed, setAnimationSpeed] = useState(() => {
+    const nilai = bacaTeks("animationSpeed", "normal");
+    return nilai === "fast" || nilai === "normal" || nilai === "slow" ? nilai : "normal";
+  });
+  const [materialDisplay, setMaterialDisplay] = useState(() => {
+    const nilai = bacaTeks("materialDisplay", "all");
+    return nilai === "diff" || nilai === "all" || nilai === "none" ? nilai : "all";
+  });
+  const [moveNotation, setMoveNotation] = useState(() => {
+    const nilai = bacaTeks("moveNotation", "letters");
+    return nilai === "letters" || nilai === "symbols" || nilai === "lan" ? nilai : "letters";
+  });
   const boardMenuSettingsRef = useRef(null);
-  return <ConfigContext.Provider value={{ boardTheme: [boardTheme, setBoardTheme], pieceSet: [pieceSet, setPieceSet], openedMenu: [openedMenu, setOpenedMenu], usedRatings: [usedRatings, setUsedRatings], highlightByRating: [highlightByRating, setHighlightByRating], showArrows: [showArrows, setShowArrows], arrowAfterMove: [arrowAfterMove, setArrowAfterMove], showLegalMoves: [showLegalMoves, setShowLegalMoves], animateMoves: [animateMoves, setAnimateMoves], boardSounds: [boardSounds, setBoardSounds], coordinates: [coordinates, setCoordinates], moveHighlight: [moveHighlight, setMoveHighlight], autoPromote: [autoPromote, setAutoPromote], eraseArrowsOnClick: [eraseArrowsOnClick, setEraseArrowsOnClick], boardMenuSettingsRef }}>
+  return <ConfigContext.Provider value={{ boardTheme: [boardTheme, setBoardTheme], pieceSet: [pieceSet, setPieceSet], openedMenu: [openedMenu, setOpenedMenu], usedRatings: [usedRatings, setUsedRatings], highlightByRating: [highlightByRating, setHighlightByRating], showArrows: [showArrows, setShowArrows], arrowAfterMove: [arrowAfterMove, setArrowAfterMove], showLegalMoves: [showLegalMoves, setShowLegalMoves], animateMoves: [animateMoves, setAnimateMoves], boardSounds: [boardSounds, setBoardSounds], coordinates: [coordinates, setCoordinates], moveHighlight: [moveHighlight, setMoveHighlight], autoPromote: [autoPromote, setAutoPromote], eraseArrowsOnClick: [eraseArrowsOnClick, setEraseArrowsOnClick], volume: [volume, setVolume], animationSpeed: [animationSpeed, setAnimationSpeed], materialDisplay: [materialDisplay, setMaterialDisplay], moveNotation: [moveNotation, setMoveNotation], boardMenuSettingsRef }}>
             {props.children}
         </ConfigContext.Provider>;
 }
