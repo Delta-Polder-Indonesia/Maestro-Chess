@@ -33,6 +33,8 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
   const hashId = useId();
   const skillId = useId();
   const waktuId = useId();
+  const modeId = useId();
+  const nodeId = useId();
 
   const aktif = cariEngine(idEngine) ?? cariEngine(undefined);
   const siapDipakai = status === "siap";
@@ -44,7 +46,13 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
   const hashMb = Number.isFinite(opsi?.hash) ? opsi.hash : 32;
   const skill = opsi && "skill" in opsi ? opsi.skill : null;
   const movetime = opsi && Number.isFinite(opsi.movetime) ? opsi.movetime : null;
+  const mode = opsi?.mode === "waktu" || opsi?.mode === "node" ? opsi.mode : "kedalaman";
+  const nodes = Number.isFinite(opsi?.nodes) ? opsi.nodes : 250000;
   const PILIHAN_WAKTU = [1000, 2000, 4000, 8000, 15000, 30000, 60000];
+  const PILIHAN_NODE = [50000, 100000, 250000, 500000, 1000000, 2000000];
+  const labelNode = (n) => (n >= 1000000
+    ? t("analisa.pengaturan.nodeJuta", { n: n / 1000000 })
+    : t("analisa.pengaturan.nodeRibu", { n: n / 1000 }));
   // Samakan tinggi dan lebar semua kontrol (pola .text-input/.number-input-wrapper
   // di prompt.md) supaya kolomnya rapi walaupun isinya input atau select.
   const kelasKontrol = "h-[30px] w-full rounded-borderRoundness border border-border bg-[#272727] px-2 text-sm text-foreground outline-none";
@@ -71,8 +79,16 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
     tulis("kedalaman", n);
   }
 
+  /* Ganti mode pencarian. Mode "waktu" memastikan ada nilai batas waktu
+     (bawaan 4 dtk bila belum pernah diset); mode lain menihilkan movetime
+     supaya tidak ikut membatasi pencarian. Kedalaman tetap tersimpan di
+     state papan sehingga kembali ke mode kedalaman tidak kehilangan nilai. */
+  function gantiMode(m) {
+    ubahOpsi?.({ mode: m, movetime: m === "waktu" ? (movetime ?? 4000) : null });
+  }
+
   function kembalikanBawaan() {
-    const n = 13;
+    const n = 8;
     setDepthMentah(String(n));
     setDepth(n);
     tulis("kedalaman", n);
@@ -80,6 +96,8 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
       hash: opsiBawaan?.hash ?? 32,
       skill: null,
       movetime: null,
+      mode: "kedalaman",
+      nodes: opsiBawaan?.nodes ?? 250000,
     });
   }
 
@@ -154,6 +172,20 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
         </div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-2">
           <div className="flex min-w-0 flex-col gap-1">
+            <label htmlFor={modeId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.modeCari")}</label>
+            <select
+              id={modeId}
+              value={mode}
+              onChange={(e) => gantiMode(e.target.value)}
+              className={kelasKontrol}
+            >
+              <option value="kedalaman">{t("analisa.pengaturan.modeKedalaman")}</option>
+              <option value="waktu">{t("analisa.pengaturan.modeWaktu")}</option>
+              <option value="node">{t("analisa.pengaturan.modeNode")}</option>
+            </select>
+          </div>
+          {mode === "kedalaman" ? (
+          <div className="flex min-w-0 flex-col gap-1">
             <label htmlFor={depthId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.kedalaman")}</label>
             <input
               id={depthId}
@@ -198,6 +230,37 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
               className={kelasKontrol}
             />
           </div>
+          ) : null}
+          {mode === "waktu" ? (
+          <div className="flex min-w-0 flex-col gap-1">
+            <label htmlFor={waktuId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.batasWaktu")}</label>
+            <select
+              id={waktuId}
+              value={movetime === null ? 4000 : movetime}
+              onChange={(e) => ubahOpsi?.({ movetime: Number(e.target.value) })}
+              className={kelasKontrol}
+            >
+              {(movetime === null || PILIHAN_WAKTU.includes(movetime) ? PILIHAN_WAKTU : [movetime, ...PILIHAN_WAKTU]).map((n) => (
+                <option key={n} value={n}>{n / 1000} s</option>
+              ))}
+            </select>
+          </div>
+          ) : null}
+          {mode === "node" ? (
+          <div className="flex min-w-0 flex-col gap-1">
+            <label htmlFor={nodeId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.batasNode")}</label>
+            <select
+              id={nodeId}
+              value={nodes}
+              onChange={(e) => ubahOpsi?.({ nodes: Number(e.target.value) })}
+              className={kelasKontrol}
+            >
+              {(PILIHAN_NODE.includes(nodes) ? PILIHAN_NODE : [nodes, ...PILIHAN_NODE]).map((n) => (
+                <option key={n} value={n}>{labelNode(n)}</option>
+              ))}
+            </select>
+          </div>
+          ) : null}
           <div className="flex min-w-0 flex-col gap-1">
             <label htmlFor={hashId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.hashMb")}</label>
             <select
@@ -222,20 +285,6 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
               <option value="bawaan">{t("analisa.pengaturan.skillBawaan")}</option>
               {Array.from({ length: 21 }, (_, n) => n).map((n) => (
                 <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex min-w-0 flex-col gap-1">
-            <label htmlFor={waktuId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.batasWaktu")}</label>
-            <select
-              id={waktuId}
-              value={movetime === null ? "nonaktif" : movetime}
-              onChange={(e) => ubahOpsi?.({ movetime: e.target.value === "nonaktif" ? null : Number(e.target.value) })}
-              className={kelasKontrol}
-            >
-              <option value="nonaktif">{t("analisa.pengaturan.tanpaBatas")}</option>
-              {(movetime === null || PILIHAN_WAKTU.includes(movetime) ? PILIHAN_WAKTU : [movetime, ...PILIHAN_WAKTU]).map((n) => (
-                <option key={n} value={n}>{n / 1000} s</option>
               ))}
             </select>
           </div>

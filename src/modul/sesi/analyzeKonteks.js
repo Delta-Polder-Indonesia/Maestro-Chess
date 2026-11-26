@@ -82,7 +82,7 @@ export const AnalyzeContext = createContext({
   }],
   akun: [{ platform: "chessCom", username: "" }, () => {
   }],
-  depth: [13, () => {
+  depth: [8, () => {
   }],
   gameController: { back: () => {
   }, forward: () => {

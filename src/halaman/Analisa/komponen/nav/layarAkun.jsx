@@ -180,8 +180,18 @@ export default function LayarAkun({ onAkunDihapus, akunTab, aktif = true }) {
     <PanelLayar>
       <h1 className="sr-only">{t("analisa.nav.akun")}</h1>
       {galatHapus ? <p role="alert" data-uji="hapus-akun-gagal" className="rounded-borderRoundness border border-lossRed px-3 py-2 text-sm text-lossRed">{t("analisa.akun.hapusGagal")}</p> : null}
-      {sedangHapus ? <p role="status" className="px-3 py-2 text-sm text-foregroundGrey">{t("analisa.akun.menghapus")}</p> : null}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 sm:gap-4 lg:flex-row">
+      <div className="relative flex min-h-0 flex-1 flex-col gap-3 sm:gap-4 lg:flex-row">
+        {/* Status "menghapus" mengapung (absolute, di luar aliran layout)
+            supaya konten tidak bergeser turun lalu naik lagi saat status
+            muncul ketika penghapusan mulai dan hilang ketika selesai. */}
+        {sedangHapus ? (
+          <p
+            role="status"
+            className="pointer-events-none absolute left-1/2 top-2 z-10 -translate-x-1/2 whitespace-nowrap rounded-borderRoundness border border-border bg-backgroundBox px-3 py-1.5 text-sm text-foregroundGrey shadow-lg"
+          >
+            {t("analisa.akun.menghapus")}
+          </p>
+        ) : null}
         {/* Kolom kiri: daftar akun - di HP max 45vh biar statistik tetap kelihatan */}
         <div className="flex w-full shrink-0 flex-col gap-3 lg:w-1/2 lg:min-h-0 max-h-[45vh] sm:max-h-[38vh] lg:max-h-none overflow-y-auto lg:overflow-visible">
           <DaftarAkun

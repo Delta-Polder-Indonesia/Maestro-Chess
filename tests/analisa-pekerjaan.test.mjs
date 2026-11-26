@@ -43,12 +43,14 @@ test("feature history persists, updates recency, and retains older work without 
   const reopened = buatPenyimpananPekerjaan(adapter);
   await reopened.init();
   const rows = daftarRiwayat(reopened.snapshot().daftar);
-  assert.deepEqual(rows.map((row) => row.item.id), ["fitur:akun", "fitur:bermain:laporan:lama", "fitur:impor:draf:lama", "laporan:lain"]);
-  assert.equal(rows[1].pekerjaan.judul, "Alice vs Bob");
-  assert.equal(rows[2].pekerjaan.judul, "1. e4");
+  assert.deepEqual(rows.map((row) => row.item.id), ["fitur:bermain:laporan:lama", "fitur:impor:draf:lama", "laporan:lain"]);
+  assert.equal(rows[0].pekerjaan.judul, "Alice vs Bob");
+  assert.equal(rows[1].pekerjaan.judul, "1. e4");
   assert.equal((await reopened.ambil("laporan:lama")).judul, "Alice vs Bob");
   assert.equal((await reopened.ambil("draf:lama")).isi.pgn, "1. e4");
   assert.equal(reopened.snapshot().daftar.some((item) => item.id === "fitur:papan"), false);
+  // Fitur bilah samping (mis. Akun) tidak dicatat ke File Terbaru.
+  assert.equal(reopened.snapshot().daftar.some((item) => item.id === "fitur:akun"), false);
 
   // A newly opened generic feature remains visible until its selected draft is known.
   catatFitur("impor", null, reopened, 12);

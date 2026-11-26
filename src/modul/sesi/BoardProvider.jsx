@@ -8,7 +8,7 @@
  * pada posisi tanpa riwayat utama, seperti FEN.
  *
  * Urutan pemanggilan hook dipertahankan supaya urutan inisialisasi (termasuk
- * `bacaAngka("kedalaman", 13)` dan `t(...)` untuk nama pemain bawaan) tetap
+ * `bacaAngka("kedalaman", 8)` dan `t(...)` untuk nama pemain bawaan) tetap
  * sama seperti sebelumnya.
  *
  * Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa
@@ -48,16 +48,18 @@ export function BoardProvider({ children }) {
    * Kedalaman tersimpan. Kuncinya HARUS "kci-analisa-kedalaman" — sama
    * dengan yang ditulis form.jsx dan panel pengaturan. Sebelumnya di
    * `analyze.jsx` dibaca kunci "kci-analisa-depth" yang tidak pernah ditulis
-   * siapa pun, jadi pilihan pengguna selalu kembali ke 13 setiap kali
-   * halaman dibuka.
+   * siapa pun, jadi pilihan pengguna selalu kembali ke nilai bawaan setiap
+   * kali halaman dibuka.
    *
-   * Default papan Analisa tetap 13 (cukup dalam untuk analisis serius
-   * di perangkat desktop); layar Deteksi Engine memakai
-   * KEDALAMAN_AGGREGAT=8 yang terpisah (lebih ringan untuk agregat
-   * banyak partai) dan tidak menyentuh state ini.
+   * Default papan Analisa 8: cukup ringan untuk perangkat umum sehingga
+   * pengguna baru tidak langsung menjalankan analisis berat tanpa sadar
+   * (kedalaman tinggi terasa lambat dan bisa disalahartikan sebagai aplikasi
+   * yang berat). Pengguna tetap bisa menaikkan manual lewat panel pengaturan
+   * hingga 20. Layar Deteksi Engine memakai KEDALAMAN_AGGREGAT=8 yang terpisah
+   * (lebih ringan untuk agregat banyak partai) dan tidak menyentuh state ini.
    */
   const [depth, setDepth] = useState(() => {
-    const tersimpan = bacaAngka("kedalaman", 13);
+    const tersimpan = bacaAngka("kedalaman", 8);
     return Math.min(20, Math.max(6, Math.round(tersimpan)));
   });
   const [tampilan, setTampilan] = useState(TAMPILAN_ANALISA.PAPAN);

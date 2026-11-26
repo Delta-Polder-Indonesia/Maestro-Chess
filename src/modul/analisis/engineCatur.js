@@ -258,8 +258,8 @@ export class EngineCatur {
    * pencarian). Permintaan yang datang berikutnya selalu menggantikan yang
    * sebelumnya sehingga hanya analisis terbaru yang ditampilkan.
    */
-  analisis(fen, { movetime = 800, kedalaman = null, multiPv = 1, padaInfo, padaSelesai }) {
-    const permintaan = { fen, movetime, kedalaman, multiPv, padaInfo, padaSelesai };
+  analisis(fen, { movetime = 800, kedalaman = null, nodes = null, multiPv = 1, padaInfo, padaSelesai }) {
+    const permintaan = { fen, movetime, kedalaman, nodes, multiPv, padaInfo, padaSelesai };
     if (this.sedangCari) {
       // Permintaan lama yang belum sempat jalan digantikan — pemanggilnya
       // harus diberi tahu, kalau tidak janji `cari()` miliknya menggantung
@@ -286,11 +286,12 @@ export class EngineCatur {
    *   `daftarPv` hanya terisi bila `multiPv > 1`: daftar kandidat
    *   `{ peringkat, cp, mate, pv, wdl }` terurut peringkat (baris bersih).
    */
-  cari({ fen, kedalaman = 12, movetime = null, multiPv = 1 }) {
+  cari({ fen, kedalaman = 12, movetime = null, nodes = null, multiPv = 1 }) {
     return new Promise((selesai, gagal) => {
       this.analisis(fen, {
         kedalaman,
         movetime,
+        nodes,
         multiPv,
         padaSelesai: (uci, info, galat, daftarPv) => {
           if (galat) gagal(galat);
@@ -300,7 +301,7 @@ export class EngineCatur {
     });
   }
 
-  jalankan({ fen, movetime, kedalaman, multiPv = 1, padaInfo, padaSelesai }) {
+  jalankan({ fen, movetime, kedalaman, nodes = null, multiPv = 1, padaInfo, padaSelesai }) {
     this.padaInfo = padaInfo;
     this.padaSelesai = padaSelesai;
     this.sedangCari = true;
@@ -315,10 +316,11 @@ export class EngineCatur {
     }
     this.kirim(`position fen ${fen}`);
     // Batas boleh lebih dari satu: engine berhenti pada batas pertama
-    // yang tercapai (mis. depth 12 atau movetime 4000 ms).
+    // yang tercapai (mis. depth 12 atau movetime 4000 ms atau nodes 250000).
     const batas = [];
     if (kedalaman) batas.push(`depth ${kedalaman}`);
     if (movetime) batas.push(`movetime ${movetime}`);
+    if (nodes) batas.push(`nodes ${nodes}`);
     this.kirim(`go ${batas.length ? batas.join(" ") : `movetime ${movetime || 800}`}`);
   }
 

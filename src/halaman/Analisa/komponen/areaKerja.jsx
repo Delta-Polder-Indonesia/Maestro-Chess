@@ -558,7 +558,6 @@ function LapisanLayar({
           aktifId={aktifId}
           sibuk={perluPulih}
           tampilanAktif={perluPulih ? null : tampilan}
-          laporanAktifId={perluPulih ? null : data?.pekerjaanId}
           onPilih={pilihTab}
           onTutup={tutupTab}
           onTambah={() => tambahTab()}

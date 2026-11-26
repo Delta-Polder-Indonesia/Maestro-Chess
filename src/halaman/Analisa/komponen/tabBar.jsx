@@ -1,7 +1,7 @@
 import { Plus, X } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 import { useI18n } from "../../../lib/i18n.jsx";
-import { KUNCI_FITUR, usePekerjaan } from "../../../modul/pekerjaan/index.js";
+import { KUNCI_FITUR } from "../../../modul/pekerjaan/index.js";
 
 function tampilkanTabAktif(daftar) {
   const tombol = daftar?.querySelector('[aria-selected="true"]');
@@ -12,15 +12,16 @@ function tampilkanTabAktif(daftar) {
 
 /**
  * Bilah sederhana di atas area kerja; setiap tab mengarah ke satu fitur.
+ * Label tab selalu nama fitur (mis. "Report Analisa"), bukan judul laporan
+ * atau nama pemain yang sedang dianalisis.
  *
  * `tampilanAktif` memakai layar yang sedang benar-benar tampil, bukan catatan
  * `tampilan` di tab. Catatan itu ditulis oleh efek setelah render, sehingga
  * saat pengguna kembali dari Engine ke Papan label tab sempat terbaca
  * "Engine" lebih dulu sebelum berubah menjadi "New Tab".
  */
-export default function TabBar({ daftar, aktifId, sibuk, tampilanAktif, laporanAktifId, onPilih, onTutup, onTambah }) {
+export default function TabBar({ daftar, aktifId, sibuk, tampilanAktif, onPilih, onTutup, onTambah }) {
   const { t } = useI18n();
-  const { daftar: pekerjaan } = usePekerjaan();
   const idDaftar = useId();
   const gulirRef = useRef(null);
   const fokusSetelahTutupRef = useRef(false);
@@ -55,11 +56,6 @@ export default function TabBar({ daftar, aktifId, sibuk, tampilanAktif, laporanA
   function namaTab(tab) {
     const fitur = fiturTab(tab);
     if (fitur === "papan") return t("analisa.tabKerja.baru");
-    if (fitur === "bermain") {
-      const id = tab.id === aktifId && laporanAktifId ? laporanAktifId : tab.laporanId;
-      const laporan = pekerjaan.find((item) => item.jenis === "laporan" && item.id === id);
-      if (laporan?.judul) return laporan.judul;
-    }
     return t(KUNCI_FITUR[fitur]);
   }
 
