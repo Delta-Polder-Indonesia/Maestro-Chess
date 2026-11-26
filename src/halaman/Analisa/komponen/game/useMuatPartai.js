@@ -143,9 +143,32 @@ export function useMuatPartai({
   const handlePGN = useCallback(async (pgn, depth2, terkini, signal, muatan, pertahankan) => {
     setPageState("loading");
     setPlaying(false);
-    if (!pertahankan) setTab("summary");
     setProgress(0);
     setLangkahSementara([]);
+    /*
+     * Partai baru (bukan pemulihan snapshot / perubahan depth pada partai yang
+     * sama): bersihkan TOTAL papan partai lama SEBELUM engine selesai. Tanpa
+     * ini, selama `loading` papan pratinjau memakai posisi awal partai baru
+     * tetapi `game`/`arrows`/`moveNumber` masih milik partai lama, sehingga
+     * panah analisis, panah custom, sorotan langkah, dan ikon penilaian lama
+     * tampil di posisi baru sampai analisis selesai. Jalur `pertahankan`
+     * (snapshot dipulihkan atau depth berubah) sengaja TIDAK direset.
+     */
+    if (!pertahankan) {
+      setTab("summary");
+      setTime(0);
+      setPlayers([]);
+      setWhite(true);
+      setMoveNumber(0);
+      setResult("");
+      setGame([]);
+      setArrows({ 0: [] });
+      setCustomLine({ moveNumber: -1, moves: [], arrows: {} });
+      setAnimation(false);
+      setAnalyzingMove(false);
+      setForward?.(true);
+      setReturnedToNormalGame?.(null);
+    }
     if (!pgn?.trim()) {
       pushPageError(setErrors, t("analisa.galat.pgnJudul"), t("analisa.galat.pgnIsi"));
       pekerjaanLaporan?.gagal(muatan.pekerjaanId);
@@ -259,7 +282,7 @@ export function useMuatPartai({
         if (!pertahankan) setMoveNumber(0);
       }
     }
-  }, [t, siapkan, pekerjaanLaporan, boardSoundsRef, setErrors, setAnalyzeController, setPageState, setPlaying, setTab, setProgress, setLangkahSementara, setTime, setPlayers, setGame, setResult, setAnimation, setArrows, setCustomLine, setAnalyzingMove, setMoveNumber]);
+  }, [t, siapkan, pekerjaanLaporan, boardSoundsRef, setErrors, setAnalyzeController, setPageState, setPlaying, setTab, setProgress, setLangkahSementara, setTime, setPlayers, setGame, setResult, setAnimation, setArrows, setCustomLine, setAnalyzingMove, setMoveNumber, setWhite, setForward, setReturnedToNormalGame]);
   const handleFEN = useCallback(async (fen, terkini, sinyal, muatan, pertahankan) => {
     /*
      * Halaman dibuka dengan PGN titipan dari teka-teki (lihat

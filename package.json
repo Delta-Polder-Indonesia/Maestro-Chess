@@ -6,7 +6,7 @@
   "homepage": "https://github.com/Delta-Polder-Indonesia/Maestro-Chess",
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build && node scripts/externalize-inline-scripts.mjs && node scripts/inject-subresource-integrity.mjs",
+    "build": "next build && node scripts/externalize-inline-scripts.mjs",
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx,.mjs --max-warnings=0",
     "typecheck": "tsc --noEmit",

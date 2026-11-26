@@ -6,6 +6,15 @@ import { fileURLToPath } from "node:url";
 /**
  * Injeksi Subresource Integrity (SRI) pasca-build.
  *
+ * PERINGATAN — NON-AKTIF secara default: skrip ini TIDAK lagi dipanggil oleh
+ * `npm run build`. Penyuntikan SRI pasca-build terbukti memblokir aplikasi di
+ * produksi Vercel: byte aset yang disalurkan Vercel berbeda dari byte hasil build
+ * yang di-hash (terkonfirmasi mismatch SHA-384 pada webpack runtime), sehingga
+ * bootstrap gagal dimuat dan halaman mentok di "Memuat Maestro Chess…". Jangan
+ * memasukkan kembali skrip ini ke pipeline build untuk host yang memproses aset
+ * pasca-build seperti Vercel. Disimpan sebagai utilitas untuk host yang menyajikan
+ * byte build apa adanya (verifier lokal hanya memvalidasi SRI bila atribut hadir).
+ *
  * Dijalankan SETELAH externalize-inline-scripts.mjs supaya seluruh skrip Flight
  * sudah berupa berkas eksternal dan HTML sudah final. Hash SHA-384 dihitung dari
  * byte akhir berkas yang dirujuk, lalu atribut integrity + crossorigin ditambahkan
