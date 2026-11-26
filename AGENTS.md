@@ -17,3 +17,7 @@ Aturan ini berlaku untuk seluruh repositori dan dapat diperbarui atas permintaan
 ## Arsip dan roadmap modularisasi
 
 Untuk melanjutkan Modular Monolith, baca [ArsipTodo](.agents/ArsipTodo/README.md) bersama catatan kelanjutan dan kode terkini. Arsip audit merupakan snapshot lama; roadmap adalah usulan, bukan persetujuan otomatis untuk mengubah kode atau perilaku, menambahkan dependensi, commit, push, atau merge.
+
+## Struktur fitur modular
+
+Saat menambah fitur baru (mis. **Main Catur**, Repertoar, Papan Analisis) atau menata ulang berkas fitur, ikuti [skill struktur fitur modular](.agents/skills/struktur-fitur-modular/SKILL.md): setiap fitur wajib **berkelompok dan modular** dalam foldernya sendiri — rapi seperti rak buku perpustakaan — bukan terpecah berserakan lintas direktori. Logika yang dipakai lintas fitur diambil dari modul bersama `src/modul/` lewat fasadnya, bukan diduplikasi ke dalam fitur.
