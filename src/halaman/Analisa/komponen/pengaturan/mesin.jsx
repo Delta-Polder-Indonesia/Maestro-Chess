@@ -109,7 +109,7 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
         </p>
       )}
 
-      <div className="flex items-center gap-3 rounded-borderRoundness border border-[#81b64c] bg-backgroundBoxBox p-3">
+      <div className="flex items-center gap-3 rounded-borderRoundness border border-backgroundBoxBoxHighlighted bg-backgroundBoxBox p-3">
         <Gambar
           src={gambar("/images/stockfish.webp")}
           alt="Stockfish"

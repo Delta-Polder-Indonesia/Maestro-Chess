@@ -192,7 +192,7 @@ export default function KartuAkun({ platform, username, aktif = false, tabAktif 
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="border-[#5d5d5d] bg-[#2a2a2a] text-[#dedede] hover:bg-[#3a3a3a] hover:text-white">{t("analisa.akun.batal")}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => onHapus?.()} className="bg-[#81b64c] font-bold text-black hover:bg-[#8bc550]">
+            <AlertDialogAction onClick={() => onHapus?.()} className="bg-backgroundBoxBoxHighlighted font-bold text-black hover:bg-backgroundBoxBoxHighlightedHover">
               {t("analisa.akun.hapus")}
             </AlertDialogAction>
           </AlertDialogFooter>

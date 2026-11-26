@@ -1,8 +1,9 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 /**
- * Logika keyboard papan Analisa — diekstrak dari game.jsx agar dapat diuji
- * langsung tanpa menduplikasi helper. Berkas ini adalah SATU-SATUNYA sumber
- * kebenaran untuk isElemenInteraktif, isDialogAktif, dan handleKeyDown.
+ * Logika input navigasi papan Analisa — diekstrak dari game.jsx agar dapat
+ * diuji langsung tanpa menduplikasi helper. Berkas ini adalah SATU-SATUNYA
+ * sumber kebenaran untuk isElemenInteraktif, isDialogAktif, handleKeyDown,
+ * dan handleWheel (gulir langkah dengan roda mouse, adopsi En Croissant).
  *
  * game.jsx mengimpor dari sini; scripts/uji-keyboard-analisa.mjs juga
  * mengimpor dari sini — keduanya menjalankan kode yang identik.
@@ -115,5 +116,31 @@ export function buatHandleKeyDown({ tampilanRef, pageStateRef, dragRef, analyzin
       default:
         break;
     }
+  };
+}
+
+/**
+ * Handler roda mouse untuk menelusuri langkah (adopsi En Croissant
+ * `enableBoardScroll`: deltaY > 0 → langkah berikutnya, < 0 → sebelumnya).
+ * Dipasang pada elemen papan itu sendiri, bukan document: papan yang tidak
+ * terlihat (visibility:hidden) tidak menerima event pointer sehingga penjaga
+ * tampilan/dialog tidak diperlukan di sini. Penjaga lain mengikuti keyboard:
+ * belum ada partai, sedang menyeret bidak, atau analisis langkah manual
+ * berjalan → biarkan peristiwa lewat. `enabledRef` adalah sakelar preferensi
+ * boardScroll; throttle 25 ms menahan banjir event trackpad seperti keyboard.
+ */
+export function buatHandleWheel({ enabledRef, pageStateRef, dragRef, analyzingMoveRef, gameController }) {
+  let lastScroll = 0;
+  return function handleWheel(e) {
+    if (!enabledRef?.current) return;
+    if (pageStateRef?.current === "default") return;
+    if (dragRef?.current?.is) return;
+    if (analyzingMoveRef?.current) return;
+    if (!e.deltaY) return;
+    const now = new Date().getTime();
+    if (now - lastScroll < 25) return;
+    if (e.deltaY > 0) gameController.forward();
+    else gameController.back();
+    lastScroll = new Date().getTime();
   };
 }

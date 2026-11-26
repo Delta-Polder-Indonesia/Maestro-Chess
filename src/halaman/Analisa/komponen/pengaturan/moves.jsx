@@ -1,5 +1,5 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
-import { ConfigContext, boardThemes, bacaTeks, tulis } from "../../../../modul/sesi/preferensi.js";
+import { ConfigContext, boardThemes, bacaTeks, tulis, DAFTAR_KOLEKSI_SUARA } from "../../../../modul/sesi/preferensi.js";
 import { memo, useContext, useEffect, useState } from "react";
 import { BISHOP, ROOK, WHITE } from "chess.js";
 import PieceSVG from "../svg/piece.jsx";
@@ -18,9 +18,12 @@ const BAWAAN_AUTO_PROMOSI = [false, SETTER_KOSONG];
 const BAWAAN_VOLUME = [100, SETTER_KOSONG];
 const BAWAAN_KECEPATAN = ["normal", SETTER_KOSONG];
 const BAWAAN_MATERIAL = ["all", SETTER_KOSONG];
+const BAWAAN_PRATINJAU = [false, SETTER_KOSONG];
+const BAWAAN_GULIR = [false, SETTER_KOSONG];
+const BAWAAN_KOLEKSI = ["standard", SETTER_KOSONG];
 const OPSI_KECEPATAN = ["fast", "normal", "slow"];
 const OPSI_MATERIAL = ["diff", "all", "none"];
-const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, setShowLegalMoves, animateMoves, setAnimateMoves, boardSounds, setBoardSounds, moveHighlight, setMoveHighlight, autoPromote, setAutoPromote, volume, setVolume, animationSpeed, setAnimationSpeed, materialDisplay, setMaterialDisplay, cocok = () => true, deskripsi = () => null }) {
+const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, setShowLegalMoves, animateMoves, setAnimateMoves, boardSounds, setBoardSounds, moveHighlight, setMoveHighlight, autoPromote, setAutoPromote, volume, setVolume, animationSpeed, setAnimationSpeed, materialDisplay, setMaterialDisplay, previewBoardOnHover, setPreviewBoardOnHover, boardScroll, setBoardScroll, soundCollection, setSoundCollection, cocok = () => true, deskripsi = () => null }) {
   const { t } = useI18n();
   const [animateMovesMoved, setAnimateMovesMoved] = useState(false);
   useEffect(() => {
@@ -108,6 +111,22 @@ const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, set
     setMaterialDisplay(sah);
     tulis("materialDisplay", sah);
   }
+  // Tier 3: pratinjau hover, gulir langkah, koleksi suara.
+  function togglePratinjauHover() {
+    const baru = !previewBoardOnHover;
+    setPreviewBoardOnHover(baru);
+    tulis("previewBoardOnHover", String(Number(baru)));
+  }
+  function toggleGulirLangkah() {
+    const baru = !boardScroll;
+    setBoardScroll(baru);
+    tulis("boardScroll", String(Number(baru)));
+  }
+  function changeSoundCollection(nilai) {
+    const sah = DAFTAR_KOLEKSI_SUARA.includes(nilai) ? nilai : "standard";
+    setSoundCollection(sah);
+    tulis("soundCollection", sah);
+  }
   const labelLegal = t("analisa.pengaturan.langkahLegal");
   const labelAnimasi = t("analisa.pengaturan.animasi");
   const labelSuara = t("analisa.pengaturan.suara");
@@ -116,8 +135,12 @@ const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, set
   const labelVolume = t("analisa.pengaturan.volume");
   const labelKecepatan = t("analisa.pengaturan.kecepatanAnimasi");
   const labelMaterial = t("analisa.pengaturan.tampilanMaterial");
+  const labelPratinjau = t("analisa.pengaturan.pratinjauHover");
+  const labelGulir = t("analisa.pengaturan.gulirLangkah");
+  const labelKoleksi = t("analisa.pengaturan.koleksiSuara");
   const pilihanKecepatan = OPSI_KECEPATAN.map((o) => ({ id: o, label: t(`analisa.pengaturan.kecepatan.${o === "fast" ? "cepat" : o === "normal" ? "normal" : "lambat"}`) }));
   const pilihanMaterial = OPSI_MATERIAL.map((o) => ({ id: o, label: t(`analisa.pengaturan.material.${o === "diff" ? "selisih" : o === "all" ? "semua" : "tanpa"}`) }));
+  const pilihanKoleksi = DAFTAR_KOLEKSI_SUARA.map((o) => ({ id: o, label: t(`analisa.pengaturan.koleksi.${o}`) }));
   return <section>
             {cocok("langkahLegal", labelLegal) ? <BarisPengaturan
       judul={<button onClick={toggleShowLegalMoves} type="button" className="flex flex-1 flex-row gap-2 items-center text-left font-medium text-foreground">
@@ -193,6 +216,12 @@ const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, set
     >
       <GeserPengaturan nilai={volume} onChange={changeVolume} ariaLabel={labelVolume} satuan="%" />
     </BarisPengaturan> : null}
+    {cocok("koleksiSuara", labelKoleksi) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelKoleksi}</span>}
+      deskripsi={deskripsi("koleksiSuara")}
+    >
+      <PilihRingkas ariaLabel={labelKoleksi} lebar="w-[160px]" nilai={DAFTAR_KOLEKSI_SUARA.includes(soundCollection) ? soundCollection : "standard"} pilihan={pilihanKoleksi} onChange={changeSoundCollection} />
+    </BarisPengaturan> : null}
     {cocok("kecepatanAnimasi", labelKecepatan) ? <BarisPengaturan
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelKecepatan}</span>}
       deskripsi={deskripsi("kecepatanAnimasi")}
@@ -204,6 +233,18 @@ const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, set
       deskripsi={deskripsi("tampilanMaterial")}
     >
       <PilihRingkas ariaLabel={labelMaterial} lebar="w-[160px]" nilai={OPSI_MATERIAL.includes(materialDisplay) ? materialDisplay : "all"} pilihan={pilihanMaterial} onChange={changeMaterialDisplay} />
+    </BarisPengaturan> : null}
+    {cocok("pratinjauHover", labelPratinjau) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelPratinjau}</span>}
+      deskripsi={deskripsi("pratinjauHover")}
+    >
+      <SakelarPengaturan checked={previewBoardOnHover} onCheckedChange={togglePratinjauHover} aria-label={labelPratinjau} />
+    </BarisPengaturan> : null}
+    {cocok("gulirLangkah", labelGulir) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelGulir}</span>}
+      deskripsi={deskripsi("gulirLangkah")}
+    >
+      <SakelarPengaturan checked={boardScroll} onCheckedChange={toggleGulirLangkah} aria-label={labelGulir} />
     </BarisPengaturan> : null}
           </section>;
 });
@@ -219,6 +260,9 @@ function Moves({ aktif = true, cocok, deskripsi }) {
   const [volume, setVolume] = config.volume ?? BAWAAN_VOLUME;
   const [animationSpeed, setAnimationSpeed] = config.animationSpeed ?? BAWAAN_KECEPATAN;
   const [materialDisplay, setMaterialDisplay] = config.materialDisplay ?? BAWAAN_MATERIAL;
-  return <IsiMoves aktif={aktif} boardTheme={boardTheme} showLegalMoves={showLegalMoves} setShowLegalMoves={setShowLegalMoves} animateMoves={animateMoves} setAnimateMoves={setAnimateMoves} boardSounds={boardSounds} setBoardSounds={setBoardSounds} moveHighlight={moveHighlight} setMoveHighlight={setMoveHighlight} autoPromote={autoPromote} setAutoPromote={setAutoPromote} volume={volume} setVolume={setVolume} animationSpeed={animationSpeed} setAnimationSpeed={setAnimationSpeed} materialDisplay={materialDisplay} setMaterialDisplay={setMaterialDisplay} cocok={cocok} deskripsi={deskripsi} />;
+  const [previewBoardOnHover, setPreviewBoardOnHover] = config.previewBoardOnHover ?? BAWAAN_PRATINJAU;
+  const [boardScroll, setBoardScroll] = config.boardScroll ?? BAWAAN_GULIR;
+  const [soundCollection, setSoundCollection] = config.soundCollection ?? BAWAAN_KOLEKSI;
+  return <IsiMoves aktif={aktif} boardTheme={boardTheme} showLegalMoves={showLegalMoves} setShowLegalMoves={setShowLegalMoves} animateMoves={animateMoves} setAnimateMoves={setAnimateMoves} boardSounds={boardSounds} setBoardSounds={setBoardSounds} moveHighlight={moveHighlight} setMoveHighlight={setMoveHighlight} autoPromote={autoPromote} setAutoPromote={setAutoPromote} volume={volume} setVolume={setVolume} animationSpeed={animationSpeed} setAnimationSpeed={setAnimationSpeed} materialDisplay={materialDisplay} setMaterialDisplay={setMaterialDisplay} previewBoardOnHover={previewBoardOnHover} setPreviewBoardOnHover={setPreviewBoardOnHover} boardScroll={boardScroll} setBoardScroll={setBoardScroll} soundCollection={soundCollection} setSoundCollection={setSoundCollection} cocok={cocok} deskripsi={deskripsi} />;
 }
 export default memo(Moves);

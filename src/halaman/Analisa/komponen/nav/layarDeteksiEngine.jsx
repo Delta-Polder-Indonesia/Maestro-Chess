@@ -552,7 +552,7 @@ export default function LayarDeteksiEngine({ onBukaAkun, akunTab, aktif = true }
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogAction className="bg-[#81b64c] hover:bg-[#8bc550] text-black font-bold">
+              <AlertDialogAction className="bg-backgroundBoxBoxHighlighted hover:bg-backgroundBoxBoxHighlightedHover text-black font-bold">
                 {t("analisa.antiCheat.riwayat.mengerti")}
               </AlertDialogAction>
             </AlertDialogFooter>

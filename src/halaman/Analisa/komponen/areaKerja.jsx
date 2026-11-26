@@ -656,7 +656,7 @@ function LapisanLayar({
                   setDialog(null);
                   if (aksi) jalankan(aksi, ++permintaanRef.current);
                 }}
-                className="bg-[#81b64c] font-bold text-black hover:bg-[#8bc550]"
+                className="bg-backgroundBoxBoxHighlighted font-bold text-black hover:bg-backgroundBoxBoxHighlightedHover"
               >
                 {t(dialog?.jenis === "hentikan" ? "analisa.pekerjaan.hentikanLanjut" : "analisa.pekerjaan.ulang")}
               </AlertDialogAction>

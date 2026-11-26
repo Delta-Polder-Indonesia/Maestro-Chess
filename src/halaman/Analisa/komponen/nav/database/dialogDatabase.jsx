@@ -50,7 +50,7 @@ export default function DialogDatabase({
       </AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>
-      <AlertDialogAction className="bg-[#81b64c] hover:bg-[#8bc550] text-black font-bold">{t("analisa.basisData.mengerti")}</AlertDialogAction>
+      <AlertDialogAction className="bg-backgroundBoxBoxHighlighted hover:bg-backgroundBoxBoxHighlightedHover text-black font-bold">{t("analisa.basisData.mengerti")}</AlertDialogAction>
     </AlertDialogFooter>
   </AlertDialogContent>
 </AlertDialog>
@@ -74,7 +74,7 @@ export default function DialogDatabase({
     </AlertDialogHeader>
     <AlertDialogFooter>
       <AlertDialogCancel className="bg-[#2a2a2a] border-[#5d5d5d] text-[#dedede] hover:bg-[#3a3a3a] hover:text-white">{t("analisa.basisData.batal")}</AlertDialogCancel>
-      <AlertDialogAction onClick={tanganiHapusPartai} className="bg-[#81b64c] hover:bg-[#8bc550] text-black font-bold">
+      <AlertDialogAction onClick={tanganiHapusPartai} className="bg-backgroundBoxBoxHighlighted hover:bg-backgroundBoxBoxHighlightedHover text-black font-bold">
         {t("analisa.basisData.hapus")}
       </AlertDialogAction>
     </AlertDialogFooter>
@@ -102,7 +102,7 @@ export default function DialogDatabase({
     </AlertDialogHeader>
     <AlertDialogFooter>
       <AlertDialogCancel className="bg-[#2a2a2a] border-[#5d5d5d] text-[#dedede] hover:bg-[#3a3a3a] hover:text-white">{t("analisa.basisData.batal")}</AlertDialogCancel>
-      <AlertDialogAction onClick={konfirmasiHapusKoleksi} className="bg-[#81b64c] hover:bg-[#8bc550] text-black font-bold">
+      <AlertDialogAction onClick={konfirmasiHapusKoleksi} className="bg-backgroundBoxBoxHighlighted hover:bg-backgroundBoxBoxHighlightedHover text-black font-bold">
         {t("analisa.basisData.hapus")}
       </AlertDialogAction>
     </AlertDialogFooter>
@@ -122,7 +122,7 @@ export default function DialogDatabase({
     </AlertDialogHeader>
     <AlertDialogFooter>
       <AlertDialogCancel className="bg-[#2a2a2a] border-[#5d5d5d] text-[#dedede] hover:bg-[#3a3a3a] hover:text-white">{t("analisa.basisData.batal")}</AlertDialogCancel>
-      <AlertDialogAction onClick={konfirmasiKosongkanSemua} className="bg-[#81b64c] hover:bg-[#8bc550] text-black font-bold">
+      <AlertDialogAction onClick={konfirmasiKosongkanSemua} className="bg-backgroundBoxBoxHighlighted hover:bg-backgroundBoxBoxHighlightedHover text-black font-bold">
         {t("analisa.basisData.hapusSemuaAksi")}
       </AlertDialogAction>
     </AlertDialogFooter>

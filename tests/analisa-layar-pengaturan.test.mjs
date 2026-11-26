@@ -73,6 +73,7 @@ function renderLayar() {
     "../pengaturan/themes.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/themes.jsx", denganBaris).default },
     "../pengaturan/ratings.jsx": modulRatings,
     "../pengaturan/moves.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/moves.jsx", denganBaris).default },
+    "../pengaturan/tampilan.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/tampilan.jsx", denganBaris).default },
     "../pengaturan/bestMoves.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/bestMoves.jsx", denganBaris).default },
     "../pengaturan/barisPengaturan.jsx": { default: Baris },
     "../pengaturan/katalogPengaturan.js": katalog,
@@ -119,7 +120,7 @@ test("settings screen uses a search row, a vertical category nav, and only real 
   const tab = renderer.root.findByType("nav").findAllByType("button");
   assert.deepEqual(tab.map(teks), ["Board", "Ratings", "Moves", "Language", "Documentation"]);
   assert.equal(tab[0].props["aria-current"], "page");
-  assert.deepEqual(judulGrup(renderer), ["Board theme", "Board behaviour"]);
+  assert.deepEqual(judulGrup(renderer), ["Board theme", "Board behaviour", "Appearance"]);
   renderer.unmount();
 });
 
@@ -156,7 +157,7 @@ test("search filters rows across tabs and clears when another tab is chosen", ()
   const cari = renderer.root.findByProps({ type: "search" });
   act(() => cari.props.onChange({ target: { value: "sound" } }));
   assert.deepEqual(judulGrup(renderer), ["Board behaviour"]);
-  assert.deepEqual(saklar(renderer), ["Board sounds"]);
+  assert.deepEqual(saklar(renderer), ["Board sounds", "Sound collection"]);
 
   act(() => cari.props.onChange({ target: { value: "brilliant" } }));
   assert.deepEqual(judulGrup(renderer), ["Ratings"]);
@@ -170,7 +171,7 @@ test("search filters rows across tabs and clears when another tab is chosen", ()
   assert.deepEqual(saklar(renderer), ["Animate moves", "Animation speed"]);
   act(() => renderer.root.findByType("nav").findAllByType("button")[0].props.onClick());
   assert.equal(renderer.root.findByProps({ type: "search" }).props.value, "");
-  assert.deepEqual(judulGrup(renderer), ["Board theme", "Board behaviour"]);
+  assert.deepEqual(judulGrup(renderer), ["Board theme", "Board behaviour", "Appearance"]);
   renderer.unmount();
 });
 

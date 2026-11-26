@@ -170,7 +170,7 @@ test("material display shows all pieces, difference only, or nothing", () => {
 
 test("the central catalog is the single source for tabs, groups and searchable rows", () => {
   assert.deepEqual(TAB_META.map((t) => t.id), ["papan", "penilaian", "langkah", "bahasa", "dokumentasi"]);
-  assert.deepEqual(GRUP_META.map((g) => g.id), ["tema", "perilaku", "penilaian", "langkah", "bahasa", "dokumentasi"]);
+  assert.deepEqual(GRUP_META.map((g) => g.id), ["tema", "perilaku", "tampilan", "penilaian", "langkah", "bahasa", "dokumentasi"]);
   // Semua grup merujuk tab yang sah; semua baris merujuk grup yang sah.
   const tabIds = new Set(TAB_META.map((t) => t.id));
   const grupIds = new Set(GRUP_META.map((g) => g.id));

@@ -17,6 +17,7 @@ import PanelLayar from "./PanelLayar.jsx";
 import Themes from "../pengaturan/themes.jsx";
 import Ratings from "../pengaturan/ratings.jsx";
 import Moves from "../pengaturan/moves.jsx";
+import Tampilan from "../pengaturan/tampilan.jsx";
 import BestMoves from "../pengaturan/bestMoves.jsx";
 import BarisPengaturan from "../pengaturan/barisPengaturan.jsx";
 import { TAB_META, GRUP_META, BARIS_STATIS } from "../pengaturan/katalogPengaturan.js";
@@ -77,10 +78,10 @@ function BarisTautan({ kunci, label, href, eksternal = false, IkonTautan, cocok,
           href={href}
           {...(eksternal ? { target: "_blank", rel: "noreferrer noopener" } : {})}
           aria-label={label}
-          className="flex flex-1 items-center gap-2 text-left font-medium text-foreground hover:text-[#8BC550] focus-visible:text-[#8BC550] focus-visible:outline-none"
+          className="flex flex-1 items-center gap-2 text-left font-medium text-foreground hover:text-backgroundBoxBoxHighlightedHover focus-visible:text-backgroundBoxBoxHighlightedHover focus-visible:outline-none"
         >
           <span className="flex shrink-0">
-            <IkonTautan className="fill-foregroundGrey transition-colors group-hover:fill-[#8BC550]" />
+            <IkonTautan className="fill-foregroundGrey transition-colors group-hover:fill-backgroundBoxBoxHighlightedHover" />
           </span>
           <span className="text-[13.5px]">{label}</span>
           <span aria-hidden="true" className="text-foregroundGrey">↗</span>
@@ -125,6 +126,7 @@ export default function LayarPengaturan({ aktif = true }) {
   const renderGrup = {
     tema: (props) => <Themes {...props} />,
     perilaku: (props) => <Moves aktif={aktif} {...props} />,
+    tampilan: (props) => <Tampilan {...props} />,
     penilaian: (props) => <Ratings {...props} />,
     langkah: (props) => <BestMoves {...props} />,
     bahasa: (props) => <BarisBahasa bahasa={bahasa} setBahasa={setBahasa} label={labelBahasa} {...props} />,
@@ -175,7 +177,7 @@ export default function LayarPengaturan({ aktif = true }) {
               onKeyDown={(event) => { if (event.key === "Escape") setPencarian(""); }}
               aria-label={t("analisa.pengaturan.cari")}
               placeholder={t("analisa.pengaturan.cari")}
-              className="h-[34px] w-full rounded-[4px] border border-border bg-backgroundBoxBox pl-9 pr-3 text-[13px] text-foreground placeholder:text-foregroundGrey focus:border-[#8BC550] focus:outline-none"
+              className="h-[34px] w-full rounded-[4px] border border-border bg-backgroundBoxBox pl-9 pr-3 text-[13px] text-foreground placeholder:text-foregroundGrey focus:border-backgroundBoxBoxHighlightedHover focus:outline-none"
             />
           </div>
         </div>

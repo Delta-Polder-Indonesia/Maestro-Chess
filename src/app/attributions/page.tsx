@@ -100,6 +100,7 @@ export default function Attributions() {
                 <p className="kartu-paragraf"><Local href="licenses/lichess-AGPL-3.0.txt">Lisensi AGPL-3.0</Local></p>
               }>
                 <p className="kartu-paragraf">Suara dari set standar <External href="https://github.com/lichess-org/lila/tree/master/public/sound/standard">Lichess</External>, AGPL-3.0. Beberapa nama berkas menggunakan suara yang sama.</p>
+                <p className="kartu-paragraf">Koleksi suara tambahan (Futuristic, Lisp, NES, Piano, Robot, SFX, WoodLand) disalin dari <External href="https://github.com/franciscoBSalgueiro/en-croissant">En Croissant</External> (GPL-3.0), yang mendistribusikan ulang set suara <External href="https://github.com/lichess-org/lila/tree/master/public/sound">Lichess</External> (AGPL-3.0). Tiap koleksi menyediakan Move/Capture/Check (lisp juga Castles); peristiwa papan lainnya tetap memakai suara standar.</p>
               </AttributionCard>
 
               <AttributionCard id="pembukaan" number="06" title="Buku pembukaan" resources={

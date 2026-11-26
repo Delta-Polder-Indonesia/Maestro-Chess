@@ -12,7 +12,7 @@ import { berkasPublik } from "../../../../lib/asets.js";
 // Kecepatan luncuran bidak: SATU sumber untuk semua papan (lihat penjelasan
 // panjang di animasiBidak.js). Nilai isepic-chess-ui: 300 ms, kurva `ease`.
 import { GESER_ISEPIC } from "../../../TekaTeki/animasiBidak.js";
-import { aturVolumePengguna } from "../../../../lib/suara.js";
+import { aturVolumePengguna, aturKoleksiPengguna } from "../../../../lib/suara.js";
 // Kecepatan animasi bidak (adopsi En Croissant: fast/normal/slow). "normal"
 // memakai durasi isepic-chess-ui semula; sakelar animateMoves tetap menjadi
 // sakelar nyala/mati terpisah sehingga perilaku bawaan tidak berubah.
@@ -800,7 +800,7 @@ function Board(props) {
 
   const boardColors = [boardThemes[boardTheme].white, boardThemes[boardTheme].black];
   const adaptedCoronationSquare = coronation.movement[0] ? adaptSquare(coronation.movement[0]) : null;
-  return <div ref={boardRef} role="group" aria-label={t("analisa.papanKeyboard.nama")} aria-describedby={idPetunjuk} onContextMenu={(e) => e.preventDefault()} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} className="grid w-fit h-fit relative" style={{ gridTemplateColumns: `repeat(8, ${squareSize}px)`, pointerEvents: drag.is ? "none" : "unset" }}>
+  return <div ref={boardRef} role="group" aria-label={t("analisa.papanKeyboard.nama")} aria-describedby={idPetunjuk} onContextMenu={(e) => e.preventDefault()} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onWheel={props.onWheel} className="grid w-fit h-fit relative" style={{ gridTemplateColumns: `repeat(8, ${squareSize}px)`, pointerEvents: drag.is ? "none" : "unset" }}>
             <span id={idPetunjuk} className="sr-only">{t("analisa.papanKeyboard.petunjuk")}</span>
             {(() => {
     const squares = [];
@@ -979,6 +979,11 @@ function BoardDenganConfig(props) {
   // Disinkron di sini karena papan selalu terpasang saat halaman Analisa aktif.
   const volume = config.volume?.[0] ?? 100;
   useLayoutEffect(() => { aturVolumePengguna(volume / 100); }, [volume]);
+  // Koleksi suara aktif ("1 pintu") disinkron di tempat yang sama dengan
+  // volume: papan selalu terpasang saat halaman Analisa aktif, dan modul
+  // suara bersama membaca koleksi saat memuat bunyi berikutnya.
+  const koleksiSuara = config.soundCollection?.[0] ?? "standard";
+  useLayoutEffect(() => { aturKoleksiPengguna(koleksiSuara); }, [koleksiSuara]);
   return <BoardMemo
     {...props}
     boardTheme={config.boardTheme[0]}

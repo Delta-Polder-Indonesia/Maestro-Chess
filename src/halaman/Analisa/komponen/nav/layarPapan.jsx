@@ -9,7 +9,7 @@
  *  - ikon           : 60px, monokrom mengikuti warna teks;
  *  - judul          : 16px / 500;
  *  - deskripsi      : 14px / dimmed;
- *  - tombol         : hijau solid #8BC550 dengan teks hitam, tinggi 42px, full width;
+ *  - tombol         : hijau solid aksen (token backgroundBoxBoxHighlightedHover) dengan teks hitam, tinggi 42px, full width;
  *  - tata letak     : lima kartu per baris pada layar lebar, sisanya lanjut di bawah.
  *
  * Fitur yang sudah tersedia langsung membuka layarnya; fitur yang belum
@@ -157,7 +157,7 @@ function Kartu({ kunci, ikon, judul, deskripsi, labelTombol, segera, onClick, t 
         className={`mt-4 h-[42px] w-full rounded-lg px-4 text-sm font-medium transition-colors ${
           segera
             ? "cursor-not-allowed bg-backgroundBoxBoxHover text-foregroundGrey opacity-60"
-            : "cursor-pointer bg-[#8BC550] font-bold text-black hover:bg-[#81b64c]"
+            : "cursor-pointer bg-backgroundBoxBoxHighlightedHover font-bold text-black hover:bg-backgroundBoxBoxHighlighted"
         }`}
       >
         {labelTombol}

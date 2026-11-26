@@ -37,7 +37,7 @@ function KartuEngine({ entri, terpilih, onPilih, labelVersi, labelElo, dataUji }
       onClick={onPilih}
       className={`flex w-full flex-col gap-3.5 rounded-[6px] border-2 bg-[#2A2A2A] p-3.5 text-left transition-colors ${
         terpilih
-          ? "border-[#8BC550] shadow-[0_0_0_1px_rgba(139,197,80,0.18)]"
+          ? "border-backgroundBoxBoxHighlightedHover shadow-[0_0_0_1px_color-mix(in_srgb,var(--backgroundBoxBoxHighlightedHover)_18%,transparent)]"
           : "border-transparent hover:border-border"
       }`}
     >

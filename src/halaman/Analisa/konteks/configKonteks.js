@@ -1,2 +1,2 @@
 // Kompatibilitas path lama; context dan rating bawaan tidak dibuat ulang.
-export { ConfigContext, defaultUsedRatings } from "../../../modul/sesi/configKonteks.js";
+export { ConfigContext, defaultUsedRatings, DAFTAR_AKSEN, DAFTAR_KOLEKSI_SUARA } from "../../../modul/sesi/configKonteks.js";

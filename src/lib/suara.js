@@ -85,8 +85,56 @@ export function bacaVolumePengguna() {
   return VOLUME_PENGGUNA;
 }
 
+// Koleksi suara pengguna (adopsi En Croissant SoundSelect, "1 pintu" lewat
+// Pengaturan Analisa). "standard" = berkas Maestro semula; koleksi lain hanya
+// menyediakan bunyi langkah/makan/skak/rokade (Move/Capture/Check/Castles dari
+// set Lichess yang didistribusikan En Croissant) — peristiwa lain (ilegal,
+// mulai/selesai partai, klik, teka-teki, ...) tetap memakai suara standar.
+const KOLEKSI_TERSEDIA = new Set(["standard", "futuristic", "lisp", "nes", "piano", "robot", "sfx", "woodland"]);
+// Nama peristiwa papan → nama berkas dalam koleksi. "Castles" hanya ada di
+// koleksi lisp; koleksi lain jatuh kembali ke Move untuk rokade.
+const PETA_KOLEKSI = {
+  [SUARA.langkahSendiri]: "Move",
+  [SUARA.langkahLawan]: "Move",
+  [SUARA.makan]: "Capture",
+  [SUARA.rokade]: "Castles",
+  [SUARA.skak]: "Check",
+  [SUARA.promosi]: "Move",
+};
+let KOLEKSI_PENGGUNA = "standard";
+
+/**
+ * Setel koleksi suara aktif. Nilai tak dikenal jatuh ke "standard". Saat
+ * koleksi berubah, cache byte/buffer/elemen dibuang supaya bunyi berikutnya
+ * memuat berkas koleksi baru (pemuatan malas, tanpa membuat AudioContext).
+ */
+export function aturKoleksiPengguna(nilai) {
+  const baru = KOLEKSI_TERSEDIA.has(nilai) ? nilai : "standard";
+  if (baru === KOLEKSI_PENGGUNA) return;
+  KOLEKSI_PENGGUNA = baru;
+  byteCache.clear();
+  bufferCache.clear();
+  elemenCache.clear();
+}
+
+/** Baca koleksi suara aktif (untuk uji/inspeksi). */
+export function bacaKoleksiPengguna() {
+  return KOLEKSI_PENGGUNA;
+}
+
+/**
+ * URL publik satu bunyi menurut koleksi aktif. Diekspor untuk uji/inspeksi:
+ * standar dan peristiwa tanpa padanan koleksi selalu ke /sounds/<nama>.mp3.
+ */
+export function alamatSuara(nama) {
+  const berkas = PETA_KOLEKSI[nama];
+  if (KOLEKSI_PENGGUNA === "standard" || !berkas) return berkasPublik(`/sounds/${nama}.mp3`);
+  const khusus = berkas === "Castles" && KOLEKSI_PENGGUNA !== "lisp" ? "Move" : berkas;
+  return berkasPublik(`/sounds/${KOLEKSI_PENGGUNA}/${khusus}.mp3`);
+}
+
 // Reuse Maestro's existing, attributed Lichess sound set.
-const alamat = (nama) => berkasPublik(`/sounds/${nama}.mp3`);
+const alamat = alamatSuara;
 
 /* ------------------------------------------------------------------ mesin */
 

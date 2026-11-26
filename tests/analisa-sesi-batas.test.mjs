@@ -62,6 +62,7 @@ const eksporProvider = ["TabKerjaProvider", "useTabKerja"];
 const eksporPreferensi = [
   "bacaAngka", "bacaBoolean", "bacaTeks", "cobaBacaTeks", "tulis", "tulisBoolean",
   "boardThemes", "ConfigContext", "defaultUsedRatings", "ConfigContextProvider",
+  "DAFTAR_AKSEN", "DAFTAR_KOLEKSI_SUARA",
 ];
 const eksporGalatTitipan = [
   "ErrorsContext", "ErrorsContextProvider", "pushPageError", "pushPageWarning",
@@ -318,6 +319,7 @@ test("application consumers use the public facade, never legacy or private sessi
     "src/halaman/Analisa/komponen/pengaturan/mesin.jsx -> src/modul/sesi/mesin.js",
     "src/halaman/Analisa/komponen/pengaturan/moves.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/pengaturan/ratings.jsx -> src/modul/sesi/preferensi.js",
+    "src/halaman/Analisa/komponen/pengaturan/tampilan.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/pengaturan/themes.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/konteks/mesin.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/konteks/mesin.jsx -> src/modul/sesi/mesin.js",

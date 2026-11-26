@@ -42,6 +42,8 @@ function Menu() {
   const setForward = analyzeContext.forward[1];
   const [customLine, setCustomLine] = analyzeContext.customLine;
   const [returnedToNormalGame] = analyzeContext.returnedToNormalGame;
+  // Orientasi papan untuk pratinjau hover daftar langkah (Tier 3).
+  const [white] = analyzeContext.white;
   const menuRef = useRef(null);
   const idTab = useId();
 
@@ -137,10 +139,10 @@ function Menu() {
           <Summary players={players} moves={game} />
         ) : ""}
         {modeAnalisis && tab === "moves" && pageState === "analyze" ? (
-          <Moves container={menuRef.current} moves={game} overallGameComment={overallGameComment} moveNumber={moveNumber} setMoveNumber={setMoveNumber} analyzingMove={analyzingMove} setAnimation={setAnimation} setForward={setForward} customLine={customLine} returnedToNormalGame={returnedToNormalGame} />
+          <Moves container={menuRef.current} moves={game} overallGameComment={overallGameComment} moveNumber={moveNumber} setMoveNumber={setMoveNumber} analyzingMove={analyzingMove} setAnimation={setAnimation} setForward={setForward} customLine={customLine} returnedToNormalGame={returnedToNormalGame} white={white} />
         ) : ""}
         {pageState === "analyzeCustom" && tab === "moves" ? (
-          <Moves container={menuRef.current} moves={[game[0], ...customLine.moves]} overallGameComment={overallGameComment} moveNumber={customLine.moveNumber + 1} setMoveNumber={(moveNumber2) => setCustomLine((prev) => ({ ...prev, moveNumber: moveNumber2 - 1 }))} analyzingMove={analyzingMove} setAnimation={setAnimation} setForward={setForward} customLine={customLine} returnedToNormalGame={returnedToNormalGame} />
+          <Moves container={menuRef.current} moves={[game[0], ...customLine.moves]} overallGameComment={overallGameComment} moveNumber={customLine.moveNumber + 1} setMoveNumber={(moveNumber2) => setCustomLine((prev) => ({ ...prev, moveNumber: moveNumber2 - 1 }))} analyzingMove={analyzingMove} setAnimation={setAnimation} setForward={setForward} customLine={customLine} returnedToNormalGame={returnedToNormalGame} white={white} />
         ) : ""}
 
         {kosong ? (

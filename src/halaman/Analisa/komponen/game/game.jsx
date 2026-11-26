@@ -19,8 +19,9 @@ import { useMuatPartai } from "./useMuatPartai.js";
 import { useAnalisisPapan } from "./useAnalisisPapan.js";
 import { usePekerjaanLaporan } from "./usePekerjaanLaporan.js";
 import PendengarKeyboard from "./pendengarKeyboard.jsx";
+import { buatHandleWheel } from "./keyboardPapan.js";
 
-const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didukung, siapkan, ambilMesin, setErrors, mode, nodes, movetime }) {
+const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, boardScrollRef, didukung, siapkan, ambilMesin, setErrors, mode, nodes, movetime }) {
   const [boardSize, setBoardSize] = useState(750);
   const [gameHeight, setGameHeight] = useState(850);
   const [arrows, setArrows] = useState({ 0: [] });
@@ -129,6 +130,13 @@ const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didu
     setAnalyzingMove,
     analyzingMove,
   });
+  // Gulir langkah dengan roda mouse (adopsi En Croissant board-scroll).
+  // Handler dibuat sekali dari ref yang sama dengan pendengar keyboard;
+  // sakelar preferensinya dibaca lewat ref agar IsiGame yang di-memo tidak
+  // ikut render saat hanya toggle-nya berubah (pola boardSoundsRef).
+  const handleWheel = useMemo(() => buatHandleWheel({
+    enabledRef: boardScrollRef, pageStateRef, dragRef, analyzingMoveRef, gameController,
+  }), [boardScrollRef, pageStateRef, dragRef, analyzingMoveRef, gameController]);
   useEffect(() => {
     dragRef.current = drag2;
   }, [drag2]);
@@ -440,6 +448,7 @@ const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didu
     drag={drag2}
     setDrag={setDrag}
     bestMoveSan={move2?.bestMoveSan}
+    onWheel={handleWheel}
   />
                 )}
                 <div style={{ width: boardSize }} className="flex flex-row justify-between">
@@ -459,12 +468,18 @@ const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, didu
 // Konteks konfigurasi/engine/errors memiliki banyak field; pilih hanya nilai
 // yang benar-benar dipakai IsiGame sebelum melewati batas memo.
 function Game({ wadah, ukuranWadah }) {
-  const [boardSounds] = useContext(ConfigContext).boardSounds;
+  const config = useContext(ConfigContext);
+  const [boardSounds] = config.boardSounds;
   const boardSoundsRef = useRef(boardSounds);
   useLayoutEffect(() => { boardSoundsRef.current = boardSounds; }, [boardSounds]);
+  // Sakelar gulir langkah (Tier 3) lewat ref seperti suara: perubahan toggle
+  // tidak membangun ulang papan yang di-memo. Defensif terhadap konteks lama.
+  const boardScroll = config.boardScroll?.[0] ?? false;
+  const boardScrollRef = useRef(boardScroll);
+  useLayoutEffect(() => { boardScrollRef.current = boardScroll; }, [boardScroll]);
   const setErrors = useContext(ErrorsContext).errors[1];
   const { didukung, siapkan, ambilMesin, opsi } = useMesin();
-  return <IsiGame wadah={wadah} ukuranWadah={ukuranWadah} boardSoundsRef={boardSoundsRef} didukung={didukung} siapkan={siapkan} ambilMesin={ambilMesin} setErrors={setErrors} mode={opsi?.mode} nodes={opsi?.nodes} movetime={opsi?.movetime} />;
+  return <IsiGame wadah={wadah} ukuranWadah={ukuranWadah} boardSoundsRef={boardSoundsRef} boardScrollRef={boardScrollRef} didukung={didukung} siapkan={siapkan} ambilMesin={ambilMesin} setErrors={setErrors} mode={opsi?.mode} nodes={opsi?.nodes} movetime={opsi?.movetime} />;
 }
 
 export default memo(Game);

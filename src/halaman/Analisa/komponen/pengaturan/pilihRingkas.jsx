@@ -47,7 +47,7 @@ export default function PilihRingkas({ nilai, pilihan, onChange, ariaLabel, leba
         aria-haspopup="listbox"
         aria-expanded={buka}
         onClick={() => { setAktif(Math.max(0, pilihan.findIndex((p) => p.id === nilai))); setBuka((b) => !b); }}
-        className="flex w-full items-center gap-2 rounded-borderRoundness border border-border bg-[#272727] px-2.5 py-1.5 text-left text-foreground hover:border-foregroundGrey focus-visible:border-[#8BC550] focus-visible:outline-none"
+        className="flex w-full items-center gap-2 rounded-borderRoundness border border-border bg-[#272727] px-2.5 py-1.5 text-left text-foreground hover:border-foregroundGrey focus-visible:border-backgroundBoxBoxHighlightedHover focus-visible:outline-none"
       >
         {terpilih?.preview ? <span className="flex shrink-0 items-center">{terpilih.preview}</span> : null}
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{terpilih?.label}</span>
@@ -79,7 +79,7 @@ export default function PilihRingkas({ nilai, pilihan, onChange, ariaLabel, leba
                   {p.preview ? <span className="flex shrink-0 items-center">{p.preview}</span> : null}
                   <span className="min-w-0 flex-1 truncate">{p.label}</span>
                   {dipilih ? (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 shrink-0 text-[#8BC550]" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 shrink-0 text-backgroundBoxBoxHighlightedHover" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
                   ) : null}
                 </button>
               </li>

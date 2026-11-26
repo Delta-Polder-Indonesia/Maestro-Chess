@@ -1,6 +1,6 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
-import { useState, useRef } from "react";
-import { ConfigContext, defaultUsedRatings } from "./configKonteks.js";
+import { useState, useRef, useEffect } from "react";
+import { ConfigContext, defaultUsedRatings, DAFTAR_AKSEN, DAFTAR_KOLEKSI_SUARA } from "./configKonteks.js";
 import { bacaAngka, bacaBoolean, bacaTeks } from "./penyimpanan.js";
 import { boardThemes } from "./boardThemes.js";
 
@@ -54,8 +54,51 @@ function ConfigContextProvider(props) {
     const nilai = bacaTeks("moveNotation", "letters");
     return nilai === "letters" || nilai === "symbols" || nilai === "lan" ? nilai : "letters";
   });
+  // Tier 3: pratinjau hover & gulir langkah opt-in (perilaku Maestro semula
+  // tidak memilikinya); koleksi suara, ukuran font, dan aksen divalidasi ke
+  // daftar yang sama dengan pilihan UI (satu sumber di configKonteks.js).
+  const [previewBoardOnHover, setPreviewBoardOnHover] = useState(() => bacaBoolean("previewBoardOnHover", false));
+  const [boardScroll, setBoardScroll] = useState(() => bacaBoolean("boardScroll", false));
+  const [soundCollection, setSoundCollection] = useState(() => {
+    const nilai = bacaTeks("soundCollection", "standard");
+    return DAFTAR_KOLEKSI_SUARA.includes(nilai) ? nilai : "standard";
+  });
+  const [fontSize, setFontSize] = useState(() => {
+    const nilai = bacaAngka("fontSize", 100);
+    return Number.isFinite(nilai) ? Math.min(200, Math.max(50, Math.round(nilai))) : 100;
+  });
+  const [accentColor, setAccentColor] = useState(() => {
+    const nilai = bacaTeks("accentColor", "hijau");
+    return DAFTAR_AKSEN.some((aksen) => aksen.id === nilai) ? nilai : "hijau";
+  });
+  // Ukuran font akar dan warna aksen diterapkan ke root dokumen seperti
+  // App.tsx En Croissant (fontSize %) dan Mantine primaryColor. Hanya selama
+  // provider Analisa terpasang; cleanup memulihkan tampilan semula sehingga
+  // halaman lain tidak ikut berubah. Di Node (uji/SSR) efek ini noop.
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    const akar = document.documentElement;
+    akar.style.fontSize = fontSize === 100 ? "" : `${fontSize}%`;
+    return () => { akar.style.fontSize = ""; };
+  }, [fontSize]);
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    const akar = document.documentElement;
+    const aksen = DAFTAR_AKSEN.find((entri) => entri.id === accentColor);
+    if (aksen && aksen.id !== "hijau") {
+      akar.style.setProperty("--backgroundBoxBoxHighlighted", aksen.dasar);
+      akar.style.setProperty("--backgroundBoxBoxHighlightedHover", aksen.hover);
+    } else {
+      akar.style.removeProperty("--backgroundBoxBoxHighlighted");
+      akar.style.removeProperty("--backgroundBoxBoxHighlightedHover");
+    }
+    return () => {
+      akar.style.removeProperty("--backgroundBoxBoxHighlighted");
+      akar.style.removeProperty("--backgroundBoxBoxHighlightedHover");
+    };
+  }, [accentColor]);
   const boardMenuSettingsRef = useRef(null);
-  return <ConfigContext.Provider value={{ boardTheme: [boardTheme, setBoardTheme], pieceSet: [pieceSet, setPieceSet], openedMenu: [openedMenu, setOpenedMenu], usedRatings: [usedRatings, setUsedRatings], highlightByRating: [highlightByRating, setHighlightByRating], showArrows: [showArrows, setShowArrows], arrowAfterMove: [arrowAfterMove, setArrowAfterMove], showLegalMoves: [showLegalMoves, setShowLegalMoves], animateMoves: [animateMoves, setAnimateMoves], boardSounds: [boardSounds, setBoardSounds], coordinates: [coordinates, setCoordinates], moveHighlight: [moveHighlight, setMoveHighlight], autoPromote: [autoPromote, setAutoPromote], eraseArrowsOnClick: [eraseArrowsOnClick, setEraseArrowsOnClick], volume: [volume, setVolume], animationSpeed: [animationSpeed, setAnimationSpeed], materialDisplay: [materialDisplay, setMaterialDisplay], moveNotation: [moveNotation, setMoveNotation], boardMenuSettingsRef }}>
+  return <ConfigContext.Provider value={{ boardTheme: [boardTheme, setBoardTheme], pieceSet: [pieceSet, setPieceSet], openedMenu: [openedMenu, setOpenedMenu], usedRatings: [usedRatings, setUsedRatings], highlightByRating: [highlightByRating, setHighlightByRating], showArrows: [showArrows, setShowArrows], arrowAfterMove: [arrowAfterMove, setArrowAfterMove], showLegalMoves: [showLegalMoves, setShowLegalMoves], animateMoves: [animateMoves, setAnimateMoves], boardSounds: [boardSounds, setBoardSounds], coordinates: [coordinates, setCoordinates], moveHighlight: [moveHighlight, setMoveHighlight], autoPromote: [autoPromote, setAutoPromote], eraseArrowsOnClick: [eraseArrowsOnClick, setEraseArrowsOnClick], volume: [volume, setVolume], animationSpeed: [animationSpeed, setAnimationSpeed], materialDisplay: [materialDisplay, setMaterialDisplay], moveNotation: [moveNotation, setMoveNotation], previewBoardOnHover: [previewBoardOnHover, setPreviewBoardOnHover], boardScroll: [boardScroll, setBoardScroll], soundCollection: [soundCollection, setSoundCollection], fontSize: [fontSize, setFontSize], accentColor: [accentColor, setAccentColor], boardMenuSettingsRef }}>
             {props.children}
         </ConfigContext.Provider>;
 }

@@ -1,8 +1,9 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo) — jangan sunting massal tanpa cek README. */
 import { useContext, useEffect, useRef, useState } from "react";
 import Comments, { FormatEval } from "./comments.jsx";
-import { ConfigContext } from "../../../../../../modul/sesi/preferensi.js";
+import { ConfigContext, boardThemes } from "../../../../../../modul/sesi/preferensi.js";
 import { notasiLangkah } from "./notasi.js";
+import PratinjauPapan from "./pratinjauPapan.jsx";
 import { WHITE } from "chess.js";
 import GameChart from "../gameChart.jsx";
 import RatingSVG from "../../../svg/rating.jsx";
@@ -31,9 +32,23 @@ function getRating(moveNumber, rating, prevRating, nextRating, lastBookMove, ter
   return;
 }
 
+// Fallback konteks beridentitas stabil (pola pengaturan): konteks lama tanpa
+// kunci Tier 3 tetap sah dan tidak membuat identitas baru tiap render.
+const SETTER_KOSONG = () => {};
+const BAWAAN_NOTASI = ["letters", SETTER_KOSONG];
+const BAWAAN_PRATINJAU = [false, SETTER_KOSONG];
+const BAWAAN_SET_BIDAK = ["cburnett", SETTER_KOSONG];
+const BAWAAN_TEMA = [0, SETTER_KOSONG];
+
 function Moves(props) {
   const { t } = useI18n();
-  const moveNotation = useContext(ConfigContext).moveNotation?.[0] ?? "letters";
+  const config = useContext(ConfigContext);
+  const moveNotation = (config.moveNotation ?? BAWAAN_NOTASI)[0];
+  // Pratinjau papan saat hover (adopsi En Croissant preview-board-on-hover).
+  const pratinjauAktif = (config.previewBoardOnHover ?? BAWAAN_PRATINJAU)[0];
+  const [pieceSet] = config.pieceSet ?? BAWAAN_SET_BIDAK;
+  const [indeksTema] = config.boardTheme ?? BAWAAN_TEMA;
+  const [pratinjau, setPratinjau] = useState(null);
   const { moves, overallGameComment, container, moveNumber, setMoveNumber, setAnimation, setForward, customLine, returnedToNormalGame, analyzingMove } = props;
   const [movesHeight, setMovesHeight] = useState(0);
   const componentRef = useRef(null);
@@ -104,6 +119,16 @@ function Moves(props) {
       setForward(true);
     }
   }
+  // Hover baris langkah → pratinjau posisi setelah langkah itu (hanya bila
+  // preferensinya aktif). Posisi diambil dari kotak baris supaya pratinjau
+  // melayang di dekatnya, seperti portal AnalysisRow En Croissant.
+  function mulaiPratinjau(e, nomor) {
+    if (!pratinjauAktif) return;
+    const entri = moves[nomor];
+    if (!entri?.fen) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPratinjau({ fen: entri.fen, movement: entri.movement, top: rect.top, left: rect.left });
+  }
   const lastBookMove = getLastBookMove(moves);
   const { previousMove, move: move2 } = getMoves(moves, moveNumber, customLine, returnedToNormalGame);
   return <div ref={componentRef} className="flex flex-col gap-3 items-center h-full">
@@ -135,7 +160,7 @@ function Moves(props) {
     const shownRating = getRating(currentMoveNumber, rating, prevRating, nextRating, lastBookMove, langkahTerpaksa(entriKini));
     const fgColorClass = shownRating ? shownRating.textClass : isSelected ? "text-foregroundHighlighted" : "";
     return <div key={`${i}-${j}`} className="w-1/2 flex flex-row gap-1 items-center">
-                                        <button type="button" onClick={() => handleMoveClick(currentMoveNumber)} className={`flex items-center gap-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-backgroundBoxBoxHighlighted ${fgColorClass}`}>
+                                        <button type="button" onClick={() => handleMoveClick(currentMoveNumber)} onMouseEnter={(e) => mulaiPratinjau(e, currentMoveNumber)} onMouseLeave={() => setPratinjau(null)} className={`flex items-center gap-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-backgroundBoxBoxHighlighted ${fgColorClass}`}>
                                             <span aria-hidden="true" className="w-[18px] shrink-0">{shownRating ? <RatingSVG draggable rating={shownRating.rating} size={18} /> : null}</span>
                                             <span className={`rounded-borderRoundness border-b-2 px-1.5 ${isSelected ? "bg-backgroundBoxBox border-backgroundBoxBoxHover" : "border-transparent"}`}>{notasiLangkah(move3, entriKini?.movement, moveNotation)}</span>
                                         </button>
@@ -147,6 +172,7 @@ function Moves(props) {
             <div ref={gameChartRef}>
                 <GameChart container={container} moves={moves} moveNumber={moveNumber} setMoveNumber={setMoveNumber} setAnimation={setAnimation} setForward={setForward} tooltipDiAtas />
             </div>
+            {pratinjauAktif && pratinjau ? <PratinjauPapan fen={pratinjau.fen} movement={pratinjau.movement} putih={props.white !== false} pieceSet={pieceSet} tema={boardThemes[indeksTema] ?? boardThemes[0]} top={pratinjau.top} left={pratinjau.left} /> : null}
         </div>;
 }
 export default Moves;

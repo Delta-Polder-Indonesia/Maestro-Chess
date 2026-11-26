@@ -57,6 +57,13 @@ https://github.com/lichess-org/lila/tree/master/public/sound/standard,
 AGPL-3.0. Some filenames reuse the same upstream sound. Full license:
 public/licenses/lichess-AGPL-3.0.txt.
 
+Additional sound collections (public/sounds/futuristic, lisp, nes, piano,
+robot, sfx, woodland) are the Lichess sound sets redistributed by En
+Croissant, https://github.com/franciscoBSalgueiro/en-croissant (GPL-3.0),
+upstream https://github.com/lichess-org/lila/tree/master/public/sound,
+AGPL-3.0. Each collection provides Move/Capture/Check (lisp also Castles);
+other board events keep the standard sound. Same license file as above.
+
 Font
 ----
 Geist Variable, copyright 2024 The Geist Project Authors, SIL OFL 1.1:
