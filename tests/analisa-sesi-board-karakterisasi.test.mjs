@@ -113,7 +113,7 @@ test("the original board context exposes six named exports and neutral shared de
   assert.equal(board.tab[0], "analyze");
   assert.deepEqual(board.customLine[0], { moveNumber: -1, moves: [], arrows: {} });
   assert.equal(board.returnedToNormalGame[0], null);
-  assert.equal(board.depth[0], 13);
+  assert.equal(board.depth[0], 8);
   const noOp = board.game[1];
   for (const nama of namaField) {
     assert.strictEqual(board[nama][1], noOp, nama);
@@ -155,7 +155,7 @@ test("the original provider has one named export and preserves initialization or
   assert.equal(board.tab[0], "analyze");
   assert.deepEqual(board.customLine[0], { moveNumber: -1, moves: [], arrows: {} });
   assert.equal(board.returnedToNormalGame[0], null);
-  assert.equal(board.depth[0], 13);
+  assert.equal(board.depth[0], 8);
   assert.deepEqual(Object.keys(board.gameController), namaKontrol);
   for (const nama of namaField) assert.equal(typeof board[nama][1], "function", nama);
   for (const nama of namaKontrol) assert.equal(typeof board.gameController[nama], "function", nama);
@@ -172,14 +172,14 @@ test("depth reads the current key before legacy depth, rounds and clamps only it
   const ling = lingkungan(tes);
   const muat = pemuat(ling);
   const kasus = [
-    [[], 13, ["maestro-analisa-kedalaman", "depth"]],
+    [[], 8, ["maestro-analisa-kedalaman", "depth"]],
     [[["depth", "9.7"]], 10, ["maestro-analisa-kedalaman", "depth"]],
     [[["maestro-analisa-kedalaman", "18.6"], ["depth", "7"]], 19, ["maestro-analisa-kedalaman"]],
     [[["maestro-analisa-kedalaman", "-20"]], 6, ["maestro-analisa-kedalaman"]],
     [[["maestro-analisa-kedalaman", "200"]], 20, ["maestro-analisa-kedalaman"]],
     [[["maestro-analisa-kedalaman", "0x10"]], 16, ["maestro-analisa-kedalaman"]],
-    [[["maestro-analisa-kedalaman", "Infinity"], ["depth", "8"]], 13, ["maestro-analisa-kedalaman"]],
-    [[["maestro-analisa-kedalaman", ""], ["depth", "8"]], 13, ["maestro-analisa-kedalaman"]],
+    [[["maestro-analisa-kedalaman", "Infinity"], ["depth", "8"]], 8, ["maestro-analisa-kedalaman"]],
+    [[["maestro-analisa-kedalaman", ""], ["depth", "8"]], 8, ["maestro-analisa-kedalaman"]],
   ];
   for (const [awal, expected, dibaca] of kasus) {
     ling.lokal.data.clear();
@@ -210,7 +210,7 @@ test("depth is read once per mount; its setter is not clamped and does not write
   assert.deepEqual(ling.operasi, [["local", "get", "maestro-analisa-kedalaman"]]);
 });
 
-test("a failed depth read logs and uses 13 without attempting a write", (tes) => {
+test("a failed depth read logs and uses 8 without attempting a write", (tes) => {
   const ling = lingkungan(tes);
   const asli = console.error;
   const errors = [];
@@ -219,7 +219,7 @@ test("a failed depth read logs and uses 13 without attempting a write", (tes) =>
   const gagal = new Error("storage blocked");
   ling.lokal.getItem = () => { throw gagal; };
   const app = siapkan(ling);
-  assert.equal(app.nilai.board.depth[0], 13);
+  assert.equal(app.nilai.board.depth[0], 8);
   assert.equal(errors.length, 1);
   assert.equal(errors[0][0], "Gagal membaca pengaturan Analisa:");
   assert.strictEqual(errors[0][1], gagal);
@@ -286,12 +286,12 @@ test("two providers in one module registry isolate their board and screen states
   act(() => { satu.nilai.board.depth[1](9); satu.nilai.setTampilan("akun"); });
   assert.equal(satu.nilai.board.depth[0], 9);
   assert.equal(satu.nilai.tampilan[0], "akun");
-  assert.equal(dua.nilai.board.depth[0], 13);
+  assert.equal(dua.nilai.board.depth[0], 8);
   assert.equal(dua.nilai.tampilan[0], "papan");
   const controller = satu.nilai.board.gameController;
   satu.unmount();
   const baru = siapkan(ling, muat);
-  assert.equal(baru.nilai.board.depth[0], 13);
+  assert.equal(baru.nilai.board.depth[0], 8);
   assert.equal(baru.nilai.tampilan[0], "papan");
   assert.notStrictEqual(baru.nilai.board.gameController, controller);
 });
@@ -317,8 +317,8 @@ test("screen changes notify only screen consumers; board changes do not notify s
   assert.strictEqual(nilai.layar[1], setTampilan);
   assert.strictEqual(nilai.board, board);
   assert.deepEqual(hitung, { board: awal.board, layar: awal.layar + 1, setter: awal.setter });
-  act(() => nilai.board.depth[1](8));
-  assert.equal(nilai.board.depth[0], 8);
+  act(() => nilai.board.depth[1](13));
+  assert.equal(nilai.board.depth[0], 13);
   assert.deepEqual(hitung, { board: awal.board + 1, layar: awal.layar + 1, setter: awal.setter });
 });
 

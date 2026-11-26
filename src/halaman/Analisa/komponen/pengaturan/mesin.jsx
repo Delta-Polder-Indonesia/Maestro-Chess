@@ -72,7 +72,7 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
   }
 
   function kembalikanBawaan() {
-    const n = 13;
+    const n = 8;
     setDepthMentah(String(n));
     setDepth(n);
     tulis("kedalaman", n);

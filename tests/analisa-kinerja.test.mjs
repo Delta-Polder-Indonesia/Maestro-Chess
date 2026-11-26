@@ -100,9 +100,9 @@ test("navigation notifies the screen only, while board and analysis still receiv
   assert.equal(nilai.board, papanAwal);
   assert.equal(nilai.analisis, analisisAwal);
 
-  await act(async () => { nilai.board.depth[1](8); });
-  assert.equal(nilai.board.depth[0], 8);
-  assert.equal(nilai.analisis.depth[0], 8);
+  await act(async () => { nilai.board.depth[1](13); });
+  assert.equal(nilai.board.depth[0], 13);
+  assert.equal(nilai.analisis.depth[0], 13);
   assert.equal(hitung.papan, awal.papan + 1);
   assert.equal(hitung.analisis, awal.analisis + 1);
   assert.equal(hitung.tampilan, awal.tampilan + 1);

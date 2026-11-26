@@ -118,7 +118,7 @@ test("the default AnalyzeContext keeps every field, neutral value, frozen player
   assert.equal(nilai.returnedToNormalGame[0], null);
   assert.equal(nilai.analyzingMove[0], false);
   assert.deepEqual(nilai.akun[0], { platform: "chessCom", username: "" });
-  assert.equal(nilai.depth[0], 13);
+  assert.equal(nilai.depth[0], 8);
   const setters = defaultFields.filter((key) => key !== "gameController").map((key) => nilai[key][1]);
   assert.equal(new Set(setters).size, setters.length);
   for (const setter of setters) assert.equal(setter(() => { throw new Error("default setter menjalankan updater"); }), undefined);

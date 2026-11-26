@@ -42,7 +42,7 @@ export const BoardContext = createContext({
   tab: ["analyze", TIDAK_ADA],
   customLine: [{ moveNumber: -1, moves: [], arrows: {} }, TIDAK_ADA],
   returnedToNormalGame: [null, TIDAK_ADA],
-  depth: [13, TIDAK_ADA],
+  depth: [8, TIDAK_ADA],
   gameController: {
     back: TIDAK_ADA,
     forward: TIDAK_ADA,

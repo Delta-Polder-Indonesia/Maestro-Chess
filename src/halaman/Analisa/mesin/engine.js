@@ -85,7 +85,7 @@ export class EngineAnalisis {
   /**
    * @param {{idEngine?: string, kedalaman?: number, threads?: number, hash?: number, skill?: number|null, onError?: Function}} [opsi]
    */
-  constructor({ idEngine, kedalaman = 13, threads = 1, hash = hashUntukEngine(), skill = null, movetime = null, onError } = {}) {
+  constructor({ idEngine, kedalaman = 8, threads = 1, hash = hashUntukEngine(), skill = null, movetime = null, onError } = {}) {
     const pilihan = cariEngine(idEngine);
     this.idEngine = pilihan.id;
     this.labelEngine = pilihan.label;
