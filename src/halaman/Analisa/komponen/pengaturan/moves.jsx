@@ -214,7 +214,7 @@ const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, set
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelVolume}</span>}
       deskripsi={deskripsi("volume")}
     >
-      <GeserPengaturan nilai={volume} onChange={changeVolume} ariaLabel={labelVolume} satuan="%" />
+      <GeserPengaturan nilai={volume} onChange={changeVolume} ariaLabel={labelVolume} satuan="%" tickMajor={25} tickMinor={5} />
     </BarisPengaturan> : null}
     {cocok("koleksiSuara", labelKoleksi) ? <BarisPengaturan
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelKoleksi}</span>}
