@@ -144,7 +144,7 @@ test("each tab opens only its own settings groups", () => {
 
   act(() => tab()[2].props.onClick());
   assert.deepEqual(judulGrup(renderer), ["Best moves"]);
-  assert.deepEqual(saklar(renderer), ["Show arrows", "Arrow after opponent's move"]);
+  assert.deepEqual(saklar(renderer), ["Show arrows", "Arrow after opponent's move", "Erase arrows on click"]);
   renderer.unmount();
 });
 

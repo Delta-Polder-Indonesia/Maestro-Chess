@@ -203,8 +203,9 @@ test("blocked reads log failures and the provider keeps its default state", asyn
   assert.equal(config.amatan.nilai.boardTheme[0], 0);
   assert.strictEqual(config.amatan.nilai.usedRatings[0], config.konteks.defaultUsedRatings);
   assert.equal(config.amatan.nilai.boardSounds[0], true);
-  // 9 preferensi dibaca (bertambah pieceSet); semuanya gagal saat storage diblokir.
-  assert.equal(galat.length, 9);
+  // 13 preferensi dibaca (pieceSet + koordinat/sorotLangkah/autoPromosi/hapusPanah);
+  // semuanya gagal saat storage diblokir.
+  assert.equal(galat.length, 13);
   assert.ok(galat.every(([, error]) => /read blocked/.test(String(error))));
 });
 

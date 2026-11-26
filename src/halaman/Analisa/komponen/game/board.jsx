@@ -428,7 +428,7 @@ function Board(props) {
   const [kotakFokus, setKotakFokus] = useState("e2");
   const idPetunjuk = useId();
   const t = props.t || ((kunci) => kunci);
-  const { boardTheme, pieceSet, usedRatings, highlightByRating, showArrows, arrowAfterMove, showLegalMoves, animateMoves, boardSoundsRef } = props;
+  const { boardTheme, pieceSet, usedRatings, highlightByRating, showArrows, arrowAfterMove, showLegalMoves, animateMoves, boardSoundsRef, coordinates = "edge", moveHighlight = true, autoPromote = false, eraseArrowsOnClick = true } = props;
   const boardRef = useRef(null);
   const pieceRef = useRef(null);
   const castleRookRef = useRef(null);
@@ -640,7 +640,12 @@ function Board(props) {
     const formattedFrom = formatSquare(from);
     const formattedTo = formatSquare(to);
     if (chess.get(from)?.type === PAWN && [0, 7].includes(formattedTo.row)) {
-      setCoronation({ choosing: true, movement: [formattedFrom, formattedTo] });
+      // Auto-promosi (adopsi En Croissant): langsung menteri tanpa pemilih.
+      if (autoPromote) {
+        analyzeMove(fen, { from, to, promotion: QUEEN }, sacrifice ?? false, previousStaticEvals ?? [], animasi, bestMoveSan, kandidat ?? []);
+      } else {
+        setCoronation({ choosing: true, movement: [formattedFrom, formattedTo] });
+      }
     } else {
       analyzeMove(fen, { from, to }, sacrifice ?? false, previousStaticEvals ?? [], animasi, bestMoveSan, kandidat ?? []);
     }
@@ -669,7 +674,8 @@ function Board(props) {
       const element = e.currentTarget;
       const elementRect = element.getBoundingClientRect();
       startArrow(e.clientX - elementRect.x, e.clientY - elementRect.y);
-    } else {
+    } else if (eraseArrowsOnClick) {
+      // Klik kiri menghapus panah/coretan hanya bila sakelar aktif (adopsi EC).
       cleanArrows();
     }
   }
@@ -816,11 +822,16 @@ function Board(props) {
             guideColor = boardColors[1];
           }
         }
+        // Koordinat papan (adopsi En Croissant: no/edge/all). "edge" adalah
+        // perilaku Maestro semula — file di baris terbawah, rank di kolom
+        // terluar; "all" melabeli tiap petak; "no" menyembunyikan keduanya.
         let squareNumGuide, squareLetterGuide;
-        if (rowNumber === (white ? 7 : 0)) {
+        const tampilFile = coordinates === "all" || (coordinates === "edge" && rowNumber === (white ? 7 : 0));
+        const tampilRank = coordinates === "all" || (coordinates === "edge" && columnNumber === (white ? 0 : 7));
+        if (tampilFile) {
           squareLetterGuide = <span aria-hidden="true" style={{ right: rightSize, color: guideColor }} className={`absolute bottom-0`}>{squareId[0]}</span>;
         }
-        if (columnNumber === (white ? 0 : 7)) {
+        if (tampilRank) {
           squareNumGuide = <span aria-hidden="true" style={{ left: leftSize, color: guideColor }} className={`absolute top-0`}>{squareId[1]}</span>;
         }
         let rounded = "";
@@ -832,7 +843,9 @@ function Board(props) {
         const iconTranslateY = (white ? rowNumber === 0 : rowNumber === 7) ? 5 : -35;
         const iconSize = squareSize / 2.4;
         let highlighted, highlightedIcon;
-        move.forEach((square3, i) => {
+        // Sorot langkah terakhir bisa dimatikan (adopsi En Croissant). Sorotan
+        // pilihan seret/promosi di bawah tetap berjalan independen.
+        if (moveHighlight) move.forEach((square3, i) => {
           const highlightedSquare = adaptSquare(square3);
           if (highlightedSquare.col === columnNumber && highlightedSquare.row === rowNumber) {
             highlighted = <div style={{ backgroundColor: highlightColor }} className={`absolute z-[10] top-0 left-0 w-full h-full opacity-50 ${rounded}`} />;
@@ -967,6 +980,10 @@ function BoardDenganConfig(props) {
     arrowAfterMove={config.arrowAfterMove[0]}
     showLegalMoves={config.showLegalMoves[0]}
     animateMoves={config.animateMoves[0]}
+    coordinates={config.coordinates?.[0] ?? "edge"}
+    moveHighlight={config.moveHighlight?.[0] ?? true}
+    autoPromote={config.autoPromote?.[0] ?? false}
+    eraseArrowsOnClick={config.eraseArrowsOnClick?.[0] ?? true}
     boardSoundsRef={boardSoundsRef}
   />;
 }

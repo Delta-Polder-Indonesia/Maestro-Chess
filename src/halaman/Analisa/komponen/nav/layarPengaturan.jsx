@@ -147,9 +147,15 @@ export default function LayarPengaturan({ aktif = true }) {
   const daftarBaris = [
     ...boardThemes.map((tema) => ({ kunci: `tema.${tema.kunci}`, label: t(`analisa.tema.${tema.kunci}`), grup: "tema" })),
     { kunci: "setBidak", label: t("analisa.pengaturan.setBidak"), grup: "tema" },
+    { kunci: "koordinatPapan", label: t("analisa.pengaturan.koordinatPapan"), grup: "tema" },
+    { kunci: "koordinat.no", label: t("analisa.pengaturan.koordinat.tanpa"), grup: "tema" },
+    { kunci: "koordinat.edge", label: t("analisa.pengaturan.koordinat.tepi"), grup: "tema" },
+    { kunci: "koordinat.all", label: t("analisa.pengaturan.koordinat.semua"), grup: "tema" },
     { kunci: "langkahLegal", label: t("analisa.pengaturan.langkahLegal"), grup: "perilaku" },
     { kunci: "animasi", label: t("analisa.pengaturan.animasi"), grup: "perilaku" },
     { kunci: "suara", label: t("analisa.pengaturan.suara"), grup: "perilaku" },
+    { kunci: "sorotLangkah", label: t("analisa.pengaturan.sorotLangkah"), grup: "perilaku" },
+    { kunci: "autoPromosi", label: t("analisa.pengaturan.autoPromosi"), grup: "perilaku" },
     { kunci: "sorotLabel", label: t("analisa.pengaturan.sorotLabel"), grup: "penilaian" },
     ...daftarRating.filter((rating) => rating !== "critical").map((rating) => ({
       kunci: `rating.${rating}`,
@@ -158,6 +164,7 @@ export default function LayarPengaturan({ aktif = true }) {
     })),
     { kunci: "tampilPanah", label: t("analisa.pengaturan.tampilPanah"), grup: "langkah" },
     { kunci: "panahSetelahLangkah", label: t("analisa.pengaturan.panahSetelahLangkah"), grup: "langkah" },
+    { kunci: "hapusPanahKlik", label: t("analisa.pengaturan.hapusPanahKlik"), grup: "langkah" },
     { kunci: "bahasa", label: labelBahasa, grup: "bahasa" },
     { kunci: "kodeSumber", label: t("analisa.nav.kodeSumber"), grup: "dokumentasi" },
     { kunci: "atribusi", label: t("analisa.nav.atribusi"), grup: "dokumentasi" },

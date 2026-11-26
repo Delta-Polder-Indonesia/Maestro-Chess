@@ -30,7 +30,17 @@ function PratinjauBidak({ set }) {
   );
 }
 
-const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, pieceSet, setPieceSet, cocok = () => true, deskripsi = () => null }) {
+// Opsi koordinat mengikuti nilai En Croissant (no/edge/all); "edge" adalah
+// tampilan Maestro semula (label di petak tepi), "all" melabeli tiap petak.
+const OPSI_KOORDINAT = ["no", "edge", "all"];
+// Fallback konteks harus beridentitas stabil agar memo IsiThemes tidak bocor
+// saat konsumen lain memperbarui ConfigContext (setter baru tiap render akan
+// memaksa render ulang). Karena itu pasangan bawaan dibuat di tingkat modul.
+const SETTER_KOSONG = () => {};
+const BAWAAN_KOORDINAT = ["edge", SETTER_KOSONG];
+const BAWAAN_SET_BIDAK = [SET_BAWAAN, SETTER_KOSONG];
+
+const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, pieceSet, setPieceSet, coordinates, setCoordinates, cocok = () => true, deskripsi = () => null }) {
   const { t } = useI18n();
   // Pratinjau sementara saat hover opsi set bidak (tidak persist sampai diklik).
   const [pratinjau, setPratinjau] = useState(null);
@@ -53,14 +63,22 @@ const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, pieceSet,
     setPieceSet(sah);
     tulis("pieceSet", sah);
   }
+  function changeCoordinates(nilai) {
+    const sah = OPSI_KOORDINAT.includes(nilai) ? nilai : "edge";
+    setCoordinates(sah);
+    tulis("coordinates", sah);
+  }
 
   const labelTema = t("analisa.pengaturan.temaPapan");
   const labelBidak = t("analisa.pengaturan.setBidak");
+  const labelKoordinat = t("analisa.pengaturan.koordinatPapan");
   const tampilTema = cocok("temaPapan", labelTema) || boardThemes.some((theme) => cocok(`tema.${theme.kunci}`, t(`analisa.tema.${theme.kunci}`)));
   const tampilBidak = cocok("setBidak", labelBidak) || DAFTAR_SET_BIDAK.some((s) => cocok(`bidak.${s.id}`, s.nama));
+  const tampilKoordinat = cocok("koordinatPapan", labelKoordinat) || OPSI_KOORDINAT.some((o) => cocok(`koordinat.${o}`, t(`analisa.pengaturan.koordinat.${o === "no" ? "tanpa" : o === "edge" ? "tepi" : "semua"}`)));
 
   const pilihanTema = boardThemes.map((theme, i) => ({ id: String(i), label: t(`analisa.tema.${theme.kunci}`), preview: <SwatchTema theme={theme} /> }));
   const pilihanBidak = DAFTAR_SET_BIDAK.map((s) => ({ id: s.id, label: s.nama }));
+  const pilihanKoordinat = OPSI_KOORDINAT.map((o) => ({ id: o, label: t(`analisa.pengaturan.koordinat.${o === "no" ? "tanpa" : o === "edge" ? "tepi" : "semua"}`) }));
   const setTampil = idSetBidak(pratinjau ?? pieceSet);
 
   return (
@@ -71,6 +89,14 @@ const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, pieceSet,
           deskripsi={deskripsi("temaPapan")}
         >
           <PilihRingkas ariaLabel={labelTema} lebar="w-[192px]" nilai={String(boardTheme)} pilihan={pilihanTema} onChange={(id) => changeBoardTheme(Number(id))} />
+        </BarisPengaturan>
+      ) : null}
+      {tampilKoordinat ? (
+        <BarisPengaturan
+          judul={<span className="text-[13.5px] font-medium text-foreground">{labelKoordinat}</span>}
+          deskripsi={deskripsi("koordinatPapan")}
+        >
+          <PilihRingkas ariaLabel={labelKoordinat} lebar="w-[160px]" nilai={OPSI_KOORDINAT.includes(coordinates) ? coordinates : "edge"} pilihan={pilihanKoordinat} onChange={changeCoordinates} />
         </BarisPengaturan>
       ) : null}
       {tampilBidak ? (
@@ -91,7 +117,8 @@ const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, pieceSet,
 function Themes({ cocok, deskripsi }) {
   const config = useContext(ConfigContext);
   const [boardTheme, setBoardTheme] = config.boardTheme;
-  const [pieceSet, setPieceSet] = config.pieceSet ?? [SET_BAWAAN, () => {}];
-  return <IsiThemes boardTheme={boardTheme} setBoardTheme={setBoardTheme} pieceSet={pieceSet} setPieceSet={setPieceSet} cocok={cocok} deskripsi={deskripsi} />;
+  const [pieceSet, setPieceSet] = config.pieceSet ?? BAWAAN_SET_BIDAK;
+  const [coordinates, setCoordinates] = config.coordinates ?? BAWAAN_KOORDINAT;
+  return <IsiThemes boardTheme={boardTheme} setBoardTheme={setBoardTheme} pieceSet={pieceSet} setPieceSet={setPieceSet} coordinates={coordinates} setCoordinates={setCoordinates} cocok={cocok} deskripsi={deskripsi} />;
 }
 export default memo(Themes);

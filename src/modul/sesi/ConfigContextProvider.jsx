@@ -27,8 +27,18 @@ function ConfigContextProvider(props) {
   const [showLegalMoves, setShowLegalMoves] = useState(() => bacaBoolean("showLegalMoves", true));
   const [animateMoves, setAnimateMoves] = useState(() => bacaBoolean("animateMoves", true));
   const [boardSounds, setBoardSounds] = useState(() => bacaBoolean("boardSounds", true));
+  // Tier 1 adopsi En Croissant. Koordinat divalidasi ke enum di sini (string
+  // mentah), sementara boolean memakai format "0"/"1" yang sama seperti sakelar
+  // lain. Tidak ada impor baru agar graf fasad preferensi tetap terkunci.
+  const [coordinates, setCoordinates] = useState(() => {
+    const nilai = bacaTeks("coordinates", "edge");
+    return nilai === "no" || nilai === "edge" || nilai === "all" ? nilai : "edge";
+  });
+  const [moveHighlight, setMoveHighlight] = useState(() => bacaBoolean("moveHighlight", true));
+  const [autoPromote, setAutoPromote] = useState(() => bacaBoolean("autoPromote", false));
+  const [eraseArrowsOnClick, setEraseArrowsOnClick] = useState(() => bacaBoolean("eraseArrowsOnClick", true));
   const boardMenuSettingsRef = useRef(null);
-  return <ConfigContext.Provider value={{ boardTheme: [boardTheme, setBoardTheme], pieceSet: [pieceSet, setPieceSet], openedMenu: [openedMenu, setOpenedMenu], usedRatings: [usedRatings, setUsedRatings], highlightByRating: [highlightByRating, setHighlightByRating], showArrows: [showArrows, setShowArrows], arrowAfterMove: [arrowAfterMove, setArrowAfterMove], showLegalMoves: [showLegalMoves, setShowLegalMoves], animateMoves: [animateMoves, setAnimateMoves], boardSounds: [boardSounds, setBoardSounds], boardMenuSettingsRef }}>
+  return <ConfigContext.Provider value={{ boardTheme: [boardTheme, setBoardTheme], pieceSet: [pieceSet, setPieceSet], openedMenu: [openedMenu, setOpenedMenu], usedRatings: [usedRatings, setUsedRatings], highlightByRating: [highlightByRating, setHighlightByRating], showArrows: [showArrows, setShowArrows], arrowAfterMove: [arrowAfterMove, setArrowAfterMove], showLegalMoves: [showLegalMoves, setShowLegalMoves], animateMoves: [animateMoves, setAnimateMoves], boardSounds: [boardSounds, setBoardSounds], coordinates: [coordinates, setCoordinates], moveHighlight: [moveHighlight, setMoveHighlight], autoPromote: [autoPromote, setAutoPromote], eraseArrowsOnClick: [eraseArrowsOnClick, setEraseArrowsOnClick], boardMenuSettingsRef }}>
             {props.children}
         </ConfigContext.Provider>;
 }

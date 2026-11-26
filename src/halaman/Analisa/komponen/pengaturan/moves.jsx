@@ -8,7 +8,12 @@ import SoundMute from "../svg/sound-mute.jsx";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import SakelarPengaturan from "./sakelarPengaturan.jsx";
 import BarisPengaturan from "./barisPengaturan.jsx";
-const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, setShowLegalMoves, animateMoves, setAnimateMoves, boardSounds, setBoardSounds, cocok = () => true, deskripsi = () => null }) {
+// Fallback konteks beridentitas stabil agar memo IsiMoves tidak bocor saat
+// konsumen ConfigContext lain berubah (lihat penjelasan di themes.jsx).
+const SETTER_KOSONG = () => {};
+const BAWAAN_SOROT_LANGKAH = [true, SETTER_KOSONG];
+const BAWAAN_AUTO_PROMOSI = [false, SETTER_KOSONG];
+const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, setShowLegalMoves, animateMoves, setAnimateMoves, boardSounds, setBoardSounds, moveHighlight, setMoveHighlight, autoPromote, setAutoPromote, cocok = () => true, deskripsi = () => null }) {
   const { t } = useI18n();
   const [animateMovesMoved, setAnimateMovesMoved] = useState(false);
   useEffect(() => {
@@ -68,9 +73,23 @@ const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, set
     tulis("boardSounds", String(Number(newBoardSounds)));
     setBoardSounds(newBoardSounds);
   }
+  // Tier 1 adopsi En Croissant: sorot langkah terakhir & auto-promosi menteri.
+  // Provider sudah menginisialisasi dari penyimpanan; sakelar cukup menulis.
+  function toggleMoveHighlight() {
+    const baru = !moveHighlight;
+    tulis("moveHighlight", String(Number(baru)));
+    setMoveHighlight(baru);
+  }
+  function toggleAutoPromote() {
+    const baru = !autoPromote;
+    tulis("autoPromote", String(Number(baru)));
+    setAutoPromote(baru);
+  }
   const labelLegal = t("analisa.pengaturan.langkahLegal");
   const labelAnimasi = t("analisa.pengaturan.animasi");
   const labelSuara = t("analisa.pengaturan.suara");
+  const labelSorotLangkah = t("analisa.pengaturan.sorotLangkah");
+  const labelAutoPromosi = t("analisa.pengaturan.autoPromosi");
   return <section>
             {cocok("langkahLegal", labelLegal) ? <BarisPengaturan
       judul={<button onClick={toggleShowLegalMoves} type="button" className="flex flex-1 flex-row gap-2 items-center text-left font-medium text-foreground">
@@ -128,6 +147,18 @@ const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, set
     >
       <SakelarPengaturan checked={boardSounds} onCheckedChange={toggleBoardSounds} aria-label={labelSuara} />
     </BarisPengaturan> : null}
+    {cocok("sorotLangkah", labelSorotLangkah) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelSorotLangkah}</span>}
+      deskripsi={deskripsi("sorotLangkah")}
+    >
+      <SakelarPengaturan checked={moveHighlight} onCheckedChange={toggleMoveHighlight} aria-label={labelSorotLangkah} />
+    </BarisPengaturan> : null}
+    {cocok("autoPromosi", labelAutoPromosi) ? <BarisPengaturan
+      judul={<span className="text-[13.5px] font-medium text-foreground">{labelAutoPromosi}</span>}
+      deskripsi={deskripsi("autoPromosi")}
+    >
+      <SakelarPengaturan checked={autoPromote} onCheckedChange={toggleAutoPromote} aria-label={labelAutoPromosi} />
+    </BarisPengaturan> : null}
           </section>;
 });
 
@@ -137,6 +168,8 @@ function Moves({ aktif = true, cocok, deskripsi }) {
   const [showLegalMoves, setShowLegalMoves] = config.showLegalMoves;
   const [animateMoves, setAnimateMoves] = config.animateMoves;
   const [boardSounds, setBoardSounds] = config.boardSounds;
-  return <IsiMoves aktif={aktif} boardTheme={boardTheme} showLegalMoves={showLegalMoves} setShowLegalMoves={setShowLegalMoves} animateMoves={animateMoves} setAnimateMoves={setAnimateMoves} boardSounds={boardSounds} setBoardSounds={setBoardSounds} cocok={cocok} deskripsi={deskripsi} />;
+  const [moveHighlight, setMoveHighlight] = config.moveHighlight ?? BAWAAN_SOROT_LANGKAH;
+  const [autoPromote, setAutoPromote] = config.autoPromote ?? BAWAAN_AUTO_PROMOSI;
+  return <IsiMoves aktif={aktif} boardTheme={boardTheme} showLegalMoves={showLegalMoves} setShowLegalMoves={setShowLegalMoves} animateMoves={animateMoves} setAnimateMoves={setAnimateMoves} boardSounds={boardSounds} setBoardSounds={setBoardSounds} moveHighlight={moveHighlight} setMoveHighlight={setMoveHighlight} autoPromote={autoPromote} setAutoPromote={setAutoPromote} cocok={cocok} deskripsi={deskripsi} />;
 }
 export default memo(Moves);
