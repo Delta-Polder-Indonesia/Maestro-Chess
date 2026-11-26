@@ -14,6 +14,7 @@ import { useKartuPemain } from "@/modul/profil/index.js";
 import { maxSisiPapan, minSisiPapan, navTop } from "../../konstanta.js";
 import { ConfigContext } from "../../../../modul/sesi/preferensi.js";
 import GameButtons from "../menu/analysis/gameButtons.jsx";
+import Tablebase from "../menu/analysis/tablebase.jsx";
 import { getMoves, getArrows, getCapturedPieces, getCustomResult, formatPlayerLabel } from "./getMoves.js";
 import { useMuatPartai } from "./useMuatPartai.js";
 import { useAnalisisPapan } from "./useAnalisisPapan.js";
@@ -21,7 +22,7 @@ import { usePekerjaanLaporan } from "./usePekerjaanLaporan.js";
 import PendengarKeyboard from "./pendengarKeyboard.jsx";
 import { buatHandleWheel } from "./keyboardPapan.js";
 
-const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, boardScrollRef, didukung, siapkan, ambilMesin, setErrors, mode, nodes, movetime }) {
+const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, boardScrollRef, didukung, siapkan, ambilMesin, setErrors, mode, nodes, movetime, tablebase }) {
   const [boardSize, setBoardSize] = useState(750);
   const [gameHeight, setGameHeight] = useState(850);
   const [arrows, setArrows] = useState({ 0: [] });
@@ -388,6 +389,16 @@ const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, boar
   const currentWhiteTime = move2?.clock?.white !== undefined ? move2.clock.white : (time || null);
   const currentBlackTime = move2?.clock?.black !== undefined ? move2.clock.black : (time || null);
 
+  // Mainkan langkah tablebase (UCI) lewat jalur yang sama dengan langkah papan:
+  // analyzeMove dengan argumen posisi kini, sehingga analisis & customLine ikut.
+  const mainkanUci = useCallback((uci) => {
+    if (!uci || !move2?.fen) return;
+    const from = uci.slice(0, 2);
+    const to = uci.slice(2, 4);
+    const promotion = uci.length > 4 ? uci[4] : undefined;
+    analyzeMove(move2.fen, { from, to, promotion }, move2?.sacrifice ?? false, move2?.previousStaticEvals ?? [], animation, move2?.bestMoveSan, move2?.kandidat ?? []);
+  }, [analyzeMove, move2, animation]);
+
   return <div className="flex flex-col gap-[6px]">
         <PendengarKeyboard pageStateRef={pageStateRef} dragRef={dragRef} analyzingMoveRef={analyzingMoveRef} gameController={gameController} />
         <div ref={gameRef} tabIndex={0} style={{ gap }} className="h-full flex navTop:flex-row flex-col outline-none">
@@ -455,6 +466,7 @@ const IsiGame = memo(function IsiGame({ wadah, ukuranWadah, boardSoundsRef, boar
                     <Name materialAdvantage={materialAdvantage} captured={captured[white ? "white" : "black"]} white={white} avatar={avatarPemain[white ? 0 : 1]} title={titlePemain[white ? 0 : 1]} flag={flagPemain[white ? 0 : 1]}>{playerLabels[white ? 0 : 1]}</Name>
                     <Clock white={white} colorMoving={move2?.color ?? game[moveNumber]?.color}>{formatTime(white ? currentWhiteTime : currentBlackTime)}</Clock>
                 </div>
+                {partaiDimuat && tablebase ? <div style={{ width: boardSize }} className="mt-1"><Tablebase fen={move2?.fen} turn={move2?.color} onMain={mainkanUci} /></div> : null}
             </div>
         </div>
         <div className="bg-backgroundBox flex-row justify-center rounded-borderRoundness group-data-[panel-sejajar=true]/papan:hidden w-full navTop:flex hidden">
@@ -477,9 +489,10 @@ function Game({ wadah, ukuranWadah }) {
   const boardScroll = config.boardScroll?.[0] ?? false;
   const boardScrollRef = useRef(boardScroll);
   useLayoutEffect(() => { boardScrollRef.current = boardScroll; }, [boardScroll]);
+  const tablebase = config.tablebase?.[0] ?? false;
   const setErrors = useContext(ErrorsContext).errors[1];
   const { didukung, siapkan, ambilMesin, opsi } = useMesin();
-  return <IsiGame wadah={wadah} ukuranWadah={ukuranWadah} boardSoundsRef={boardSoundsRef} boardScrollRef={boardScrollRef} didukung={didukung} siapkan={siapkan} ambilMesin={ambilMesin} setErrors={setErrors} mode={opsi?.mode} nodes={opsi?.nodes} movetime={opsi?.movetime} />;
+  return <IsiGame wadah={wadah} ukuranWadah={ukuranWadah} boardSoundsRef={boardSoundsRef} boardScrollRef={boardScrollRef} didukung={didukung} siapkan={siapkan} ambilMesin={ambilMesin} setErrors={setErrors} mode={opsi?.mode} nodes={opsi?.nodes} movetime={opsi?.movetime} tablebase={tablebase} />;
 }
 
 export default memo(Game);

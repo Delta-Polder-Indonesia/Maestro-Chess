@@ -325,6 +325,7 @@ test("the board observes its workspace from the first mount and resizes when the
     "../../konstanta.js": { maxSisiPapan: 1000, minSisiPapan: 160, navTop: 516 },
     "../../../../modul/sesi/preferensi.js": configContext,
     "../menu/analysis/gameButtons.jsx": { default: kosong },
+    "../menu/analysis/tablebase.jsx": { default: kosong },
     "./getMoves.js": {
       getMoves: (game, i) => ({ move: game[i] }), getArrows: () => [], getCapturedPieces,
       getCustomResult: () => "", formatPlayerLabel: (player) => player.name,

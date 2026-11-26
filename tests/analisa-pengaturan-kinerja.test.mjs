@@ -59,6 +59,7 @@ test("a setting updates only the relevant panels while theme changes reach every
   const Ratings = kompilasi("../src/halaman/Analisa/komponen/pengaturan/ratings.jsx", {
     ...umum, "../menu/analyze/selectChessComData.js": { capitalizeFirst: (value) => value[0].toUpperCase() + value.slice(1) },
     "./sakelarPengaturan.jsx": { default: saklar("ratings") },
+    "./pilihRingkas.jsx": { default: pilih("ratings") },
   });
   const Moves = kompilasi("../src/halaman/Analisa/komponen/pengaturan/moves.jsx", {
     ...umum, "../svg/soundMax.jsx": { default: kosong }, "../svg/sound-mute.jsx": { default: kosong },

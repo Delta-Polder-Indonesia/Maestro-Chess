@@ -133,11 +133,11 @@ function Moves(props) {
   const { previousMove, move: move2 } = getMoves(moves, moveNumber, customLine, returnedToNormalGame);
   return <div ref={componentRef} className="flex flex-col gap-3 items-center h-full">
             <div ref={commentsRef} className="w-full flex flex-col items-center">
-                <Comments comment={analyzingMove ? previousMove?.comment : move2?.comment} commentKey={analyzingMove ? kunciKomentar(previousMove) : kunciKomentar(move2)} commentIndex={analyzingMove ? indeksKomentar(previousMove) : indeksKomentar(move2)} rating={analyzingMove ? ratingTampilan(previousMove) : ratingTampilan(move2)} moveSan={analyzingMove ? previousMove?.san : move2?.san} evaluation={analyzingMove ? previousMove?.previousStaticEvals?.[0] ?? ["cp", "0"] : move2?.previousStaticEvals?.[0] ?? ["cp", "0"]} white={analyzingMove ? previousMove?.color === WHITE : move2?.color === WHITE} overallGameComment={overallGameComment} />
+                <Comments comment={analyzingMove ? previousMove?.comment : move2?.comment} commentKey={analyzingMove ? kunciKomentar(previousMove) : kunciKomentar(move2)} commentIndex={analyzingMove ? indeksKomentar(previousMove) : indeksKomentar(move2)} rating={analyzingMove ? ratingTampilan(previousMove) : ratingTampilan(move2)} moveSan={analyzingMove ? previousMove?.san : move2?.san} evaluation={analyzingMove ? previousMove?.previousStaticEvals?.[0] ?? ["cp", "0"] : move2?.previousStaticEvals?.[0] ?? ["cp", "0"]} white={analyzingMove ? previousMove?.color === WHITE : move2?.color === WHITE} wdl={analyzingMove ? previousMove?.kandidat?.[0]?.wdl : move2?.kandidat?.[0]?.wdl} overallGameComment={overallGameComment} />
             </div>
             <div style={{ display: previousMove ? "" : "none" }} className="bg-backgroundBoxDarker w-full">
                 <div className="w-[85%] text-sm font-semibold text-highlightBest mx-auto flex flex-row items-center gap-2 py-1.5">
-                    <FormatEval best smaller evaluation={previousMove?.previousStaticEvals?.[0] ?? ["cp", "0"]} white={(previousMove?.color ?? WHITE) === WHITE} />
+                    <FormatEval best smaller evaluation={previousMove?.previousStaticEvals?.[0] ?? ["cp", "0"]} white={(previousMove?.color ?? WHITE) === WHITE} wdl={previousMove?.kandidat?.[0]?.wdl} />
                     <RatingSVG rating="best" size={18} />
                     {previousMove?.bestMoveSan} {t("analisa.langkah.palingBaik")}
                 </div>

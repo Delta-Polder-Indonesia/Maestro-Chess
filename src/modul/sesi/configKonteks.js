@@ -97,5 +97,13 @@ export const ConfigContext = createContext({
   // "dark" mempertahankan tampilan Maestro semula; "auto" mengikuti sistem.
   theme: ["dark", () => {
   }],
+  // Format skor evaluasi (adopsi En Croissant ScoreBubble: klik skor berganti
+  // centipawn ↔ WDL). Bawaan "cp" mempertahankan tampilan Maestro semula.
+  evalDisplay: ["cp", () => {
+  }],
+  // Tablebase online Lichess untuk endgame ≤7 bidak (adopsi En Croissant
+  // TablebaseInfo). Bawaan mati: opt-in karena mengirim FEN ke server lichess.
+  tablebase: [false, () => {
+  }],
   boardMenuSettingsRef: { current: null }
 });

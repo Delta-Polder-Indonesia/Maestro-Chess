@@ -75,6 +75,11 @@ function ConfigContextProvider(props) {
     const nilai = bacaTeks("theme", "dark");
     return nilai === "auto" || nilai === "light" || nilai === "dark" ? nilai : "dark";
   });
+  const [evalDisplay, setEvalDisplay] = useState(() => {
+    const nilai = bacaTeks("evalDisplay", "cp");
+    return nilai === "wdl" ? "wdl" : "cp";
+  });
+  const [tablebase, setTablebase] = useState(() => bacaBoolean("tablebase", false));
   // Ukuran font akar dan warna aksen diterapkan ke root dokumen seperti
   // App.tsx En Croissant (fontSize %) dan Mantine primaryColor. Hanya selama
   // provider Analisa terpasang; cleanup memulihkan tampilan semula sehingga
@@ -128,7 +133,7 @@ function ConfigContextProvider(props) {
     return () => akar.removeAttribute("data-tema");
   }, [theme]);
   const boardMenuSettingsRef = useRef(null);
-  return <ConfigContext.Provider value={{ boardTheme: [boardTheme, setBoardTheme], pieceSet: [pieceSet, setPieceSet], openedMenu: [openedMenu, setOpenedMenu], usedRatings: [usedRatings, setUsedRatings], highlightByRating: [highlightByRating, setHighlightByRating], showArrows: [showArrows, setShowArrows], arrowAfterMove: [arrowAfterMove, setArrowAfterMove], showLegalMoves: [showLegalMoves, setShowLegalMoves], animateMoves: [animateMoves, setAnimateMoves], boardSounds: [boardSounds, setBoardSounds], coordinates: [coordinates, setCoordinates], moveHighlight: [moveHighlight, setMoveHighlight], autoPromote: [autoPromote, setAutoPromote], eraseArrowsOnClick: [eraseArrowsOnClick, setEraseArrowsOnClick], volume: [volume, setVolume], animationSpeed: [animationSpeed, setAnimationSpeed], materialDisplay: [materialDisplay, setMaterialDisplay], moveNotation: [moveNotation, setMoveNotation], previewBoardOnHover: [previewBoardOnHover, setPreviewBoardOnHover], boardScroll: [boardScroll, setBoardScroll], soundCollection: [soundCollection, setSoundCollection], fontSize: [fontSize, setFontSize], accentColor: [accentColor, setAccentColor], theme: [theme, setTheme], boardMenuSettingsRef }}>
+  return <ConfigContext.Provider value={{ boardTheme: [boardTheme, setBoardTheme], pieceSet: [pieceSet, setPieceSet], openedMenu: [openedMenu, setOpenedMenu], usedRatings: [usedRatings, setUsedRatings], highlightByRating: [highlightByRating, setHighlightByRating], showArrows: [showArrows, setShowArrows], arrowAfterMove: [arrowAfterMove, setArrowAfterMove], showLegalMoves: [showLegalMoves, setShowLegalMoves], animateMoves: [animateMoves, setAnimateMoves], boardSounds: [boardSounds, setBoardSounds], coordinates: [coordinates, setCoordinates], moveHighlight: [moveHighlight, setMoveHighlight], autoPromote: [autoPromote, setAutoPromote], eraseArrowsOnClick: [eraseArrowsOnClick, setEraseArrowsOnClick], volume: [volume, setVolume], animationSpeed: [animationSpeed, setAnimationSpeed], materialDisplay: [materialDisplay, setMaterialDisplay], moveNotation: [moveNotation, setMoveNotation], previewBoardOnHover: [previewBoardOnHover, setPreviewBoardOnHover], boardScroll: [boardScroll, setBoardScroll], soundCollection: [soundCollection, setSoundCollection], fontSize: [fontSize, setFontSize], accentColor: [accentColor, setAccentColor], theme: [theme, setTheme], evalDisplay: [evalDisplay, setEvalDisplay], tablebase: [tablebase, setTablebase], boardMenuSettingsRef }}>
             {props.children}
         </ConfigContext.Provider>;
 }

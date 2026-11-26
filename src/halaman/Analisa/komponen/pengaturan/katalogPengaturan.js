@@ -53,6 +53,8 @@ export const BARIS_STATIS = [
   { kunci: "tema", labelKunci: "analisa.pengaturan.tema", grup: "tampilan" },
   { kunci: "ukuranFont", labelKunci: "analisa.pengaturan.ukuranFont", grup: "tampilan" },
   { kunci: "warnaAksen", labelKunci: "analisa.pengaturan.warnaAksen", grup: "tampilan" },
+  { kunci: "formatSkor", labelKunci: "analisa.pengaturan.formatSkor", grup: "penilaian" },
+  { kunci: "tablebase", labelKunci: "analisa.pengaturan.tablebase", grup: "penilaian" },
   { kunci: "sorotLabel", labelKunci: "analisa.pengaturan.sorotLabel", grup: "penilaian" },
   { kunci: "tampilPanah", labelKunci: "analisa.pengaturan.tampilPanah", grup: "langkah" },
   { kunci: "panahSetelahLangkah", labelKunci: "analisa.pengaturan.panahSetelahLangkah", grup: "langkah" },

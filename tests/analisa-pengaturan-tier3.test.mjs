@@ -478,6 +478,7 @@ test("game wires the wheel handler to the board and the boardScroll preference g
     "../../konstanta.js": { maxSisiPapan: 1000, minSisiPapan: 160, navTop: 516 },
     "../../../../modul/sesi/preferensi.js": configContext,
     "../menu/analysis/gameButtons.jsx": { default: kosong },
+    "../menu/analysis/tablebase.jsx": { default: kosong },
     "./getMoves.js": { getMoves: (game, i) => ({ move: game[i] }), getArrows: () => [], getCapturedPieces, getCustomResult: () => "", formatPlayerLabel: (player) => player?.name ?? "" },
     "./useMuatPartai.js": { useMuatPartai: () => ({ controllerRef: {}, muatSeqRef: {}, openingsRef: {} }) },
     "./useAnalisisPapan.js": { useAnalisisPapan: () => ({ analyzeMove: noop, analyzingMoveRef: { current: false } }) },

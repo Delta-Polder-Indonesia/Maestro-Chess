@@ -236,9 +236,9 @@ test("theme, accent and font size compose on the analisa root and clean up toget
   assert.equal(akar.style.props.size, 0, "aksen pulih");
 });
 
-test("settings catalog registers the theme row in the appearance group (27 static rows)", async () => {
+test("settings catalog registers the theme row in the appearance group (29 static rows)", async () => {
   const { BARIS_STATIS, GRUP_META } = await import("../src/halaman/Analisa/komponen/pengaturan/katalogPengaturan.js");
-  assert.equal(BARIS_STATIS.length, 27);
+  assert.equal(BARIS_STATIS.length, 29);
   const baris = BARIS_STATIS.find((b) => b.kunci === "tema");
   assert.ok(baris, "baris tema terdaftar");
   assert.equal(baris.grup, "tampilan");
