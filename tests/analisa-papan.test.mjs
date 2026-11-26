@@ -244,7 +244,7 @@ test("dashboard has one report button and opens recent features or saved work", 
       { id: "interrupted", jenis: "laporan", status: "berjalan", judul: "Carol vs Dan", adaHasil: false, waktu: 3 },
       { id: "previous", jenis: "laporan", status: "terputus", judul: "Eve vs Fox", adaHasil: true, waktu: 4 },
       { id: "running", jenis: "laporan", status: "berjalan", judul: "Gina vs Han", adaHasil: false, waktu: 5 },
-      { id: "fitur:akun", jenis: "fitur", fitur: "akun", waktu: 6 },
+      { id: "fitur:wawasan", jenis: "fitur", fitur: "wawasan", waktu: 6 },
     ],
   };
   const renderer = renderPapan(indonesia, {
@@ -262,7 +262,7 @@ test("dashboard has one report button and opens recent features or saved work", 
   assert.equal(report.findByType("h2").children.join(""), "Report Analisa");
   assert.equal(report.findAllByType("button").length, 1);
   assert.match(text(byTestId(renderer, "pekerjaan-daftar")), /File Terbaru/);
-  assert.match(text(item(renderer, "fitur:akun")), /Akun/);
+  assert.match(text(item(renderer, "fitur:wawasan")), /Wawasan/);
   assert.match(text(item(renderer, "interrupted")), /Terputus/);
   assert.match(text(item(renderer, "previous")), /Terputus/);
   const previousRow = item(renderer, "previous");
@@ -276,11 +276,11 @@ test("dashboard has one report button and opens recent features or saved work", 
     byTestId(renderer, "papan-tombol-impor").props.onClick();
     byTestId(renderer, "papan-tombol-deteksi-engine").props.onClick();
     byTestId(renderer, "papan-tombol-wawasan").props.onClick();
-    for (const id of ["draft", "done", "interrupted", "previous", "running", "fitur:akun"]) {
+    for (const id of ["draft", "done", "interrupted", "previous", "running", "fitur:wawasan"]) {
       item(renderer, id).find((node) => node.props["data-uji"] === "pekerjaan-buka").props.onClick();
     }
   });
-  assert.deepEqual(calls, ["report", "impor", "deteksi-engine", "wawasan", "buka:draft", "buka:done", "buka:interrupted", "buka:previous", "buka:running", "buka:fitur:akun"]);
+  assert.deepEqual(calls, ["report", "impor", "deteksi-engine", "wawasan", "buka:draft", "buka:done", "buka:interrupted", "buka:previous", "buka:running", "buka:fitur:wawasan"]);
   for (const key of ["main", "analisa", "repertoar", "puzzle"]) {
     assert.equal(byTestId(renderer, `papan-tombol-${key}`).props.disabled, true);
   }
@@ -318,11 +318,11 @@ test("recent files use the original compact panel and empty state without explan
 test("stored feature names follow the current language", () => {
   const work = {
     siap: true, tersedia: true, menyimpan: false, aktif: {},
-    daftar: [{ id: "fitur:pengaturan", jenis: "fitur", fitur: "pengaturan", waktu: Date.now() }],
+    daftar: [{ id: "fitur:wawasan", jenis: "fitur", fitur: "wawasan", waktu: Date.now() }],
   };
-  for (const [dictionary, label] of [[indonesia, "Pengaturan"], [english, "Settings"]]) {
+  for (const [dictionary, label] of [[indonesia, "Wawasan"], [english, "Insights"]]) {
     const renderer = renderPapan(dictionary, {}, work);
-    assert.match(text(item(renderer, "fitur:pengaturan")), new RegExp(label));
+    assert.match(text(item(renderer, "fitur:wawasan")), new RegExp(label));
     renderer.unmount();
   }
 });
@@ -335,7 +335,7 @@ test("recent files retain the same height and scroll vertically when populated",
 
   const work = {
     siap: true, tersedia: true, menyimpan: false, aktif: {},
-    daftar: [{ id: "fitur:akun", jenis: "fitur", fitur: "akun", waktu: Date.now() }],
+    daftar: [{ id: "fitur:wawasan", jenis: "fitur", fitur: "wawasan", waktu: Date.now() }],
   };
   const populated = renderPapan(indonesia, {}, work);
   const scroll = byTestId(populated, "pekerjaan-scroll");
@@ -351,19 +351,19 @@ test("recent-file names come from their visible content and details use unique d
   const work = {
     siap: true, tersedia: true, menyimpan: false, aktif: {},
     daftar: [
-      { id: "fitur:pengaturan", jenis: "fitur", fitur: "pengaturan", waktu },
+      { id: "fitur:impor", jenis: "fitur", fitur: "impor", waktu },
       { id: "fitur:wawasan", jenis: "fitur", fitur: "wawasan", waktu },
-      { id: "fitur:akun", jenis: "fitur", fitur: "akun", waktu: 0 },
+      { id: "fitur:deteksi-engine", jenis: "fitur", fitur: "deteksi-engine", waktu: 0 },
       { id: "laporan:tanpa-waktu", jenis: "laporan", status: "baru", waktu: 0 },
     ],
   };
   for (const [dictionary, prefix, judul] of [
-    [indonesia, "Buka: ", ["Pengaturan", "Wawasan"]],
-    [english, "Open: ", ["Settings", "Insights"]],
+    [indonesia, "Buka: ", ["Impor Permainan", "Wawasan"]],
+    [english, "Open: ", ["Import Game", "Insights"]],
   ]) {
     const renderer = renderPapan(dictionary, {}, work);
     const ids = [];
-    for (const [index, key] of ["fitur:pengaturan", "fitur:wawasan"].entries()) {
+    for (const [index, key] of ["fitur:impor", "fitur:wawasan"].entries()) {
       const row = item(renderer, key);
       const open = row.findByProps({ "data-uji": "pekerjaan-buka" });
       assert.equal(open.props["aria-label"], undefined);
@@ -375,7 +375,7 @@ test("recent-file names come from their visible content and details use unique d
       ids.push(detail.props.id);
     }
     assert.equal(new Set(ids).size, ids.length);
-    const noTime = item(renderer, "fitur:akun").findByProps({ "data-uji": "pekerjaan-buka" });
+    const noTime = item(renderer, "fitur:deteksi-engine").findByProps({ "data-uji": "pekerjaan-buka" });
     assert.equal(noTime.props["aria-describedby"], undefined);
     const statusOnlyRow = item(renderer, "laporan:tanpa-waktu");
     const statusOnly = statusOnlyRow.findByProps({ "data-uji": "pekerjaan-buka" });

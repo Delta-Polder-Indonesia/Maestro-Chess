@@ -249,15 +249,18 @@ test("opened screens enter history and their rows return to the corresponding fe
   const pindah = async (tampilan) => act(async () => { navigasi.setTampilan(tampilan); await flush(); await store.tungguTulis(); });
   assert.equal(records().length, 0); // The home screen itself is not a recent feature.
 
+  // Semua layar tetap bisa dibuka, tetapi hanya fitur nav papan yang dicatat;
+  // menu bilah samping (akun/database/pengaturan) tidak masuk File Terbaru.
+  const dicatat = new Set(["deteksi-engine", "wawasan", "impor", "bermain"]);
   for (const fitur of ["akun", "database", "deteksi-engine", "wawasan", "pengaturan", "impor", "bermain"]) {
     await pindah(fitur);
     assert.equal(navigasi.tampilan, fitur);
-    assert.ok(records().some((item) => item.fitur === fitur));
+    assert.equal(records().some((item) => item.fitur === fitur), dicatat.has(fitur), fitur);
     await pindah("papan");
   }
-  assert.equal(records().length, 7);
+  assert.equal(records().length, 4);
 
-  for (const fitur of ["akun", "database", "deteksi-engine", "wawasan", "pengaturan", "impor", "bermain"]) {
+  for (const fitur of ["deteksi-engine", "wawasan", "impor", "bermain"]) {
     const item = records().find((record) => record.fitur === fitur);
     await act(async () => { navigasi.papan.onBukaPekerjaan(item); await flush(); await store.tungguTulis(); });
     assert.equal(navigasi.tampilan, fitur);
@@ -818,14 +821,12 @@ test("workspace supplies saved labels while a session report is still loading", 
   assert.equal(navigasi.tab.perluPulih, true);
   assert.equal(navigasi.tabBar.sibuk, true);
   assert.equal(navigasi.tabBar.tampilanAktif, null);
-  assert.equal(navigasi.tabBar.laporanAktifId, null);
   assert.equal(navigasi.tabBar.daftar[0].laporanId, id);
 
   await act(async () => { lanjut(); await flush(); await flush(); });
   assert.equal(navigasi.tab.perluPulih, false);
   assert.equal(navigasi.tabBar.sibuk, false);
   assert.equal(navigasi.tabBar.tampilanAktif, "bermain");
-  assert.equal(navigasi.tabBar.laporanAktifId, id);
   await act(async () => { renderer.unmount(); await store.tungguTulis(); });
 });
 

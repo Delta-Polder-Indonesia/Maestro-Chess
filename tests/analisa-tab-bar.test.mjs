@@ -25,7 +25,7 @@ function komponenTab() {
   const dependencies = {
     "lucide-react": require("lucide-react"),
     "../../../lib/i18n.jsx": { useI18n: () => ({ t: (key, nilai) => (terjemahan[key] ?? key).replace("{nama}", nilai?.nama ?? "") }) },
-    "../../../modul/pekerjaan/index.js": { KUNCI_FITUR, usePekerjaan: () => ({ daftar: [{ id: "laporan:1", jenis: "laporan", judul: "Alice vs Bob" }] }) },
+    "../../../modul/pekerjaan/index.js": { KUNCI_FITUR },
   };
   const filename = new URL("../src/halaman/Analisa/komponen/tabBar.jsx", import.meta.url);
   const compiled = ts.transpileModule(readFileSync(filename, "utf8"), {
@@ -41,7 +41,7 @@ function komponenTab() {
   return result.exports.default;
 }
 
-test("tab bar labels features and reports, and exposes select, close and add controls", () => {
+test("tab bar labels each tab with its feature name, and exposes select, close and add controls", () => {
   const TabBar = komponenTab();
   const aksi = [];
   const daftar = [
@@ -54,14 +54,14 @@ test("tab bar labels features and reports, and exposes select, close and add con
   let renderer;
   act(() => { renderer = TestRenderer.create(React.createElement(TabBar, props)); });
   const buttons = renderer.root.findAll((node) => node.props.role === "tab");
-  assert.deepEqual(buttons.map((node) => node.children.join("")), ["New Tab", "Alice vs Bob", "Report Analisa", "Impor Permainan"]);
+  assert.deepEqual(buttons.map((node) => node.children.join("")), ["New Tab", "Report Analisa", "Report Analisa", "Impor Permainan"]);
   assert.deepEqual(buttons.map((node) => node.props["aria-selected"]), [false, true, false, false]);
   assert.deepEqual(buttons.map((node) => node.props.tabIndex), [-1, 0, -1, -1]);
   assert.ok(buttons.every((node) => node.props["aria-controls"] === "konten-tab-kerja"));
   assert.equal(renderer.root.findByProps({ role: "tablist" }).props["aria-label"], "Tab area kerja");
   act(() => buttons[0].props.onClick());
   const tutup = renderer.root.findAll((node) => node.props["data-uji"] === "tab-kerja-tutup");
-  assert.equal(tutup[1].props["aria-label"], "Tutup tab Alice vs Bob");
+  assert.equal(tutup[1].props["aria-label"], "Tutup tab Report Analisa");
   act(() => tutup[1].props.onClick());
   act(() => renderer.root.findByProps({ "data-uji": "tab-kerja-tambah" }).props.onClick());
   assert.deepEqual(aksi, [["pilih", "tab:1"], ["tutup", "tab:2"], ["tambah"]]);
@@ -93,9 +93,8 @@ test("active tab follows the live screen before the recorded tab feature catches
     ...props,
     aktifId: "tab:2",
     tampilanAktif: "bermain",
-    laporanAktifId: "laporan:1",
   })));
-  assert.deepEqual(renderer.root.findAll((node) => node.props.role === "tab").map((node) => node.children.join("")), ["Engine", "Alice vs Bob"]);
+  assert.deepEqual(renderer.root.findAll((node) => node.props.role === "tab").map((node) => node.children.join("")), ["Engine", "Report Analisa"]);
   act(() => renderer.unmount());
 });
 
@@ -109,16 +108,15 @@ test("session recovery uses saved tab labels until the live screen is ready", ()
     aktifId: "tab:2",
     sibuk: true,
     tampilanAktif: null,
-    laporanAktifId: null,
     onPilih() {}, onTutup() {}, onTambah() {},
   };
   let renderer;
   act(() => { renderer = TestRenderer.create(React.createElement(TabBar, props)); });
-  assert.deepEqual(renderer.root.findAll((node) => node.props.role === "tab").map((node) => node.children.join("")), ["Engine", "Alice vs Bob"]);
+  assert.deepEqual(renderer.root.findAll((node) => node.props.role === "tab").map((node) => node.children.join("")), ["Engine", "Report Analisa"]);
   assert.deepEqual(renderer.root.findAllByProps({ "data-uji": "tab-kerja-item" }).map((node) => node.props["data-tab-fitur"]), ["engine", "bermain"]);
   assert.ok(renderer.root.findAll((node) => ["tab-kerja-pilih", "tab-kerja-tutup", "tab-kerja-tambah"].includes(node.props["data-uji"])).every((node) => node.props.disabled));
 
-  act(() => renderer.update(React.createElement(TabBar, { ...props, sibuk: false, tampilanAktif: "papan", laporanAktifId: "laporan:1" })));
+  act(() => renderer.update(React.createElement(TabBar, { ...props, sibuk: false, tampilanAktif: "papan" })));
   assert.deepEqual(renderer.root.findAll((node) => node.props.role === "tab").map((node) => node.children.join("")), ["Engine", "New Tab"]);
   assert.equal(renderer.root.findAllByProps({ "data-uji": "tab-kerja-tutup" })[1].props["aria-label"], "Tutup tab New Tab");
   act(() => renderer.unmount());
