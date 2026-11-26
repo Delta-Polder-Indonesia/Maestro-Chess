@@ -8,6 +8,7 @@ import TestRenderer from "react-test-renderer";
 import ts from "typescript";
 import * as configContext from "../src/halaman/Analisa/konteks/configKonteks.js";
 import { boardThemes } from "../src/halaman/Analisa/komponen/pengaturan/boardThemes.js";
+import * as setBidak from "../src/halaman/Analisa/komponen/pengaturan/setBidak.js";
 import { analisa as english } from "../src/lib/terjemahan/en/analisa.js";
 
 const nodeRequire = createRequire(import.meta.url);
@@ -61,7 +62,8 @@ function renderLayar() {
     "next/link": { default: TautanUji },
   };
   const Baris = compile("../src/halaman/Analisa/komponen/pengaturan/barisPengaturan.jsx", {}).default;
-  const denganBaris = { ...umum, "./barisPengaturan.jsx": { default: Baris } };
+  const PilihRingkas = compile("../src/halaman/Analisa/komponen/pengaturan/pilihRingkas.jsx", {}).default;
+  const denganBaris = { ...umum, "./barisPengaturan.jsx": { default: Baris }, "./pilihRingkas.jsx": { default: PilihRingkas }, "./setBidak.js": setBidak };
   const modulRatings = compile("../src/halaman/Analisa/komponen/pengaturan/ratings.jsx", denganBaris);
   const modulLayar = compile("../src/halaman/Analisa/komponen/nav/layarPengaturan.jsx", {
     "../../../../lib/i18n.jsx": umum["../../../../lib/i18n.jsx"],
@@ -82,6 +84,7 @@ function renderLayar() {
   function Harness() {
     const nilai = {
       boardTheme: React.useState(0),
+      pieceSet: React.useState("cburnett"),
       usedRatings: React.useState(configContext.defaultUsedRatings),
       highlightByRating: React.useState(true),
       showArrows: React.useState(true),

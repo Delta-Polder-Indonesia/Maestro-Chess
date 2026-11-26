@@ -173,7 +173,7 @@ function Arrow(props) {
         </svg>;
 }
 function Coronation(props) {
-  const { white, column, coroningWhite, squareSize, clearCoronation, coronate, fokusKembali, t } = props;
+  const { white, column, coroningWhite, squareSize, clearCoronation, coronate, fokusKembali, t, pieceSet } = props;
   const coronationRef = useRef(null);
   const pieces = [
     QUEEN,
@@ -205,7 +205,7 @@ function Coronation(props) {
     coronate(piece);
     fokusKembali();
   }} key={piece} className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-700">
-                    <PieceSVG piece={piece} color={color} size={squareSize} />
+                    <PieceSVG piece={piece} color={color} size={squareSize} set={pieceSet} />
                 </button>)}
             <button type="button" aria-label={t("analisa.papanKeyboard.batalPromosi")} onClick={() => { clearCoronation(); fokusKembali(); }} className="bg-neutral-200 w-full flex justify-center items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-700" style={{ height: squareSize / 2 }}>
                 <Image draggable={false} src={berkasPublik("images/analisa/cross.svg")} alt="" aria-hidden="true" width={squareSize / 4.5} height={squareSize / 4.5} />
@@ -213,7 +213,7 @@ function Coronation(props) {
         </div>;
 }
 function Piece(props) {
-  const { boardRef, pieceRef, castleRookRef, moved, isCastleRook, pieceColor, pieceSymbol, drag, setDrag, id, squareSize, setPlaying, isCoronating, bolehSeret, kotakDariKursor, onLepasSentuh, cleanArrows } = props;
+  const { boardRef, pieceRef, castleRookRef, moved, isCastleRook, pieceColor, pieceSymbol, pieceSet, drag, setDrag, id, squareSize, setPlaying, isCoronating, bolehSeret, kotakDariKursor, onLepasSentuh, cleanArrows } = props;
   const [movement, setMovement] = useState({ x: 0, y: 0 });
   const wasSelectedRef = useRef(false);
   const pindahKotakRef = useRef(false);
@@ -419,7 +419,7 @@ function Piece(props) {
     className="w-full relative h-full z-[20] cursor-grab"
     style={{ top: movement.y || "", left: movement.x || "", zIndex: drag.is && drag.id === id ? 100 : "", touchAction: bolehSeret ? "none" : "auto" }}
   >
-            <PieceSVG className="*:pointer-events-none" dataset={{ "dontcleandrag": true }} piece={pieceSymbol} color={pieceColor} size={squareSize} />
+            <PieceSVG className="*:pointer-events-none" dataset={{ "dontcleandrag": true }} piece={pieceSymbol} color={pieceColor} size={squareSize} set={pieceSet} />
         </div>;
 }
 function Board(props) {
@@ -428,7 +428,7 @@ function Board(props) {
   const [kotakFokus, setKotakFokus] = useState("e2");
   const idPetunjuk = useId();
   const t = props.t || ((kunci) => kunci);
-  const { boardTheme, usedRatings, highlightByRating, showArrows, arrowAfterMove, showLegalMoves, animateMoves, boardSoundsRef } = props;
+  const { boardTheme, pieceSet, usedRatings, highlightByRating, showArrows, arrowAfterMove, showLegalMoves, animateMoves, boardSoundsRef } = props;
   const boardRef = useRef(null);
   const pieceRef = useRef(null);
   const castleRookRef = useRef(null);
@@ -878,6 +878,7 @@ function Board(props) {
             castleRookRef={castleRookRef}
             pieceColor={pieceColor}
             pieceSymbol={pieceType}
+            pieceSet={pieceSet}
             boardRef={boardRef}
             bolehSeret={!props.pratinjau && pieceColor === chess.turn()}
             kotakDariKursor={kotakDariKursor}
@@ -941,7 +942,7 @@ function Board(props) {
       setCoronation({ choosing: false, movement: [] });
     }
     const to = coronation.movement[1];
-    return <Coronation white={white} squareSize={squareSize} column={to.col} coroningWhite={!whiteMoving} t={t} fokusKembali={() => boardRef.current?.querySelector(`[data-square="${deformatSquare(to)}"]`)?.focus()} clearCoronation={() => setCoronation({ choosing: false, movement: [] })} coronate={coronate} />;
+    return <Coronation white={white} squareSize={squareSize} column={to.col} coroningWhite={!whiteMoving} t={t} fokusKembali={() => boardRef.current?.querySelector(`[data-square="${deformatSquare(to)}"]`)?.focus()} clearCoronation={() => setCoronation({ choosing: false, movement: [] })} coronate={coronate} pieceSet={pieceSet} />;
   })()}
         </div>;
 }
@@ -959,6 +960,7 @@ function BoardDenganConfig(props) {
   return <BoardMemo
     {...props}
     boardTheme={config.boardTheme[0]}
+    pieceSet={config.pieceSet?.[0] ?? "cburnett"}
     usedRatings={config.usedRatings[0]}
     highlightByRating={config.highlightByRating[0]}
     showArrows={config.showArrows[0]}

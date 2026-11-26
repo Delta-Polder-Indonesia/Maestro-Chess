@@ -26,6 +26,17 @@ Creative Commons Attribution-ShareAlike 3.0 Unported:
 https://creativecommons.org/licenses/by-sa/3.0/ .
 The pieces have been adapted into SVG/React components in this project.
 
+Additional selectable piece sets in public/bidak/ (Alpha, California,
+Cardinal, Chessnut, Dubrovny, Gioco, Governor, ICPieces, Maestro, Merida,
+Staunty, Tatiana, Chess.com, and the PNG-based sets) are copied from the
+owner's ChessClub repository, which sources them from the lichess-org/lila
+static piece collection (https://github.com/lichess-org/lila/tree/master/public/piece).
+Per-set authors and licenses vary: CC BY-SA 3.0/4.0, Apache 2.0 (Chessnut),
+GPLv2+ (Merida), and CC BY-NC-SA 4.0 for some sets (California, Cardinal,
+ICPieces). The per-set notices shipped with the assets are preserved
+(e.g. public/bidak/cburnett/license.txt, public/bidak/bidak/README.md);
+a consolidated summary is in public/bidak/CREDITS.md.
+
 Opening book
 ------------
 public/data/buku-analisa.json is the ChessClub analysis table derived from

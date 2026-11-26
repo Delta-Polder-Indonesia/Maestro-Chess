@@ -282,6 +282,7 @@ test("application consumers use the public facade, never legacy or private sessi
     "src/halaman/Analisa/komponen/boardMenu/boardMenu.jsx -> src/modul/sesi/analisa.js",
     "src/halaman/Analisa/komponen/errors/pageErrors.jsx -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/game/board.jsx -> src/modul/sesi/preferensi.js",
+    "src/halaman/Analisa/komponen/game/capturedPieces.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/game/game.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/game/game.jsx -> src/modul/sesi/galat.js",
     "src/halaman/Analisa/komponen/game/game.jsx -> src/modul/sesi/analisa.js",

@@ -973,6 +973,7 @@ export const analisa = {
     pengaturan: {
       judul: "Pengaturan",
       temaPapan: "Tema papan",
+      setBidak: "Set bidak",
       langkah: "Langkah",
       penilaian: "Label",
       langkahTerbaik: "Langkah terbaik",
@@ -1019,7 +1020,8 @@ export const analisa = {
         dokumentasiDeskripsi: "Tautan ke kode sumber dan daftar atribusi proyek.",
       },
       deskripsi: {
-        temaPapan: "Warna bidak dan latar yang dipakai papan analisis.",
+        temaPapan: "Warna latar yang dipakai papan analisis.",
+        setBidak: "Gaya visual bidak yang dipakai papan dan bidak tertangkap.",
         perilakuPapan: "Perilaku visual papan saat langkah dibuat.",
         langkahLegal: "Tampilkan titik pada kotak tujuan bidak.",
         animasi: "Animasikan perpindahan bidak antarkotak.",

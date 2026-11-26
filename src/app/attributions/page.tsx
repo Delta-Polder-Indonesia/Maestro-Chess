@@ -93,6 +93,7 @@ export default function Attributions() {
                 <p className="kartu-paragraf"><External href="https://creativecommons.org/licenses/by-sa/3.0/">Lisensi CC BY-SA 3.0</External></p>
               }>
                 <p className="kartu-paragraf">Desain bidak oleh <External href="https://en.wikipedia.org/wiki/User:Cburnett">Cburnett</External>, diadaptasi sebagai komponen SVG.</p>
+                <p className="kartu-paragraf">Set bidak tambahan (Alpha, California, Cardinal, Chessnut, Merida, Maestro, dan lainnya) disalin dari repositori ChessClub milik pemilik yang bersumber dari koleksi aset lichess-org/lila. Lisensi tiap set berbeda (CC BY-SA, Apache 2.0, atau CC BY-NC-SA untuk beberapa set); rincian penulis dan lisensi ada di public/bidak/CREDITS.md.</p>
               </AttributionCard>
 
               <AttributionCard id="suara" number="05" title="Suara papan" resources={

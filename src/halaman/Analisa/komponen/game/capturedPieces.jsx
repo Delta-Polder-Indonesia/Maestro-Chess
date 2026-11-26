@@ -1,9 +1,10 @@
 /* Port dari Brilliant-Chess (MIT, © 2025 Delo).
  * Bidak yang dimakan menggunakan SVG Cburnett yang sama dengan papan. */
 
-import { useMemo } from "react";
+import { useContext, useMemo } from "react";
 import { BISHOP, KNIGHT, PAWN, QUEEN, ROOK } from "chess.js";
 import { ChessPiece } from "../../../../components/chess/ChessPiece.jsx";
+import { ConfigContext } from "../../../../modul/sesi/preferensi.js";
 
 const PIECES_ORDER = [PAWN, BISHOP, KNIGHT, ROOK, QUEEN];
 
@@ -12,6 +13,7 @@ function formatAdvantage(advantage = 0) {
 }
 
 export default function CapturedPieces({ white = false, pieces = [], advantage = 0 }) {
+  const pieceSet = useContext(ConfigContext).pieceSet?.[0] ?? "cburnett";
   // Kelompokkan dan urutkan bidak berdasarkan urutan nilai catur
   const sortedGroupedPieces = useMemo(() => {
     const counts = pieces.reduce((acc, piece) => {
@@ -50,6 +52,7 @@ export default function CapturedPieces({ white = false, pieces = [], advantage =
                 <ChessPiece
                   key={`${piece}-${idx}`}
                   piece={pieceChar}
+                  set={pieceSet}
                   className={`w-[10px] h-[10px] group-data-[panel-sejajar=true]/papan:w-[17px] group-data-[panel-sejajar=true]/papan:h-[17px] ${marginX} ${overlapClass}`}
                 />
               );

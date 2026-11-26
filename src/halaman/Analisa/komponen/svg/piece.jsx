@@ -2,6 +2,7 @@
 import { BISHOP, KING, KNIGHT, PAWN, QUEEN, ROOK, WHITE } from "chess.js";
 import { getPropsDataset } from "./getPropsDataset.js";
 import { TooltipLabel } from "../../../../components/ui/tooltip.jsx";
+import { idSetBidak, urlBidak } from "../pengaturan/setBidak.js";
 
 function Pawn({ color, size }) {
   return color === WHITE ? <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" width={size} height={size}>
@@ -543,11 +544,17 @@ function King({ color, size }) {
         </svg>;
 }
 
-function PieceSVG({ piece, color, size, dataset, className, style, draggable, title }) {
+function PieceSVG({ piece, color, size, dataset, className, style, draggable, title, set }) {
   const propsDataset = getPropsDataset(dataset ?? {});
   const pieceProps = { color, size };
+  // Set selain CBurnett dirender dari aset SVG/PNG publik (public/bidak/).
+  // CBurnett tetap SVG inline agar tampilan bawaan dan perilaku seret tidak berubah.
+  const setSah = idSetBidak(set);
+  const sumber = setSah !== "cburnett" ? urlBidak(setSah, color === WHITE ? piece.toUpperCase() : piece) : null;
   return <TooltipLabel label={title}><div draggable={draggable} {...propsDataset} className={className} style={style}>
-            {(() => {
+            {sumber ? (
+    <img src={sumber} alt="" width={size} height={size} draggable={false} className="pointer-events-none select-none object-contain" style={{ width: size, height: size }} />
+  ) : (() => {
     switch (piece) {
       case PAWN:
         return <Pawn {...pieceProps} />;

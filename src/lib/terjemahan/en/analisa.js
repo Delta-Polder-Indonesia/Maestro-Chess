@@ -976,6 +976,7 @@ export const analisa = {
     pengaturan: {
       judul: "Settings",
       temaPapan: "Board theme",
+      setBidak: "Piece set",
       langkah: "Moves",
       penilaian: "Ratings",
       langkahTerbaik: "Best moves",
@@ -1022,7 +1023,8 @@ export const analisa = {
         dokumentasiDeskripsi: "Links to the project source code and attributions.",
       },
       deskripsi: {
-        temaPapan: "Piece and square colors used by the analysis board.",
+        temaPapan: "Square colors used by the analysis board.",
+        setBidak: "Visual style of the pieces used on the board and captured pieces.",
         perilakuPapan: "Visual behaviour of the board when moves are made.",
         langkahLegal: "Show dots on the destination squares of a piece.",
         animasi: "Animate pieces as they move between squares.",

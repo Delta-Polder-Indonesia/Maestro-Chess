@@ -146,6 +146,7 @@ export default function LayarPengaturan({ aktif = true }) {
 
   const daftarBaris = [
     ...boardThemes.map((tema) => ({ kunci: `tema.${tema.kunci}`, label: t(`analisa.tema.${tema.kunci}`), grup: "tema" })),
+    { kunci: "setBidak", label: t("analisa.pengaturan.setBidak"), grup: "tema" },
     { kunci: "langkahLegal", label: t("analisa.pengaturan.langkahLegal"), grup: "perilaku" },
     { kunci: "animasi", label: t("analisa.pengaturan.animasi"), grup: "perilaku" },
     { kunci: "suara", label: t("analisa.pengaturan.suara"), grup: "perilaku" },

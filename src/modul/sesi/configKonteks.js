@@ -20,6 +20,8 @@ export const ConfigContext = createContext({
   }],
   boardTheme: [0, () => {
   }],
+  pieceSet: ["cburnett", () => {
+  }],
   usedRatings: [defaultUsedRatings, () => {
   }],
   highlightByRating: [true, () => {
