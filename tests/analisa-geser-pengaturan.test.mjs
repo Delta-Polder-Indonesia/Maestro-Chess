@@ -183,3 +183,62 @@ test("i18n adds increase/decrease/scrub keys in both Indonesian and English", ()
   assert.ok(id.includes('seretNilai: "Seret kiri/kanan untuk mengubah nilai"'));
   assert.ok(en.includes('seretNilai: "Drag left/right to change the value"'));
 });
+
+// ── Pengunci hasil audit scrub: batas, pointer lepas, dan cadangan sentuh ──
+
+test("scrubbing past a clamp does not spam onChange with unchanged values", async () => {
+  const panggilan = [];
+  const renderer = await render({ nilai: 200, onChange: (v) => panggilan.push(v), min: 50, max: 200, step: 10, ariaLabel: "Font", hintSeret: "Seret" });
+  const scrub = renderer.root.findByProps({ title: "Seret" });
+  const target = { setPointerCapture() {}, releasePointerCapture() {} };
+  await act(async () => { scrub.props.onPointerDown({ button: 0, pointerId: 1, preventDefault: cegah, currentTarget: target }); });
+  // Sudah di maksimum: menahan geser ke kanan tidak menulis ulang nilai sama.
+  await act(async () => { scrub.props.onPointerMove({ movementX: 40, currentTarget: target }); });
+  await act(async () => { scrub.props.onPointerMove({ movementX: 40, currentTarget: target }); });
+  assert.deepEqual(panggilan, [], "tidak ada onChange saat nilai terjepit di max");
+  // Arah sebaliknya tetap mengubah nilai.
+  await act(async () => { scrub.props.onPointerMove({ movementX: -4, currentTarget: target }); });
+  assert.deepEqual(panggilan, [180]);
+  await act(async () => { scrub.props.onPointerUp({ pointerId: 1, currentTarget: target }); });
+  await act(async () => { renderer.unmount(); });
+});
+
+test("scrub stops when the pointer was released elsewhere (buttons 0 / lost capture)", async () => {
+  const panggilan = [];
+  const renderer = await render({ nilai: 100, onChange: (v) => panggilan.push(v), min: 0, max: 100, step: 1, ariaLabel: "Volume", hintSeret: "Seret" });
+  const scrub = renderer.root.findByProps({ title: "Seret" });
+  let pegang = true;
+  const target = {
+    setPointerCapture() { pegang = true; },
+    hasPointerCapture() { return pegang; },
+    releasePointerCapture() { pegang = false; },
+  };
+  await act(async () => { scrub.props.onPointerDown({ button: 0, pointerId: 1, preventDefault: cegah, currentTarget: target }); });
+  // Pointer dilepas di luar elemen: buttons 0 → scrub berhenti, bukan lanjut.
+  await act(async () => { scrub.props.onPointerMove({ movementX: 10, buttons: 0, currentTarget: target }); });
+  assert.deepEqual(panggilan, [], "gerakan tanpa tombol tertahan tidak mengubah nilai");
+  assert.equal(pegang, false, "capture dilepas");
+  await act(async () => { scrub.props.onPointerMove({ movementX: 10, currentTarget: target }); });
+  assert.deepEqual(panggilan, [], "scrub tidak nyangkut setelah pointer lepas");
+  // lostpointercapture juga mengakhiri scrub (idempoten, tanpa rilis ganda).
+  await act(async () => { scrub.props.onPointerDown({ button: 0, pointerId: 2, preventDefault: cegah, currentTarget: target }); });
+  pegang = false; // peramban melepas capture lebih dulu
+  await act(async () => { scrub.props.onLostPointerCapture({ pointerId: 2, currentTarget: target }); });
+  await act(async () => { scrub.props.onPointerMove({ movementX: 10, currentTarget: target }); });
+  assert.deepEqual(panggilan, [], "setelah lostpointercapture, gerakan diabaikan");
+  await act(async () => { renderer.unmount(); });
+});
+
+test("touch scrub falls back to clientX deltas when movementX is unavailable", async () => {
+  const panggilan = [];
+  const renderer = await render({ nilai: 100, onChange: (v) => panggilan.push(v), min: 50, max: 200, step: 10, ariaLabel: "Font", hintSeret: "Seret" });
+  const scrub = renderer.root.findByProps({ title: "Seret" });
+  const target = { setPointerCapture() {}, releasePointerCapture() {} };
+  // Peramban sentuh tertentu tidak menyediakan movementX → pakai clientX.
+  await act(async () => { scrub.props.onPointerDown({ button: 0, pointerId: 1, clientX: 100, preventDefault: cegah, currentTarget: target }); });
+  await act(async () => { scrub.props.onPointerMove({ clientX: 104, currentTarget: target }); }); // +4px → +20
+  await act(async () => { scrub.props.onPointerMove({ clientX: 98, currentTarget: target }); });  // −6px → −30
+  assert.deepEqual(panggilan, [120, 90]);
+  await act(async () => { scrub.props.onPointerUp({ pointerId: 1, currentTarget: target }); });
+  await act(async () => { renderer.unmount(); });
+});

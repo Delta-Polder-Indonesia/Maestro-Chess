@@ -6,18 +6,32 @@
  * nama-nama pilihan. Lebar bisa diatur per pemakaian (set bidak 10rem, tema
  * papan 12rem).
  *
- * Aksesibel: area teks `aria-haspopup="listbox"` + `aria-expanded`, daftar
- * `role="listbox"`, tiap pilihan `role="option"` + `aria-selected`, navigasi
- * panah/Enter/Escape saat terbuka, panah atas/bawah memindah pilihan saat
- * tertutup, klik di luar menutup. Chevron diberi `data-stepper` agar tidak
- * dihitung sebagai kontrol utama oleh pencarian pengaturan. `onPratinjau`
- * (opsional) dipanggil saat hover opsi dan dikosongkan saat tertutup. Efek
- * dokumen hanya aktif saat terbuka sehingga aman dirender tertutup di uji.
+ * Aksesibel: area teks `aria-haspopup="listbox"` + `aria-expanded` +
+ * `aria-controls`, daftar `role="listbox"`, tiap pilihan `role="option"` +
+ * `aria-selected` (di tombol, `li` presentation — sama seperti SelectDaftar,
+ * agar tidak ada interactive bersarang di dalam option), navigasi
+ * panah/Home/End/Enter/Space/Escape/Tab saat terbuka, panah atas/bawah memindah
+ * pilihan saat tertutup, klik di luar menutup. Fokus kembali ke trigger saat
+ * daftar ditutup lewat keyboard/pilihan, dan opsi aktif digulirkan ke area
+ * tampak. Chevron diberi `data-stepper` agar tidak dihitung sebagai kontrol
+ * utama oleh pencarian pengaturan. `onPratinjau` (opsional) dipanggil saat hover
+ * opsi dan dikosongkan sekali saat daftar ditutup.
+ *
+ * Posisi: panel pengaturan bergulir (`overflow-y-auto`), sehingga popover
+ * `absolute` akan terpotong di baris bawah. Karena itu posisi diukur saat buka
+ * dan dipasang `fixed` (keluar dari kliping leluhur), membalik ke atas bila
+ * ruang bawah sempit dan membatasi tinggi ke ruang tersedia; diukur ulang saat
+ * gulir/resize. Bila pengukuran tidak tersedia (SSR/uji tanpa DOM), jatuh balik
+ * ke posisi absolut seperti semula.
  *
  * Bebas impor selain react agar kontrak deps-map pengaturan tetap sederhana;
  * chevron memakai SVG inline.
  */
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+
+const TINGGI_MAKS = 200;
+const TINGGI_MIN = 96;
+const JARAK = 4;
 
 function Chevron({ arah }) {
   return (
@@ -30,21 +44,91 @@ function Chevron({ arah }) {
 export default function PilihRingkas({ id, nilai, pilihan, onChange, ariaLabel, lebar = "w-[190px]", onPratinjau, labelNaik, labelTurun }) {
   const [buka, setBuka] = useState(false);
   const [aktif, setAktif] = useState(0);
+  const [posisi, setPosisi] = useState(null);
   const wadah = useRef(null);
+  const triggerRef = useRef(null);
   const daftarRef = useRef(null);
+  const opsiRef = useRef([]);
+  // Callback pratinjau disimpan di ref supaya identitasnya yang berubah tiap
+  // render tidak membuat efek dokumen (fokus + pendengar) dipasang ulang.
+  const pratinjau = useRef(onPratinjau);
+  pratinjau.current = onPratinjau;
   const idDasar = useId();
+  const idDaftar = `${idDasar}-daftar`;
   const terpilih = pilihan.find((p) => p.id === nilai) ?? pilihan[0];
   const indeks = pilihan.findIndex((p) => p.id === nilai);
 
-  useEffect(() => {
-    if (!buka) { onPratinjau?.(null); return undefined; }
-    daftarRef.current?.focus();
-    const klikLuar = (e) => { if (wadah.current && !wadah.current.contains(e.target)) setBuka(false); };
-    document.addEventListener("mousedown", klikLuar);
-    return () => document.removeEventListener("mousedown", klikLuar);
-  }, [buka, onPratinjau]);
+  // Ukur trigger terhadap viewport: pilih arah dengan ruang terbanyak dan
+  // batasi tinggi daftar agar tidak melewati tepi layar maupun panel.
+  const ukur = useCallback(() => {
+    const el = wadah.current;
+    if (!el || typeof el.getBoundingClientRect !== "function") return;
+    if (typeof window === "undefined") return;
+    const kotak = el.getBoundingClientRect();
+    const tinggiLayar = window.innerHeight || 0;
+    const lebarLayar = window.innerWidth || 0;
+    const ruangBawah = tinggiLayar - kotak.bottom - JARAK;
+    const ruangAtas = kotak.top - JARAK;
+    const keBawah = ruangBawah >= TINGGI_MIN || ruangBawah >= ruangAtas;
+    const baru = {
+      kanan: Math.max(8, lebarLayar - kotak.right),
+      lebar: kotak.width,
+      maks: Math.max(TINGGI_MIN, Math.min(TINGGI_MAKS, keBawah ? ruangBawah : ruangAtas)),
+      keBawah,
+      atas: kotak.bottom + JARAK,
+      bawah: tinggiLayar - kotak.top + JARAK,
+    };
+    // Selama menggulir, posisi sering tidak berubah — jangan picu render ulang.
+    setPosisi((lama) => (
+      lama && lama.kanan === baru.kanan && lama.lebar === baru.lebar && lama.maks === baru.maks
+        && lama.keBawah === baru.keBawah && lama.atas === baru.atas && lama.bawah === baru.bawah
+        ? lama
+        : baru
+    ));
+  }, []);
 
-  function pilih(id) { onChange(id); setBuka(false); }
+  useEffect(() => {
+    if (!buka) return undefined;
+    ukur();
+    daftarRef.current?.focus?.();
+    const klikLuar = (e) => { if (wadah.current && !wadah.current.contains(e.target)) setBuka(false); };
+    const pasangUlang = () => ukur();
+    const adaDocument = typeof document !== "undefined";
+    const adaWindow = typeof window !== "undefined";
+    // pointerdown mencakup sentuh/pena, bukan hanya mouse.
+    if (adaDocument) document.addEventListener("pointerdown", klikLuar);
+    if (adaWindow) {
+      window.addEventListener("scroll", pasangUlang, true);
+      window.addEventListener("resize", pasangUlang);
+    }
+    return () => {
+      if (adaDocument) document.removeEventListener("pointerdown", klikLuar);
+      if (adaWindow) {
+        window.removeEventListener("scroll", pasangUlang, true);
+        window.removeEventListener("resize", pasangUlang);
+      }
+    };
+  }, [buka, ukur]);
+
+  // Pratinjau hover dibersihkan saat mount tertutup dan setiap kali daftar
+  // ditutup — sekali per transisi, bukan tiap render (identitas callback berubah
+  // tiap render tidak lagi memicu pembersihan berulang).
+  useEffect(() => {
+    if (!buka) pratinjau.current?.(null);
+  }, [buka]);
+
+  // Opsi aktif selalu terlihat meski daftar digulir (aria-activedescendant
+  // tidak menggulir sendiri seperti fokus native).
+  useEffect(() => {
+    if (buka) opsiRef.current[aktif]?.scrollIntoView?.({ block: "nearest" });
+  }, [aktif, buka]);
+
+  function tutup(fokus) {
+    setBuka(false);
+    if (fokus) triggerRef.current?.focus?.();
+  }
+
+  function pilih(id) { onChange(id); tutup(true); }
 
   // Stepper: pindah pilihan sebelumnya/berikutnya (membungkus ujung daftar),
   // tanpa membuka daftar — seperti menaikkan/menurunkan nilai NumberField.
@@ -56,7 +140,8 @@ export default function PilihRingkas({ id, nilai, pilihan, onChange, ariaLabel, 
   }
 
   function onKeyDown(e) {
-    if (e.key === "Escape") { setBuka(false); return; }
+    if (e.key === "Escape") { e.preventDefault(); tutup(true); return; }
+    if (e.key === "Tab") { tutup(true); return; }
     if (e.key === "ArrowDown") { e.preventDefault(); setAktif((i) => Math.min(pilihan.length - 1, i + 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setAktif((i) => Math.max(0, i - 1)); }
     else if (e.key === "Home") { e.preventDefault(); setAktif(0); }
@@ -74,16 +159,30 @@ export default function PilihRingkas({ id, nilai, pilihan, onChange, ariaLabel, 
 
   const kelasChevron = "flex w-6 flex-1 items-center justify-center text-foregroundGrey transition-colors hover:bg-backgroundBoxBox hover:text-foreground focus-visible:bg-backgroundBoxBox focus-visible:text-foreground focus-visible:outline-none";
 
+  // Terukur → fixed (lolos kliping panel bergulir). Belum terukur → absolut.
+  const gayaDaftar = posisi
+    ? {
+      position: "fixed",
+      right: posisi.kanan,
+      width: posisi.lebar,
+      maxHeight: posisi.maks,
+      ...(posisi.keBawah ? { top: posisi.atas } : { bottom: posisi.bawah }),
+    }
+    : undefined;
+  const kelasPosisi = posisi ? "" : "absolute right-0 top-full mt-1 max-h-[200px]";
+
   return (
     <div ref={wadah} className={`relative ${lebar}`}>
       <div className="flex h-8 items-stretch overflow-hidden rounded-borderRoundness border border-border bg-backgroundDropdown transition-colors hover:border-foregroundGrey focus-within:border-backgroundBoxBoxHighlightedHover">
         <button
+          ref={triggerRef}
           id={id}
           type="button"
           aria-label={ariaLabel}
           aria-haspopup="listbox"
           aria-expanded={buka}
-          onClick={() => { setAktif(Math.max(0, indeks)); setBuka((b) => !b); }}
+          aria-controls={buka ? idDaftar : undefined}
+          onClick={() => { setAktif(Math.max(0, indeks)); if (!buka) ukur(); setBuka((b) => !b); }}
           onKeyDown={onKeyDownTrigger}
           className="flex min-w-0 flex-1 items-center gap-2 px-2.5 text-left text-foreground focus-visible:outline-none"
         >
@@ -102,22 +201,28 @@ export default function PilihRingkas({ id, nilai, pilihan, onChange, ariaLabel, 
       {buka ? (
         <ul
           ref={daftarRef}
+          id={idDaftar}
           role="listbox"
           aria-label={ariaLabel}
           tabIndex={-1}
           aria-activedescendant={`${idDasar}-${aktif}`}
           onKeyDown={onKeyDown}
-          className={`absolute right-0 z-30 mt-1 ${lebar} max-h-[200px] overflow-y-auto rounded-[6px] border border-border bg-backgroundDropdown py-1 shadow-lg focus:outline-none`}
+          style={gayaDaftar}
+          className={`${kelasPosisi} z-[1200] overflow-y-auto rounded-[6px] border border-border bg-backgroundDropdown py-1 shadow-lg focus:outline-none`}
         >
           {pilihan.map((p, i) => {
             const dipilih = p.id === nilai;
             return (
-              <li key={p.id} id={`${idDasar}-${i}`} role="option" aria-selected={dipilih}>
+              <li key={p.id} role="presentation">
                 <button
+                  ref={(el) => { opsiRef.current[i] = el; }}
                   type="button"
+                  role="option"
+                  id={`${idDasar}-${i}`}
+                  aria-selected={dipilih}
                   tabIndex={-1}
                   onClick={() => pilih(p.id)}
-                  onMouseEnter={() => { setAktif(i); onPratinjau?.(p.id); }}
+                  onMouseEnter={() => { setAktif(i); pratinjau.current?.(p.id); }}
                   className={`flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left text-[13px] hover:bg-backgroundDropdownHover ${i === aktif ? "bg-backgroundDropdownHover" : ""} ${dipilih ? "font-semibold text-foreground" : "text-foregroundGrey"}`}
                 >
                   {p.preview ? <span className="flex shrink-0 items-center">{p.preview}</span> : null}

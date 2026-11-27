@@ -86,26 +86,47 @@ export default function GeserPengaturan({
   function mulaiScrub(e) {
     if (e.button !== undefined && e.button !== 0) return;
     e.preventDefault();
-    scrub.current = { sisa: 0, nilai: dasar };
+    scrub.current = { sisa: 0, nilai: dasar, terakhir: Number.isFinite(e.clientX) ? e.clientX : null };
     e.currentTarget.setPointerCapture?.(e.pointerId);
   }
   function gerakScrub(e) {
     const s = scrub.current;
     if (!s) return;
-    s.sisa += e.movementX ?? 0;
+    // Pointer sudah dilepas di luar elemen (pointerup tidak sampai ke sini):
+    // hentikan scrub supaya hover berikutnya tidak mengubah nilai lagi.
+    if (e.buttons !== undefined && e.buttons === 0) { akhirScrub(e); return; }
+    // movementX tidak tersedia di sebagian peramban sentuh → pakai selisih
+    // clientX sebagai cadangan agar geser tetap berfungsi di layar sentuh.
+    let dx = e.movementX;
+    if (!Number.isFinite(dx) || dx === 0) {
+      dx = Number.isFinite(e.clientX) && s.terakhir !== null ? e.clientX - s.terakhir : 0;
+    }
+    if (Number.isFinite(e.clientX)) s.terakhir = e.clientX;
+    s.sisa += dx;
     let langkah = 0;
     while (s.sisa >= SENSITIVITAS_SCRUB) { langkah++; s.sisa -= SENSITIVITAS_SCRUB; }
     while (s.sisa <= -SENSITIVITAS_SCRUB) { langkah--; s.sisa += SENSITIVITAS_SCRUB; }
     if (langkah) {
-      s.nilai = jepit(s.nilai + langkah * step, min, max);
-      setDraf(String(s.nilai));
-      onChange(s.nilai);
+      const baru = jepit(s.nilai + langkah * step, min, max);
+      // Hanya tulis bila benar-benar berubah: menahan geser di batas tidak
+      // membanjiri penyimpanan preferensi dengan nilai yang sama.
+      if (baru !== s.nilai) {
+        s.nilai = baru;
+        setDraf(String(baru));
+        onChange(baru);
+      }
     }
   }
   function akhirScrub(e) {
     if (!scrub.current) return;
     scrub.current = null;
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    const el = e.currentTarget;
+    // Lepas capture hanya bila masih terpegang (lostpointercapture sudah lepas).
+    if (typeof el?.hasPointerCapture === "function") {
+      if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture?.(e.pointerId);
+    } else {
+      el?.releasePointerCapture?.(e.pointerId);
+    }
   }
 
   const kelasChevron = "flex w-5 flex-1 items-center justify-center text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHighlightedHover hover:text-foreground focus-visible:bg-backgroundBoxBoxHighlightedHover focus-visible:text-foreground focus-visible:outline-none";
@@ -119,6 +140,7 @@ export default function GeserPengaturan({
         onPointerMove={gerakScrub}
         onPointerUp={akhirScrub}
         onPointerCancel={akhirScrub}
+        onLostPointerCapture={akhirScrub}
         className="cursor-ew-resize touch-none select-none self-end text-[11px] font-medium tabular-nums text-foregroundGrey"
       >{nilai}{satuan}</span>
       <div className="flex h-7 items-stretch overflow-hidden rounded-borderRoundness border border-border bg-backgroundBoxBox transition-colors focus-within:border-backgroundBoxBoxHighlighted">
