@@ -42,6 +42,12 @@ export default function useSesiTekaTeki({
   const [petunjuk, setPetunjuk] = useState({ tingkat: "kosong", petak: null, panah: null });
   const [mulai, setMulai] = useState(null);
   const [waktu, setWaktu] = useState(0);
+  // Waktu yang sudah dikumpulkan SEBELUM segmen berjalan sekarang. Pewaktu
+  // dijumlahkan dari sini, bukan dari satu timestamp tunggal: saat pencatatan
+  // dimatikan lalu dinyalakan lagi, jeda itu tidak boleh ikut terhitung.
+  const terekam = useRef(0);
+  const mulaiRef = useRef(null);
+  mulaiRef.current = mulai;
   const [solusiBerjalan, setSolusiBerjalan] = useState(false);
   // Jalur solusi sudah dituntaskan (langkah terakhir atau lihat solusi).
   // Terpisah dari status benar/salah: soal yang salah tetap boleh dilanjutkan.
@@ -63,7 +69,8 @@ export default function useSesiTekaTeki({
     // Soal yang dibuka ulang dari riwayat mempertahankan waktu tersimpan;
     // pewaktu hanya hidup untuk soal yang belum ditandai.
     const statusEntri = entri?.status ?? STATUS_SOAL.BELUM;
-    setWaktu(entri?.waktu ?? 0);
+    terekam.current = entri?.waktu ?? 0;
+    setWaktu(terekam.current);
     setMulai(catatWaktu && statusEntri === STATUS_SOAL.BELUM ? Date.now() : null);
     setJalurSelesai(statusEntri === STATUS_SOAL.BENAR);
   }, [catatWaktu]);
@@ -116,15 +123,34 @@ export default function useSesiTekaTeki({
   // soal yang sudah ditandai salah tetap bisa dilanjutkan (paritas En Croissant).
   const belumSelesai = !jalurSelesai && status !== STATUS_SOAL.BENAR;
 
+  // Nyalakan/matikan pencatatan di tengah soal. Mematikan membekukan waktu yang
+  // sudah terkumpul; menyalakan melanjutkan dari angka itu. Tanpa ini, mematikan
+  // lalu menyalakan menghitung seluruh jeda (Date.now() - mulai lama), dan soal
+  // yang dibuka saat pencatatan mati tidak pernah mulai menghitung saat dinyalakan.
+  useEffect(() => {
+    const berjalan = mulaiRef.current;
+    if (!catatWaktu) {
+      if (berjalan !== null) {
+        terekam.current += Date.now() - berjalan;
+        setWaktu(terekam.current);
+        setMulai(null);
+      }
+      return;
+    }
+    // Hanya untuk soal yang benar-benar sudah terbuka, bukan selama memuat.
+    if (berjalan === null && soal && belumSelesai && status === STATUS_SOAL.BELUM) setMulai(Date.now());
+  }, [catatWaktu, belumSelesai, status, soal]);
+
   // Pewaktu tampilan: hanya berjalan saat soal belum selesai dan waktu dicatat.
   useEffect(() => {
     if (!catatWaktu || !belumSelesai || mulai === null) return undefined;
-    const id = setInterval(() => setWaktu(Date.now() - mulai), 200);
+    const id = setInterval(() => setWaktu(terekam.current + (Date.now() - mulai)), 200);
     return () => clearInterval(id);
   }, [catatWaktu, belumSelesai, mulai]);
 
   const tandai = useCallback((status) => {
-    const dipakai = mulai !== null ? Date.now() - mulai : 0;
+    const dipakai = terekam.current + (mulai !== null ? Date.now() - mulai : 0);
+    terekam.current = dipakai;
     setWaktu(dipakai);
     setMulai(null);
     setRiwayat((lama) => lama.map((entri, i) => (

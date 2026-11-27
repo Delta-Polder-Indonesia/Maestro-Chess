@@ -59,8 +59,9 @@ function pasangHook(tes, { daftar = DAFTAR_UJI, ...opsi } = {}) {
     "../../../modul/tekaTeki/index.js": { ...modulTekaTeki, muatSoal: async () => daftar },
   }).default;
   const keluaran = { current: null };
+  const props = { current: { catatWaktu: false, ...opsi } };
   function Harness() {
-    keluaran.current = hook({ catatWaktu: false, ...opsi });
+    keluaran.current = hook(props.current);
     return null;
   }
   let renderer;
@@ -74,8 +75,36 @@ function pasangHook(tes, { daftar = DAFTAR_UJI, ...opsi } = {}) {
       await act(async () => { await fn(keluaran.current); });
       return keluaran.current;
     },
+    // Ubah preferensi saat sesi berjalan (mis. sakelar "catat waktu").
+    async ubah(tambahan) {
+      props.current = { ...props.current, ...tambahan };
+      await act(async () => { renderer.update(React.createElement(Harness)); });
+      return keluaran.current;
+    },
     unmount() { act(() => renderer.unmount()); },
   };
+}
+
+// Hitung interval pewaktu (jeda 200 ms) yang masih hidup, untuk memastikan tidak
+// ada interval ganda atau tertinggal setelah ganti soal/unmount.
+function pasangPenghitungInterval(tes) {
+  const asliSet = globalThis.setInterval;
+  const asliClear = globalThis.clearInterval;
+  const hidup = new Set();
+  globalThis.setInterval = (fn, jeda, ...sisa) => {
+    const id = asliSet(fn, jeda, ...sisa);
+    if (jeda === 200) hidup.add(id);
+    return id;
+  };
+  globalThis.clearInterval = (id) => {
+    hidup.delete(id);
+    return asliClear(id);
+  };
+  tes.after(() => {
+    globalThis.setInterval = asliSet;
+    globalThis.clearInterval = asliClear;
+  });
+  return hidup;
 }
 
 test("session loads a source on the player's own turn and records one pending entry", async (tes) => {
@@ -315,6 +344,87 @@ function pasangPrefs(tes, baca = {}) {
     async jalankan(fn) { await act(async () => { await fn(keluaran.current); }); return keluaran.current; },
   };
 }
+
+test("turning time tracking off freezes the clock and turning it back on does not count the pause", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["Date", "setInterval"], now: 1_000_000 });
+  const interval = pasangPenghitungInterval(tes);
+  const sesi = pasangHook(tes, { catatWaktu: true, lompatCepat: false });
+  await sesi.mount();
+  assert.equal(sesi.keluaran.current.waktu, 0);
+  assert.equal(interval.size, 1, "tepat satu interval pewaktu saat soal berjalan");
+
+  await sesi.jalankan(() => jam.tick(1000));
+  assert.equal(sesi.keluaran.current.waktu, 1000);
+
+  // Dimatikan: waktu beku dan interval dilepas.
+  await sesi.ubah({ catatWaktu: false });
+  assert.equal(interval.size, 0, "tidak ada interval saat pencatatan mati");
+  await sesi.jalankan(() => jam.tick(5000));
+  assert.equal(sesi.keluaran.current.waktu, 1000, "jeda tidak menambah waktu");
+
+  // Dinyalakan lagi: lanjut dari 1000, bukan menghitung ulang sejak awal.
+  await sesi.ubah({ catatWaktu: true });
+  assert.equal(interval.size, 1, "tetap satu interval, tidak ganda");
+  await sesi.jalankan(() => jam.tick(1000));
+  assert.equal(sesi.keluaran.current.waktu, 2000, "jeda 5000 ms tidak ikut terhitung");
+
+  // Waktu yang tercatat saat soal selesai juga tidak memuat jeda.
+  const akhir = await sesi.jalankan((s) => s.mainkan({ from: "e1", to: "e8" }));
+  assert.equal(akhir.riwayat[0].waktu, 2000);
+  assert.equal(interval.size, 0, "interval dilepas setelah soal selesai");
+  await sesi.jalankan(() => jam.tick(3000));
+  assert.equal(sesi.keluaran.current.waktu, 2000, "waktu tidak berjalan setelah selesai");
+  sesi.unmount();
+  assert.equal(interval.size, 0);
+});
+
+test("time tracking switched on mid-puzzle starts counting from zero", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["Date", "setInterval"], now: 1_000_000 });
+  const interval = pasangPenghitungInterval(tes);
+  const sesi = pasangHook(tes, { catatWaktu: false, lompatCepat: false });
+  await sesi.mount();
+  await sesi.jalankan(() => jam.tick(500));
+  assert.equal(sesi.keluaran.current.waktu, 0, "pencatatan mati: waktu tetap nol");
+  assert.equal(interval.size, 0);
+
+  await sesi.ubah({ catatWaktu: true });
+  assert.equal(interval.size, 1, "pewaktu hidup saat dinyalakan di tengah soal");
+  await sesi.jalankan(() => jam.tick(1000));
+  assert.equal(sesi.keluaran.current.waktu, 1000, "dihitung sejak dinyalakan, bukan sejak soal dibuka");
+  sesi.unmount();
+  assert.equal(interval.size, 0, "tidak ada interval tertinggal setelah unmount");
+});
+
+test("dealing another puzzle while the clock runs resets the timer state", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["Date", "setInterval"], now: 1_000_000 });
+  const interval = pasangPenghitungInterval(tes);
+  const sesi = pasangHook(tes, { catatWaktu: true, lompatCepat: false });
+  await sesi.mount();
+  const pertama = sesi.keluaran.current.soal.id;
+  await sesi.jalankan(() => jam.tick(4000));
+  assert.equal(sesi.keluaran.current.waktu, 4000);
+  await sesi.jalankan((s) => s.mainkan({ from: "e1", to: "e8" }));
+  assert.equal(sesi.keluaran.current.riwayat[0].waktu, 4000);
+  assert.equal(interval.size, 0, "pewaktu berhenti saat soal pertama selesai");
+
+  // Pindah soal saat sesi hidup: waktu mulai nol dan hanya satu interval.
+  const baru = await sesi.jalankan((s) => s.soalBaru());
+  assert.notEqual(baru.soal.id, pertama, "soal baru terbuka");
+  assert.equal(baru.waktu, 0, "waktu soal baru mulai dari nol");
+  assert.equal(interval.size, 1, "interval lama dibersihkan, tepat satu yang baru");
+  await sesi.jalankan(() => jam.tick(1000));
+  assert.equal(sesi.keluaran.current.waktu, 1000, "waktu soal lama tidak bocor ke soal baru");
+
+  // Soal yang sudah benar dibuka ulang dari riwayat: pewaktu tidak hidup lagi.
+  const ulang = await sesi.jalankan((s) => s.pilihRiwayat(0));
+  assert.equal(ulang.waktu, 4000, "waktu tersimpan soal lama dipulihkan");
+  assert.equal(interval.size, 0, "soal yang sudah benar tidak menjalankan pewaktu");
+  sesi.unmount();
+  assert.equal(interval.size, 0);
+});
 
 test("feature-local prefs default like En Croissant and persist every change", async (tes) => {
   const p = pasangPrefs(tes);
