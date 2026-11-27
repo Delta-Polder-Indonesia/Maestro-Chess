@@ -35,7 +35,7 @@ const JARAK = 4;
 
 function Chevron({ arah }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-3 [@media(pointer:coarse)]:size-4" aria-hidden="true">
       {arah === "atas" ? <path d="m18 15-6-6-6 6" /> : <path d="m6 9 6 6 6-6" />}
     </svg>
   );
@@ -53,6 +53,7 @@ export default function PilihRingkas({ id, nilai, pilihan, onChange, ariaLabel, 
   // render tidak membuat efek dokumen (fokus + pendengar) dipasang ulang.
   const pratinjau = useRef(onPratinjau);
   pratinjau.current = onPratinjau;
+  const ketik = useRef({ teks: "", waktu: 0 });
   const idDasar = useId();
   const idDaftar = `${idDasar}-daftar`;
   const terpilih = pilihan.find((p) => p.id === nilai) ?? pilihan[0];
@@ -139,9 +140,38 @@ export default function PilihRingkas({ id, nilai, pilihan, onChange, ariaLabel, 
     onChange(pilihan[baru].id);
   }
 
+  // Typeahead seperti select native: ketik huruf untuk melompat ke nama yang
+  // berawalan itu. Huruf sama ditekan berulang menyisir semua nama berawalan
+  // tersebut; jeda >700ms memulai awalan baru. Saat daftar terbuka hanya
+  // menyorot, saat tertutup langsung memilih.
+  function typeahead(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return false;
+    if (!/^[\p{L}\p{N}]$/u.test(e.key ?? "")) return false;
+    const kini = Date.now();
+    const k = ketik.current;
+    const huruf = e.key.toLowerCase();
+    // Huruf sama ditekan berulang = menyisir awalan itu (bukan menumpuk "ss"),
+    // persis select native; jeda panjang memulai awalan baru.
+    const menyisir = k.teks.length > 0 && [...k.teks].every((c) => c === huruf);
+    k.teks = kini - k.waktu > 700 || menyisir ? huruf : k.teks + huruf;
+    k.waktu = kini;
+    const basis = buka ? aktif : (indeks < 0 ? 0 : indeks);
+    const mulai = k.teks.length === 1 ? basis + 1 : basis;
+    for (let langkah = 0; langkah < pilihan.length; langkah++) {
+      const i = (mulai + langkah + pilihan.length) % pilihan.length;
+      if (String(pilihan[i].label).toLowerCase().startsWith(k.teks)) {
+        if (buka) setAktif(i);
+        else if (pilihan[i].id !== nilai) onChange(pilihan[i].id);
+        return true;
+      }
+    }
+    return true;
+  }
+
   function onKeyDown(e) {
     if (e.key === "Escape") { e.preventDefault(); tutup(true); return; }
     if (e.key === "Tab") { tutup(true); return; }
+    if (typeahead(e)) { e.preventDefault(); return; }
     if (e.key === "ArrowDown") { e.preventDefault(); setAktif((i) => Math.min(pilihan.length - 1, i + 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setAktif((i) => Math.max(0, i - 1)); }
     else if (e.key === "Home") { e.preventDefault(); setAktif(0); }
@@ -153,11 +183,12 @@ export default function PilihRingkas({ id, nilai, pilihan, onChange, ariaLabel, 
   // native); Enter/Space tetap membuka daftar lewat klik tombol bawaan.
   function onKeyDownTrigger(e) {
     if (buka) return;
+    if (typeahead(e)) { e.preventDefault(); return; }
     if (e.key === "ArrowDown") { e.preventDefault(); geser(1); }
     else if (e.key === "ArrowUp") { e.preventDefault(); geser(-1); }
   }
 
-  const kelasChevron = "flex w-6 flex-1 items-center justify-center text-foregroundGrey transition-colors hover:bg-backgroundBoxBox hover:text-foreground focus-visible:bg-backgroundBoxBox focus-visible:text-foreground focus-visible:outline-none";
+  const kelasChevron = "flex w-6 [@media(pointer:coarse)]:w-9 flex-1 items-center justify-center text-foregroundGrey transition-colors hover:bg-backgroundBoxBox hover:text-foreground focus-visible:bg-backgroundBoxBox focus-visible:text-foreground focus-visible:outline-none";
 
   // Terukur → fixed (lolos kliping panel bergulir). Belum terukur → absolut.
   const gayaDaftar = posisi
@@ -173,7 +204,7 @@ export default function PilihRingkas({ id, nilai, pilihan, onChange, ariaLabel, 
 
   return (
     <div ref={wadah} className={`relative ${lebar}`}>
-      <div className="flex h-8 items-stretch overflow-hidden rounded-borderRoundness border border-border bg-backgroundDropdown transition-colors hover:border-foregroundGrey focus-within:border-backgroundBoxBoxHighlightedHover">
+      <div className="flex h-8 [@media(pointer:coarse)]:h-14 items-stretch overflow-hidden rounded-borderRoundness border border-border bg-backgroundDropdown transition-colors hover:border-foregroundGrey focus-within:border-backgroundBoxBoxHighlightedHover">
         <button
           ref={triggerRef}
           id={id}
@@ -184,7 +215,7 @@ export default function PilihRingkas({ id, nilai, pilihan, onChange, ariaLabel, 
           aria-controls={buka ? idDaftar : undefined}
           onClick={() => { setAktif(Math.max(0, indeks)); if (!buka) ukur(); setBuka((b) => !b); }}
           onKeyDown={onKeyDownTrigger}
-          className="flex min-w-0 flex-1 items-center gap-2 px-2.5 text-left text-foreground focus-visible:outline-none"
+          className="flex min-w-0 flex-1 items-center gap-2 px-2.5 text-left text-foreground [@media(pointer:coarse)]:text-[15px] focus-visible:outline-none"
         >
           {terpilih?.preview ? <span className="flex shrink-0 items-center">{terpilih.preview}</span> : null}
           <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{terpilih?.label}</span>

@@ -7,7 +7,7 @@
 // dipertahankan apa adanya. Tes fixture mengunci algoritmanya; tes reproduksi
 // penuh membuktikan buku yang dikirim = hasil skrip dari sumber yang sama.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 import { Chess } from "chess.js";
 
@@ -242,3 +242,25 @@ test("daily puzzle snapshot covers 2007-2026 with 7097 fact-only problems and co
 function rangeTahun() {
   return Array.from({ length: 20 }, (_, i) => 2007 + i);
 }
+
+test("data folder ships a schema README and never references a script that is not committed", () => {
+  const readme = readFileSync(new URL("../public/data/README.md", import.meta.url), "utf8");
+  // Setiap berkas data yang dikirim harus terdokumentasi agar bisa digarap lokal.
+  for (const nama of ["buku-pembukaan.json", "buku-analisa.json", "teka-teki.json", "teka-teki-video.json", "teka-teki-harian"]) {
+    assert.ok(readme.includes(nama), `README menyebut ${nama}`);
+  }
+  // Skema praktis untuk pembangun fitur: format langkah, konverter, dan CSP.
+  assert.ok(readme.includes("promotion"), "format promosi dijelaskan");
+  assert.ok(readme.includes("media-src"), "batasan CSP video disebut");
+  assert.ok(readme.includes("titipan.js"), "jalur titipan PGN disebut");
+
+  // Rujukan skrip di data/README harus benar-benar ada di repo (dulu indeks.json
+  // menyebut scripts/ambil-teka-teki-harian.mjs yang tidak pernah ter-commit).
+  const berkas = ["../public/data/README.md", "../public/data/teka-teki-harian/indeks.json"];
+  for (const path of berkas) {
+    const isi = readFileSync(new URL(path, import.meta.url), "utf8");
+    for (const [, skrip] of isi.matchAll(/scripts\/([a-z0-9-]+\.mjs)/g)) {
+      assert.ok(existsSync(new URL(`../scripts/${skrip}`, import.meta.url)), `${path} merujuk skrip yang ada: ${skrip}`);
+    }
+  }
+});

@@ -292,3 +292,84 @@ test("outside pointerdown closes the list and document listeners are cleaned up"
   assert.equal(pendengar.size, 0, "pendengar dilepas saat tertutup (tanpa kebocoran)");
   await act(async () => { renderer.unmount(); });
 });
+
+// ── Typeahead + target sentuh + keseragaman gaya (keputusan lanjutan audit) ──
+
+const PILIHAN_S = [...PILIHAN, { id: "solid", label: "Solid" }];
+
+function jamTetap(tes, awal = 1_000_000) {
+  const asli = Date.now;
+  let kini = awal;
+  Date.now = () => kini;
+  tes.after(() => { Date.now = asli; });
+  return { maju: (ms) => { kini += ms; } };
+}
+
+test("typeahead on the closed trigger jumps to the name and cycles through the same initial", async (tes) => {
+  stubDocument(tes);
+  jamTetap(tes);
+  const panggilan = [];
+  const renderer = await render({ nilai: "standard", pilihan: PILIHAN_S, onChange: (v) => panggilan.push(v), ariaLabel: "Koleksi suara" });
+  const trigger = () => renderer.root.findByProps({ "aria-haspopup": "listbox" });
+  await act(async () => { trigger().props.onKeyDown({ key: "s", preventDefault: cegah }); });
+  assert.deepEqual(panggilan, ["solid"], "huruf s melompat ke nama S berikutnya");
+  await act(async () => { trigger().props.onKeyDown({ key: "s", preventDefault: cegah }); });
+  assert.deepEqual(panggilan, ["solid", "standard"], "menekan huruf sama menyisir nama berawalan itu (membungkus)");
+  assert.equal(renderer.root.findAllByProps({ role: "listbox" }).length, 0, "typeahead tidak membuka daftar");
+  await act(async () => { renderer.unmount(); });
+});
+
+test("typeahead accumulates a prefix and resets after a pause", async (tes) => {
+  stubDocument(tes);
+  const jam = jamTetap(tes);
+  const panggilan = [];
+  const renderer = await render({ nilai: "standard", pilihan: PILIHAN_S, onChange: (v) => panggilan.push(v), ariaLabel: "Koleksi suara" });
+  const trigger = () => renderer.root.findByProps({ "aria-haspopup": "listbox" });
+  await act(async () => { trigger().props.onKeyDown({ key: "l", preventDefault: cegah }); });
+  await act(async () => { trigger().props.onKeyDown({ key: "i", preventDefault: cegah }); });
+  assert.deepEqual(panggilan, ["lisp"], "awalan 'li' memilih Lisp tanpa menulis ulang nilai sama");
+  jam.maju(800); // jeda >700ms → awalan baru
+  await act(async () => { trigger().props.onKeyDown({ key: "f", preventDefault: cegah }); });
+  assert.deepEqual(panggilan, ["lisp", "futuristic"]);
+  await act(async () => { renderer.unmount(); });
+});
+
+test("typeahead while the list is open only moves the highlight (no commit)", async (tes) => {
+  stubDocument(tes);
+  jamTetap(tes);
+  const panggilan = [];
+  const renderer = await render({ nilai: "standard", pilihan: PILIHAN_S, onChange: (v) => panggilan.push(v), ariaLabel: "Koleksi suara" });
+  await act(async () => { renderer.root.findByProps({ "aria-haspopup": "listbox" }).props.onClick(); });
+  const daftar = renderer.root.findByProps({ role: "listbox" });
+  await act(async () => { daftar.props.onKeyDown({ key: "f", preventDefault: cegah }); });
+  assert.deepEqual(panggilan, [], "menyorot saja, belum memilih");
+  const opsi = renderer.root.findAllByProps({ role: "option" });
+  assert.equal(renderer.root.findByProps({ role: "listbox" }).props["aria-activedescendant"], opsi[1].props.id);
+  // Enter baru berkomitmen.
+  await act(async () => { renderer.root.findByProps({ role: "listbox" }).props.onKeyDown({ key: "Enter", preventDefault: cegah }); });
+  assert.deepEqual(panggilan, ["futuristic"]);
+  await act(async () => { renderer.unmount(); });
+});
+
+test("both settings controls enlarge chevron hit areas on coarse pointers and share one style", async (tes) => {
+  stubDocument(tes);
+  const sumberPilih = baca("../src/halaman/Analisa/komponen/pengaturan/pilihRingkas.jsx");
+  const sumberGeser = baca("../src/halaman/Analisa/komponen/pengaturan/geserPengaturan.jsx");
+  for (const [nama, isi] of [["pilihRingkas", sumberPilih], ["geserPengaturan", sumberGeser]]) {
+    // Baris 56px di pointer kasar → tiap chevron ≥24px (WCAG 2.5.8), tetap
+    // ringkas 32px di desktop; kolom chevron 36px dan ikon lebih besar.
+    assert.ok(isi.includes("h-8 [@media(pointer:coarse)]:h-14"), `${nama}: tinggi baris seragam + membesar di sentuh`);
+    assert.ok(isi.includes("w-6 [@media(pointer:coarse)]:w-9"), `${nama}: kolom chevron cukup lebar untuk sentuh`);
+    assert.ok(isi.includes("[@media(pointer:coarse)]:size-4"), `${nama}: ikon chevron membesar di sentuh`);
+    assert.ok(isi.includes("bg-backgroundDropdown"), `${nama}: latar kotak solid sama`);
+    assert.ok(isi.includes("hover:bg-backgroundBoxBox hover:text-foreground"), `${nama}: hover chevron netral sama`);
+    assert.ok(!isi.includes("hover:bg-backgroundBoxBoxHighlightedHover"), `${nama}: hover hijau lama dilepas`);
+  }
+  // Kelas benar-benar sampai ke DOM yang dirender, bukan hanya di sumber.
+  const renderer = await render({ nilai: "standard", pilihan: PILIHAN, onChange: noop, ariaLabel: "Koleksi suara" });
+  const baris = renderer.root.findByProps({ "aria-haspopup": "listbox" }).parent;
+  assert.ok(String(baris.props.className).includes("[@media(pointer:coarse)]:h-14"));
+  const chevron = renderer.root.findAllByProps({ "data-stepper": "true" })[0];
+  assert.ok(String(chevron.props.className).includes("[@media(pointer:coarse)]:w-9"));
+  await act(async () => { renderer.unmount(); });
+});

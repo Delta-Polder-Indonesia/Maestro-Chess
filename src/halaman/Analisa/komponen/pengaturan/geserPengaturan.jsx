@@ -24,7 +24,7 @@ function jepit(n, min, max) {
 
 function Chevron({ arah }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-2.5" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-3 [@media(pointer:coarse)]:size-4" aria-hidden="true">
       {arah === "atas" ? <path d="m18 15-6-6-6 6" /> : <path d="m6 9 6 6 6-6" />}
     </svg>
   );
@@ -129,7 +129,7 @@ export default function GeserPengaturan({
     }
   }
 
-  const kelasChevron = "flex w-5 flex-1 items-center justify-center text-foregroundGrey transition-colors hover:bg-backgroundBoxBoxHighlightedHover hover:text-foreground focus-visible:bg-backgroundBoxBoxHighlightedHover focus-visible:text-foreground focus-visible:outline-none";
+  const kelasChevron = "flex w-6 [@media(pointer:coarse)]:w-9 flex-1 items-center justify-center text-foregroundGrey transition-colors hover:bg-backgroundBoxBox hover:text-foreground focus-visible:bg-backgroundBoxBox focus-visible:text-foreground focus-visible:outline-none";
 
   return (
     <div className="flex w-[132px] flex-col gap-1">
@@ -141,9 +141,9 @@ export default function GeserPengaturan({
         onPointerUp={akhirScrub}
         onPointerCancel={akhirScrub}
         onLostPointerCapture={akhirScrub}
-        className="cursor-ew-resize touch-none select-none self-end text-[11px] font-medium tabular-nums text-foregroundGrey"
+        className="cursor-ew-resize touch-none select-none self-end text-[11px] [@media(pointer:coarse)]:py-1 [@media(pointer:coarse)]:text-[13px] font-medium tabular-nums text-foregroundGrey"
       >{nilai}{satuan}</span>
-      <div className="flex h-7 items-stretch overflow-hidden rounded-borderRoundness border border-border bg-backgroundBoxBox transition-colors focus-within:border-backgroundBoxBoxHighlighted">
+      <div className="flex h-8 [@media(pointer:coarse)]:h-14 items-stretch overflow-hidden rounded-borderRoundness border border-border bg-backgroundDropdown transition-colors focus-within:border-backgroundBoxBoxHighlightedHover">
         <input
           type="number"
           min={min}
@@ -155,10 +155,10 @@ export default function GeserPengaturan({
           onChange={ketik}
           onBlur={() => commit(draf)}
           onKeyDown={tombol}
-          className="angka-input w-full min-w-0 flex-1 bg-transparent px-2 text-start text-[12.5px] tabular-nums text-foreground outline-none"
+          className="angka-input w-full min-w-0 flex-1 bg-transparent px-2 text-start text-[12.5px] [@media(pointer:coarse)]:text-[15px] tabular-nums text-foreground outline-none"
         />
         {satuan ? <span className="pointer-events-none flex items-center pr-1 text-[11px] text-foregroundGrey">{satuan}</span> : null}
-        <div className="m-px flex shrink-0 flex-col overflow-hidden rounded-[3px] border border-border bg-backgroundBoxBoxHover">
+        <div className="m-px flex shrink-0 flex-col overflow-hidden rounded-[3px] border border-border bg-backgroundBoxBox">
           <button type="button" data-stepper="true" aria-label={labelNaik ?? `${ariaLabel} +`} onClick={naik} className={`${kelasChevron} border-b border-border`}>
             <Chevron arah="atas" />
           </button>
