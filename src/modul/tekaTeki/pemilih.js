@@ -33,15 +33,35 @@ export function rentangProgresif(rating) {
 }
 
 /**
- * Saring soal. Soal tanpa rating (mis. teka-teki harian) hanya lolos bila
- * pembatasan rating tidak diminta — kalau tidak, penyaring rating membuang seluruh
- * sumber harian tanpa penjelasan.
+ * Sumber yang datanya TIDAK membawa rating maupun tema.
+ *
+ * Soal harian Chess.com hanya menyimpan `tanggal`, `fen`, dan `langkah`
+ * (lihat public/data/README.md) — seluruh 7.097 soal harian punya rating null
+ * dan tema kosong. Menerapkan filter rating/tema pada sumber ini membuang
+ * SEMUA soalnya, termasuk pada rentang bawaan 1000–1500, sehingga layar harian
+ * tampil kosong. Karena itu filter tersebut dilewati untuk sumber harian.
+ *
+ * Sumber lain (`skakmat`, `video`) memiliki rating dan tema lengkap sehingga
+ * tetap disaring penuh. Jenis tak dikenal tetap disaring (perilaku lama).
+ */
+const SUMBER_TANPA_RATING_TEMA = Object.freeze(new Set(["harian"]));
+
+function disaringRatingTema(soal) {
+  return !SUMBER_TANPA_RATING_TEMA.has(soal?.jenis);
+}
+
+/**
+ * Saring soal menurut rentang rating dan tema, dengan aturan per sumber:
+ * sumber tanpa metadata rating/tema (harian) lolos apa adanya, sumber lain
+ * disaring penuh. Soal berjenis reguler yang kehilangan rating tetap dibuang
+ * saat pembatasan rating diminta — data rusak tidak diselundupkan.
  */
 export function saringSoal(daftar, { ratingMin, ratingMax, tema } = {}) {
   const pakaiRating = Number.isFinite(ratingMin) || Number.isFinite(ratingMax);
   const bawah = Number.isFinite(ratingMin) ? ratingMin : RENTANG_RATING.min;
   const atas = Number.isFinite(ratingMax) ? ratingMax : RENTANG_RATING.max;
   return (daftar ?? []).filter((soal) => {
+    if (!disaringRatingTema(soal)) return true;
     if (tema && !soal.tema?.includes(tema)) return false;
     if (!pakaiRating) return true;
     if (soal.rating === null || soal.rating === undefined) return false;

@@ -218,6 +218,29 @@ test("clearing the session empties history and deals a fresh puzzle; history ent
   sesi.unmount();
 });
 
+test("the daily source deals a puzzle under the default rating range and an active theme", async (tes) => {
+  // Soal harian tidak punya rating/tema; konfigurasi bawaan layar (1000–1500)
+  // tidak boleh membuat sumber ini tampil kosong.
+  const harian = modulTekaTeki.normalisasiSoal({
+    tanggal: "2025-01-01", fen: FEN_MAT, langkah: "e1-e8",
+  }, "harian");
+  assert.equal(harian.rating, null);
+  assert.deepEqual(harian.tema, []);
+  const sesi = pasangHook(tes, {
+    daftar: [harian], sumber: "harian", ratingMin: 1000, ratingMax: 1500, tema: "mateIn3",
+  });
+  const keadaan = await sesi.mount();
+  assert.equal(keadaan.memuat, false);
+  assert.ok(keadaan.soal, "sumber harian tetap menghasilkan soal pada konfigurasi bawaan");
+  assert.equal(keadaan.soal.id, "harian-2025-01-01");
+  assert.notEqual(keadaan.pesan, "kosong", "tidak boleh melaporkan sumber kosong");
+  assert.equal(keadaan.fen, harian.fen);
+  // Soal harian tetap bisa dimainkan normal.
+  const akhir = await sesi.jalankan((s) => s.mainkan({ from: "e1", to: "e8" }));
+  assert.equal(akhir.riwayat[0].status, "benar");
+  sesi.unmount();
+});
+
 test("an empty source reports a readable state instead of crashing", async (tes) => {
   const sesi = pasangHook(tes, { daftar: [] });
   const keadaan = await sesi.mount();

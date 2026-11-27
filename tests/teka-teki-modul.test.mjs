@@ -149,6 +149,52 @@ test("rating/theme filtering keeps unrated daily puzzles only when no rating bou
   assert.deepEqual(RENTANG_RATING.bawaan, [1000, 1500]);
 });
 
+test("daily puzzles survive the default rating range and any theme filter (they carry neither)", () => {
+  const harian = normalisasiBerkas(baca("../public/data/teka-teki-harian/2025.json"), "harian");
+  assert.equal(harian.length, 365);
+  // Data harian memang tidak punya rating/tema — bukan soal yang rusak.
+  assert.ok(harian.every((soal) => soal.rating === null && soal.tema.length === 0));
+  assert.deepEqual(daftarTema(harian), []);
+
+  const [bawah, atas] = RENTANG_RATING.bawaan;
+  assert.equal(saringSoal(harian, { ratingMin: bawah, ratingMax: atas }).length, harian.length,
+    "rentang bawaan tidak boleh mengosongkan sumber harian");
+  assert.equal(saringSoal(harian, { ratingMin: 2000, ratingMax: 2800 }).length, harian.length,
+    "batas rating sempit tetap tidak membuang soal harian");
+  assert.equal(saringSoal(harian, { tema: "mateIn3" }).length, harian.length,
+    "filter tema tidak relevan untuk sumber harian");
+  assert.equal(saringSoal(harian, { ratingMin: bawah, ratingMax: atas, tema: "endgame" }).length, harian.length);
+  // Pemilihan nyata pada konfigurasi bawaan layar harus menghasilkan soal.
+  const dipilih = pilihSoal(harian, { ratingMin: bawah, ratingMax: atas, tema: "mateIn3", acak: () => 0 });
+  assert.ok(dipilih, "sumber harian menghasilkan soal pada konfigurasi bawaan");
+  assert.equal(dipilih.jenis, "harian");
+});
+
+test("rating and theme filters still apply in full to the regular and video sources", () => {
+  const skakmat = normalisasiBerkas(baca("../public/data/teka-teki.json"), "skakmat");
+  const video = normalisasiBerkas(baca("../public/data/teka-teki-video.json"), "video");
+  for (const [nama, daftar] of [["skakmat", skakmat], ["video", video]]) {
+    assert.ok(daftar.every((soal) => soal.rating !== null && soal.tema.length > 0), `${nama} punya rating dan tema`);
+    const sempit = saringSoal(daftar, { ratingMin: 1000, ratingMax: 1500 });
+    assert.ok(sempit.length > 0 && sempit.length < daftar.length, `${nama}: rentang bawaan benar-benar menyaring`);
+    assert.ok(sempit.every((soal) => soal.rating >= 1000 && soal.rating <= 1500));
+    const tema = daftarTema(daftar)[0];
+    const bertema = saringSoal(daftar, { tema });
+    assert.ok(bertema.length > 0 && bertema.length < daftar.length, `${nama}: filter tema menyaring`);
+    assert.ok(bertema.every((soal) => soal.tema.includes(tema)));
+    // Gabungan rating + tema tetap berlaku dan lebih sempit dari masing-masing.
+    const gabungan = saringSoal(daftar, { ratingMin: 1000, ratingMax: 1500, tema });
+    assert.ok(gabungan.length <= Math.min(sempit.length, bertema.length));
+    assert.ok(gabungan.every((soal) => soal.rating >= 1000 && soal.rating <= 1500 && soal.tema.includes(tema)));
+    assert.deepEqual(saringSoal(daftar, { ratingMin: 2700, ratingMax: 2800 }), [], `${nama}: di atas rating tertinggi kosong`);
+  }
+  // Soal sumber reguler yang kehilangan rating tetap dibuang saat rating diminta:
+  // data rusak tidak diselundupkan lewat pengecualian sumber harian.
+  const rusak = [{ id: "rusak", jenis: "skakmat", rating: null, tema: [] }];
+  assert.deepEqual(saringSoal(rusak, { ratingMin: 1000, ratingMax: 1500 }), []);
+  assert.deepEqual(saringSoal(rusak, { tema: "mateIn1" }), []);
+});
+
 test("progressive mode raises the range by +50/+100 and clamps at the ceiling", () => {
   assert.deepEqual(rentangProgresif(1200), [1250, 1300]);
   assert.deepEqual(rentangProgresif(2780), [2800, 2800]);
