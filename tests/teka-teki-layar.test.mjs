@@ -293,6 +293,13 @@ test("the puzzle screen is wired into navigation, the layer registry, and the se
   assert.ok(area.includes('import("../../TekaTeki/TekaTeki.jsx")'), "layar dimuat malas");
   assert.ok(area.includes("layar === TAMPILAN_ANALISA.TEKA_TEKI"));
   assert.ok(area.includes("onAnalisa="), "jalur analisa posisi diteruskan");
+  // Kartu Puzzle di beranda Papan harus hidup (bukan "segera hadir") dan
+  // membuka layar teka-teki — jalur masuk kedua selain item nav.
+  assert.ok(area.includes("onTekaTeki="), "beranda Papan meneruskan pembuka layar teka-teki");
+  const papan = baca("../src/halaman/Analisa/komponen/nav/layarPapan.jsx");
+  const kartuPuzzle = papan.slice(papan.indexOf('kunci: "puzzle"'), papan.indexOf('kunci: "deteksi-engine"'));
+  assert.ok(kartuPuzzle.includes("onClick: onTekaTeki"), "kartu puzzle memakai onClick");
+  assert.ok(!kartuPuzzle.includes("segera: true"), "kartu puzzle tidak lagi ditandai segera hadir");
   const katalog = baca("../src/halaman/Analisa/komponen/pengaturan/katalogPengaturan.js");
   assert.ok(katalog.includes('{ id: "teka-teki", judulKunci: "tekaTeki.pengaturan.tab"'));
   assert.ok(katalog.includes('{ id: "tekaTeki", tab: "teka-teki"'));

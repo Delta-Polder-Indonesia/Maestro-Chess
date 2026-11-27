@@ -168,7 +168,7 @@ function Kartu({ kunci, ikon, judul, deskripsi, labelTombol, segera, onClick, t 
 
 /* ── Layar ──────────────────────────────────────────────────────────── */
 
-export default function LayarPapan({ onReport, onImpor, onDeteksiEngine, onWawasan, onBukaPekerjaan }) {
+export default function LayarPapan({ onReport, onImpor, onTekaTeki, onDeteksiEngine, onWawasan, onBukaPekerjaan }) {
   const { t } = useI18n();
 
   const kartu = [
@@ -218,7 +218,7 @@ export default function LayarPapan({ onReport, onImpor, onDeteksiEngine, onWawas
       judul: t("analisa.papan.kartu.puzzle.judul"),
       deskripsi: t("analisa.papan.kartu.puzzle.deskripsi"),
       labelTombol: t("analisa.papan.kartu.puzzle.tombol"),
-      segera: true,
+      onClick: onTekaTeki,
     },
     {
       kunci: "deteksi-engine",
