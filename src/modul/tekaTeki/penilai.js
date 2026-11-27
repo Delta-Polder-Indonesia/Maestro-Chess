@@ -52,7 +52,12 @@ export function nilaiLangkah({ fen, langkahSoal, indeks, pemain }) {
   const benar = uci === diharapkan || mat;
   if (!benar) return { sah: true, benar: false, selesai: false, balasan: null, uci, fenBaru: papan.fen() };
   const terakhir = indeks >= langkahSoal.length - 1;
-  const balasan = terakhir ? null : (langkahSoal[indeks + 1] ?? null);
+  // Skakmat alternatif mengakhiri permainan saat itu juga: balasan dari jalur
+  // solusi awal TIDAK boleh dikembalikan. Kalau tetap dikirim, hook mencoba
+  // menerapkannya pada posisi yang sudah mati (ilegal, ditelan terapkanLangkah)
+  // dan memajukan indeks dua langkah sehingga jejak langkah tidak lagi cocok
+  // dengan posisi yang benar-benar dimainkan.
+  const balasan = (mat || terakhir) ? null : (langkahSoal[indeks + 1] ?? null);
   // Jalur habis bila tidak ada langkah pemain lagi sesudah balasan lawan.
   // Solusi panjang genap (sebagian soal harian) berakhir pada balasan lawan,
   // jadi balasan terakhir tetap diterapkan lalu soal ditandai selesai.

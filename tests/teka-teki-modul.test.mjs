@@ -263,6 +263,57 @@ test("an alternative move that still checkmates counts as correct", () => {
   const hasil = nilaiLangkah({ fen, langkahSoal: solusi, indeks: 0, pemain: { from: "d1", to: "d8" } });
   assert.equal(hasil.benar, true);
   assert.equal(hasil.selesai, true);
+  assert.equal(hasil.balasan, null, "langkah terakhir tidak meminta balasan");
+});
+
+test("an alternative mate before the last recorded move ends the puzzle with no reply", () => {
+  // Jalur solusi tercatat tiga langkah, tetapi Putih punya skakmat langsung
+  // Rd8# di indeks 0. Permainan berakhir di situ: balasan jalur awal tidak
+  // boleh dikirim (ilegal pada posisi mati) dan indeks hanya maju satu.
+  const fen = "6k1/5ppp/8/8/8/8/5PPP/3RR1K1 w - - 0 1";
+  const solusi = parseLangkah("e1-e2;g7-g6;d1-d8");
+  const hasil = nilaiLangkah({ fen, langkahSoal: solusi, indeks: 0, pemain: { from: "d1", to: "d8" } });
+  assert.equal(hasil.sah, true);
+  assert.equal(hasil.benar, true, "skakmat alternatif tetap diterima");
+  assert.equal(hasil.selesai, true, "posisi berakhir → soal selesai");
+  assert.equal(hasil.balasan, null, "tidak ada balasan setelah permainan berakhir");
+  assert.ok(new Chess(hasil.fenBaru).isCheckmate());
+  // Balasan yang dipaksakan pun tidak mengubah posisi mati.
+  assert.equal(terapkanLangkah(hasil.fenBaru, solusi[1]), hasil.fenBaru);
+  // Indeks berikutnya = satu langkah nyata yang dimainkan.
+  assert.equal(0 + (hasil.balasan ? 2 : 1), 1);
+
+  // Sama halnya bila skakmat alternatif terjadi di tengah jalur (indeks 2 dari 5).
+  const panjang = parseLangkah("e1-e2;g7-g6;d1-d8;g6-g5;d8-d7");
+  const tengah = nilaiLangkah({ fen, langkahSoal: panjang, indeks: 0, pemain: { from: "d1", to: "d8" } });
+  assert.equal(tengah.selesai, true);
+  assert.equal(tengah.balasan, null);
+});
+
+test("a correct move that does not end the game still gets the opponent's reply", () => {
+  const fen = "6k1/5ppp/8/8/8/8/5PPP/3RR1K1 w - - 0 1";
+  const solusi = parseLangkah("e1-e2;g7-g6;d1-d8");
+  // Langkah solusi di indeks 0 (Re2) bukan skakmat → balasan lawan tetap ada.
+  const hasil = nilaiLangkah({ fen, langkahSoal: solusi, indeks: 0, pemain: { from: "e1", to: "e2" } });
+  assert.equal(hasil.benar, true);
+  assert.equal(hasil.selesai, false, "permainan belum berakhir");
+  assert.deepEqual(hasil.balasan, solusi[1], "balasan jalur solusi tetap dikirim");
+  const posisi = terapkanLangkah(hasil.fenBaru, hasil.balasan);
+  assert.equal(new Chess(posisi).turn(), "w", "giliran kembali ke pemain");
+
+  // Langkah alternatif yang tidak skakmat tetap dinilai salah dan dibatalkan UI:
+  // tidak ada balasan dan tidak ada status selesai.
+  const salah = nilaiLangkah({ fen, langkahSoal: solusi, indeks: 0, pemain: { from: "e1", to: "e3" } });
+  assert.equal(salah.sah, true);
+  assert.equal(salah.benar, false);
+  assert.equal(salah.selesai, false);
+  assert.equal(salah.balasan, null);
+
+  // Jalur normal sampai langkah terakhir: selesai tanpa balasan (tanpa regresi).
+  const akhir = nilaiLangkah({ fen: posisi, langkahSoal: solusi, indeks: 2, pemain: { from: "d1", to: "d8" } });
+  assert.equal(akhir.benar, true);
+  assert.equal(akhir.selesai, true);
+  assert.equal(akhir.balasan, null);
 });
 
 test("hints escalate square → arrow → cleared", () => {

@@ -200,6 +200,13 @@ test("viewing the solution replays it and marks the puzzle incorrect", async (te
   assert.equal(keadaan.solusiBerjalan, false, "pemutaran selesai");
   assert.equal(keadaan.pesan, "solusi");
   assert.equal(modulTekaTeki.giliranDariFen(keadaan.fen), "b", "posisi akhir solusi tercapai");
+  // Pemutaran solusi mengikuti jalur tercatat, jadi jejak tetap sama seperti dulu.
+  assert.deepEqual(keadaan.langkahNyata, keadaan.soal.langkah);
+  assert.deepEqual(
+    buatJejak(keadaan.soal, keadaan.indeks, keadaan.langkahNyata),
+    buatJejak(keadaan.soal, keadaan.indeks),
+    "jalur normal: jejak dengan jalur nyata identik dengan jejak solusi",
+  );
   sesi.unmount();
 });
 
@@ -215,6 +222,35 @@ test("clearing the session empties history and deals a fresh puzzle; history ent
   keadaan = await sesi.jalankan((s) => s.pilihRiwayat(0));
   assert.equal(keadaan.aktif, 0);
   assert.equal(keadaan.indeks, 0, "soal lama dibuka dari awal");
+  sesi.unmount();
+});
+
+test("an alternative mate ends the session cleanly: no illegal reply, index and trace stay honest", async (tes) => {
+  // Jalur solusi tercatat 3 langkah, tetapi Rd8# langsung skakmat di langkah 1.
+  const soal = modulTekaTeki.normalisasiSoal({
+    problemid: 77, fen: "6k1/5ppp/8/8/8/8/5PPP/3RR1K1 w - - 0 1",
+    moves: "e1-e2;g7-g6;d1-d8", rating: 1200, tema: "mateIn1",
+  }, "skakmat");
+  const sesi = pasangHook(tes, { daftar: [soal], lompatCepat: false });
+  await sesi.mount();
+  const akhir = await sesi.jalankan((s) => s.mainkan({ from: "d1", to: "d8" }));
+  assert.ok(new Chess(akhir.fen).isCheckmate(), "papan berada pada posisi skakmat");
+  assert.equal(akhir.indeks, 1, "indeks maju satu langkah nyata, bukan dua");
+  assert.equal(akhir.status, "benar", "skakmat alternatif tercatat benar");
+  assert.equal(akhir.pesan, "selesai");
+  assert.equal(akhir.belumSelesai, false, "papan terkunci setelah soal selesai");
+  // Jejak langkah memuat posisi awal + langkah yang benar-benar dimainkan:
+  // bukan langkah solusi awal (Re2) yang tidak pernah dimainkan.
+  assert.deepEqual(akhir.langkahNyata, [{ from: "d1", to: "d8", promotion: undefined }]);
+  const jejak = buatJejak(akhir.soal, akhir.indeks, akhir.langkahNyata);
+  assert.equal(jejak.length, 2, "posisi awal + satu langkah nyata");
+  assert.equal(jejak[1].san, "Rd8#");
+  assert.equal(jejak[1].fen, akhir.fen, "posisi tinjauan sama dengan papan");
+  assert.ok(new Chess(jejak[1].fen).isCheckmate());
+  // Langkah lanjutan ditolak: tidak ada gerakan ilegal sesudah permainan berakhir.
+  const tetap = await sesi.jalankan((s) => s.mainkan({ from: "g7", to: "g6" }));
+  assert.equal(tetap.fen, akhir.fen, "FEN tidak berubah setelah soal selesai");
+  assert.equal(tetap.indeks, 1);
   sesi.unmount();
 });
 

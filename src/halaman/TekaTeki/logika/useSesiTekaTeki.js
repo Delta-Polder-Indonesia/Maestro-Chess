@@ -32,6 +32,10 @@ export default function useSesiTekaTeki({
   const [soal, setSoal] = useState(null);
   const [fen, setFen] = useState("");
   const [indeks, setIndeks] = useState(0);
+  // Langkah yang benar-benar dimainkan (pemain + balasan lawan yang diterapkan).
+  // Jalur solusi awal tidak selalu sama dengan jalur yang dimainkan: skakmat
+  // alternatif mengakhiri soal lebih cepat, jadi jejak langkah perlu jalur nyata.
+  const [langkahNyata, setLangkahNyata] = useState([]);
   const [riwayat, setRiwayat] = useState([]);
   const [aktif, setAktif] = useState(-1);
   const [pesan, setPesan] = useState("");
@@ -53,6 +57,7 @@ export default function useSesiTekaTeki({
     setSoal(dipilih);
     setFen(posisiAwalPemain(dipilih.fen));
     setIndeks(0);
+    setLangkahNyata([]);
     setPetunjuk({ tingkat: "kosong", petak: null, panah: null });
     setPesan("");
     // Soal yang dibuka ulang dari riwayat mempertahankan waktu tersimpan;
@@ -140,12 +145,15 @@ export default function useSesiTekaTeki({
     }
     let posisi = hasil.fenBaru;
     let berikutnya = indeks + 1;
+    const dimainkan = [{ from: langkah.from, to: langkah.to, promotion: langkah.promotion }];
     if (hasil.balasan) {
       posisi = terapkanLangkah(posisi, hasil.balasan);
       berikutnya = indeks + 2;
+      dimainkan.push(hasil.balasan);
     }
     setFen(posisi);
     setIndeks(berikutnya);
+    setLangkahNyata((lama) => [...lama, ...dimainkan]);
     setPetunjuk({ tingkat: "kosong", petak: null, panah: null });
     if (!hasil.selesai) { setPesan("benar"); return; }
     setJalurSelesai(true);
@@ -179,6 +187,7 @@ export default function useSesiTekaTeki({
       posisi = terapkanLangkah(posisi, soal.langkah[i]);
       setFen(posisi);
       setIndeks(i + 1);
+      setLangkahNyata(soal.langkah.slice(0, i + 1));
       await new Promise((selesaiJeda) => setTimeout(selesaiJeda, JEDA_SOLUSI));
     }
     if (!pengendali.signal.aborted) { setSolusiBerjalan(false); setPesan("solusi"); }
@@ -212,7 +221,7 @@ export default function useSesiTekaTeki({
   }, [soal, aktif, bukaSoal]);
 
   return {
-    memuat, soal, fen, indeks, riwayat, aktif, pesan, petunjuk, waktu, solusiBerjalan,
+    memuat, soal, fen, indeks, langkahNyata, riwayat, aktif, pesan, petunjuk, waktu, solusiBerjalan,
     statistik: hitungStatistik(riwayat),
     status, belumSelesai,
     mainkan, ambilPetunjuk, lihatSolusi, soalBaru: () => soalBaru(daftar, soal?.rating ?? null),

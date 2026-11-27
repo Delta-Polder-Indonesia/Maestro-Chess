@@ -40,7 +40,10 @@ export default function TekaTeki({ onAnalisa }) {
     { id: "harian", label: t("tekaTeki.sumber.harian") },
   ], [t]);
 
-  const jejak = useMemo(() => buatJejak(sesi.soal, sesi.indeks), [sesi.soal, sesi.indeks]);
+  const jejak = useMemo(
+    () => buatJejak(sesi.soal, sesi.indeks, sesi.langkahNyata),
+    [sesi.soal, sesi.indeks, sesi.langkahNyata],
+  );
   const lastIndex = Math.max(0, jejak.length - 1);
   // Setiap soal/jalur maju kembali ke tampilan live.
   useEffect(() => { setTinjau(null); }, [sesi.soal, sesi.indeks]);
