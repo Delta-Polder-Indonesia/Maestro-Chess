@@ -27,6 +27,14 @@ Berkas di `public/data/` (skema lengkap: `public/data/README.md`):
 | `video` | `teka-teki-video.json` | 6.551 soal, 1.681 bertautan video |
 | `harian` | `teka-teki-harian/<tahun>.json` | 7.097 soal 2007–2026 |
 
+**Penyaringan berbeda per sumber karena kelengkapan datanya berbeda:**
+`skakmat` dan `video` punya rating dan tema di setiap soal (5.486/5.486 dan
+6.551/6.551) sehingga `saringSoal()` menyaring penuh. Soal `harian` **tidak
+punya rating maupun tema** (0/7.097) — menerapkan filter itu membuang seluruh
+soalnya, termasuk pada rentang bawaan 1000–1500, jadi jenis `harian` dilewati.
+Jenis tak dikenal tetap disaring, dan soal reguler yang kehilangan rating tetap
+dibuang saat batas rating diminta.
+
 Semua langkah disimpan sebagai pasangan koordinat `c4-c8;b7-c8` (promosi
 `f2-f1q`). `parseLangkah` mengubahnya sekali menjadi langkah chess.js; lapisan
 UI tidak perlu tahu format berkas.
@@ -63,6 +71,7 @@ susunan kode repo ini (MIT) — tidak ada kode sumber yang disalin.
 | Pemain jalan lebih dulu pada FEN soal | `posisiAwalPemain()` = FEN apa adanya; `pihakPemain()` = giliran FEN |
 | Langkah benar → balasan lawan otomatis | `nilaiLangkah().balasan` |
 | Skakmat alternatif tetap dianggap benar | `nilaiLangkah()` menerima `isCheckmate()` |
+| Permainan berakhir → tidak ada balasan lagi | `balasan = null` bila `mat` atau langkah terakhir |
 | Langkah salah tidak memajukan posisi | `nilaiLangkah().benar === false` (UI membatalkan langkah) |
 | Langkah ilegal ≠ salah | `nilaiLangkah().sah === false` |
 | Petunjuk bertingkat: petak → panah → hapus | `petunjukBerikutnya()` |
@@ -74,12 +83,17 @@ susunan kode repo ini (MIT) — tidak ada kode sumber yang disalin.
 ## Tahap pembangunan
 
 - **Tahap 1 (selesai):** modul bersama ini + tes.
-- **Tahap 2 (berikutnya):** layar `src/halaman/TekaTeki/` — papan di kiri,
-  panel kanan atas (pemilih sumber, gigi pengaturan, kartu Rating/Waktu/
-  Akurasi/Streak/Rata-rata, tombol Petunjuk & Lihat solusi), kanan bawah
-  (riwayat sesi + notasi langkah). Pengaturan masuk katalog "satu pintu".
-- **Tahap 3:** tema/video/harian, lompat ke analisa posisi (jalur titipan PGN
-  `src/modul/sesi/titipan.js`), dan preferensi lanjutan.
+- **Tahap 2 (selesai):** layar `src/halaman/TekaTeki/` — papan di kiri, panel
+  kanan atas (pemilih sumber, gigi pengaturan, kartu Rating/Waktu/Akurasi/
+  Rantai, tombol Petunjuk & Lihat solusi), kanan bawah (kotak status + daftar
+  langkah SAN bernavigasi). Pengaturan latihan kemudian dipindah **ke dalam
+  layar** sebagai preferensi milik fitur (Tahap 2b), bukan katalog "satu pintu".
+- **Perbaikan audit (selesai):** penyaringan sadar jenis sumber, skakmat
+  alternatif tanpa balasan ilegal, pewaktu yang tidak menghitung jeda, dan
+  dialog promosi yang ditutup saat posisi berganti.
+- **Tahap 3 (rencana):** pemilih tahun harian, penanda video, penyaring tema dari
+  data aktif, dan penyimpanan sesi antar kunjungan. Lompat ke analisa posisi
+  sudah tersedia lewat jalur titipan PGN `src/modul/sesi/titipan.js`.
 
 Catatan lisensi: mengadopsi **ide/perilaku** tidak menyalin karya GPL. Bila nanti
 menyalin berkas (suara, gambar, kode) dari En Croissant, lisensi dan atribusinya

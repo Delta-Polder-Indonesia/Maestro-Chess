@@ -22,7 +22,7 @@ src/halaman/TekaTeki/
     ├── useSesiTekaTeki.js        # orkestrasi sesi (memuat, menilai, statistik)
     ├── usePreferensiTekaTeki.js  # preferensi milik fitur (bukan config umum)
     ├── useUkuranPapan.js         # papan persegi mengikuti wadah
-    ├── jejakLangkah.js           # posisi + SAN dari awal s.d. indeks dimainkan
+    ├── jejakLangkah.js           # posisi + SAN jalur yang benar-benar dimainkan
     ├── tandaBantu.js             # toggle mark petak + panah (klik kanan, ala chess.com)
     └── pgnDariSoal.js            # PGN untuk "Analisa posisi ini"
 ```
@@ -44,7 +44,10 @@ disambungkan ke aset Maestro (PieceSVG, boardThemes, urlBidak, animasiBidak):
 - **Tanda bantu**: klik kanan petak = mark; seret klik kanan = panah (Shift/Ctrl/
   Alt → merah/hijau/biru); klik kiri = hapus semua tanda.
 - **Promosi**: pion ke baris akhir membuka dialog wajib pilih (menteri/benteng/
-  gajah/kuda). **Luncuran** bidak saat FEN berganti memakai GESER_ISEPIC.
+  gajah/kuda). Dialog **ditutup otomatis** saat FEN berganti atau papan terkunci,
+  sehingga dialog soal lama tidak menempel di soal baru dan tombolnya tidak
+  mengirim langkah promosi basi. Batal menutup dialog tanpa mengirim langkah.
+  **Luncuran** bidak saat FEN berganti memakai GESER_ISEPIC.
 
 Pembungkus (`papanTekaTeki.jsx`) memiliki keadaan interaksi dan membaca tema/set
 bidak/koordinat dari ConfigContext (Pengaturan umum); aturan main tetap di sesi.
@@ -78,7 +81,10 @@ hook di fitur ini hanya mengatur state:
 1. **pemain jalan lebih dulu** pada FEN soal (`langkah[0]` milik pemain, pihak
    pemain = giliran FEN); tidak ada langkah pembuka yang dimainkan otomatis;
 2. langkah benar → balasan lawan otomatis (indeks ganjil); langkah terakhir →
-   soal selesai;
+   soal selesai. **Skakmat alternatif mengakhiri soal saat itu juga**: balasan
+   jalur solusi awal tidak dikirim (ilegal pada posisi yang sudah mati) dan
+   indeks maju satu langkah saja. Daftar langkah memakai jalur yang benar-benar
+   dimainkan (`langkahNyata`), bukan jalur solusi awal;
 3. langkah salah tidak memajukan posisi dan menandai soal salah, tetapi latihan
    tetap bisa dilanjutkan sampai jalur selesai; papan terkunci hanya bila soal
    sudah benar atau jalurnya dituntaskan;
@@ -88,7 +94,31 @@ hook di fitur ini hanya mengatur state:
    terbuka begitu soal ditandai;
 7. mode progresif menaikkan rentang rating dari rating soal terakhir; lompat
    cepat membuka soal berikutnya begitu jalur selesai (benar maupun salah);
-   waktu dicatat bila diminta.
+8. **pencatatan waktu** bisa dimatikan/dinyalakan di tengah soal. Mematikan
+   membekukan waktu yang sudah terkumpul dan melepas interval; menyalakan
+   melanjutkan dari angka itu — jeda saat mati **tidak** ikut terhitung, termasuk
+   pada waktu yang disimpan di riwayat. Soal yang dibuka saat pencatatan mati
+   mulai menghitung sejak sakelar dinyalakan. Ganti soal, ulangi, atau membuka
+   riwayat membersihkan state pewaktu; hanya satu interval (200 ms) yang hidup,
+   dan pewaktu tidak berjalan selama memuat maupun setelah soal ditandai.
+
+## Sumber data dan penyaringan
+
+Tiga sumber dipilih lewat pemilih di kepala panel; masing-masing dimuat malas
+oleh `muatSoal()` (skema lengkap: `public/data/README.md`):
+
+| Sumber | Berkas | Jumlah | Filter rating/tema |
+| --- | --- | --- | --- |
+| Skakmat | `teka-teki.json` | 5.486 soal | diterapkan penuh (rating 600–2567, 50 tema) |
+| Video | `teka-teki-video.json` | 6.551 soal (1.681 bertautan video) | diterapkan penuh (rating 700–2380, 9 tema) |
+| Harian | `teka-teki-harian/<tahun>.json` | 7.097 soal 2007–2026 | **dilewati** — data harian tidak punya rating/tema |
+
+Rentang bawaan 1000–1500 karena itu tidak mengosongkan sumber Harian. Sumber
+Harian saat ini selalu memuat tahun terbaru snapshot (**2026**, 293 soal) karena
+layar memanggil `muatSoal(sumber)` tanpa tahun; **pemilih tahun belum ada** dan
+soal dipilih **acak** dari kolam yang terunduh, bukan menurut tanggal kalender
+(rencana Tahap 3). Tautan `video` belum diputar: `media-src 'self'` menolak host
+`media.chesscomfiles.com` dan melonggarkan CSP perlu keputusan pemilik.
 
 ## Preferensi (milik fitur, bukan pengaturan umum)
 
@@ -108,8 +138,9 @@ tombol gigi di kepala panel membuka panel pengaturan (pola En Croissant).
 
 ## Titik sambung
 
-- **Papan**: `src/halaman/Analisa/komponen/game/board.jsx` dipakai ulang; papan
-  memanggil `analyzeMove(fen, langkah)` yang diteruskan ke sesi untuk dinilai.
+- **Papan**: `komponen/papanInteraktif.jsx` (adopsi ChessClub, sejak Tahap 2d)
+  dibungkus `papanTekaTeki.jsx`; langkah diteruskan ke `sesi.mainkan(langkah)`
+  untuk dinilai. Papan Analisa tidak lagi dipakai di layar ini.
 - **Analisa posisi**: `pgnDariSoal()` menghasilkan PGN ber-header FEN, lalu
   `areaKerja` memuatnya lewat `muatPartai` (papan Analisa terbuka).
 - **Terjemahan**: rak sendiri `src/lib/terjemahan/{id,en}/tekaTeki.js`, kunci
@@ -137,6 +168,14 @@ tombol gigi di kepala panel membuka panel pengaturan (pola En Croissant).
   Wawasan). Kepala penjelasan di dalam layar dihapus — pemain sudah paham main,
   jadi cukup tab; judul tetap ada sebagai `h1 sr-only` untuk pembaca layar.
   Kunjungan fitur kini dicatat ke "File Terbaru" (`FITUR_DICATAT`).
+- **Perbaikan pihak pemain** (selesai): pihak pemain = giliran FEN dan
+  `langkah[0]` milik pemain; sebelumnya langkah pertama dimainkan otomatis
+  sebagai "pembuka lawan" sehingga soal "Mate in One" tampil sudah skakmat.
+- **Perbaikan audit** (selesai): filter rating/tema dilewati untuk sumber harian
+  (sebelumnya sumber Harian kosong pada rentang bawaan); skakmat alternatif
+  tidak lagi mengirim balasan ilegal dan daftar langkah menampilkan jalur nyata;
+  pewaktu tidak menghitung jeda saat pencatatan mati dan bisa dinyalakan di
+  tengah soal; dialog promosi ditutup saat posisi berganti/papan terkunci.
 - **Tahap 3** (rencana): pemilih tahun untuk soal harian, penanda video, penyaring
   tema dari data aktif, dan penyimpanan sesi antar kunjungan.
 

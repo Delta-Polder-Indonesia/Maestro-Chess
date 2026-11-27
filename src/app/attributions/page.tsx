@@ -115,7 +115,7 @@ export default function Attributions() {
               }>
                 <p className="kartu-paragraf">Koleksi teka-teki skakmat (5.486 soal) disalin dari ChessClub dan bersumber dari <External href="https://database.lichess.org/#puzzles">basis data puzzle Lichess</External>, CC0 1.0.</p>
                 <p className="kartu-paragraf">Teka-teki harian (7.097 soal, 2007–2026) berasal dari <External href="https://www.chess.com/daily-puzzle">soal harian publik Chess.com</External> melalui <External href="https://github.com/samuraitruong/chess.com-daily-puzzle">arsip publik</External>; hanya tanggal, posisi FEN, dan langkah solusi yang disimpan — judul, penulis, dan media tidak diambil.</p>
-                <p className="kartu-paragraf">Koleksi taktik + video (6.551 soal, 1.681 dengan video) memakai metadata soal Chess.com beserta tautan video pembahasannya. Seluruh data teka-teki baru disimpan di <code>public/data/</code> untuk fitur mendatang dan belum dimuat aplikasi.</p>
+                <p className="kartu-paragraf">Koleksi taktik + video (6.551 soal, 1.681 dengan video) memakai metadata soal Chess.com beserta tautan video pembahasannya. Seluruh data teka-teki disimpan di <code>public/data/</code> dan dimuat malas oleh fitur Teka-Teki menurut sumber yang dipilih (skakmat, video, atau harian per tahun). Tautan video pembahasan belum diputar karena kebijakan keamanan konten aplikasi hanya mengizinkan media dari domain sendiri.</p>
               </AttributionCard>
             </div>
           </section>
