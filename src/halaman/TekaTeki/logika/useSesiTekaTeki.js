@@ -3,7 +3,7 @@
  * (GPL-3.0), ditulis ulang di atas modul bersama `src/modul/tekaTeki`:
  *
  *  1. sumber dimuat malas, satu soal dipilih menurut rentang rating/tema;
- *  2. langkah pembuka lawan dimainkan otomatis, pemain membalas;
+ *  2. pemain jalan lebih dulu pada FEN soal (langkah[0] milik pemain);
  *  3. langkah benar → balasan lawan otomatis; langkah terakhir → soal selesai;
  *  4. langkah salah tidak memajukan posisi dan menandai soal salah, tetapi
  *     latihan tetap bisa dilanjutkan sampai jalur solusi selesai (paritas
@@ -31,7 +31,7 @@ export default function useSesiTekaTeki({
   const [memuat, setMemuat] = useState(true);
   const [soal, setSoal] = useState(null);
   const [fen, setFen] = useState("");
-  const [indeks, setIndeks] = useState(1);
+  const [indeks, setIndeks] = useState(0);
   const [riwayat, setRiwayat] = useState([]);
   const [aktif, setAktif] = useState(-1);
   const [pesan, setPesan] = useState("");
@@ -51,8 +51,8 @@ export default function useSesiTekaTeki({
     batalSolusi.current?.abort?.();
     setSolusiBerjalan(false);
     setSoal(dipilih);
-    setFen(posisiAwalPemain(dipilih.fen, dipilih.langkah));
-    setIndeks(1);
+    setFen(posisiAwalPemain(dipilih.fen));
+    setIndeks(0);
     setPetunjuk({ tingkat: "kosong", petak: null, panah: null });
     setPesan("");
     // Soal yang dibuka ulang dari riwayat mempertahankan waktu tersimpan;
@@ -172,9 +172,9 @@ export default function useSesiTekaTeki({
     batalSolusi.current = pengendali;
     setSolusiBerjalan(true);
     setPetunjuk({ tingkat: "kosong", petak: null, panah: null });
-    let posisi = posisiAwalPemain(soal.fen, soal.langkah);
+    let posisi = posisiAwalPemain(soal.fen);
     setFen(posisi);
-    for (let i = 1; i < soal.langkah.length; i++) {
+    for (let i = 0; i < soal.langkah.length; i++) {
       if (pengendali.signal.aborted) break;
       posisi = terapkanLangkah(posisi, soal.langkah[i]);
       setFen(posisi);

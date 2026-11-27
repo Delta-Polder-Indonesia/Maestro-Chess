@@ -18,9 +18,10 @@ import {
 
 const baca = (p) => JSON.parse(readFileSync(new URL(p, import.meta.url), "utf8"));
 
-// Soal rakitan: hitam menunggu (a6-a5), putih skakmat dengan Re8#.
-const FEN_MAT = "7k/6pp/p7/8/8/8/5PPP/4R1K1 b - - 0 1";
-const SOAL_MAT = normalisasiSoal({ fen: FEN_MAT, langkah: "a6-a5;e1-e8", tanggal: "2025-01-01" }, "harian");
+// Soal rakitan mengikuti konvensi data sebenarnya: FEN = giliran PEMAIN dan
+// langkah[0] adalah langkah pemain (di sini Putih skakmat dengan Re8#).
+const FEN_MAT = "7k/6pp/p7/8/8/8/5PPP/4R1K1 w - - 0 1";
+const SOAL_MAT = normalisasiSoal({ fen: FEN_MAT, langkah: "e1-e8", tanggal: "2025-01-01" }, "harian");
 
 test("parseLangkah reads coordinate pairs, promotions, UCI fallback, and drops corrupt entries", () => {
   assert.deepEqual(parseLangkah("c4-c8;b7-c8"), [{ from: "c4", to: "c8" }, { from: "b7", to: "c8" }]);
@@ -35,24 +36,24 @@ test("parseLangkah reads coordinate pairs, promotions, UCI fallback, and drops c
   assert.equal(uciLangkah(null), "");
 });
 
-test("side to play is the opposite of the FEN turn (the opening move is the opponent's)", () => {
-  assert.equal(giliranDariFen(FEN_MAT), "b");
+test("side to play is the FEN turn — the puzzle's first move belongs to the player", () => {
+  assert.equal(giliranDariFen(FEN_MAT), "w");
   assert.equal(pihakPemain(FEN_MAT), "w");
-  assert.equal(pihakPemain("8/8/8/8/8/8/8/K6k w - - 0 1"), "b");
+  assert.equal(pihakPemain("8/8/8/8/8/8/8/K6k b - - 0 1"), "b");
   assert.equal(giliranDariFen("bukan fen"), "");
   assert.equal(pihakPemain(""), "");
   assert.deepEqual(parseTema("backRankMate endgame mateIn3 endgame"), ["backRankMate", "endgame", "mateIn3"]);
 });
 
 test("normalisasiSoal maps all three sources into one shape and rejects unusable entries", () => {
-  const skakmat = normalisasiSoal({ problemid: 7, fen: FEN_MAT, moves: "a6-a5;e1-e8", rating: 900, tema: "mateIn1 backRankMate", type: "Mate in One" }, "skakmat");
+  const skakmat = normalisasiSoal({ problemid: 7, fen: FEN_MAT, moves: "e1-e8", rating: 900, tema: "mateIn1 backRankMate", type: "Mate in One" }, "skakmat");
   assert.equal(skakmat.id, "skakmat-7");
   assert.equal(skakmat.rating, 900);
   assert.deepEqual(skakmat.tema, ["mateIn1", "backRankMate"]);
   assert.equal(skakmat.pihak, "w");
   assert.equal(skakmat.video, null);
 
-  const video = normalisasiSoal({ problemid: 9, fen: FEN_MAT, moves: "a6-a5;e1-e8", rating: 1200, video: "https://contoh/video.mp4", pelatih: "WIM X", judulSoal: "Taktik", tanggal: "2025-12-09" }, "video");
+  const video = normalisasiSoal({ problemid: 9, fen: FEN_MAT, moves: "e1-e8", rating: 1200, video: "https://contoh/video.mp4", pelatih: "WIM X", judulSoal: "Taktik", tanggal: "2025-12-09" }, "video");
   assert.equal(video.id, "video-9");
   assert.equal(video.video, "https://contoh/video.mp4");
   assert.equal(video.pelatih, "WIM X");
@@ -76,6 +77,62 @@ test("every shipped mate puzzle replays legally and ends in checkmate", () => {
     const papan = new Chess(soal.fen);
     for (const langkah of soal.langkah) papan.move({ from: langkah.from, to: langkah.to, promotion: langkah.promotion });
     assert.ok(papan.isCheckmate(), `soal ${soal.id} berakhir skakmat`);
+  }
+});
+
+test("shipped data starts on the player's move: first move is theirs and mate-in-one is a single move", () => {
+  const mentah = baca("../public/data/teka-teki.json").problems;
+  const daftar = normalisasiBerkas({ problems: mentah }, "skakmat");
+  assert.equal(daftar.length, mentah.length);
+  let matSatu = 0;
+  for (const [i, soal] of daftar.entries()) {
+    const papan = new Chess(soal.fen);
+    // Pihak pemain = giliran FEN, dan langkah[0] harus bidak milik pihak itu.
+    assert.equal(soal.pihak, soal.giliranFen, `soal ${soal.id}: pihak pemain = giliran FEN`);
+    const pertama = soal.langkah[0];
+    const bidak = papan.get(pertama.from);
+    assert.ok(bidak, `soal ${soal.id}: petak asal langkah pertama terisi`);
+    assert.equal(bidak.color, soal.giliranFen, `soal ${soal.id}: langkah pertama milik pemain, bukan lawan`);
+    // Field `first` pada sumber menegaskan pihak yang harus jalan.
+    assert.equal(mentah[i].first, soal.giliranFen === "w" ? "White to Move" : "Black to Move");
+    if (mentah[i].type === "Mate in One") {
+      assert.equal(soal.langkah.length, 1, `soal ${soal.id}: mat dalam 1 = tepat satu langkah`);
+      papan.move({ from: pertama.from, to: pertama.to, promotion: pertama.promotion });
+      assert.ok(papan.isCheckmate(), `soal ${soal.id}: langkah tunggal pemain langsung skakmat`);
+      matSatu++;
+    }
+  }
+  assert.ok(matSatu > 1000, "sampel mencakup soal mat-dalam-satu");
+});
+
+test("playing the solution as the player completes every sampled puzzle across all three sources", () => {
+  const sumber = [
+    ["skakmat", normalisasiBerkas(baca("../public/data/teka-teki.json"), "skakmat").filter((_, i) => i % 40 === 0)],
+    ["video", normalisasiBerkas(baca("../public/data/teka-teki-video.json"), "video").filter((_, i) => i % 50 === 0)],
+    ["harian", normalisasiBerkas(baca("../public/data/teka-teki-harian/2025.json"), "harian").filter((_, i) => i % 5 === 0)],
+  ];
+  for (const [nama, daftar] of sumber) {
+    assert.ok(daftar.length > 0, nama);
+    for (const soal of daftar) {
+      let fen = posisiAwalPemain(soal.fen, soal.langkah);
+      let indeks = 0;
+      let selesai = false;
+      for (let jaga = 0; jaga < 300 && !selesai; jaga++) {
+        const langkah = soal.langkah[indeks];
+        assert.ok(langkah, `${nama} ${soal.id}: langkah pemain tersedia di indeks ${indeks}`);
+        const hasil = nilaiLangkah({ fen, langkahSoal: soal.langkah, indeks, pemain: langkah });
+        assert.ok(hasil.sah && hasil.benar, `${nama} ${soal.id}: langkah solusi diterima di indeks ${indeks}`);
+        fen = hasil.fenBaru;
+        if (hasil.balasan) {
+          const papan = new Chess(fen);
+          papan.move(hasil.balasan);
+          fen = papan.fen();
+        }
+        indeks += hasil.balasan ? 2 : 1;
+        selesai = hasil.selesai;
+      }
+      assert.ok(selesai, `${nama} ${soal.id}: jalur solusi tuntas dimainkan pemain`);
+    }
   }
 });
 
@@ -110,17 +167,21 @@ test("pilihSoal is deterministic with an injected rng, avoids repeats, and never
   assert.equal(pilihSoal([], {}), null);
 });
 
-test("posisiAwalPemain plays the opponent's opening move and tolerates a bad one", () => {
+test("posisiAwalPemain keeps the puzzle FEN so the player makes the first move", () => {
   const awal = posisiAwalPemain(FEN_MAT, SOAL_MAT.langkah);
-  assert.equal(giliranDariFen(awal), "w", "setelah pembuka hitam, giliran putih");
-  assert.ok(awal.startsWith("7k/6pp/8/p7/"), "bidak hitam maju a6-a5");
+  assert.equal(awal, FEN_MAT, "tidak ada langkah pembuka yang dimainkan otomatis");
+  assert.equal(giliranDariFen(awal), "w", "giliran tetap milik pemain");
+  // Langkah pertama solusi masih bisa dimainkan dari posisi awal.
+  const papan = new Chess(awal);
+  const pertama = SOAL_MAT.langkah[0];
+  assert.doesNotThrow(() => papan.move({ from: pertama.from, to: pertama.to }));
+  assert.ok(papan.isCheckmate(), "langkah pertama pemain adalah skakmat");
   assert.equal(posisiAwalPemain(FEN_MAT, []), FEN_MAT);
-  assert.equal(posisiAwalPemain(FEN_MAT, [{ from: "a1", to: "a8" }]), FEN_MAT, "langkah pembuka tidak sah → FEN asal");
 });
 
 test("nilaiLangkah accepts the solution move, auto-replies, and finishes on the last move or mate", () => {
   const awal = posisiAwalPemain(FEN_MAT, SOAL_MAT.langkah);
-  const hasil = nilaiLangkah({ fen: awal, langkahSoal: SOAL_MAT.langkah, indeks: 1, pemain: { from: "e1", to: "e8" } });
+  const hasil = nilaiLangkah({ fen: awal, langkahSoal: SOAL_MAT.langkah, indeks: 0, pemain: { from: "e1", to: "e8" } });
   assert.equal(hasil.sah, true);
   assert.equal(hasil.benar, true);
   assert.equal(hasil.selesai, true, "langkah terakhir → soal selesai");
@@ -128,24 +189,24 @@ test("nilaiLangkah accepts the solution move, auto-replies, and finishes on the 
   assert.equal(hasil.uci, "e1e8");
 
   // Langkah sah tetapi bukan solusi: posisi tidak dianggap benar.
-  const salah = nilaiLangkah({ fen: awal, langkahSoal: SOAL_MAT.langkah, indeks: 1, pemain: { from: "g2", to: "g3" } });
+  const salah = nilaiLangkah({ fen: awal, langkahSoal: SOAL_MAT.langkah, indeks: 0, pemain: { from: "g2", to: "g3" } });
   assert.equal(salah.sah, true);
   assert.equal(salah.benar, false);
   assert.equal(salah.selesai, false);
 
   // Langkah tidak sah: bukan "salah", papan tidak berubah.
-  const ilegal = nilaiLangkah({ fen: awal, langkahSoal: SOAL_MAT.langkah, indeks: 1, pemain: { from: "e1", to: "f3" } });
+  const ilegal = nilaiLangkah({ fen: awal, langkahSoal: SOAL_MAT.langkah, indeks: 0, pemain: { from: "e1", to: "f3" } });
   assert.equal(ilegal.sah, false);
   assert.equal(ilegal.fenBaru, null);
 
   // Soal nyata multi-langkah: benar → balasan lawan otomatis, belum selesai.
   const soal = normalisasiBerkas(baca("../public/data/teka-teki.json"), "skakmat")[0];
   const posisi = posisiAwalPemain(soal.fen, soal.langkah);
-  const tengah = nilaiLangkah({ fen: posisi, langkahSoal: soal.langkah, indeks: 1, pemain: soal.langkah[1] });
+  const tengah = nilaiLangkah({ fen: posisi, langkahSoal: soal.langkah, indeks: 0, pemain: soal.langkah[0] });
   assert.equal(tengah.benar, true);
   assert.equal(tengah.selesai, false);
-  assert.deepEqual(tengah.balasan, soal.langkah[2]);
-  assert.deepEqual(langkahDiharapkan(soal.langkah, 1), soal.langkah[1]);
+  assert.deepEqual(tengah.balasan, soal.langkah[1], "balasan lawan di indeks ganjil");
+  assert.deepEqual(langkahDiharapkan(soal.langkah, 0), soal.langkah[0]);
   assert.equal(langkahDiharapkan(soal.langkah, 99), null);
 });
 
@@ -197,7 +258,7 @@ test("loader fetches each source once, caches in flight, and does not cache fail
   globalThis.fetch = async (url) => {
     diminta.push(url);
     if (gagal) return { ok: false, status: 500 };
-    return { ok: true, json: async () => ({ soal: [{ tanggal: "2025-01-01", fen: FEN_MAT, langkah: "a6-a5;e1-e8" }] }) };
+    return { ok: true, json: async () => ({ soal: [{ tanggal: "2025-01-01", fen: FEN_MAT, langkah: "e1-e8" }] }) };
   };
   const diam = console.error;
   console.error = () => {};

@@ -64,14 +64,20 @@ export function giliranDariFen(fen) {
 }
 
 /**
- * Pihak yang harus dimainkan pengguna: FEN soal menyimpan posisi SEBELUM
- * langkah pembuka lawan, jadi giliran pengguna adalah kebalikan giliran FEN.
- * (Sama seperti En Croissant: papan diorientasikan ke pihak pengguna.)
+ * Pihak yang harus dimainkan pengguna = giliran pada FEN soal.
+ *
+ * Ketiga sumber data memakai konvensi "pemain jalan lebih dulu": FEN adalah
+ * posisi tempat PEMAIN bergerak dan `langkah[0]` adalah langkah pertama pemain
+ * (lihat public/data/README.md). Ini BUKAN konvensi Lichess API yang menaruh
+ * langkah lawan di depan. Buktinya pada data yang dikirim:
+ *  - field `first` selalu sama dengan giliran FEN (5.486/5.486 soal skakmat);
+ *  - "Mate in One" punya tepat SATU langkah, dan langkah itu skakmat oleh
+ *    pihak FEN (1.377/1.377) — mustahil bila langkah[0] milik lawan;
+ *  - seluruh jalur solusi berakhir skakmat oleh pihak FEN.
+ * Papan diorientasikan ke pihak ini.
  */
 export function pihakPemain(fen) {
-  const giliran = giliranDariFen(fen);
-  if (!giliran) return "";
-  return giliran === "w" ? "b" : "w";
+  return giliranDariFen(fen);
 }
 
 /** Daftar tema dari teks tag ber-spasi ("backRankMate endgame mateIn3"). */
@@ -102,8 +108,8 @@ export function normalisasiSoal(mentah, jenis = "skakmat") {
     jenis,
     fen,
     langkah,
-    // Langkah pertama adalah langkah lawan (pembuka); pengguna memainkannya
-    // otomatis saat soal dibuka, lalu membalas mulai indeks 1.
+    // Langkah[0] adalah langkah PEMAIN; balasan lawan di indeks ganjil.
+    // Pemain mulai dari indeks 0 pada FEN soal apa adanya.
     giliranFen: giliranDariFen(fen),
     pihak: pihakPemain(fen),
     rating: Number.isFinite(rating) ? rating : null,

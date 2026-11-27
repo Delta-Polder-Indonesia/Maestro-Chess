@@ -15,19 +15,19 @@ import { Chess } from "chess.js";
 import { uciLangkah } from "./soal.js";
 
 /**
- * FEN setelah langkah pembuka lawan dimainkan (posisi yang dilihat pemain).
- * Kembalikan FEN asal bila langkah pembuka tidak sah.
+ * Posisi awal yang dilihat pemain = FEN soal apa adanya.
+ *
+ * Data soal memakai konvensi "pemain jalan lebih dulu" (lihat pihakPemain dan
+ * public/data/README.md): `langkah[0]` adalah langkah PEMAIN, bukan pembuka
+ * lawan. Memainkan langkah[0] di sini akan merampas langkah pertama pemain dan
+ * membalik pihak yang dimainkan — pada "Mate in One" papan langsung skakmat
+ * sehingga tidak ada bidak yang bisa bergerak.
+ *
+ * Fungsi dipertahankan sebagai satu pintu posisi awal (dipakai sesi saat buka
+ * soal dan saat memutar solusi) agar konvensi ini hanya tertulis sekali.
  */
-export function posisiAwalPemain(fen, langkahSoal) {
-  const pembuka = langkahSoal?.[0];
-  if (!pembuka) return fen;
-  try {
-    const papan = new Chess(fen);
-    papan.move({ from: pembuka.from, to: pembuka.to, promotion: pembuka.promotion });
-    return papan.fen();
-  } catch {
-    return fen;
-  }
+export function posisiAwalPemain(fen) {
+  return fen;
 }
 
 /**
@@ -52,12 +52,17 @@ export function nilaiLangkah({ fen, langkahSoal, indeks, pemain }) {
   const benar = uci === diharapkan || mat;
   if (!benar) return { sah: true, benar: false, selesai: false, balasan: null, uci, fenBaru: papan.fen() };
   const terakhir = indeks >= langkahSoal.length - 1;
-  const selesai = terakhir || mat;
+  const balasan = terakhir ? null : (langkahSoal[indeks + 1] ?? null);
+  // Jalur habis bila tidak ada langkah pemain lagi sesudah balasan lawan.
+  // Solusi panjang genap (sebagian soal harian) berakhir pada balasan lawan,
+  // jadi balasan terakhir tetap diterapkan lalu soal ditandai selesai.
+  const habis = indeks + (balasan ? 2 : 1) >= langkahSoal.length;
+  const selesai = mat || habis;
   return {
     sah: true,
     benar: true,
     selesai,
-    balasan: selesai ? null : (langkahSoal[indeks + 1] ?? null),
+    balasan,
     uci,
     fenBaru: papan.fen(),
   };

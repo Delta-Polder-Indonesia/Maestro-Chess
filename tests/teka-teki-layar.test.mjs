@@ -38,12 +38,21 @@ function kompilasi(path, dependencies = {}) {
   return result.exports;
 }
 
-const FEN_MAT = "7k/6pp/p7/8/8/8/5PPP/4R1K1 b - - 0 1";
-const FEN_MAT2 = "7k/6pp/1p6/8/8/8/5PPP/4R1K1 b - - 0 1";
+// Konvensi data sebenarnya: FEN = giliran PEMAIN dan langkah[0] adalah langkah
+// pemain (Putih skakmat Re8#). Bukan konvensi "pembuka lawan" Lichess API.
+const FEN_MAT = "7k/6pp/p7/8/8/8/5PPP/4R1K1 w - - 0 1";
+const FEN_MAT2 = "7k/6pp/1p6/8/8/8/5PPP/4R1K1 w - - 0 1";
 const DAFTAR_UJI = [
-  modulTekaTeki.normalisasiSoal({ problemid: 1, fen: FEN_MAT, moves: "a6-a5;e1-e8", rating: 1100, tema: "mateIn1" }, "skakmat"),
-  modulTekaTeki.normalisasiSoal({ problemid: 2, fen: FEN_MAT2, moves: "b6-b5;e1-e8", rating: 1200, tema: "mateIn1" }, "skakmat"),
+  modulTekaTeki.normalisasiSoal({ problemid: 1, fen: FEN_MAT, moves: "e1-e8", rating: 1100, tema: "mateIn1" }, "skakmat"),
+  modulTekaTeki.normalisasiSoal({ problemid: 2, fen: FEN_MAT2, moves: "e1-e8", rating: 1200, tema: "mateIn1" }, "skakmat"),
 ];
+
+// Soal nyata dari public/data/teka-teki.json (id 2, mat dalam dua): Hitam jalan
+// lebih dulu, Putih membalas, Hitam skakmat. Dipakai uji jejak/daftar langkah.
+const SOAL_PANJANG = modulTekaTeki.normalisasiSoal({
+  problemid: 2, fen: "3r2k1/1B3n1p/6p1/2P2p2/1P6/2Q1P3/2P2PPP/6K1 b - - 0 31",
+  moves: "d8-d1;c3-e1;d1-e1", rating: 600, tema: "backRankMate mateIn2",
+}, "skakmat");
 
 function pasangHook(tes, { daftar = DAFTAR_UJI, ...opsi } = {}) {
   const hook = kompilasi("../src/halaman/TekaTeki/logika/useSesiTekaTeki.js", {
@@ -69,13 +78,15 @@ function pasangHook(tes, { daftar = DAFTAR_UJI, ...opsi } = {}) {
   };
 }
 
-test("session loads a source, plays the opponent's opening move, and records one pending entry", async (tes) => {
+test("session loads a source on the player's own turn and records one pending entry", async (tes) => {
   const sesi = pasangHook(tes);
   const keadaan = await sesi.mount();
   assert.equal(keadaan.memuat, false);
   assert.ok(keadaan.soal, "soal terpilih");
-  assert.equal(modulTekaTeki.giliranDariFen(keadaan.fen), "w", "pembuka hitam sudah dimainkan");
-  assert.equal(keadaan.indeks, 1);
+  assert.equal(keadaan.fen, keadaan.soal.fen, "papan memakai FEN soal apa adanya");
+  assert.equal(modulTekaTeki.giliranDariFen(keadaan.fen), "w", "pemain jalan lebih dulu");
+  assert.equal(keadaan.soal.pihak, "w", "papan diorientasikan ke pihak pemain");
+  assert.equal(keadaan.indeks, 0, "langkah pertama yang diharapkan adalah langkah[0]");
   assert.equal(keadaan.riwayat.length, 1);
   assert.equal(keadaan.riwayat[0].status, "belum");
   assert.equal(keadaan.statistik.akurasi, null);
@@ -158,7 +169,7 @@ test("reopening history keeps a solved puzzle locked and an incorrect one playab
   await sesi.jalankan((s) => s.mainkan({ from: "g2", to: "g3" }));
   keadaan = await sesi.jalankan((s) => s.pilihRiwayat(0));
   assert.equal(keadaan.belumSelesai, true, "soal salah yang dibuka ulang boleh dilanjutkan");
-  assert.equal(keadaan.indeks, 1);
+  assert.equal(keadaan.indeks, 0);
   sesi.unmount();
 });
 
@@ -171,7 +182,7 @@ test("retrying the active puzzle resets it to a fresh, playable attempt", async 
   const keadaan = await sesi.jalankan((s) => s.ulangSoal());
   assert.equal(keadaan.riwayat[0].status, "belum", "entri dicatat ulang belum dikerjakan");
   assert.equal(keadaan.belumSelesai, true, "papan terbuka lagi untuk percobaan baru");
-  assert.equal(keadaan.indeks, 1);
+  assert.equal(keadaan.indeks, 0);
   assert.equal(keadaan.fen, awalFen, "kembali ke posisi awal pemain");
   assert.equal(keadaan.waktu, 0);
   // Bisa dituntaskan lagi setelah diulang.
@@ -203,7 +214,7 @@ test("clearing the session empties history and deals a fresh puzzle; history ent
   await sesi.jalankan((s) => s.mainkan({ from: "e1", to: "e8" }));
   keadaan = await sesi.jalankan((s) => s.pilihRiwayat(0));
   assert.equal(keadaan.aktif, 0);
-  assert.equal(keadaan.indeks, 1, "soal lama dibuka dari awal");
+  assert.equal(keadaan.indeks, 0, "soal lama dibuka dari awal");
   sesi.unmount();
 });
 
@@ -370,42 +381,43 @@ test("range slider is inert when disabled", (tes) => {
 /* --------------------------- Jejak langkah & navigasi --------------------------- */
 
 test("jejak langkah builds positions + SAN from the start to the played index", () => {
-  const soal = DAFTAR_UJI[0];
+  const soal = SOAL_PANJANG;
   const awal = buatJejak(soal, 0);
-  assert.equal(awal.length, 1, "posisi awal saja");
+  assert.equal(awal.length, 1, "posisi awal saja — pemain belum jalan");
   assert.equal(awal[0].fen, soal.fen);
   assert.equal(awal[0].san, null);
   const satu = buatJejak(soal, 1);
   assert.equal(satu.length, 2);
-  assert.equal(satu[1].san, "a5", "pembuka lawan tercatat");
-  assert.equal(satu[1].warna, "b");
-  assert.equal(satu[1].nomor, 1);
-  const dua = buatJejak(soal, 2);
-  assert.equal(dua.length, 3);
-  assert.equal(dua[2].san, "Re8#", "langkah penyelesaian skakmat");
-  assert.equal(dua[2].warna, "w");
-  assert.equal(dua[2].nomor, 2);
-  assert.notEqual(dua[1].fen, dua[2].fen, "tiap entri menyimpan posisi sendiri");
+  assert.equal(satu[1].san, "Rd1+", "langkah pertama PEMAIN tercatat");
+  assert.equal(satu[1].warna, "b", "pihak pemain = giliran FEN");
+  assert.equal(satu[1].nomor, 31);
+  const tiga = buatJejak(soal, 3);
+  assert.equal(tiga.length, 4);
+  assert.equal(tiga[2].san, "Qe1", "balasan lawan di indeks ganjil");
+  assert.equal(tiga[2].warna, "w");
+  assert.equal(tiga[3].san, "Rxe1#", "langkah penyelesaian skakmat");
+  assert.equal(tiga[3].warna, "b");
+  assert.notEqual(tiga[2].fen, tiga[3].fen, "tiap entri menyimpan posisi sendiri");
   assert.deepEqual(buatJejak(null, 0), [], "tanpa soal tidak ada jejak");
 });
 
 test("move list shows clickable SAN chips and four navigation buttons", (tes) => {
   const Komponen = kompilasi("../src/halaman/TekaTeki/komponen/riwayatLangkah.jsx", {}).default;
-  const jejak = buatJejak(DAFTAR_UJI[0], 2); // [awal, a5, Re8#]
+  const jejak = buatJejak(SOAL_PANJANG, 3); // [awal, Rd1+, Qe1, Rxe1#]
   const tinjauan = [];
   const nav = [];
   let renderer;
   act(() => {
     renderer = TestRenderer.create(React.createElement(Komponen, {
-      t: tUji, jejak, tinjau: 2,
+      t: tUji, jejak, tinjau: 3,
       onTinjau: (i) => tinjauan.push(i), onNavigasi: (a) => nav.push(a),
     }));
   });
   tes.after(() => act(() => renderer.unmount()));
   const keping = renderer.root.findAllByProps({ role: "listitem" });
-  assert.equal(keping.length, 2, "posisi awal bukan keping; dua langkah dimainkan");
-  assert.ok(keping[1].props.children.join("").includes("Re8#"));
-  assert.equal(keping[1].props["aria-current"], true, "langkah live ditandai aktif");
+  assert.equal(keping.length, 3, "posisi awal bukan keping; tiga langkah dimainkan");
+  assert.ok(keping[2].props.children.join("").includes("Rxe1#"));
+  assert.equal(keping[2].props["aria-current"], true, "langkah live ditandai aktif");
   act(() => keping[0].props.onClick());
   assert.equal(tinjauan.at(-1), 1, "klik keping meninjau posisi itu");
   const tombolNav = renderer.root.findAllByType("button").filter((b) => ["To start", "Previous move", "Next move", "To end"].includes(b.props["aria-label"]));
@@ -478,6 +490,34 @@ function pasangPapan(tes, { fen, terkunci = false } = {}) {
   tes.after(() => act(() => renderer.unmount()));
   return { renderer, panggilan, props: () => papanProps };
 }
+
+test("a shipped mate-in-one opens playable, not already checkmated (regression: wrong player side)", (tes) => {
+  // Soal nyata "Mate in One": bila langkah[0] dimainkan otomatis sebagai
+  // "pembuka lawan", papan langsung skakmat dan tidak ada bidak bisa bergerak.
+  const soal = modulTekaTeki.normalisasiSoal({
+    problemid: 6, fen: "3r1k2/p5pp/2p2p2/P7/2R5/8/1P3PPP/6K1 b - - 0 32",
+    moves: "d8-d1", rating: 1200, type: "Mate in One",
+  }, "skakmat");
+  const sesi = pasangHook(tes, { daftar: [soal], lompatCepat: false });
+  return sesi.mount().then(async (keadaan) => {
+    assert.equal(keadaan.soal.pihak, "b", "pemain = pihak yang harus skakmat");
+    assert.equal(keadaan.indeks, 0);
+    const papan = new Chess(keadaan.fen);
+    assert.equal(papan.isCheckmate(), false, "papan tidak boleh sudah skakmat saat soal dibuka");
+    assert.ok(papan.moves().length > 0, "ada langkah legal yang bisa dimainkan");
+    // Papan menampilkan titik langkah sah untuk bidak pemain.
+    const { props } = pasangPapan(tes, { fen: keadaan.fen });
+    act(() => props().onKlik("d8"));
+    assert.equal(props().terpilih, "d8");
+    assert.ok(props().sasaran.includes("d1"), "klik benteng menunjukkan titik langkah sah");
+    // Langkah solusi diterima dan menuntaskan soal.
+    const akhir = await sesi.jalankan((s) => s.mainkan({ from: "d8", to: "d1" }));
+    assert.equal(akhir.riwayat[0].status, "benar");
+    assert.equal(akhir.belumSelesai, false);
+    assert.ok(new Chess(akhir.fen).isCheckmate(), "pemain yang memberikan skakmat");
+    sesi.unmount();
+  });
+});
 
 test("puzzle board: click a piece shows legal targets, click a target plays the move", (tes) => {
   const { panggilan, props } = pasangPapan(tes, { fen: new Chess().fen() });

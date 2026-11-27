@@ -75,8 +75,10 @@ mendapat ruang penuh.
 Semua aturan tinggal di modul bersama **`src/modul/tekaTeki/`** (lihat README-nya);
 hook di fitur ini hanya mengatur state:
 
-1. langkah pembuka lawan dimainkan otomatis, pemain membalas;
-2. langkah benar → balasan lawan otomatis; langkah terakhir → soal selesai;
+1. **pemain jalan lebih dulu** pada FEN soal (`langkah[0]` milik pemain, pihak
+   pemain = giliran FEN); tidak ada langkah pembuka yang dimainkan otomatis;
+2. langkah benar → balasan lawan otomatis (indeks ganjil); langkah terakhir →
+   soal selesai;
 3. langkah salah tidak memajukan posisi dan menandai soal salah, tetapi latihan
    tetap bisa dilanjutkan sampai jalur selesai; papan terkunci hanya bila soal
    sudah benar atau jalurnya dituntaskan;
