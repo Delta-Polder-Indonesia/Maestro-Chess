@@ -107,7 +107,7 @@ export default function PilihRingkas({ id, nilai, pilihan, onChange, ariaLabel, 
           tabIndex={-1}
           aria-activedescendant={`${idDasar}-${aktif}`}
           onKeyDown={onKeyDown}
-          className={`absolute right-0 z-30 mt-1 ${lebar} max-h-[200px] overflow-y-auto rounded-[6px] border border-border bg-backgroundBox py-1 shadow-lg focus:outline-none`}
+          className={`absolute right-0 z-30 mt-1 ${lebar} max-h-[200px] overflow-y-auto rounded-[6px] border border-border bg-backgroundDropdown py-1 shadow-lg focus:outline-none`}
         >
           {pilihan.map((p, i) => {
             const dipilih = p.id === nilai;
@@ -118,7 +118,7 @@ export default function PilihRingkas({ id, nilai, pilihan, onChange, ariaLabel, 
                   tabIndex={-1}
                   onClick={() => pilih(p.id)}
                   onMouseEnter={() => { setAktif(i); onPratinjau?.(p.id); }}
-                  className={`flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left text-[13px] hover:bg-backgroundBoxBox ${i === aktif ? "bg-backgroundBoxBox" : ""} ${dipilih ? "font-semibold text-foreground" : "text-foregroundGrey"}`}
+                  className={`flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left text-[13px] hover:bg-backgroundDropdownHover ${i === aktif ? "bg-backgroundDropdownHover" : ""} ${dipilih ? "font-semibold text-foreground" : "text-foregroundGrey"}`}
                 >
                   {p.preview ? <span className="flex shrink-0 items-center">{p.preview}</span> : null}
                   <span className="min-w-0 flex-1 truncate">{p.label}</span>

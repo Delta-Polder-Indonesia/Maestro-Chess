@@ -130,3 +130,27 @@ test("all settings dropdowns and the engine config selects use PilihRingkas (no 
   assert.ok(baca("../src/lib/terjemahan/id/analisa.js").includes('opsiSebelumnya: "Pilihan sebelumnya"'));
   assert.ok(baca("../src/lib/terjemahan/en/analisa.js").includes('opsiSebelumnya: "Previous option"'));
 });
+
+test("popover background is opaque (solid dropdown token) so underlying text does not bleed through", async (tes) => {
+  stubDocument(tes);
+  const renderer = await render({ nilai: "standard", pilihan: PILIHAN, onChange: noop, ariaLabel: "Koleksi suara" });
+  await act(async () => { renderer.root.findByProps({ "aria-haspopup": "listbox" }).props.onClick(); });
+  const listbox = renderer.root.findByProps({ role: "listbox" });
+  const kelas = String(listbox.props.className).split(/\s+/);
+  // Latar popover memakai token dropdown solid, bukan backgroundBox transparan.
+  assert.ok(kelas.includes("bg-backgroundDropdown"), "popover pakai bg-backgroundDropdown");
+  assert.ok(!kelas.includes("bg-backgroundBox"), "tidak memakai bg-backgroundBox (transparan)");
+  // Sorotan opsi juga solid (konsisten dengan SelectDaftar).
+  const opsi = listbox.findAllByProps({ role: "option" })[0].findByType("button");
+  assert.ok(String(opsi.props.className).includes("hover:bg-backgroundDropdownHover"), "hover opsi solid");
+  await act(async () => { renderer.unmount(); });
+
+  // Sumber token: --analisa-backgroundDropdown heks 6-digit (opaque) di kedua
+  // tema, sedangkan --analisa-backgroundBox memang ber-alpha (transparan).
+  const css = baca("../src/halaman/Analisa/analisa.css");
+  const dropdown = [...css.matchAll(/--analisa-backgroundDropdown:\s*(#[0-9a-fA-F]+)\s*;/g)].map((m) => m[1]);
+  assert.ok(dropdown.length >= 2, "token dropdown ada di tema gelap dan terang");
+  for (const nilai of dropdown) assert.equal(nilai.length, 7, `${nilai} heks 6-digit opaque`);
+  const box = [...css.matchAll(/--analisa-backgroundBox:\s*(#[0-9a-fA-F]+)\s*;/g)].map((m) => m[1]);
+  assert.ok(box.every((n) => n.length === 9), "backgroundBox ber-alpha (alasan popover tidak memakainya)");
+});
