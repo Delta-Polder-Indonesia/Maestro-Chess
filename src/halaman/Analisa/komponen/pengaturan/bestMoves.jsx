@@ -115,7 +115,7 @@ const IsiBestMoves = memo(function IsiBestMoves({ boardTheme, showArrows, setSho
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelNotasi}</span>}
       deskripsi={deskripsi("notasiLangkah")}
     >
-      <PilihRingkas ariaLabel={labelNotasi} lebar="w-[160px]" nilai={OPSI_NOTASI.includes(moveNotation) ? moveNotation : "letters"} pilihan={pilihanNotasi} onChange={changeMoveNotation} />
+      <PilihRingkas ariaLabel={labelNotasi} lebar="w-[160px]" nilai={OPSI_NOTASI.includes(moveNotation) ? moveNotation : "letters"} pilihan={pilihanNotasi} onChange={changeMoveNotation} labelNaik={t("analisa.pengaturan.opsiSebelumnya")} labelTurun={t("analisa.pengaturan.opsiBerikutnya")} />
     </BarisPengaturan> : null}
         </section>;
 });

@@ -137,10 +137,10 @@ export default function GeserPengaturan({
         />
         {satuan ? <span className="pointer-events-none flex items-center pr-1 text-[11px] text-foregroundGrey">{satuan}</span> : null}
         <div className="m-px flex shrink-0 flex-col overflow-hidden rounded-[3px] border border-border bg-backgroundBoxBoxHover">
-          <button type="button" aria-label={labelNaik ?? `${ariaLabel} +`} onClick={naik} className={`${kelasChevron} border-b border-border`}>
+          <button type="button" data-stepper="true" aria-label={labelNaik ?? `${ariaLabel} +`} onClick={naik} className={`${kelasChevron} border-b border-border`}>
             <Chevron arah="atas" />
           </button>
-          <button type="button" aria-label={labelTurun ?? `${ariaLabel} −`} onClick={turun} className={kelasChevron}>
+          <button type="button" data-stepper="true" aria-label={labelTurun ?? `${ariaLabel} −`} onClick={turun} className={kelasChevron}>
             <Chevron arah="bawah" />
           </button>
         </div>

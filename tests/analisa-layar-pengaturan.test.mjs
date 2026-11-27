@@ -109,8 +109,10 @@ function judulGrup(renderer) {
   return renderer.root.findAllByType("h2").map(teks);
 }
 function saklar(renderer) {
+  // Kontrol utama pengaturan (sakelar + trigger dropdown); tombol chevron
+  // stepper NumberField/dropdown ditandai data-stepper dan tidak dihitung.
   return renderer.root.findAllByType("button")
-    .filter((node) => node.props["aria-label"])
+    .filter((node) => node.props["aria-label"] && !node.props["data-stepper"])
     .map((node) => node.props["aria-label"]);
 }
 
@@ -158,9 +160,7 @@ test("search filters rows across tabs and clears when another tab is chosen", ()
   const cari = renderer.root.findByProps({ type: "search" });
   act(() => cari.props.onChange({ target: { value: "sound" } }));
   assert.deepEqual(judulGrup(renderer), ["Board behaviour"]);
-  // Baris "Sound volume" kini NumberField: tombol chevron naik/turun berlabel
-  // ikut muncul di antara sakelar Board sounds dan pemilih Sound collection.
-  assert.deepEqual(saklar(renderer), ["Board sounds", "Increase value", "Decrease value", "Sound collection"]);
+  assert.deepEqual(saklar(renderer), ["Board sounds", "Sound collection"]);
 
   act(() => cari.props.onChange({ target: { value: "brilliant" } }));
   assert.deepEqual(judulGrup(renderer), ["Ratings"]);

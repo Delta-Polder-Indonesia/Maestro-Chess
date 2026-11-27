@@ -88,7 +88,7 @@ const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, pieceSet,
           judul={<span className="text-[13.5px] font-medium text-foreground">{labelTema}</span>}
           deskripsi={deskripsi("temaPapan")}
         >
-          <PilihRingkas ariaLabel={labelTema} lebar="w-[192px]" nilai={String(boardTheme)} pilihan={pilihanTema} onChange={(id) => changeBoardTheme(Number(id))} />
+          <PilihRingkas ariaLabel={labelTema} lebar="w-[192px]" nilai={String(boardTheme)} pilihan={pilihanTema} onChange={(id) => changeBoardTheme(Number(id))} labelNaik={t("analisa.pengaturan.opsiSebelumnya")} labelTurun={t("analisa.pengaturan.opsiBerikutnya")} />
         </BarisPengaturan>
       ) : null}
       {tampilKoordinat ? (
@@ -96,7 +96,7 @@ const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, pieceSet,
           judul={<span className="text-[13.5px] font-medium text-foreground">{labelKoordinat}</span>}
           deskripsi={deskripsi("koordinatPapan")}
         >
-          <PilihRingkas ariaLabel={labelKoordinat} lebar="w-[160px]" nilai={OPSI_KOORDINAT.includes(coordinates) ? coordinates : "edge"} pilihan={pilihanKoordinat} onChange={changeCoordinates} />
+          <PilihRingkas ariaLabel={labelKoordinat} lebar="w-[160px]" nilai={OPSI_KOORDINAT.includes(coordinates) ? coordinates : "edge"} pilihan={pilihanKoordinat} onChange={changeCoordinates} labelNaik={t("analisa.pengaturan.opsiSebelumnya")} labelTurun={t("analisa.pengaturan.opsiBerikutnya")} />
         </BarisPengaturan>
       ) : null}
       {tampilBidak ? (
@@ -106,7 +106,7 @@ const IsiThemes = memo(function IsiThemes({ boardTheme, setBoardTheme, pieceSet,
         >
           <div className="flex items-center gap-3">
             <PratinjauBidak set={setTampil} />
-            <PilihRingkas ariaLabel={labelBidak} lebar="w-[160px]" nilai={idSetBidak(pieceSet)} pilihan={pilihanBidak} onChange={changePieceSet} onPratinjau={setPratinjau} />
+            <PilihRingkas ariaLabel={labelBidak} lebar="w-[160px]" nilai={idSetBidak(pieceSet)} pilihan={pilihanBidak} onChange={changePieceSet} onPratinjau={setPratinjau} labelNaik={t("analisa.pengaturan.opsiSebelumnya")} labelTurun={t("analisa.pengaturan.opsiBerikutnya")} />
           </div>
         </BarisPengaturan>
       ) : null}

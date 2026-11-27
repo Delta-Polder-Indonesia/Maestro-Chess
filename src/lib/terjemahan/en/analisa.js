@@ -1020,6 +1020,8 @@ export const analisa = {
       naikkan: "Increase value",
       turunkan: "Decrease value",
       seretNilai: "Drag left/right to change the value",
+      opsiSebelumnya: "Previous option",
+      opsiBerikutnya: "Next option",
       tampilan: "Appearance",
       koordinat: {
         tanpa: "None",

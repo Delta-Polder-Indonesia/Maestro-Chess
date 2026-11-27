@@ -10,6 +10,7 @@ import { AnalyzeContext } from "../../../../modul/sesi/analisa.js";
 import { tulis } from "../../../../modul/sesi/preferensi.js";
 import Gambar from "../Gambar.jsx";
 import SakelarPengaturan from "./sakelarPengaturan.jsx";
+import PilihRingkas from "./pilihRingkas.jsx";
 
 /**
  * Pilihan engine + kedalaman analisis.
@@ -189,16 +190,20 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
         <div className="grid grid-cols-2 gap-x-3 gap-y-2">
           <div className="flex min-w-0 flex-col gap-1">
             <label htmlFor={modeId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.modeCari")}</label>
-            <select
+            <PilihRingkas
               id={modeId}
-              value={mode}
-              onChange={(e) => gantiMode(e.target.value)}
-              className={kelasKontrol}
-            >
-              <option value="kedalaman">{t("analisa.pengaturan.modeKedalaman")}</option>
-              <option value="waktu">{t("analisa.pengaturan.modeWaktu")}</option>
-              <option value="node">{t("analisa.pengaturan.modeNode")}</option>
-            </select>
+              ariaLabel={t("analisa.pengaturan.modeCari")}
+              lebar="w-full"
+              nilai={mode}
+              pilihan={[
+                { id: "kedalaman", label: t("analisa.pengaturan.modeKedalaman") },
+                { id: "waktu", label: t("analisa.pengaturan.modeWaktu") },
+                { id: "node", label: t("analisa.pengaturan.modeNode") },
+              ]}
+              onChange={gantiMode}
+              labelNaik={t("analisa.pengaturan.opsiSebelumnya")}
+              labelTurun={t("analisa.pengaturan.opsiBerikutnya")}
+            />
           </div>
           {mode === "kedalaman" ? (
           <div className="flex min-w-0 flex-col gap-1">
@@ -250,59 +255,58 @@ const IsiPengaturanMesin = memo(function IsiPengaturanMesin({ idEngine, status, 
           {mode === "waktu" ? (
           <div className="flex min-w-0 flex-col gap-1">
             <label htmlFor={waktuId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.batasWaktu")}</label>
-            <select
+            <PilihRingkas
               id={waktuId}
-              value={movetime === null ? 4000 : movetime}
-              onChange={(e) => ubahOpsi?.({ movetime: Number(e.target.value) })}
-              className={kelasKontrol}
-            >
-              {(movetime === null || PILIHAN_WAKTU.includes(movetime) ? PILIHAN_WAKTU : [movetime, ...PILIHAN_WAKTU]).map((n) => (
-                <option key={n} value={n}>{n / 1000} s</option>
-              ))}
-            </select>
+              ariaLabel={t("analisa.pengaturan.batasWaktu")}
+              lebar="w-full"
+              nilai={String(movetime === null ? 4000 : movetime)}
+              pilihan={(movetime === null || PILIHAN_WAKTU.includes(movetime) ? PILIHAN_WAKTU : [movetime, ...PILIHAN_WAKTU]).map((n) => ({ id: String(n), label: `${n / 1000} s` }))}
+              onChange={(id) => ubahOpsi?.({ movetime: Number(id) })}
+              labelNaik={t("analisa.pengaturan.opsiSebelumnya")}
+              labelTurun={t("analisa.pengaturan.opsiBerikutnya")}
+            />
           </div>
           ) : null}
           {mode === "node" ? (
           <div className="flex min-w-0 flex-col gap-1">
             <label htmlFor={nodeId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.batasNode")}</label>
-            <select
+            <PilihRingkas
               id={nodeId}
-              value={nodes}
-              onChange={(e) => ubahOpsi?.({ nodes: Number(e.target.value) })}
-              className={kelasKontrol}
-            >
-              {(PILIHAN_NODE.includes(nodes) ? PILIHAN_NODE : [nodes, ...PILIHAN_NODE]).map((n) => (
-                <option key={n} value={n}>{labelNode(n)}</option>
-              ))}
-            </select>
+              ariaLabel={t("analisa.pengaturan.batasNode")}
+              lebar="w-full"
+              nilai={String(nodes)}
+              pilihan={(PILIHAN_NODE.includes(nodes) ? PILIHAN_NODE : [nodes, ...PILIHAN_NODE]).map((n) => ({ id: String(n), label: labelNode(n) }))}
+              onChange={(id) => ubahOpsi?.({ nodes: Number(id) })}
+              labelNaik={t("analisa.pengaturan.opsiSebelumnya")}
+              labelTurun={t("analisa.pengaturan.opsiBerikutnya")}
+            />
           </div>
           ) : null}
           <div className="flex min-w-0 flex-col gap-1">
             <label htmlFor={hashId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.hashMb")}</label>
-            <select
+            <PilihRingkas
               id={hashId}
-              value={hashMb}
-              onChange={(e) => ubahOpsi?.({ hash: Number(e.target.value) })}
-              className={kelasKontrol}
-            >
-              {(PILIHAN_HASH.includes(hashMb) ? PILIHAN_HASH : [hashMb, ...PILIHAN_HASH]).map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
+              ariaLabel={t("analisa.pengaturan.hashMb")}
+              lebar="w-full"
+              nilai={String(hashMb)}
+              pilihan={(PILIHAN_HASH.includes(hashMb) ? PILIHAN_HASH : [hashMb, ...PILIHAN_HASH]).map((n) => ({ id: String(n), label: String(n) }))}
+              onChange={(id) => ubahOpsi?.({ hash: Number(id) })}
+              labelNaik={t("analisa.pengaturan.opsiSebelumnya")}
+              labelTurun={t("analisa.pengaturan.opsiBerikutnya")}
+            />
           </div>
           <div className="flex min-w-0 flex-col gap-1">
             <label htmlFor={skillId} className="text-xs font-bold text-foregroundGrey">{t("analisa.pengaturan.skill")}</label>
-            <select
+            <PilihRingkas
               id={skillId}
-              value={skill === null ? "bawaan" : skill}
-              onChange={(e) => ubahOpsi?.({ skill: e.target.value === "bawaan" ? null : Number(e.target.value) })}
-              className={kelasKontrol}
-            >
-              <option value="bawaan">{t("analisa.pengaturan.skillBawaan")}</option>
-              {Array.from({ length: 21 }, (_, n) => n).map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
+              ariaLabel={t("analisa.pengaturan.skill")}
+              lebar="w-full"
+              nilai={skill === null ? "bawaan" : String(skill)}
+              pilihan={[{ id: "bawaan", label: t("analisa.pengaturan.skillBawaan") }, ...Array.from({ length: 21 }, (_, n) => ({ id: String(n), label: String(n) }))]}
+              onChange={(id) => ubahOpsi?.({ skill: id === "bawaan" ? null : Number(id) })}
+              labelNaik={t("analisa.pengaturan.opsiSebelumnya")}
+              labelTurun={t("analisa.pengaturan.opsiBerikutnya")}
+            />
           </div>
         </div>
         <div className="mt-3 flex flex-col gap-2 rounded-borderRoundness border border-border bg-backgroundBoxBox p-3">
