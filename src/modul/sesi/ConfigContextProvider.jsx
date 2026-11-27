@@ -80,21 +80,9 @@ function ConfigContextProvider(props) {
     return nilai === "wdl" ? "wdl" : "cp";
   });
   const [tablebase, setTablebase] = useState(() => bacaBoolean("tablebase", false));
-  // Preferensi teka-teki (adopsi layar puzzle En Croissant): rentang rating
-  // 600-2800 bawaan 1000-1500, tema opsional ("" = semua), progresif, sembunyikan
-  // rating, lompat cepat, dan catat waktu. Disimpan di config bersama agar layar
-  // Pengaturan tetap satu pintu untuk seluruh preferensi aplikasi.
-  const bacaRatingPuzzle = (kunci, bawaan) => {
-    const nilai = bacaAngka(kunci, bawaan);
-    return Number.isFinite(nilai) ? Math.min(2800, Math.max(600, Math.round(nilai))) : bawaan;
-  };
-  const [puzzleRatingMin, setPuzzleRatingMin] = useState(() => bacaRatingPuzzle("puzzleRatingMin", 1000));
-  const [puzzleRatingMax, setPuzzleRatingMax] = useState(() => bacaRatingPuzzle("puzzleRatingMax", 1500));
-  const [puzzleTema, setPuzzleTema] = useState(() => bacaTeks("puzzleTema", ""));
-  const [puzzleProgresif, setPuzzleProgresif] = useState(() => bacaBoolean("puzzleProgresif", false));
-  const [puzzleSembunyiRating, setPuzzleSembunyiRating] = useState(() => bacaBoolean("puzzleSembunyiRating", false));
-  const [puzzleLompatCepat, setPuzzleLompatCepat] = useState(() => bacaBoolean("puzzleLompatCepat", true));
-  const [puzzleCatatWaktu, setPuzzleCatatWaktu] = useState(() => bacaBoolean("puzzleCatatWaktu", true));
+  // Preferensi latihan teka-teki TIDAK tinggal di sini: ia bersifat personal
+  // untuk fitur teka-teki (sifat kerja sesi), bukan pengaturan umum aplikasi,
+  // sehingga disimpan dan disunting di dalam layar teka-teki itu sendiri.
   // Ukuran font akar dan warna aksen diterapkan ke root dokumen seperti
   // App.tsx En Croissant (fontSize %) dan Mantine primaryColor. Hanya selama
   // provider Analisa terpasang; cleanup memulihkan tampilan semula sehingga
@@ -148,7 +136,7 @@ function ConfigContextProvider(props) {
     return () => akar.removeAttribute("data-tema");
   }, [theme]);
   const boardMenuSettingsRef = useRef(null);
-  return <ConfigContext.Provider value={{ boardTheme: [boardTheme, setBoardTheme], pieceSet: [pieceSet, setPieceSet], openedMenu: [openedMenu, setOpenedMenu], usedRatings: [usedRatings, setUsedRatings], highlightByRating: [highlightByRating, setHighlightByRating], showArrows: [showArrows, setShowArrows], arrowAfterMove: [arrowAfterMove, setArrowAfterMove], showLegalMoves: [showLegalMoves, setShowLegalMoves], animateMoves: [animateMoves, setAnimateMoves], boardSounds: [boardSounds, setBoardSounds], coordinates: [coordinates, setCoordinates], moveHighlight: [moveHighlight, setMoveHighlight], autoPromote: [autoPromote, setAutoPromote], eraseArrowsOnClick: [eraseArrowsOnClick, setEraseArrowsOnClick], volume: [volume, setVolume], animationSpeed: [animationSpeed, setAnimationSpeed], materialDisplay: [materialDisplay, setMaterialDisplay], moveNotation: [moveNotation, setMoveNotation], previewBoardOnHover: [previewBoardOnHover, setPreviewBoardOnHover], boardScroll: [boardScroll, setBoardScroll], soundCollection: [soundCollection, setSoundCollection], fontSize: [fontSize, setFontSize], accentColor: [accentColor, setAccentColor], theme: [theme, setTheme], evalDisplay: [evalDisplay, setEvalDisplay], tablebase: [tablebase, setTablebase], puzzleRatingMin: [puzzleRatingMin, setPuzzleRatingMin], puzzleRatingMax: [puzzleRatingMax, setPuzzleRatingMax], puzzleTema: [puzzleTema, setPuzzleTema], puzzleProgresif: [puzzleProgresif, setPuzzleProgresif], puzzleSembunyiRating: [puzzleSembunyiRating, setPuzzleSembunyiRating], puzzleLompatCepat: [puzzleLompatCepat, setPuzzleLompatCepat], puzzleCatatWaktu: [puzzleCatatWaktu, setPuzzleCatatWaktu], boardMenuSettingsRef }}>
+  return <ConfigContext.Provider value={{ boardTheme: [boardTheme, setBoardTheme], pieceSet: [pieceSet, setPieceSet], openedMenu: [openedMenu, setOpenedMenu], usedRatings: [usedRatings, setUsedRatings], highlightByRating: [highlightByRating, setHighlightByRating], showArrows: [showArrows, setShowArrows], arrowAfterMove: [arrowAfterMove, setArrowAfterMove], showLegalMoves: [showLegalMoves, setShowLegalMoves], animateMoves: [animateMoves, setAnimateMoves], boardSounds: [boardSounds, setBoardSounds], coordinates: [coordinates, setCoordinates], moveHighlight: [moveHighlight, setMoveHighlight], autoPromote: [autoPromote, setAutoPromote], eraseArrowsOnClick: [eraseArrowsOnClick, setEraseArrowsOnClick], volume: [volume, setVolume], animationSpeed: [animationSpeed, setAnimationSpeed], materialDisplay: [materialDisplay, setMaterialDisplay], moveNotation: [moveNotation, setMoveNotation], previewBoardOnHover: [previewBoardOnHover, setPreviewBoardOnHover], boardScroll: [boardScroll, setBoardScroll], soundCollection: [soundCollection, setSoundCollection], fontSize: [fontSize, setFontSize], accentColor: [accentColor, setAccentColor], theme: [theme, setTheme], evalDisplay: [evalDisplay, setEvalDisplay], tablebase: [tablebase, setTablebase], boardMenuSettingsRef }}>
             {props.children}
         </ConfigContext.Provider>;
 }

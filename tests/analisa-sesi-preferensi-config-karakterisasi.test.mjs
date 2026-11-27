@@ -203,13 +203,12 @@ test("blocked reads log failures and the provider keeps its default state", asyn
   assert.equal(config.amatan.nilai.boardTheme[0], 0);
   assert.strictEqual(config.amatan.nilai.usedRatings[0], config.konteks.defaultUsedRatings);
   assert.equal(config.amatan.nilai.boardSounds[0], true);
-  // 32 preferensi dibaca (pieceSet + Tier 1 koordinat/sorotLangkah/autoPromosi/
-  // hapusPanah + Tier 2 volume/kecepatanAnimasi/material/notasi + Tier 3
-  // pratinjauHover/gulirLangkah/koleksiSuara/ukuranFont/warnaAksen + tema
-  // terang/gelap + format skor WDL + tablebase + 7 preferensi teka-teki:
-  // ratingMin/ratingMax/tema/progresif/sembunyiRating/lompatCepat/catatWaktu);
-  // semuanya gagal saat storage diblokir.
-  assert.equal(galat.length, 32);
+  // 25 preferensi UMUM dibaca (pieceSet + Tier 1 koordinat/sorotLangkah/
+  // autoPromosi/hapusPanah + Tier 2 volume/kecepatanAnimasi/material/notasi +
+  // Tier 3 pratinjauHover/gulirLangkah/koleksiSuara/ukuranFont/warnaAksen + tema
+  // terang/gelap + format skor WDL + tablebase); semuanya gagal saat storage
+  // diblokir. Preferensi latihan teka-teki tidak lagi di sini — ia milik fitur.
+  assert.equal(galat.length, 25);
   assert.ok(galat.every(([, error]) => /read blocked/.test(String(error))));
 });
 

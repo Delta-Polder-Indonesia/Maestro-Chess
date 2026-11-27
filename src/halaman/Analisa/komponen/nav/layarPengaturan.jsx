@@ -10,7 +10,6 @@
  * sini. Semua state memakai konteks/localStorage yang sama seperti sebelumnya.
  */
 import { useState } from "react";
-import { Puzzle } from "lucide-react";
 import Link from "next/link";
 import { useI18n } from "../../../../lib/i18n.jsx";
 import { URL_REPO } from "../../../../lib/repo.js";
@@ -20,7 +19,6 @@ import Ratings from "../pengaturan/ratings.jsx";
 import Moves from "../pengaturan/moves.jsx";
 import Tampilan from "../pengaturan/tampilan.jsx";
 import BestMoves from "../pengaturan/bestMoves.jsx";
-import TekaTekiPengaturan from "../pengaturan/tekaTeki.jsx";
 import BarisPengaturan from "../pengaturan/barisPengaturan.jsx";
 import { TAB_META, GRUP_META, BARIS_STATIS } from "../pengaturan/katalogPengaturan.js";
 import { boardThemes } from "../../../../modul/sesi/preferensi.js";
@@ -37,9 +35,6 @@ function Ikon({ children }) {
 }
 function IkonPapan() {
   return <Ikon><circle cx="12" cy="6" r="2.5" /><path d="M9.5 10h5l1.5 6H8l1.5-6z" /><path d="M6 19h12" /></Ikon>;
-}
-function IkonPuzzle() {
-  return <Puzzle className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />;
 }
 function IkonLabel() {
   return <Ikon><path d="M20.6 13.4 12 22l-9-9V4a1 1 0 0 1 1-1h9l7.6 7.6a2 2 0 0 1 0 2.8z" /><circle cx="7.5" cy="7.5" r="1.3" /></Ikon>;
@@ -125,7 +120,7 @@ export default function LayarPengaturan({ aktif = true }) {
   const labelBahasa = t("analisa.pengaturan.bahasa");
   // Metadata tab/grup/baris diturunkan dari katalog tunggal ("1 pintu");
   // ikon dan render kontrol tetap di sini karena berupa komponen React.
-  const IKON_TAB = { papan: IkonPapan, penilaian: IkonLabel, langkah: IkonPanah, "teka-teki": IkonPuzzle, bahasa: IkonBahasa, dokumentasi: IkonDokumentasi };
+  const IKON_TAB = { papan: IkonPapan, penilaian: IkonLabel, langkah: IkonPanah, bahasa: IkonBahasa, dokumentasi: IkonDokumentasi };
   const daftarTab = TAB_META.map((meta) => ({ id: meta.id, judul: t(meta.judulKunci), deskripsi: t(meta.deskripsiKunci), Ikon: IKON_TAB[meta.id] }));
 
   const renderGrup = {
@@ -134,7 +129,6 @@ export default function LayarPengaturan({ aktif = true }) {
     tampilan: (props) => <Tampilan {...props} />,
     penilaian: (props) => <Ratings {...props} />,
     langkah: (props) => <BestMoves {...props} />,
-    tekaTeki: (props) => <TekaTekiPengaturan {...props} />,
     bahasa: (props) => <BarisBahasa bahasa={bahasa} setBahasa={setBahasa} label={labelBahasa} {...props} />,
     dokumentasi: (props) => (
       <>

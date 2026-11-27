@@ -3,14 +3,15 @@
  * papan di kiri, panel latihan di kanan atas, riwayat sesi di kanan bawah.
  * Pada layar sempit ketiganya menumpuk vertikal.
  *
- * Preferensi dibaca dari config bersama ("satu pintu") sehingga pengaturannya
- * tinggal di layar Pengaturan, bukan tersebar di fitur ini.
+ * Preferensi latihan adalah milik fitur ini (bukan pengaturan umum aplikasi):
+ * dibaca/disunting di dalam layar lewat tombol gigi pada panel, persis pola
+ * En Croissant. Warna papan / set bidak / tampilan tetap di Pengaturan umum.
  */
-import { useContext, useMemo, useRef, useState } from "react";
-import { ConfigContext } from "../../modul/sesi/preferensi.js";
+import { useMemo, useRef, useState } from "react";
 import { useI18n } from "../../lib/i18n.jsx";
 import PanelLayar from "../Analisa/komponen/nav/PanelLayar.jsx";
 import useSesiTekaTeki from "./logika/useSesiTekaTeki.js";
+import usePreferensiTekaTeki from "./logika/usePreferensiTekaTeki.js";
 import useUkuranPapan from "./logika/useUkuranPapan.js";
 import pgnDariSoal from "./logika/pgnDariSoal.js";
 import PapanTekaTeki from "./komponen/papanTekaTeki.jsx";
@@ -19,20 +20,17 @@ import RiwayatSesi from "./komponen/riwayatSesi.jsx";
 
 export default function TekaTeki({ onAnalisa }) {
   const { t } = useI18n();
-  const config = useContext(ConfigContext);
+  const prefs = usePreferensiTekaTeki();
   const [sumber, setSumber] = useState("skakmat");
+  const [bukaPengaturan, setBukaPengaturan] = useState(false);
   const wadahPapan = useRef(null);
   const ukuran = useUkuranPapan(wadahPapan);
 
-  const [ratingMin] = config.puzzleRatingMin ?? [1000];
-  const [ratingMax] = config.puzzleRatingMax ?? [1500];
-  const [tema] = config.puzzleTema ?? [""];
-  const [progresif] = config.puzzleProgresif ?? [false];
-  const [sembunyiRating] = config.puzzleSembunyiRating ?? [false];
-  const [lompatCepat] = config.puzzleLompatCepat ?? [true];
-  const [catatWaktu] = config.puzzleCatatWaktu ?? [true];
-
-  const sesi = useSesiTekaTeki({ sumber, ratingMin, ratingMax, tema, progresif, lompatCepat, catatWaktu });
+  const sesi = useSesiTekaTeki({
+    sumber,
+    ratingMin: prefs.ratingMin, ratingMax: prefs.ratingMax, tema: prefs.tema,
+    progresif: prefs.progresif, lompatCepat: prefs.lompatCepat, catatWaktu: prefs.catatWaktu,
+  });
   const pilihanSumber = useMemo(() => [
     { id: "skakmat", label: t("tekaTeki.sumber.skakmat") },
     { id: "video", label: t("tekaTeki.sumber.video") },
@@ -66,9 +64,10 @@ export default function TekaTeki({ onAnalisa }) {
             sesi={sesi}
             sumber={sumber}
             onSumber={setSumber}
+            prefs={prefs}
+            bukaPengaturan={bukaPengaturan}
+            onTogglePengaturan={() => setBukaPengaturan((b) => !b)}
             pilihanSumber={pilihanSumber}
-            sembunyiRating={sembunyiRating}
-            catatWaktu={catatWaktu}
             onAnalisa={() => onAnalisa?.(pgnDariSoal(sesi.soal))}
           />
           <p aria-live="polite" className={`min-h-[18px] text-[12.5px] font-medium ${statusNada}`}>{pesan}</p>

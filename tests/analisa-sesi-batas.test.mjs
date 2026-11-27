@@ -322,10 +322,9 @@ test("application consumers use the public facade, never legacy or private sessi
     "src/halaman/Analisa/komponen/pengaturan/moves.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/pengaturan/ratings.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/pengaturan/tampilan.jsx -> src/modul/sesi/preferensi.js",
-    "src/halaman/Analisa/komponen/pengaturan/tekaTeki.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/komponen/pengaturan/themes.jsx -> src/modul/sesi/preferensi.js",
     "src/halaman/Analisa/konteks/mesin.jsx -> src/modul/sesi/mesin.js",
     "src/halaman/Analisa/konteks/mesin.jsx -> src/modul/sesi/preferensi.js",
-    "src/halaman/TekaTeki/TekaTeki.jsx -> src/modul/sesi/preferensi.js",
-    ].sort());
+    "src/halaman/TekaTeki/logika/usePreferensiTekaTeki.js -> src/modul/sesi/preferensi.js",
+      ].sort());
 });

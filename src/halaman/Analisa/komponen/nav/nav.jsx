@@ -45,7 +45,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import Profile from "../svg/profile.jsx";
-import { Puzzle, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import { TAMPILAN_ANALISA } from "../../../../modul/sesi/analisa.js";
 import { useTampilan } from "../../../../modul/sesi/papan.js";
 import { useTabKerja } from "@/modul/sesi/index.js";
@@ -150,12 +150,6 @@ export default function Nav() {
       icon: (props) => <Profile width={18} height={18} class={props.className} />,
       tampilan: TAMPILAN_ANALISA.AKUN,
       kunci: "akun",
-    },
-    {
-      label: t("analisa.nav.tekaTeki"),
-      icon: (props) => <Puzzle width={18} height={18} className={props.className} />,
-      tampilan: TAMPILAN_ANALISA.TEKA_TEKI,
-      kunci: "teka-teki",
     },
     {
       label: t("analisa.nav.database"),

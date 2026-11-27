@@ -11,10 +11,13 @@ src/halaman/TekaTeki/
 ├── README.md                     # berkas ini
 ├── komponen/
 │   ├── papanTekaTeki.jsx         # memakai ulang papan Analisa + panah petunjuk
-│   ├── panelTekaTeki.jsx         # sumber, kartu statistik, aksi, petunjuk/solusi
+│   ├── panelTekaTeki.jsx         # sumber + gigi, statistik, aksi, petunjuk/solusi
+│   ├── pengaturanTekaTeki.jsx    # pengaturan latihan DI DALAM layar (buka/tutup)
+│   ├── rentangRating.jsx         # slider dua-thumb rentang rating (scrub+keyboard)
 │   └── riwayatSesi.jsx           # keping riwayat sesi (benar/salah/belum)
 └── logika/
     ├── useSesiTekaTeki.js        # orkestrasi sesi (memuat, menilai, statistik)
+    ├── usePreferensiTekaTeki.js  # preferensi milik fitur (bukan config umum)
     ├── useUkuranPapan.js         # papan persegi mengikuti wadah
     └── pgnDariSoal.js            # PGN untuk "Analisa posisi ini"
 ```
@@ -24,10 +27,14 @@ src/halaman/TekaTeki/
 | Wilayah | Isi |
 | --- | --- |
 | Kiri | Papan, orientasi mengikuti pihak pemain |
-| Kanan atas | Pemilih sumber, kartu Rating/Waktu/Akurasi/Rantai/Rata-rata, tema soal, indikator giliran, aksi (soal baru · analisa posisi · bersihkan sesi), tombol **Petunjuk** dan **Lihat solusi** |
+| Kanan atas | Pemilih sumber + tombol **gigi**, pengaturan latihan (buka/tutup di tempat), kartu Rating/Waktu/Akurasi/Rantai/Rata-rata, tema soal, indikator giliran, aksi (soal baru · analisa posisi · bersihkan sesi), tombol **Petunjuk** dan **Lihat solusi** |
 | Kanan bawah | Riwayat sesi; klik keping membuka soal itu lagi |
 
 Di layar sempit ketiganya menumpuk vertikal.
+
+**Pintu masuk hanya kartu "Teka-Teki" di beranda Papan** — tidak ada item di
+bilah nav kiri, persis En Croissant yang membuka puzzle dari beranda, bukan
+menaruhnya sebagai menu terpisah.
 
 ## Aturan main
 
@@ -47,12 +54,21 @@ hook di fitur ini hanya mengatur state:
    cepat membuka soal berikutnya begitu jalur selesai (benar maupun salah);
    waktu dicatat bila diminta.
 
-## Preferensi
+## Preferensi (milik fitur, bukan pengaturan umum)
 
-Disimpan di config bersama `src/modul/sesi/` dan disunting lewat layar
-**Pengaturan → Teka-teki** (grup `tekaTeki`, enam baris di katalog satu pintu):
-rentang rating (600–2800, bawaan 1000–1500), tema, progresif, sembunyikan rating,
-langsung ke soal berikutnya, dan catat waktu.
+Preferensi latihan mengatur **sifat kerja sesi teka-teki itu sendiri**, jadi ia
+bersifat personal untuk fitur ini — berbeda dari warna papan / set bidak /
+tampilan yang bersifat umum dan tinggal di layar Pengaturan "satu pintu".
+Karena itu preferensi ini **disimpan dan disunting di dalam layar teka-teki**:
+tombol gigi di kepala panel membuka panel pengaturan (pola En Croissant).
+
+- `usePreferensiTekaTeki.js` membaca/menulis lewat fasad penyimpanan sesi
+  (`bacaAngka/bacaTeks/bacaBoolean/tulis/tulisBoolean`), bukan config bersama.
+- Isi: rentang rating dua-thumb (600–2800, bawaan 1000–1500, dinonaktifkan saat
+  progresif), tema, progresif, sembunyikan rating, langsung ke soal berikutnya,
+  dan catat waktu.
+- Katalog `katalogPengaturan.js` dan layar Pengaturan umum **tidak** memuat
+  baris/grup/tab teka-teki.
 
 ## Titik sambung
 
@@ -61,12 +77,17 @@ langsung ke soal berikutnya, dan catat waktu.
 - **Analisa posisi**: `pgnDariSoal()` menghasilkan PGN ber-header FEN, lalu
   `areaKerja` memuatnya lewat `muatPartai` (papan Analisa terbuka).
 - **Terjemahan**: rak sendiri `src/lib/terjemahan/{id,en}/tekaTeki.js`, kunci
-  `tekaTeki.*`; label nav memakai `analisa.nav.tekaTeki`.
+  `tekaTeki.*`. Kartu beranda memakai `analisa.papan.kartu.puzzle.*`.
+- **Beranda Papan**: `layarPapan.jsx` meneruskan `onTekaTeki` yang membuka layar
+  ini; satu-satunya pintu masuk fitur.
 
 ## Tahap
 
 - **Tahap 1** (selesai): modul bersama + tes.
-- **Tahap 2** (selesai): layar, panel, riwayat, pengaturan, nav, i18n, tes.
+- **Tahap 2** (selesai): layar, panel, riwayat, i18n, tes.
+- **Tahap 2b** (selesai): pengaturan latihan dipindah ke dalam layar (tombol
+  gigi), item nav dihapus, preferensi jadi milik fitur; pintu masuk cukup kartu
+  beranda Papan.
 - **Tahap 3** (rencana): pemilih tahun untuk soal harian, penanda video, penyaring
   tema dari data aktif, dan penyimpanan sesi antar kunjungan.
 

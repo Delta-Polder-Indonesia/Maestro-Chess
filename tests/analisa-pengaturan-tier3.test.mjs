@@ -612,5 +612,5 @@ test("catalog registers every Tier 3 row and the accent palette keeps the legacy
     for (const a of DAFTAR_AKSEN) assert.equal(typeof p.aksen[a.id], "string", a.id);
     for (const kunci of ["pratinjauHover", "gulirLangkah", "koleksiSuara", "tema", "ukuranFont", "warnaAksen", "tampilan"]) assert.equal(typeof p.deskripsi[kunci], "string", kunci);
   }
-  assert.ok(TAB_META.length === 6, "lima tab lama + tab Teka-teki");
+  assert.ok(TAB_META.length === 5, "pengaturan umum: papan/penilaian/langkah/bahasa/dokumentasi");
 });

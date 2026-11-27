@@ -11,13 +11,17 @@
  * diterjemahkan oleh layar. Ikon/render tetap di layar karena berupa komponen.
  * Baris dinamis (tema papan & label penilaian) ditambahkan layar di atas
  * BARIS_STATIS karena jumlahnya mengikuti registri tema/rating.
+ *
+ * Hanya pengaturan yang bersifat UMUM (tampilan papan, bidak, perilaku,
+ * penilaian, bahasa, dokumentasi) yang terdaftar di sini. Pengaturan sifat
+ * kerja sebuah fitur — seperti preferensi latihan teka-teki — bersifat personal
+ * untuk fitur itu dan tinggal di dalam layarnya sendiri, bukan di katalog ini.
  */
 
 export const TAB_META = [
   { id: "papan", judulKunci: "analisa.pengaturan.tab.papan", deskripsiKunci: "analisa.pengaturan.tab.papanDeskripsi" },
   { id: "penilaian", judulKunci: "analisa.pengaturan.penilaian", deskripsiKunci: "analisa.pengaturan.tab.penilaianDeskripsi" },
   { id: "langkah", judulKunci: "analisa.pengaturan.langkah", deskripsiKunci: "analisa.pengaturan.tab.langkahDeskripsi" },
-  { id: "teka-teki", judulKunci: "tekaTeki.pengaturan.tab", deskripsiKunci: "tekaTeki.pengaturan.tabDeskripsi" },
   { id: "bahasa", judulKunci: "analisa.pengaturan.tab.bahasa", deskripsiKunci: "analisa.pengaturan.tab.bahasaDeskripsi" },
   { id: "dokumentasi", judulKunci: "analisa.pengaturan.tab.dokumentasi", deskripsiKunci: "analisa.pengaturan.tab.dokumentasiDeskripsi" },
 ];
@@ -28,7 +32,6 @@ export const GRUP_META = [
   { id: "tampilan", tab: "papan", judulKunci: "analisa.pengaturan.tampilan", deskripsiKunci: "analisa.pengaturan.deskripsi.tampilan" },
   { id: "penilaian", tab: "penilaian", judulKunci: "analisa.pengaturan.penilaian", deskripsiKunci: "analisa.pengaturan.tab.penilaianDeskripsi" },
   { id: "langkah", tab: "langkah", judulKunci: "analisa.pengaturan.langkahTerbaik", deskripsiKunci: "analisa.pengaturan.tab.langkahDeskripsi" },
-  { id: "tekaTeki", tab: "teka-teki", judulKunci: "tekaTeki.pengaturan.grup", deskripsiKunci: "tekaTeki.pengaturan.grupDeskripsi" },
   { id: "bahasa", tab: "bahasa", judulKunci: "analisa.pengaturan.bahasa", deskripsiKunci: "analisa.pengaturan.deskripsi.bahasa" },
   { id: "dokumentasi", tab: "dokumentasi", judulKunci: "analisa.pengaturan.tab.dokumentasi", deskripsiKunci: "analisa.pengaturan.tab.dokumentasiDeskripsi" },
 ];
@@ -55,12 +58,6 @@ export const BARIS_STATIS = [
   { kunci: "tema", labelKunci: "analisa.pengaturan.tema", grup: "tampilan" },
   { kunci: "ukuranFont", labelKunci: "analisa.pengaturan.ukuranFont", grup: "tampilan" },
   { kunci: "warnaAksen", labelKunci: "analisa.pengaturan.warnaAksen", grup: "tampilan" },
-  { kunci: "puzzleRentangRating", labelKunci: "tekaTeki.pengaturan.rentangRating", grup: "tekaTeki" },
-  { kunci: "puzzleTema", labelKunci: "tekaTeki.pengaturan.tema", grup: "tekaTeki" },
-  { kunci: "puzzleProgresif", labelKunci: "tekaTeki.pengaturan.progresif", grup: "tekaTeki" },
-  { kunci: "puzzleSembunyiRating", labelKunci: "tekaTeki.pengaturan.sembunyiRating", grup: "tekaTeki" },
-  { kunci: "puzzleLompatCepat", labelKunci: "tekaTeki.pengaturan.lompatCepat", grup: "tekaTeki" },
-  { kunci: "puzzleCatatWaktu", labelKunci: "tekaTeki.pengaturan.catatWaktu", grup: "tekaTeki" },
   { kunci: "formatSkor", labelKunci: "analisa.pengaturan.formatSkor", grup: "penilaian" },
   { kunci: "tablebase", labelKunci: "analisa.pengaturan.tablebase", grup: "penilaian" },
   { kunci: "sorotLabel", labelKunci: "analisa.pengaturan.sorotLabel", grup: "penilaian" },

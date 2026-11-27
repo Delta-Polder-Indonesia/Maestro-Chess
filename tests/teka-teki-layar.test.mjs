@@ -195,121 +195,194 @@ test("an empty source reports a readable state instead of crashing", async (tes)
   sesi.unmount();
 });
 
-/* ------------------------------ Grup pengaturan ------------------------------ */
+/* ------------------- Preferensi milik fitur (di dalam layar) ------------------- */
 
-function pasangPengaturan(tes) {
+const tUji = (kunci) => kunci.split(".").reduce((acc, p) => acc?.[p], {
+  tekaTeki: kamusEn,
+  analisa: { pengaturan: { opsiSebelumnya: "Prev", opsiBerikutnya: "Next" } },
+}) ?? kunci;
+
+function pasangPrefs(tes, baca = {}) {
   const tulisan = [];
-  const keadaan = {};
-  const Baris = ({ judul, children }) => React.createElement("div", { "data-baris": true }, judul, children);
-  const Geser = ({ nilai, onChange, ariaLabel }) => React.createElement("input", { "data-geser": ariaLabel, value: nilai, onChange: (e) => onChange(e.target.value) });
-  const Pilih = ({ nilai, onChange, ariaLabel, pilihan }) => React.createElement("select", { "data-pilih": ariaLabel, value: nilai, onChange: (e) => onChange(e.target.value), "data-opsi": pilihan.map((p) => p.id).join(",") });
-  const Sakelar = ({ checked, onCheckedChange, "aria-label": label }) => React.createElement("button", { role: "switch", "aria-checked": checked, "aria-label": label, onClick: () => onCheckedChange(!checked) });
-  const Konteks = React.createContext(null);
-  const config = {
-    puzzleRatingMin: [1000, (v) => { keadaan.min = v; }],
-    puzzleRatingMax: [1500, (v) => { keadaan.max = v; }],
-    puzzleTema: ["", (v) => { keadaan.tema = v; }],
-    puzzleProgresif: [false, (v) => { keadaan.progresif = v; }],
-    puzzleSembunyiRating: [false, (v) => { keadaan.sembunyi = v; }],
-    puzzleLompatCepat: [true, (v) => { keadaan.lompat = v; }],
-    puzzleCatatWaktu: [true, (v) => { keadaan.waktu = v; }],
-  };
-  const Grup = kompilasi("../src/halaman/Analisa/komponen/pengaturan/tekaTeki.jsx", {
-    "../../../../modul/sesi/preferensi.js": {
-      ConfigContext: Konteks,
-      tulis: (kunci, nilai) => tulisan.push([kunci, nilai]),
-      tulisBoolean: (kunci, nilai) => tulisan.push([kunci, nilai ? "1" : "0"]),
+  const hook = kompilasi("../src/halaman/TekaTeki/logika/usePreferensiTekaTeki.js", {
+    "../../../modul/sesi/preferensi.js": {
+      bacaAngka: (k, d) => (k in baca ? baca[k] : d),
+      bacaTeks: (k, d) => (k in baca ? baca[k] : d),
+      bacaBoolean: (k, d) => (k in baca ? baca[k] : d),
+      tulis: (k, v) => tulisan.push([k, v]),
+      tulisBoolean: (k, v) => tulisan.push([k, v ? "1" : "0"]),
     },
-    "../../../../modul/tekaTeki/index.js": modulTekaTeki,
-    "../../../../lib/i18n.jsx": { useI18n: () => ({ t: (kunci) => kunci.split(".").reduce((acc, p) => acc?.[p], { tekaTeki: kamusEn, analisa: { pengaturan: { naikkan: "Up", turunkan: "Down", seretNilai: "Drag", opsiSebelumnya: "Prev", opsiBerikutnya: "Next" } } }) ?? kunci }) },
-    "./barisPengaturan.jsx": { default: Baris },
-    "./geserPengaturan.jsx": { default: Geser },
-    "./pilihRingkas.jsx": { default: Pilih },
-    "./sakelarPengaturan.jsx": { default: Sakelar },
   }).default;
-  // Harness ber-state: nilai config benar-benar berubah setelah tiap perubahan,
-  // sehingga penjepitan min/max diuji pada keadaan nyata, bukan nilai beku.
-  function Harness() {
-    const [min, setMin] = React.useState(1000);
-    const [max, setMax] = React.useState(1500);
-    const nilai = {
-      ...config,
-      puzzleRatingMin: [min, (v) => { keadaan.min = v; setMin(v); }],
-      puzzleRatingMax: [max, (v) => { keadaan.max = v; setMax(v); }],
-    };
-    return React.createElement(Konteks.Provider, { value: nilai }, React.createElement(Grup));
-  }
+  const keluaran = { current: null };
+  function Harness() { keluaran.current = hook(); return null; }
   let renderer;
   act(() => { renderer = TestRenderer.create(React.createElement(Harness)); });
   tes.after(() => act(() => renderer.unmount()));
-  return { renderer, tulisan, keadaan };
+  return {
+    keluaran, tulisan,
+    async jalankan(fn) { await act(async () => { await fn(keluaran.current); }); return keluaran.current; },
+  };
 }
 
-test("puzzle settings group renders six rows and persists every change", (tes) => {
-  const { renderer, tulisan, keadaan } = pasangPengaturan(tes);
-  assert.equal(renderer.root.findAllByProps({ "data-baris": true }).length, 6);
-  const geser = renderer.root.findAllByType("input");
-  assert.deepEqual(geser.map((n) => n.props["data-geser"]), ["Minimum rating", "Maximum rating"]);
-  act(() => geser[0].props.onChange({ target: { value: 1200 } }));
-  act(() => geser[1].props.onChange({ target: { value: 1800 } }));
-  assert.deepEqual(tulisan.slice(0, 2), [["puzzleRatingMin", "1200"], ["puzzleRatingMax", "1800"]]);
-  assert.equal(keadaan.min, 1200);
-  assert.equal(keadaan.max, 1800);
+test("feature-local prefs default like En Croissant and persist every change", async (tes) => {
+  const p = pasangPrefs(tes);
+  const awal = p.keluaran.current;
+  assert.equal(awal.ratingMin, 1000);
+  assert.equal(awal.ratingMax, 1500);
+  assert.equal(awal.tema, "");
+  assert.equal(awal.progresif, false);
+  assert.equal(awal.sembunyiRating, false);
+  assert.equal(awal.lompatCepat, true);
+  assert.equal(awal.catatWaktu, true);
+  let k = await p.jalankan((s) => s.ubah("progresif", true));
+  assert.equal(k.progresif, true);
+  assert.deepEqual(p.tulisan.at(-1), ["puzzleProgresif", "1"]);
+  k = await p.jalankan((s) => s.ubah("tema", "fork"));
+  assert.equal(k.tema, "fork");
+  assert.deepEqual(p.tulisan.at(-1), ["puzzleTema", "fork"]);
+  k = await p.jalankan((s) => s.ubah("lompatCepat", false));
+  assert.deepEqual(p.tulisan.at(-1), ["puzzleLompatCepat", "0"], "sakelar bawaan nyala bisa dimatikan");
+});
 
+test("rating bounds clamp against each other and stay within 600–2800", async (tes) => {
+  const p = pasangPrefs(tes);
+  let k = await p.jalankan((s) => s.ubah("ratingMin", 2000));
+  assert.equal(k.ratingMin, 1500, "min dijepit ke max");
+  k = await p.jalankan((s) => s.ubah("ratingMax", 700));
+  assert.equal(k.ratingMax, 1500, "max tidak boleh turun di bawah min");
+  const tersimpan = pasangPrefs(tes, { puzzleRatingMin: 9999, puzzleRatingMax: -5 });
+  assert.equal(tersimpan.keluaran.current.ratingMin, 2800, "nilai tersimpan dijepit ke atas");
+  assert.equal(tersimpan.keluaran.current.ratingMax, 600, "nilai tersimpan dijepit ke bawah");
+});
+
+function pasangPengaturanLayar(tes, prefsOverride = {}) {
+  const panggilan = [];
+  const prefs = {
+    ratingMin: 1000, ratingMax: 1500, tema: "", progresif: false,
+    sembunyiRating: false, lompatCepat: true, catatWaktu: true,
+    ubah: (k, v) => panggilan.push([k, v]), ...prefsOverride,
+  };
+  const Pilih = ({ nilai, onChange, ariaLabel, pilihan }) => React.createElement("select", { "data-pilih": ariaLabel, value: nilai, "data-opsi": pilihan.map((p) => p.id).join(","), onChange: (e) => onChange(e.target.value) });
+  const Sakelar = ({ checked, onCheckedChange, "aria-label": label }) => React.createElement("button", { role: "switch", "aria-checked": checked, "aria-label": label, onClick: () => onCheckedChange(!checked) });
+  const Rentang = (props) => React.createElement("div", { "data-rentang": true, "data-disabled": props.disabled || false });
+  const Komponen = kompilasi("../src/halaman/TekaTeki/komponen/pengaturanTekaTeki.jsx", {
+    "../../../modul/tekaTeki/index.js": modulTekaTeki,
+    "../../Analisa/komponen/pengaturan/pilihRingkas.jsx": { default: Pilih },
+    "../../Analisa/komponen/pengaturan/sakelarPengaturan.jsx": { default: Sakelar },
+    "./rentangRating.jsx": { default: Rentang },
+    "../logika/usePreferensiTekaTeki.js": { RATING_BAWAH: 600, RATING_ATAS: 2800 },
+  }).default;
+  let renderer;
+  act(() => { renderer = TestRenderer.create(React.createElement(Komponen, { prefs, t: tUji })); });
+  tes.after(() => act(() => renderer.unmount()));
+  return { renderer, panggilan };
+}
+
+test("in-screen settings show range + theme + four switches and write through prefs.ubah", (tes) => {
+  const { renderer, panggilan } = pasangPengaturanLayar(tes);
+  assert.ok(renderer.root.findByProps({ "data-rentang": true }), "rentang rating tampil");
   const pilih = renderer.root.findByType("select");
   assert.ok(pilih.props["data-opsi"].startsWith("semua,"), "opsi pertama = semua tema");
   act(() => pilih.props.onChange({ target: { value: "fork" } }));
-  assert.deepEqual(tulisan.at(-1), ["puzzleTema", "fork"]);
+  assert.deepEqual(panggilan.at(-1), ["tema", "fork"]);
   act(() => pilih.props.onChange({ target: { value: "semua" } }));
-  assert.deepEqual(tulisan.at(-1), ["puzzleTema", ""], "semua tema disimpan sebagai string kosong");
-
+  assert.deepEqual(panggilan.at(-1), ["tema", ""], "semua tema = string kosong");
   const sakelar = renderer.root.findAllByProps({ role: "switch" });
   assert.deepEqual(sakelar.map((n) => n.props["aria-label"]), ["Progressive", "Hide rating", "Jump to next puzzle", "Track time"]);
   act(() => sakelar[0].props.onClick());
-  assert.deepEqual(tulisan.at(-1), ["puzzleProgresif", "1"]);
-  act(() => sakelar[2].props.onClick());
-  assert.deepEqual(tulisan.at(-1), ["puzzleLompatCepat", "0"], "sakelar bawaan nyala bisa dimatikan");
+  assert.deepEqual(panggilan.at(-1), ["progresif", true]);
+  act(() => sakelar[3].props.onClick());
+  assert.deepEqual(panggilan.at(-1), ["catatWaktu", false]);
 });
 
-test("rating bounds never cross each other", (tes) => {
-  const { renderer, keadaan } = pasangPengaturan(tes);
-  const geser = renderer.root.findAllByType("input");
-  // Min dinaikkan melewati max → dijepit ke max; max diturunkan di bawah min → dijepit ke min.
-  act(() => geser[0].props.onChange({ target: { value: 2000 } }));
-  assert.equal(keadaan.min, 1500);
-  act(() => renderer.root.findAllByType("input")[1].props.onChange({ target: { value: 700 } }));
-  assert.equal(keadaan.max, 1500, "max tidak boleh turun di bawah min yang baru");
+test("progressive mode disables the manual rating range", (tes) => {
+  const { renderer } = pasangPengaturanLayar(tes, { progresif: true });
+  assert.equal(renderer.root.findByProps({ "data-rentang": true }).props["data-disabled"], true);
+});
+
+test("range slider thumbs move by keyboard and clamp at the other thumb", (tes) => {
+  const perubahan = [];
+  const Rentang = kompilasi("../src/halaman/TekaTeki/komponen/rentangRating.jsx", {}).default;
+  let renderer;
+  act(() => {
+    renderer = TestRenderer.create(React.createElement(Rentang, {
+      nilaiMin: 1000, nilaiMax: 1500,
+      onChangeMin: (n) => perubahan.push(["min", n]), onChangeMax: (n) => perubahan.push(["max", n]),
+      labelMin: "Min", labelMax: "Max", labelRentang: "Range",
+    }));
+  });
+  tes.after(() => act(() => renderer.unmount()));
+  const min = renderer.root.findByProps({ "data-uji": "rentang-min" });
+  const max = renderer.root.findByProps({ "data-uji": "rentang-max" });
+  assert.equal(min.props["aria-valuenow"], 1000);
+  assert.equal(min.props.role, "slider");
+  act(() => min.props.onKeyDown({ key: "ArrowRight", preventDefault() {} }));
+  assert.deepEqual(perubahan.at(-1), ["min", 1050]);
+  act(() => max.props.onKeyDown({ key: "ArrowLeft", preventDefault() {} }));
+  assert.deepEqual(perubahan.at(-1), ["max", 1450]);
+  act(() => min.props.onKeyDown({ key: "End", preventDefault() {} }));
+  assert.deepEqual(perubahan.at(-1), ["min", 1500], "min dijepit ke max");
+  act(() => max.props.onKeyDown({ key: "Home", preventDefault() {} }));
+  assert.deepEqual(perubahan.at(-1), ["max", 1000], "max dijepit ke min");
+});
+
+test("range slider is inert when disabled", (tes) => {
+  const perubahan = [];
+  const Rentang = kompilasi("../src/halaman/TekaTeki/komponen/rentangRating.jsx", {}).default;
+  let renderer;
+  act(() => {
+    renderer = TestRenderer.create(React.createElement(Rentang, {
+      nilaiMin: 1000, nilaiMax: 1500, disabled: true,
+      onChangeMin: (n) => perubahan.push(["min", n]), onChangeMax: (n) => perubahan.push(["max", n]),
+      labelMin: "Min", labelMax: "Max", labelRentang: "Range",
+    }));
+  });
+  tes.after(() => act(() => renderer.unmount()));
+  const min = renderer.root.findByProps({ "data-uji": "rentang-min" });
+  act(() => min.props.onKeyDown({ key: "ArrowRight", preventDefault() {} }));
+  act(() => min.props.onPointerDown({ preventDefault() {}, currentTarget: {}, pointerId: 1 }));
+  assert.equal(perubahan.length, 0, "kenop tidak berubah saat dinonaktifkan");
+  assert.equal(min.props.tabIndex, -1);
 });
 
 /* ------------------------------ Pemasangan & i18n ------------------------------ */
 
-test("the puzzle screen is wired into navigation, the layer registry, and the settings catalog", () => {
+test("puzzle enters only via the Papan card; its settings live in-screen, not in nav or general settings", () => {
   const konteks = baca("../src/modul/sesi/analyzeKonteks.js");
-  assert.ok(konteks.includes('TEKA_TEKI: "teka-teki"'));
+  assert.ok(konteks.includes('TEKA_TEKI: "teka-teki"'), "konstanta layar tetap ada");
+  // Tidak ada item teka-teki di bilah nav kiri.
   const nav = baca("../src/halaman/Analisa/komponen/nav/nav.jsx");
-  assert.ok(nav.includes("TAMPILAN_ANALISA.TEKA_TEKI"), "item menu teka-teki");
-  assert.ok(nav.includes('t("analisa.nav.tekaTeki")'));
+  assert.ok(!nav.includes("TAMPILAN_ANALISA.TEKA_TEKI"), "nav tidak memuat item teka-teki");
+  assert.ok(!nav.includes("nav.tekaTeki"), "nav tidak memakai label teka-teki");
+  // Pintu masuk: kartu beranda Papan yang hidup (bukan "segera hadir").
   const area = baca("../src/halaman/Analisa/komponen/areaKerja.jsx");
   assert.ok(area.includes('import("../../TekaTeki/TekaTeki.jsx")'), "layar dimuat malas");
   assert.ok(area.includes("layar === TAMPILAN_ANALISA.TEKA_TEKI"));
   assert.ok(area.includes("onAnalisa="), "jalur analisa posisi diteruskan");
-  // Kartu Puzzle di beranda Papan harus hidup (bukan "segera hadir") dan
-  // membuka layar teka-teki — jalur masuk kedua selain item nav.
   assert.ok(area.includes("onTekaTeki="), "beranda Papan meneruskan pembuka layar teka-teki");
   const papan = baca("../src/halaman/Analisa/komponen/nav/layarPapan.jsx");
   const kartuPuzzle = papan.slice(papan.indexOf('kunci: "puzzle"'), papan.indexOf('kunci: "deteksi-engine"'));
   assert.ok(kartuPuzzle.includes("onClick: onTekaTeki"), "kartu puzzle memakai onClick");
   assert.ok(!kartuPuzzle.includes("segera: true"), "kartu puzzle tidak lagi ditandai segera hadir");
+  // Katalog & layar Pengaturan umum TIDAK memuat teka-teki (pengaturan personal fitur).
   const katalog = baca("../src/halaman/Analisa/komponen/pengaturan/katalogPengaturan.js");
-  assert.ok(katalog.includes('{ id: "teka-teki", judulKunci: "tekaTeki.pengaturan.tab"'));
-  assert.ok(katalog.includes('{ id: "tekaTeki", tab: "teka-teki"'));
+  assert.ok(!katalog.includes('id: "teka-teki"'), "katalog tanpa tab teka-teki");
+  assert.ok(!katalog.includes('id: "tekaTeki"'), "katalog tanpa grup tekaTeki");
+  assert.ok(!katalog.includes("puzzleRentangRating"), "katalog tanpa baris puzzle");
   const layar = baca("../src/halaman/Analisa/komponen/nav/layarPengaturan.jsx");
-  assert.ok(layar.includes("tekaTeki: (props) => <TekaTekiPengaturan"));
-  // Preferensi hidup di config bersama (satu pintu), bukan state liar di fitur.
+  assert.ok(!layar.includes("TekaTekiPengaturan"), "layar Pengaturan umum tanpa renderer teka-teki");
+  // Preferensi TIDAK di config bersama; ia milik fitur.
   const provider = baca("../src/modul/sesi/ConfigContextProvider.jsx");
   for (const kunci of ["puzzleRatingMin", "puzzleRatingMax", "puzzleTema", "puzzleProgresif", "puzzleSembunyiRating", "puzzleLompatCepat", "puzzleCatatWaktu"]) {
-    assert.ok(provider.includes(kunci), `${kunci} ada di config bersama`);
+    assert.ok(!provider.includes(kunci), `${kunci} tidak lagi di config bersama`);
   }
+  // Pengaturan latihan hidup di dalam layar: tombol gigi + panel buka/tutup.
+  const panel = baca("../src/halaman/TekaTeki/komponen/panelTekaTeki.jsx");
+  assert.ok(panel.includes("onTogglePengaturan"), "panel punya tombol gigi buka/tutup");
+  assert.ok(panel.includes("<PengaturanTekaTeki"), "panel merender pengaturan di tempat");
+  const entri = baca("../src/halaman/TekaTeki/TekaTeki.jsx");
+  assert.ok(entri.includes("usePreferensiTekaTeki"), "layar memakai preferensi milik fitur");
+  assert.ok(!entri.includes("ConfigContext"), "layar tidak membaca config umum untuk preferensinya");
 });
 
 test("the feature keeps its own shelf: entry, components, logic, and a README", () => {
@@ -318,8 +391,11 @@ test("the feature keeps its own shelf: entry, components, logic, and a README", 
     "../src/halaman/TekaTeki/README.md",
     "../src/halaman/TekaTeki/komponen/papanTekaTeki.jsx",
     "../src/halaman/TekaTeki/komponen/panelTekaTeki.jsx",
+    "../src/halaman/TekaTeki/komponen/pengaturanTekaTeki.jsx",
+    "../src/halaman/TekaTeki/komponen/rentangRating.jsx",
     "../src/halaman/TekaTeki/komponen/riwayatSesi.jsx",
     "../src/halaman/TekaTeki/logika/useSesiTekaTeki.js",
+    "../src/halaman/TekaTeki/logika/usePreferensiTekaTeki.js",
     "../src/halaman/TekaTeki/logika/pgnDariSoal.js",
   ]) assert.ok(baca(berkas).length > 0, berkas);
   // Papan dipakai ulang dari Analisa, tidak diduplikasi ke fitur ini.
@@ -329,6 +405,12 @@ test("the feature keeps its own shelf: entry, components, logic, and a README", 
   const hook = baca("../src/halaman/TekaTeki/logika/useSesiTekaTeki.js");
   assert.ok(hook.includes('../../../modul/tekaTeki/index.js'));
   assert.ok(!hook.includes('from "chess.js"'), "hook tidak memanggil chess.js langsung");
+  // Preferensi fitur memakai fasad penyimpanan sesi, bukan config bersama.
+  const prefs = baca("../src/halaman/TekaTeki/logika/usePreferensiTekaTeki.js");
+  assert.ok(prefs.includes('../../../modul/sesi/preferensi.js'), "preferensi lewat fasad sesi");
+  assert.ok(!prefs.includes("ConfigContext"), "preferensi tidak memakai config bersama");
+  // Renderer grup lama di folder pengaturan Analisa sudah dihapus.
+  assert.throws(() => baca("../src/halaman/Analisa/komponen/pengaturan/tekaTeki.jsx"), "renderer grup lama tidak ada lagi");
 });
 
 test("Indonesian and English puzzle dictionaries expose the same keys", () => {

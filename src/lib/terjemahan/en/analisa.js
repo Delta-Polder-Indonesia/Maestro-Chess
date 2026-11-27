@@ -384,7 +384,6 @@ export const analisa = {
     nav: {
       pengaturan: "Settings",
       papan: "Board",
-      tekaTeki: "Puzzles",
       papanKeterangan: "Board home — every feature",
       play: "Analysis Report",
       playKeterangan: "Back to the analysis board",

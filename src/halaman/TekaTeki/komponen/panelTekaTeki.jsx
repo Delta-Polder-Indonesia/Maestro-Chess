@@ -1,10 +1,15 @@
 /**
- * Panel kanan-atas teka-teki (pola En Croissant): pemilih sumber, kartu
- * statistik (rating/waktu/akurasi/rantai/rata-rata), indikator giliran, aksi
- * soal baru–analisa–bersihkan, lalu dua tombol besar Petunjuk dan Lihat solusi.
+ * Panel kanan-atas teka-teki (pola En Croissant): pemilih sumber + tombol gigi,
+ * pengaturan latihan yang bisa dibuka-tutup di tempat, kartu statistik
+ * (rating/waktu/akurasi/rantai/rata-rata), indikator giliran, aksi soal
+ * baru–analisa–bersihkan, lalu dua tombol besar Petunjuk dan Lihat solusi.
+ *
+ * Pengaturan latihan tinggal di sini (di dalam fitur), bukan di layar
+ * Pengaturan umum — tombol gigi membuka panel rentang rating/tema/sakelar.
  */
 import { formatWaktu } from "../../../modul/tekaTeki/index.js";
 import PilihRingkas from "../../Analisa/komponen/pengaturan/pilihRingkas.jsx";
+import PengaturanTekaTeki from "./pengaturanTekaTeki.jsx";
 
 function Kartu({ label, nilai, nada = "" }) {
   return (
@@ -15,7 +20,7 @@ function Kartu({ label, nilai, nada = "" }) {
   );
 }
 
-function TombolAksi({ label, onClick, disabled, children }) {
+function TombolAksi({ label, onClick, disabled, children, aktif = false }) {
   return (
     <button
       type="button"
@@ -23,17 +28,21 @@ function TombolAksi({ label, onClick, disabled, children }) {
       title={label}
       onClick={onClick}
       disabled={disabled}
-      className="flex h-8 w-8 items-center justify-center rounded-borderRoundness border border-border bg-backgroundDropdown text-foregroundGrey transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+      className={`flex h-8 w-8 items-center justify-center rounded-borderRoundness border border-border bg-backgroundDropdown transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+        aktif ? "text-backgroundBoxBoxHighlighted" : "text-foregroundGrey hover:text-foreground"
+      }`}
     >{children}</button>
   );
 }
 
-export default function PanelTekaTeki({ t, sesi, sumber, onSumber, sembunyiRating, catatWaktu, onAnalisa, pilihanSumber }) {
+export default function PanelTekaTeki({
+  t, sesi, sumber, onSumber, prefs, bukaPengaturan, onTogglePengaturan, onAnalisa, pilihanSumber,
+}) {
   const { soal, statistik, waktu, status, belumSelesai, solusiBerjalan, riwayat, aktif } = sesi;
   const ratingTerlihat = soal?.rating ?? null;
   // Rating disembunyikan hanya selama soal belum ditandai; begitu salah/benar
   // rating terlihat (paritas En Croissant).
-  const ratingTampil = ratingTerlihat === null ? "—" : (sembunyiRating && status === "belum" ? "?" : String(ratingTerlihat));
+  const ratingTampil = ratingTerlihat === null ? "—" : (prefs.sembunyiRating && status === "belum" ? "?" : String(ratingTerlihat));
   const giliran = soal?.pihak === "w" ? t("tekaTeki.panel.giliranPutih") : t("tekaTeki.panel.giliranHitam");
   const nadaAkurasi = statistik.akurasi === null ? "text-foregroundGrey" : (statistik.akurasi >= 50 ? "text-winGreen" : "text-lossRed");
   const temaSoal = riwayat[aktif]?.tema ?? [];
@@ -41,23 +50,37 @@ export default function PanelTekaTeki({ t, sesi, sumber, onSumber, sembunyiRatin
   return (
     <div className="flex min-h-0 flex-col gap-2.5 rounded-borderRoundness border border-border bg-backgroundBoxDarker p-3">
       <div className="flex items-center gap-2">
-        <PilihRingkas
-          ariaLabel={t("tekaTeki.sumber.label")}
-          lebar="w-full"
-          nilai={sumber}
-          pilihan={pilihanSumber}
-          onChange={onSumber}
-          labelNaik={t("analisa.pengaturan.opsiSebelumnya")}
-          labelTurun={t("analisa.pengaturan.opsiBerikutnya")}
-        />
+        <div className="min-w-0 flex-1">
+          <PilihRingkas
+            ariaLabel={t("tekaTeki.sumber.label")}
+            lebar="w-full"
+            nilai={sumber}
+            pilihan={pilihanSumber}
+            onChange={onSumber}
+            labelNaik={t("analisa.pengaturan.opsiSebelumnya")}
+            labelTurun={t("analisa.pengaturan.opsiBerikutnya")}
+          />
+        </div>
+        <TombolAksi
+          label={t("tekaTeki.panel.pengaturan")}
+          onClick={onTogglePengaturan}
+          aktif={bukaPengaturan}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </TombolAksi>
       </div>
+
+      {bukaPengaturan ? <PengaturanTekaTeki prefs={prefs} t={t} /> : null}
 
       <div className="flex flex-wrap gap-1.5">
         <Kartu label={t("tekaTeki.panel.rating")} nilai={ratingTampil} />
-        {catatWaktu ? <Kartu label={t("tekaTeki.panel.waktu")} nilai={formatWaktu(waktu)} /> : null}
+        {prefs.catatWaktu ? <Kartu label={t("tekaTeki.panel.waktu")} nilai={formatWaktu(waktu)} /> : null}
         <Kartu label={t("tekaTeki.panel.akurasi")} nilai={statistik.akurasi === null ? "—" : `${statistik.akurasi}%`} nada={nadaAkurasi} />
         <Kartu label={t("tekaTeki.panel.streak")} nilai={String(statistik.streak)} />
-        {catatWaktu && statistik.rataWaktu !== null ? <Kartu label={t("tekaTeki.panel.rataWaktu")} nilai={`${(statistik.rataWaktu / 1000).toFixed(1)}s`} /> : null}
+        {prefs.catatWaktu && statistik.rataWaktu !== null ? <Kartu label={t("tekaTeki.panel.rataWaktu")} nilai={`${(statistik.rataWaktu / 1000).toFixed(1)}s`} /> : null}
       </div>
 
       {status !== "belum" && temaSoal.length ? (
