@@ -1,14 +1,13 @@
 /**
- * Pengaturan latihan yang hidup DI DALAM layar teka-teki (bukan di Pengaturan
+ * Pengaturan latihan yang hidup DI DALAM layar teka-teki (bukan Pengaturan
  * umum). Dibuka lewat tombol gigi di kepala panel, persis panel puzzle En
- * Croissant: rentang rating dua-thumb, pemilih tema, lalu empat sakelar sifat
- * kerja sesi. Kontrol pilih/sakelar memakai komponen pengaturan yang sudah ada
- * agar bentuk dan aksesibilitasnya seragam; rentang rating memakai kontrol
- * dua-thumb khas fitur ini.
+ * Croissant: rentang rating dua-thumb, pemilih tema, lalu grid 2x2 sakelar
+ * sifat kerja sesi (judul + deskripsi). Sakelar memakai kontrol ringkas gaya
+ * Mantine; pemilih tema memakai komponen pengaturan yang sudah ada.
  */
 import { daftarTema } from "../../../modul/tekaTeki/index.js";
 import PilihRingkas from "../../Analisa/komponen/pengaturan/pilihRingkas.jsx";
-import SakelarPengaturan from "../../Analisa/komponen/pengaturan/sakelarPengaturan.jsx";
+import SakelarRingkas from "./sakelarRingkas.jsx";
 import RentangRating from "./rentangRating.jsx";
 import { RATING_ATAS, RATING_BAWAH } from "../logika/usePreferensiTekaTeki.js";
 
@@ -21,10 +20,10 @@ const TEMA_BAWAAN = [
 function BarisSakelar({ label, deskripsi, checked, onChange }) {
   return (
     <div className="flex items-start gap-2.5">
-      <SakelarPengaturan checked={checked} onCheckedChange={onChange} aria-label={label} />
-      <div className="min-w-0 pt-0.5">
-        <div className="text-[13px] font-medium leading-4 text-foreground">{label}</div>
-        <div className="mt-0.5 text-[11.5px] leading-4 text-foregroundGrey">{deskripsi}</div>
+      <span className="mt-0.5"><SakelarRingkas checked={checked} onCheckedChange={onChange} aria-label={label} /></span>
+      <div className="min-w-0 leading-tight">
+        <div className="text-[13px] font-medium text-foreground">{label}</div>
+        <div className="mt-0.5 text-[11px] leading-4 text-foregroundGrey">{deskripsi}</div>
       </div>
     </div>
   );
@@ -37,9 +36,9 @@ export default function PengaturanTekaTeki({ prefs, t }) {
   ];
 
   return (
-    <div className="flex flex-col gap-3 border-b border-border pb-3" data-uji="pengaturan-teka-teki">
-      <div>
-        <div className="mb-1.5 text-[13px] font-semibold text-foreground">{t("tekaTeki.pengaturan.rentangRating")}</div>
+    <div className="flex flex-col gap-4 border-b border-border pb-3.5" data-uji="pengaturan-teka-teki">
+      <div className="px-1">
+        <div className="mb-2 text-[13px] font-medium text-foreground">{t("tekaTeki.pengaturan.rentangRating")}</div>
         <RentangRating
           nilaiMin={prefs.ratingMin}
           nilaiMax={prefs.ratingMax}
@@ -55,8 +54,8 @@ export default function PengaturanTekaTeki({ prefs, t }) {
         />
       </div>
 
-      <div>
-        <div className="mb-1.5 text-[13px] font-semibold text-foreground">{t("tekaTeki.pengaturan.tema")}</div>
+      <div className="px-1">
+        <div className="mb-1.5 text-[13px] font-medium text-foreground">{t("tekaTeki.pengaturan.tema")}</div>
         <PilihRingkas
           ariaLabel={t("tekaTeki.pengaturan.tema")}
           lebar="w-full"
@@ -68,7 +67,7 @@ export default function PengaturanTekaTeki({ prefs, t }) {
         />
       </div>
 
-      <div className="flex flex-col gap-3 pt-1">
+      <div className="grid grid-cols-1 gap-x-5 gap-y-3.5 px-1 sm:grid-cols-2">
         <BarisSakelar
           label={t("tekaTeki.pengaturan.progresif")}
           deskripsi={t("tekaTeki.pengaturan.progresifDeskripsi")}

@@ -8,7 +8,11 @@ export const tekaTeki = {
     giliranPutih: "Putih jalan", giliranHitam: "Hitam jalan",
     soalBaru: "Soal baru", petunjuk: "Petunjuk", lihatSolusi: "Lihat solusi",
     bersihkanSesi: "Bersihkan sesi", analisaPosisi: "Analisa posisi ini", temaSoal: "Tema soal",
-    pengaturan: "Pengaturan latihan",
+    pengaturan: "Pengaturan latihan", ulangSoal: "Ulangi soal ini",
+  },
+  langkah: {
+    judul: "Daftar langkah", kosong: "Belum ada langkah dimainkan.",
+    awal: "Ke awal", sebelum: "Langkah sebelumnya", berikut: "Langkah berikutnya", akhir: "Ke akhir",
   },
   status: { benar: "Benar", salah: "Salah", belum: "Belum dikerjakan", memuat: "Memuat soal…", kosong: "Tidak ada soal yang cocok dengan saringan.", gagal: "Gagal memuat data teka-teki." },
   pesan: { benar: "Tepat! Lanjutkan.", salah: "Belum tepat — coba langkah lain.", selesai: "Teka-teki selesai.", solusi: "Solusi ditampilkan." },

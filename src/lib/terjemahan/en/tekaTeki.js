@@ -8,7 +8,11 @@ export const tekaTeki = {
     giliranPutih: "White to move", giliranHitam: "Black to move",
     soalBaru: "New puzzle", petunjuk: "Get a hint", lihatSolusi: "View solution",
     bersihkanSesi: "Clear session", analisaPosisi: "Analyse this position", temaSoal: "Puzzle themes",
-    pengaturan: "Training settings",
+    pengaturan: "Training settings", ulangSoal: "Retry this puzzle",
+  },
+  langkah: {
+    judul: "Move list", kosong: "No moves played yet.",
+    awal: "To start", sebelum: "Previous move", berikut: "Next move", akhir: "To end",
   },
   status: { benar: "Correct", salah: "Incorrect", belum: "Not attempted", memuat: "Loading puzzles…", kosong: "No puzzle matches the current filters.", gagal: "Failed to load puzzle data." },
   pesan: { benar: "Correct! Keep going.", salah: "Not quite — try another move.", selesai: "Puzzle solved.", solusi: "Showing the solution." },

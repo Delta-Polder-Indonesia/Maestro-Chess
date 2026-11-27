@@ -12,6 +12,7 @@ import TestRenderer from "react-test-renderer";
 import ts from "typescript";
 
 import * as modulTekaTeki from "../src/modul/tekaTeki/index.js";
+import buatJejak from "../src/halaman/TekaTeki/logika/jejakLangkah.js";
 import { tekaTeki as kamusId } from "../src/lib/terjemahan/id/tekaTeki.js";
 import { tekaTeki as kamusEn } from "../src/lib/terjemahan/en/tekaTeki.js";
 
@@ -268,7 +269,7 @@ function pasangPengaturanLayar(tes, prefsOverride = {}) {
   const Komponen = kompilasi("../src/halaman/TekaTeki/komponen/pengaturanTekaTeki.jsx", {
     "../../../modul/tekaTeki/index.js": modulTekaTeki,
     "../../Analisa/komponen/pengaturan/pilihRingkas.jsx": { default: Pilih },
-    "../../Analisa/komponen/pengaturan/sakelarPengaturan.jsx": { default: Sakelar },
+    "./sakelarRingkas.jsx": { default: Sakelar },
     "./rentangRating.jsx": { default: Rentang },
     "../logika/usePreferensiTekaTeki.js": { RATING_BAWAH: 600, RATING_ATAS: 2800 },
   }).default;
@@ -345,6 +346,75 @@ test("range slider is inert when disabled", (tes) => {
   assert.equal(min.props.tabIndex, -1);
 });
 
+/* --------------------------- Jejak langkah & navigasi --------------------------- */
+
+test("jejak langkah builds positions + SAN from the start to the played index", () => {
+  const soal = DAFTAR_UJI[0];
+  const awal = buatJejak(soal, 0);
+  assert.equal(awal.length, 1, "posisi awal saja");
+  assert.equal(awal[0].fen, soal.fen);
+  assert.equal(awal[0].san, null);
+  const satu = buatJejak(soal, 1);
+  assert.equal(satu.length, 2);
+  assert.equal(satu[1].san, "a5", "pembuka lawan tercatat");
+  assert.equal(satu[1].warna, "b");
+  assert.equal(satu[1].nomor, 1);
+  const dua = buatJejak(soal, 2);
+  assert.equal(dua.length, 3);
+  assert.equal(dua[2].san, "Re8#", "langkah penyelesaian skakmat");
+  assert.equal(dua[2].warna, "w");
+  assert.equal(dua[2].nomor, 2);
+  assert.notEqual(dua[1].fen, dua[2].fen, "tiap entri menyimpan posisi sendiri");
+  assert.deepEqual(buatJejak(null, 0), [], "tanpa soal tidak ada jejak");
+});
+
+test("move list shows clickable SAN chips and four navigation buttons", (tes) => {
+  const Komponen = kompilasi("../src/halaman/TekaTeki/komponen/riwayatLangkah.jsx", {}).default;
+  const jejak = buatJejak(DAFTAR_UJI[0], 2); // [awal, a5, Re8#]
+  const tinjauan = [];
+  const nav = [];
+  let renderer;
+  act(() => {
+    renderer = TestRenderer.create(React.createElement(Komponen, {
+      t: tUji, jejak, tinjau: 2,
+      onTinjau: (i) => tinjauan.push(i), onNavigasi: (a) => nav.push(a),
+    }));
+  });
+  tes.after(() => act(() => renderer.unmount()));
+  const keping = renderer.root.findAllByProps({ role: "listitem" });
+  assert.equal(keping.length, 2, "posisi awal bukan keping; dua langkah dimainkan");
+  assert.ok(keping[1].props.children.join("").includes("Re8#"));
+  assert.equal(keping[1].props["aria-current"], true, "langkah live ditandai aktif");
+  act(() => keping[0].props.onClick());
+  assert.equal(tinjauan.at(-1), 1, "klik keping meninjau posisi itu");
+  const tombolNav = renderer.root.findAllByType("button").filter((b) => ["To start", "Previous move", "Next move", "To end"].includes(b.props["aria-label"]));
+  assert.equal(tombolNav.length, 4, "baris navigasi « ‹ › »");
+  // Di langkah terakhir: maju/akhir mati, mundur/awal hidup.
+  assert.equal(tombolNav[0].props.disabled, false);
+  assert.equal(tombolNav[1].props.disabled, false);
+  assert.equal(tombolNav[2].props.disabled, true);
+  assert.equal(tombolNav[3].props.disabled, true);
+  act(() => tombolNav[0].props.onClick());
+  assert.equal(nav.at(-1), "awal");
+  act(() => tombolNav[1].props.onClick());
+  assert.equal(nav.at(-1), "sebelum");
+});
+
+test("empty move list disables every navigation button", (tes) => {
+  const Komponen = kompilasi("../src/halaman/TekaTeki/komponen/riwayatLangkah.jsx", {}).default;
+  let renderer;
+  act(() => {
+    renderer = TestRenderer.create(React.createElement(Komponen, {
+      t: tUji, jejak: buatJejak(DAFTAR_UJI[0], 0), tinjau: 0,
+      onTinjau: () => {}, onNavigasi: () => {},
+    }));
+  });
+  tes.after(() => act(() => renderer.unmount()));
+  assert.equal(renderer.root.findAllByProps({ role: "listitem" }).length, 0);
+  const tombolNav = renderer.root.findAllByType("button").filter((b) => ["To start", "Previous move", "Next move", "To end"].includes(b.props["aria-label"]));
+  assert.ok(tombolNav.every((b) => b.props.disabled === true), "tanpa langkah, semua navigasi mati");
+});
+
 /* ------------------------------ Pemasangan & i18n ------------------------------ */
 
 test("puzzle enters only via the Papan card; its settings live in-screen, not in nav or general settings", () => {
@@ -393,9 +463,11 @@ test("the feature keeps its own shelf: entry, components, logic, and a README", 
     "../src/halaman/TekaTeki/komponen/panelTekaTeki.jsx",
     "../src/halaman/TekaTeki/komponen/pengaturanTekaTeki.jsx",
     "../src/halaman/TekaTeki/komponen/rentangRating.jsx",
-    "../src/halaman/TekaTeki/komponen/riwayatSesi.jsx",
+    "../src/halaman/TekaTeki/komponen/sakelarRingkas.jsx",
+    "../src/halaman/TekaTeki/komponen/riwayatLangkah.jsx",
     "../src/halaman/TekaTeki/logika/useSesiTekaTeki.js",
     "../src/halaman/TekaTeki/logika/usePreferensiTekaTeki.js",
+    "../src/halaman/TekaTeki/logika/jejakLangkah.js",
     "../src/halaman/TekaTeki/logika/pgnDariSoal.js",
   ]) assert.ok(baca(berkas).length > 0, berkas);
   // Papan dipakai ulang dari Analisa, tidak diduplikasi ke fitur ini.
@@ -411,6 +483,11 @@ test("the feature keeps its own shelf: entry, components, logic, and a README", 
   assert.ok(!prefs.includes("ConfigContext"), "preferensi tidak memakai config bersama");
   // Renderer grup lama di folder pengaturan Analisa sudah dihapus.
   assert.throws(() => baca("../src/halaman/Analisa/komponen/pengaturan/tekaTeki.jsx"), "renderer grup lama tidak ada lagi");
+  // Keping riwayat sesi lama diganti daftar langkah + navigasi (mockup En Croissant).
+  assert.throws(() => baca("../src/halaman/TekaTeki/komponen/riwayatSesi.jsx"), "panel riwayat sesi lama tidak ada lagi");
+  const entriLayar = baca("../src/halaman/TekaTeki/TekaTeki.jsx");
+  assert.ok(entriLayar.includes("<RiwayatLangkah"), "layar merender daftar langkah + navigasi");
+  assert.ok(entriLayar.includes("buatJejak"), "layar membangun jejak langkah untuk ditinjau");
 });
 
 test("Indonesian and English puzzle dictionaries expose the same keys", () => {

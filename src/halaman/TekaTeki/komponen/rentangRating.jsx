@@ -93,7 +93,7 @@ export default function RentangRating({
         onPointerCancel={(e) => selesai(e, which)}
         onLostPointerCapture={(e) => selesai(e, which)}
         onKeyDown={(e) => tombol(e, which)}
-        className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize touch-none rounded-full border-2 border-backgroundBoxBoxHighlighted bg-white shadow transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-backgroundBoxBoxHighlighted [@media(pointer:coarse)]:h-6 [@media(pointer:coarse)]:w-6"
+        className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize touch-none rounded-full border-4 border-backgroundBoxBoxHighlighted bg-white shadow transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-backgroundBoxBoxHighlighted [@media(pointer:coarse)]:h-6 [@media(pointer:coarse)]:w-6"
         style={{ left: `${persen(nilai)}%` }}
       />
     );

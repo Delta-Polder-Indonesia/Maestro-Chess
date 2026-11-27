@@ -7,18 +7,20 @@ yang disalin.
 
 ```
 src/halaman/TekaTeki/
-├── TekaTeki.jsx                  # entry layar: tata letak tiga wilayah
+├── TekaTeki.jsx                  # entry layar: papan kiri, panel + daftar langkah kanan
 ├── README.md                     # berkas ini
 ├── komponen/
 │   ├── papanTekaTeki.jsx         # memakai ulang papan Analisa + panah petunjuk
-│   ├── panelTekaTeki.jsx         # sumber + gigi, statistik, aksi, petunjuk/solusi
+│   ├── panelTekaTeki.jsx         # sumber + sampah + gigi, 4 kartu statistik, aksi, petunjuk/solusi
 │   ├── pengaturanTekaTeki.jsx    # pengaturan latihan DI DALAM layar (buka/tutup)
 │   ├── rentangRating.jsx         # slider dua-thumb rentang rating (scrub+keyboard)
-│   └── riwayatSesi.jsx           # keping riwayat sesi (benar/salah/belum)
+│   ├── sakelarRingkas.jsx        # sakelar 38x20 gaya Mantine untuk grid 2x2
+│   └── riwayatLangkah.jsx        # daftar langkah SAN + navigasi << < > >>
 └── logika/
     ├── useSesiTekaTeki.js        # orkestrasi sesi (memuat, menilai, statistik)
     ├── usePreferensiTekaTeki.js  # preferensi milik fitur (bukan config umum)
     ├── useUkuranPapan.js         # papan persegi mengikuti wadah
+    ├── jejakLangkah.js           # posisi + SAN dari awal s.d. indeks dimainkan
     └── pgnDariSoal.js            # PGN untuk "Analisa posisi ini"
 ```
 
@@ -26,11 +28,12 @@ src/halaman/TekaTeki/
 
 | Wilayah | Isi |
 | --- | --- |
-| Kiri | Papan, orientasi mengikuti pihak pemain |
-| Kanan atas | Pemilih sumber + tombol **gigi**, pengaturan latihan (buka/tutup di tempat), kartu Rating/Waktu/Akurasi/Rantai/Rata-rata, tema soal, indikator giliran, aksi (soal baru · analisa posisi · bersihkan sesi), tombol **Petunjuk** dan **Lihat solusi** |
-| Kanan bawah | Riwayat sesi; klik keping membuka soal itu lagi |
+| Kiri | Papan persegi, orientasi mengikuti pihak pemain |
+| Kanan atas | Pemilih sumber + **sampah** (bersihkan sesi) + **gigi** (pengaturan buka/tutup di tempat), empat kartu statistik mono **Rating/Waktu/Akurasi/Rantai** (rantai berikon api), tema soal, toolbar (soal baru · analisa posisi · ulangi soal), tombol **Petunjuk** dan **Lihat solusi** |
+| Kanan bawah | Kotak status (pesan + id soal), daftar langkah SAN yang bisa diklik untuk meninjau posisi, baris navigasi **« ‹ › »** |
 
-Di layar sempit ketiganya menumpuk vertikal.
+Kolom kanan dapat digulir; meninjau langkah lama mengunci papan sampai kembali
+ke langkah terakhir (live). Di layar sempit semuanya menumpuk vertikal.
 
 **Pintu masuk hanya kartu "Teka-Teki" di beranda Papan** — tidak ada item di
 bilah nav kiri, persis En Croissant yang membuka puzzle dari beranda, bukan
@@ -88,6 +91,10 @@ tombol gigi di kepala panel membuka panel pengaturan (pola En Croissant).
 - **Tahap 2b** (selesai): pengaturan latihan dipindah ke dalam layar (tombol
   gigi), item nav dihapus, preferensi jadi milik fitur; pintu masuk cukup kartu
   beranda Papan.
+- **Tahap 2c** (selesai): tata letak diselaraskan dengan mockup "En Croissant
+  Replica" — empat kartu statistik mono (rantai berikon api), grid 2x2 sakelar
+  ringkas, toolbar aksi, kotak status + daftar langkah SAN dengan navigasi
+  « ‹ › » (menggantikan keping riwayat sesi).
 - **Tahap 3** (rencana): pemilih tahun untuk soal harian, penanda video, penyaring
   tema dari data aktif, dan penyimpanan sesi antar kunjungan.
 
