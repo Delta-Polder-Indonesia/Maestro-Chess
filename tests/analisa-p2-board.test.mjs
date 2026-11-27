@@ -174,3 +174,28 @@ test("keyboard promotion offers named buttons and Escape returns focus", async (
   assert.deepEqual(app.calls[0][1], { from: "a7", to: "a8", promotion: "q" });
   act(() => app.renderer.unmount());
 });
+
+test("mouse drag prevents native text selection and the board itself is non-selectable", (t) => {
+  const app = mount(t);
+  // Papan ber-`select-none`: koordinat file/rank di tepi tidak ikut "terblok"
+  // walau panel sekitarnya ber-`select-text`.
+  const papan = app.renderer.root.findByProps({ role: "group" });
+  assert.match(papan.props.className, /select-none/, "papan memakai select-none");
+  // Menyeret bidak dengan mouse memanggil preventDefault pada mousedown supaya
+  // gestur seleksi teks bawaan peramban tidak mengeblok notasi/status di samping
+  // papan (pola chessground/chess.com). Jalur sentuh sudah melakukannya.
+  const bidak = app.square("e2").find((n) => typeof n.props.onMouseDown === "function");
+  let prevented = false;
+  const elemen = { getBoundingClientRect: () => ({ x: 160, y: 240, width: 40, height: 40 }) };
+  const down = { button: 0, clientX: 180, clientY: 260, currentTarget: elemen, nativeEvent: {}, preventDefault() { prevented = true; } };
+  act(() => bidak.props.onMouseDown(down));
+  assert.equal(prevented, true, "mousedown menyeret memanggil preventDefault");
+  assert.equal(app.state.is, true);
+  assert.equal(app.state.id, "e2");
+  assert.equal(globalThis.document.body.style.cursor, "grabbing");
+  // Lepas di kotak asal: kursor situs dipulihkan dan drag berakhir.
+  app.emit("mouseup", { button: 0, clientX: 180, clientY: 260 });
+  assert.equal(globalThis.document.body.style.cursor, "", "kursor dipulihkan setelah seret");
+  assert.equal(app.state.is, false);
+  act(() => app.renderer.unmount());
+});
