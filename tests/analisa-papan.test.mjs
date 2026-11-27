@@ -139,7 +139,7 @@ test("navigation places Engine between database and settings with the requested 
   const tombol = renderer.root.findAll((node) => typeof node.props["data-uji"] === "string" && node.props["data-uji"].startsWith("nav-") && node.props["data-uji"] !== "nav-tutup");
   assert.deepEqual(
     tombol.map((node) => node.props["data-uji"]),
-    ["nav-papan", "nav-akun", "nav-database", "nav-engine", "nav-pengaturan"],
+    ["nav-papan", "nav-akun", "nav-teka-teki", "nav-database", "nav-engine", "nav-pengaturan"],
   );
   const engine = byTestId(renderer, "nav-engine");
   assert.equal(engine.props["aria-label"], "Engine");

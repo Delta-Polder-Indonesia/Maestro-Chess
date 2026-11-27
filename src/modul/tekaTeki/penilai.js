@@ -81,3 +81,18 @@ export function petunjukBerikutnya(tingkat, langkah) {
 export function langkahDiharapkan(langkahSoal, indeks) {
   return langkahSoal?.[indeks] ?? null;
 }
+
+/**
+ * FEN setelah satu langkah diterapkan (dipakai untuk balasan lawan otomatis).
+ * Langkah tidak sah mengembalikan FEN asal, bukan melempar.
+ */
+export function terapkanLangkah(fen, langkah) {
+  if (!langkah) return fen;
+  try {
+    const papan = new Chess(fen);
+    papan.move({ from: langkah.from, to: langkah.to, promotion: langkah.promotion });
+    return papan.fen();
+  } catch {
+    return fen;
+  }
+}

@@ -11,6 +11,7 @@ import { boardThemes } from "../src/halaman/Analisa/komponen/pengaturan/boardThe
 import * as setBidak from "../src/halaman/Analisa/komponen/pengaturan/setBidak.js";
 import * as katalog from "../src/halaman/Analisa/komponen/pengaturan/katalogPengaturan.js";
 import { analisa as english } from "../src/lib/terjemahan/en/analisa.js";
+import { tekaTeki as englishTekaTeki } from "../src/lib/terjemahan/en/tekaTeki.js";
 
 const nodeRequire = createRequire(import.meta.url);
 const { act } = TestRenderer;
@@ -41,7 +42,7 @@ function teks(node) {
 
 function renderLayar() {
   const translate = (key, options) => {
-    const value = key.split(".").reduce((acc, part) => acc?.[part], { analisa: english }) ?? key;
+    const value = key.split(".").reduce((acc, part) => acc?.[part], { analisa: english, tekaTeki: englishTekaTeki }) ?? key;
     if (typeof value !== "string" || !options) return value;
     return value.replace(/\{(\w+)\}/g, (_, name) => String(options[name] ?? ""));
   };
@@ -76,6 +77,8 @@ function renderLayar() {
     "../pengaturan/moves.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/moves.jsx", denganBaris).default },
     "../pengaturan/tampilan.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/tampilan.jsx", denganBaris).default },
     "../pengaturan/bestMoves.jsx": { default: compile("../src/halaman/Analisa/komponen/pengaturan/bestMoves.jsx", denganBaris).default },
+    "../pengaturan/tekaTeki.jsx": { default: kosong },
+    "lucide-react": { Puzzle: kosong },
     "../pengaturan/barisPengaturan.jsx": { default: Baris },
     "../pengaturan/katalogPengaturan.js": katalog,
     "../../../../modul/sesi/preferensi.js": { boardThemes },
@@ -121,7 +124,7 @@ test("settings screen uses a search row, a vertical category nav, and only real 
   assert.equal(teks(renderer.root.findByType("h1")), "Settings");
   assert.equal(renderer.root.findByProps({ type: "search" }).props.placeholder, "Search settings");
   const tab = renderer.root.findByType("nav").findAllByType("button");
-  assert.deepEqual(tab.map(teks), ["Board", "Ratings", "Moves", "Language", "Documentation"]);
+  assert.deepEqual(tab.map(teks), ["Board", "Ratings", "Moves", "Puzzles", "Language", "Documentation"]);
   assert.equal(tab[0].props["aria-current"], "page");
   assert.deepEqual(judulGrup(renderer), ["Board theme", "Board behaviour", "Appearance"]);
   renderer.unmount();
@@ -141,7 +144,7 @@ test("the selected sidebar category turns its name green without a green backgro
 test("each tab opens only its own settings groups", () => {
   const { renderer, keadaan } = renderLayar();
   const tab = () => renderer.root.findByType("nav").findAllByType("button");
-  act(() => tab()[3].props.onClick());
+  act(() => tab()[4].props.onClick());
   assert.deepEqual(judulGrup(renderer), ["Language"]);
   assert.deepEqual(saklar(renderer), []);
   const pilihBahasa = renderer.root.findByType("select");
@@ -180,7 +183,7 @@ test("search filters rows across tabs and clears when another tab is chosen", ()
 
 test("documentation tab holds the source and attribution links removed from the navigation", () => {
   const { renderer } = renderLayar();
-  act(() => renderer.root.findByType("nav").findAllByType("button")[4].props.onClick());
+  act(() => renderer.root.findByType("nav").findAllByType("button")[5].props.onClick());
   assert.deepEqual(judulGrup(renderer), ["Documentation"]);
   const tautan = renderer.root.findAllByType("a").filter((node) => node.props["aria-label"]);
   assert.deepEqual(tautan.map((node) => node.props["aria-label"]), ["Source Code", "Attributions"]);

@@ -255,8 +255,16 @@ test("FormatEval falls back to mate text even in WDL mode (no WDL for mate)", as
 
 /* ------------------------------ Katalog & i18n & CSP ------------------------------ */
 
-test("catalog registers formatSkor and tablebase rows in the evaluation group (29 rows)", () => {
-  assert.equal(BARIS_STATIS.length, 29);
+test("catalog registers formatSkor and tablebase rows in the evaluation group (35 rows with puzzle training)", () => {
+  // 29 baris lama + 6 baris latihan teka-teki (rentang rating, tema, progresif,
+  // sembunyikan rating, lompat cepat, catat waktu).
+  assert.equal(BARIS_STATIS.length, 35);
+  for (const kunci of ["puzzleRentangRating", "puzzleTema", "puzzleProgresif", "puzzleSembunyiRating", "puzzleLompatCepat", "puzzleCatatWaktu"]) {
+    const baris = BARIS_STATIS.find((b) => b.kunci === kunci);
+    assert.ok(baris, kunci);
+    assert.equal(baris.grup, "tekaTeki");
+    assert.ok(baris.labelKunci.startsWith("tekaTeki.pengaturan."), `${kunci} memakai kamus fitur`);
+  }
   for (const kunci of ["formatSkor", "tablebase"]) {
     const baris = BARIS_STATIS.find((b) => b.kunci === kunci);
     assert.ok(baris, kunci);

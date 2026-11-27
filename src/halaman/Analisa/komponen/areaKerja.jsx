@@ -79,6 +79,7 @@ const LayarImpor = lazy(() => import("./nav/layarImpor.jsx"));
 const LayarDeteksiEngine = lazy(() => import("./nav/layarDeteksiEngine.jsx"));
 const LayarWawasan = lazy(() => import("./nav/layarWawasan.jsx"));
 const LayarPengaturan = lazy(() => import("./nav/layarPengaturan.jsx"));
+const LayarTekaTeki = lazy(() => import("../../TekaTeki/TekaTeki.jsx"));
 
 /** Bilah tab hanya ditampilkan di beranda Papan dan papan laporan. */
 function tampilkanBilahTab(tampilan) {
@@ -606,6 +607,9 @@ function LapisanLayar({
                       <LayarAkun aktif={aktif} akunTab={akunTab} onAkunDihapus={hapusAkunTerpilih} />
                     ) : null}
                     {layar === TAMPILAN_ANALISA.PENGATURAN ? <LayarPengaturan aktif={aktif} /> : null}
+                    {layar === TAMPILAN_ANALISA.TEKA_TEKI ? (
+                      <LayarTekaTeki onAnalisa={(pgn) => { if (pgn) muatPartai({ format: "pgn", string: pgn }); }} />
+                    ) : null}
                     {layar === TAMPILAN_ANALISA.DETEKSI_ENGINE ? (
                       <LayarDeteksiEngine aktif={aktif} akunTab={akunTab} onBukaAkun={() => { if (masihAktif()) keAkun(); }} />
                     ) : null}

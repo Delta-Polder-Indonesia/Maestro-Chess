@@ -11,7 +11,7 @@ import { Chess } from "chess.js";
 import {
   parseLangkah, uciLangkah, giliranDariFen, pihakPemain, parseTema, normalisasiSoal, normalisasiBerkas,
   RENTANG_RATING, rentangProgresif, saringSoal, daftarTema, pilihSoal,
-  posisiAwalPemain, nilaiLangkah, petunjukBerikutnya, langkahDiharapkan,
+  posisiAwalPemain, nilaiLangkah, petunjukBerikutnya, langkahDiharapkan, terapkanLangkah,
   STATUS_SOAL, buatEntri, hitungStatistik, formatWaktu,
   VERSI_DATA, JENIS_SOAL, muatSoal, resetCacheSoal,
 } from "../src/modul/tekaTeki/index.js";
@@ -224,6 +224,14 @@ test("loader fetches each source once, caches in flight, and does not cache fail
   assert.equal(ulang.length, 1, "setelah gagal, sumber dicoba lagi");
 });
 
+test("terapkanLangkah applies a move and tolerates an illegal one", () => {
+  const awal = posisiAwalPemain(FEN_MAT, SOAL_MAT.langkah);
+  const sesudah = terapkanLangkah(awal, { from: "e1", to: "e8" });
+  assert.equal(giliranDariFen(sesudah), "b");
+  assert.equal(terapkanLangkah(awal, { from: "e1", to: "f3" }), awal, "langkah tidak sah → FEN asal");
+  assert.equal(terapkanLangkah(awal, null), awal);
+});
+
 test("module barrel exposes exactly the intended surface and stays UI-free", () => {
   const sumber = readFileSync(new URL("../src/modul/tekaTeki/index.js", import.meta.url), "utf8");
   const ekspor = [...sumber.matchAll(/export \{([^}]+)\}/g)].flatMap((m) => m[1].split(",").map((s) => s.trim()));
@@ -232,7 +240,7 @@ test("module barrel exposes exactly the intended surface and stays UI-free", () 
     "buatEntri", "daftarTema", "formatWaktu", "giliranDariFen", "hitungStatistik",
     "langkahDiharapkan", "muatSoal", "normalisasiBerkas", "normalisasiSoal", "parseLangkah",
     "parseTema", "petunjukBerikutnya", "pihakPemain", "pilihSoal", "posisiAwalPemain",
-    "rentangProgresif", "resetCacheSoal", "saringSoal", "nilaiLangkah", "uciLangkah",
+    "rentangProgresif", "resetCacheSoal", "saringSoal", "nilaiLangkah", "terapkanLangkah", "uciLangkah",
   ].sort());
   // Modul bersama tidak boleh memuat React/JSX atau menyentuh DOM langsung.
   for (const berkas of ["soal.js", "pemilih.js", "penilai.js", "sesi.js", "pemuat.js", "index.js"]) {

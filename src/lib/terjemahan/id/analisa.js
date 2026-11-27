@@ -384,6 +384,7 @@ export const analisa = {
     nav: {
       pengaturan: "Pengaturan",
       papan: "Papan",
+      tekaTeki: "Teka-teki",
       papanKeterangan: "Beranda Papan — semua fitur",
       play: "Report Analisa",
       playKeterangan: "Kembali ke papan analisis",

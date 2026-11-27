@@ -19,9 +19,13 @@ export const JENIS_SOAL = Object.freeze({ SKAKMAT: "skakmat", VIDEO: "video", HA
 
 const janji = new Map();
 
+// Tahun terbaru snapshot harian yang dikirim di public/data/teka-teki-harian.
+// Dipakai bila pemanggil tidak menyebut tahun (pemilih sumber di layar).
+const TAHUN_HARIAN_TERBARU = 2026;
+
 function jalurSumber(jenis, tahun) {
   if (jenis === JENIS_SOAL.VIDEO) return "data/teka-teki-video.json";
-  if (jenis === JENIS_SOAL.HARIAN) return `data/teka-teki-harian/${Number(tahun)}.json`;
+  if (jenis === JENIS_SOAL.HARIAN) return `data/teka-teki-harian/${Number.isFinite(Number(tahun)) ? Number(tahun) : TAHUN_HARIAN_TERBARU}.json`;
   return "data/teka-teki.json";
 }
 
@@ -46,7 +50,8 @@ async function unduh(jenis, tahun) {
  * @param {{tahun?: number}} [opsi]
  */
 export function muatSoal(jenis = JENIS_SOAL.SKAKMAT, { tahun } = {}) {
-  const kunci = jenis === JENIS_SOAL.HARIAN ? `${jenis}:${Number(tahun)}` : jenis;
+  const tahunTerpilih = Number.isFinite(Number(tahun)) ? Number(tahun) : TAHUN_HARIAN_TERBARU;
+  const kunci = jenis === JENIS_SOAL.HARIAN ? `${jenis}:${tahunTerpilih}` : jenis;
   if (!janji.has(kunci)) {
     janji.set(kunci, unduh(jenis, tahun).then((daftar) => {
       if (!daftar.length) janji.delete(kunci);
