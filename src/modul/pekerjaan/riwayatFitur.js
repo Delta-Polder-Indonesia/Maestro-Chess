@@ -9,17 +9,18 @@ export const KUNCI_FITUR = Object.freeze({
   database: "analisa.nav.database",
   engine: "analisa.nav.engine",
   impor: "analisa.papan.kartu.impor.judul",
+  "teka-teki": "analisa.papan.kartu.puzzle.judul",
   "deteksi-engine": "analisa.nav.deteksiEngine",
   wawasan: "analisa.nav.wawasan",
   pengaturan: "analisa.nav.pengaturan",
 });
 
 // Scope "File Terbaru": hanya fitur pada nav papan (beranda) yang dicatat dan
-// ditampilkan — Report Analisa (bermain), Impor Permainan, Deteksi Engine, dan
-// Wawasan. Menu bilah samping (Akun/Database/Engine/Pengaturan) sengaja tidak
-// dicatat. Kartu papan yang belum tersedia (Main Catur, Papan Analisis,
-// Repertoar Baru, Teka-Teki) belum punya layar sehingga belum bisa dikunjungi.
-const FITUR_DICATAT = Object.freeze(["bermain", "impor", "deteksi-engine", "wawasan"]);
+// ditampilkan — Report Analisa (bermain), Impor Permainan, Teka-Teki, Deteksi
+// Engine, dan Wawasan. Menu bilah samping (Akun/Database/Engine/Pengaturan)
+// sengaja tidak dicatat. Kartu papan yang belum tersedia (Main Catur, Papan
+// Analisis, Repertoar Baru) belum punya layar sehingga belum bisa dikunjungi.
+const FITUR_DICATAT = Object.freeze(["bermain", "impor", "teka-teki", "deteksi-engine", "wawasan"]);
 
 function targetSah(fitur, id) {
   return typeof id === "string" && (

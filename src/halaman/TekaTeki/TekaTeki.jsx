@@ -68,7 +68,10 @@ export default function TekaTeki({ onAnalisa }) {
   const giliran = sesi.soal?.pihak === "w" ? t("tekaTeki.panel.giliranPutih") : t("tekaTeki.panel.giliranHitam");
 
   return (
-    <PanelLayar judul={t("tekaTeki.judul")} subjudul={t("tekaTeki.deskripsi")} lebarMaks="max-w-[1200px]">
+    <PanelLayar lebarMaks="max-w-[1200px]">
+      {/* Nama fitur sudah menjadi label tab di bilah atas; kepala penjelasan
+          tidak diulang di dalam layar. Judul tetap ada untuk pembaca layar. */}
+      <h1 className="sr-only">{t("tekaTeki.judul")}</h1>
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto lg:flex-row lg:overflow-hidden">
         <div ref={wadahPapan} className="flex min-h-[260px] shrink-0 items-start justify-center lg:min-h-0 lg:flex-1">
           <PapanTekaTeki

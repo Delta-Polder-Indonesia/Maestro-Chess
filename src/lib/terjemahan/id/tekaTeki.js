@@ -1,7 +1,6 @@
 /** Terjemahan Indonesia fitur Teka-teki (rak terjemahan sendiri per fitur). */
 export const tekaTeki = {
   judul: "Teka-teki",
-  deskripsi: "Latih taktik dengan soal dari basis data lokal.",
   sumber: { label: "Sumber soal", skakmat: "Skakmat", video: "Taktik + video", harian: "Harian" },
   panel: {
     rating: "Rating", waktu: "Waktu", akurasi: "Akurasi", streak: "Rantai", rataWaktu: "Rata-rata",

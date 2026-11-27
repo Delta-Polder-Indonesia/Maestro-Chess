@@ -343,7 +343,6 @@ export const analisa = {
     },
     impor: {
       judul: "Import game",
-      tipe: "Import type",
       pgn: "Paste PGN",
       fen: "Paste FEN",
       online: "Online",
@@ -657,7 +656,6 @@ export const analisa = {
 },
     wawasan: {
       judul: "Profile Insights",
-      deskripsi: "Performance summary from stored games: win statistics, rating trends, favorite openings, and tactical accuracy.",
       pilihAkun: "Select account",
       pilihAkunPetunjuk: "Select an account from the list to view performance insights.",
       memuat: "Loading games…",

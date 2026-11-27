@@ -1,7 +1,6 @@
 /** English dictionary for the Puzzles feature (one translation shelf per feature). */
 export const tekaTeki = {
   judul: "Puzzles",
-  deskripsi: "Train tactics with puzzles from the local database.",
   sumber: { label: "Puzzle source", skakmat: "Checkmates", video: "Tactics + video", harian: "Daily" },
   panel: {
     rating: "Rating", waktu: "Time", akurasi: "Accuracy", streak: "Streak", rataWaktu: "Avg time",

@@ -64,6 +64,12 @@ ke langkah terakhir (live). Di layar sempit semuanya menumpuk vertikal.
 bilah nav kiri, persis En Croissant yang membuka puzzle dari beranda, bukan
 menaruhnya sebagai menu terpisah.
 
+Begitu dibuka, layar ini menempati **tab bernama "Teka-Teki" di bilah tab atas**
+dan bilah itu tetap tampil (lihat `tampilkanBilahTab` di `areaKerja.jsx`). Tidak
+ada kepala "Teka-teki / Latih taktik dengan soal dari basis data lokal." di dalam
+layar: nama fitur cukup dibaca dari tab, sehingga papan dan panel latihan langsung
+mendapat ruang penuh.
+
 ## Aturan main
 
 Semua aturan tinggal di modul bersama **`src/modul/tekaTeki/`** (lihat README-nya);
@@ -124,6 +130,11 @@ tombol gigi di kepala panel membuka panel pengaturan (pola En Croissant).
   (`papanInteraktif.jsx`) — bidak hantu, pointer capture, slop 5px, klik-untuk-
   jalan + titik langkah sah, klik-kanan batal seret, tanda bantu, dialog promosi,
   luncuran bidak; menggantikan papan Analisa yang sebelumnya dipakai ulang.
+- **Tahap 2e** (selesai): nama fitur tampil sebagai **tab di bilah tab atas**
+  (`Teka-Teki`), sama seperti fitur Papan lain (Impor Permainan, Deteksi Engine,
+  Wawasan). Kepala penjelasan di dalam layar dihapus — pemain sudah paham main,
+  jadi cukup tab; judul tetap ada sebagai `h1 sr-only` untuk pembaca layar.
+  Kunjungan fitur kini dicatat ke "File Terbaru" (`FITUR_DICATAT`).
 - **Tahap 3** (rencana): pemilih tahun untuk soal harian, penanda video, penyaring
   tema dari data aktif, dan penyimpanan sesi antar kunjungan.
 
