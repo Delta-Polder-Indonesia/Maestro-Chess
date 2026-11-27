@@ -56,6 +56,7 @@ test("engine startup failures from settings are visible in the console", async (
     "../Gambar.jsx": { default: kosong },
     "../../mesin/rentangElo.js": { RENTANG_ELO: { min: 1320, max: 3190, bawaan: 2000 } },
     "./sakelarPengaturan.jsx": { default: kosong },
+    "./pilihRingkas.jsx": { default: kosong },
   }).default;
   let renderer;
   await act(async () => {
@@ -88,6 +89,7 @@ test("engine card ignores unrelated analysis progress but updates its depth", as
     "../Gambar.jsx": { default: gambarMock },
     "../../mesin/rentangElo.js": { RENTANG_ELO: { min: 1320, max: 3190, bawaan: 2000 } },
     "./sakelarPengaturan.jsx": { default: kosong },
+    "./pilihRingkas.jsx": { default: kosong },
   }).default;
   const kendali = {};
   function Harness() {

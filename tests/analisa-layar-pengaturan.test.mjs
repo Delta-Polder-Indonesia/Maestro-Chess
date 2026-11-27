@@ -109,8 +109,10 @@ function judulGrup(renderer) {
   return renderer.root.findAllByType("h2").map(teks);
 }
 function saklar(renderer) {
+  // Kontrol utama pengaturan (sakelar + trigger dropdown); tombol chevron
+  // stepper NumberField/dropdown ditandai data-stepper dan tidak dihitung.
   return renderer.root.findAllByType("button")
-    .filter((node) => node.props["aria-label"])
+    .filter((node) => node.props["aria-label"] && !node.props["data-stepper"])
     .map((node) => node.props["aria-label"]);
 }
 

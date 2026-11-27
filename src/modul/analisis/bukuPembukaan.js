@@ -1,8 +1,11 @@
 /**
  * Tabel "langkah buku" (nama pembukaan) dan kunci FEN untuk halaman Analisa.
  *
- * Berkas datanya dibuat dari buku pembukaan milik situs ini sendiri:
+ * Berkas datanya dibuat dari buku pembukaan ChessClub (public/data/
+ * buku-pembukaan.json, olahan lichess-org/chess-openings CC0) lewat:
  *   node scripts/generasi-buku-analisa.mjs → public/data/buku-analisa.json
+ * Skrip itu mencatat posisi sepanjang tiap garis pembukaan (bukan hanya
+ * posisi akhirnya), sehingga tabelnya mencakup puluhan ribu posisi teori.
  *
  * Dipuat sekali per kunjungan halaman dan di-cache di modul ini (bukan di
  * komponen) agar berpindah tab di panel kanan tidak memicu fetch ulang.
@@ -29,7 +32,7 @@ let janji = null;
  * tidak akan pernah terlihat sampai peramban dimatikan. Naikkan versi setiap
  * kali scripts/generasi-buku-analisa.mjs menghasilkan berkas baru.
  */
-const VERSI_BUKU = "2026-09-22";
+const VERSI_BUKU = "2026-11-26";
 
 function unduh() {
   return fetch(`${berkasPublik("data/buku-analisa.json")}?v=${VERSI_BUKU}`)
@@ -48,7 +51,7 @@ export function muatBuku() {
   janji ||= unduh().then((peta) => {
     /*
      * Hasil kosong ({}) berarti unduhannya gagal (buku asli selalu berisi
-     * belasan ribu posisi) — jangan cache kegagalan: kosongkan lagi supaya
+     * puluhan ribu posisi) — jangan cache kegagalan: kosongkan lagi supaya
      * analisis berikutnya mencoba mengunduh ulang, bukan memakai buku kosong
      * selama sisa kunjungan tanpa ada yang tahu.
      */

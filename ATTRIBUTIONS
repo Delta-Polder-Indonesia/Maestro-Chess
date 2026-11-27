@@ -44,6 +44,32 @@ lichess-org/chess-openings, CC0 1.0:
 https://github.com/lichess-org/chess-openings
 License: public/licenses/chess-openings-CC0.txt.
 
+The Maestro analysis book enriches that table to 27,826 theoretical positions:
+scripts/generasi-buku-analisa.mjs replays all 18,713 lines of
+public/data/buku-pembukaan.json (the ChessClub opening book, same CC0 source)
+and records every position along each line, not just its terminal position.
+Pre-existing labels are preserved verbatim; the most-played variant names any
+newly covered position.
+
+Puzzles (stored for a future feature, not loaded by the app yet)
+----------------------------------------------------------------
+public/data/teka-teki.json holds 5,486 mate puzzles copied from ChessClub,
+sourced from the Lichess puzzle database, CC0 1.0:
+https://database.lichess.org/#puzzles
+License: public/licenses/chess-openings-CC0.txt (CC0 1.0 Universal legal code).
+
+public/data/teka-teki-harian/ holds 7,097 daily puzzles (2007-2026) from the
+public Chess.com daily puzzle via the samuraitruong/chess.com-daily-puzzle
+archive: only dates, FEN positions and solution moves are stored — titles,
+authors and media are not taken.
+https://www.chess.com/daily-puzzle
+https://github.com/samuraitruong/chess.com-daily-puzzle
+
+public/data/teka-teki-video.json holds 6,551 tactics problems (1,681 with
+coach discussion videos) using Chess.com puzzle metadata and video links.
+Chess.com and Lichess names and logos are trademarks of their respective
+owners.
+
 Flags
 -----
 Flag SVGs are from flag-icons 7.6.0, copyright (c) 2013 Panayiotis Lipiridis,

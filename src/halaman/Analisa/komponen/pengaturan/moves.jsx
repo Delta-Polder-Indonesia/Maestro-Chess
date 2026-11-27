@@ -214,25 +214,25 @@ const IsiMoves = memo(function IsiMoves({ aktif, boardTheme, showLegalMoves, set
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelVolume}</span>}
       deskripsi={deskripsi("volume")}
     >
-      <GeserPengaturan nilai={volume} onChange={changeVolume} ariaLabel={labelVolume} satuan="%" tickMajor={25} tickMinor={5} />
+      <GeserPengaturan nilai={volume} onChange={changeVolume} ariaLabel={labelVolume} satuan="%" labelNaik={t("analisa.pengaturan.naikkan")} labelTurun={t("analisa.pengaturan.turunkan")} hintSeret={t("analisa.pengaturan.seretNilai")} />
     </BarisPengaturan> : null}
     {cocok("koleksiSuara", labelKoleksi) ? <BarisPengaturan
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelKoleksi}</span>}
       deskripsi={deskripsi("koleksiSuara")}
     >
-      <PilihRingkas ariaLabel={labelKoleksi} lebar="w-[160px]" nilai={DAFTAR_KOLEKSI_SUARA.includes(soundCollection) ? soundCollection : "standard"} pilihan={pilihanKoleksi} onChange={changeSoundCollection} />
+      <PilihRingkas ariaLabel={labelKoleksi} lebar="w-[160px]" nilai={DAFTAR_KOLEKSI_SUARA.includes(soundCollection) ? soundCollection : "standard"} pilihan={pilihanKoleksi} onChange={changeSoundCollection} labelNaik={t("analisa.pengaturan.opsiSebelumnya")} labelTurun={t("analisa.pengaturan.opsiBerikutnya")} />
     </BarisPengaturan> : null}
     {cocok("kecepatanAnimasi", labelKecepatan) ? <BarisPengaturan
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelKecepatan}</span>}
       deskripsi={deskripsi("kecepatanAnimasi")}
     >
-      <PilihRingkas ariaLabel={labelKecepatan} lebar="w-[160px]" nilai={OPSI_KECEPATAN.includes(animationSpeed) ? animationSpeed : "normal"} pilihan={pilihanKecepatan} onChange={changeAnimationSpeed} />
+      <PilihRingkas ariaLabel={labelKecepatan} lebar="w-[160px]" nilai={OPSI_KECEPATAN.includes(animationSpeed) ? animationSpeed : "normal"} pilihan={pilihanKecepatan} onChange={changeAnimationSpeed} labelNaik={t("analisa.pengaturan.opsiSebelumnya")} labelTurun={t("analisa.pengaturan.opsiBerikutnya")} />
     </BarisPengaturan> : null}
     {cocok("tampilanMaterial", labelMaterial) ? <BarisPengaturan
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelMaterial}</span>}
       deskripsi={deskripsi("tampilanMaterial")}
     >
-      <PilihRingkas ariaLabel={labelMaterial} lebar="w-[160px]" nilai={OPSI_MATERIAL.includes(materialDisplay) ? materialDisplay : "all"} pilihan={pilihanMaterial} onChange={changeMaterialDisplay} />
+      <PilihRingkas ariaLabel={labelMaterial} lebar="w-[160px]" nilai={OPSI_MATERIAL.includes(materialDisplay) ? materialDisplay : "all"} pilihan={pilihanMaterial} onChange={changeMaterialDisplay} labelNaik={t("analisa.pengaturan.opsiSebelumnya")} labelTurun={t("analisa.pengaturan.opsiBerikutnya")} />
     </BarisPengaturan> : null}
     {cocok("pratinjauHover", labelPratinjau) ? <BarisPengaturan
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelPratinjau}</span>}

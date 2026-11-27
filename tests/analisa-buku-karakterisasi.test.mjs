@@ -58,7 +58,7 @@ test("importing buku and kunciFen stays lazy without touching fetch or browser g
   assert.equal(child.stdout.trim(), "ok");
 });
 
-test("muatBuku resolves URL lazily with ?v=2026-09-22 and honors NEXT_PUBLIC_BASE_PATH at call time", () => {
+test("muatBuku resolves URL lazily with ?v=2026-11-26 and honors NEXT_PUBLIC_BASE_PATH at call time", () => {
   const script = `
     delete process.env.NEXT_PUBLIC_BASE_PATH;
     const urls = [];
@@ -77,9 +77,9 @@ test("muatBuku resolves URL lazily with ?v=2026-09-22 and honors NEXT_PUBLIC_BAS
   const child = spawnSync(process.execPath, ["--input-type=module", "-e", script], { cwd: akar, encoding: "utf8" });
   assert.equal(child.status, 0, child.stderr);
   assert.deepEqual(JSON.parse(child.stdout.trim()), [
-    "/data/buku-analisa.json?v=2026-09-22",
-    "/Maestro-Chess/data/buku-analisa.json?v=2026-09-22",
-    "/data/buku-analisa.json?v=2026-09-22",
+    "/data/buku-analisa.json?v=2026-11-26",
+    "/Maestro-Chess/data/buku-analisa.json?v=2026-11-26",
+    "/data/buku-analisa.json?v=2026-11-26",
   ]);
 });
 

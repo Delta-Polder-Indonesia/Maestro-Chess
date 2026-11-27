@@ -95,7 +95,7 @@ const IsiRatings = memo(function IsiRatings({ usedRatings2, setUsedRatings, boar
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelFormat}</span>}
       deskripsi={deskripsi("formatSkor")}
     >
-      <PilihRingkas nilai={evalDisplay} onChange={changeEvalDisplay} ariaLabel={labelFormat} lebar="w-[150px]" pilihan={[{ id: "cp", label: t("analisa.pengaturan.opsiEval.cp") }, { id: "wdl", label: t("analisa.pengaturan.opsiEval.wdl") }]} />
+      <PilihRingkas nilai={evalDisplay} onChange={changeEvalDisplay} ariaLabel={labelFormat} lebar="w-[150px]" pilihan={[{ id: "cp", label: t("analisa.pengaturan.opsiEval.cp") }, { id: "wdl", label: t("analisa.pengaturan.opsiEval.wdl") }]} labelNaik={t("analisa.pengaturan.opsiSebelumnya")} labelTurun={t("analisa.pengaturan.opsiBerikutnya")} />
     </BarisPengaturan> : null}
             {cocok("tablebase", labelTablebase) ? <BarisPengaturan
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelTablebase}</span>}

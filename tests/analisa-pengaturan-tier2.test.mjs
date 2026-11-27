@@ -209,8 +209,8 @@ test("Tier 2 controls persist volume, animation speed, material and notation", a
   }
   let renderer;
   await act(async () => { renderer = TestRenderer.create(React.createElement(Harness)); });
-  // Slider volume menulis angka 0..100.
-  const slider = renderer.root.findByProps({ type: "range", "aria-label": "analisa.pengaturan.volume" });
+  // Kontrol angka volume (NumberField) menulis angka 0..100.
+  const slider = renderer.root.findByProps({ type: "number", "aria-label": "analisa.pengaturan.volume" });
   await act(async () => { slider.props.onChange({ target: { value: "40" } }); });
   assert.deepEqual(tulisan.at(-1), ["volume", "40"]);
   // Dropdown kecepatan animasi, material, dan notasi menulis nilai enum.

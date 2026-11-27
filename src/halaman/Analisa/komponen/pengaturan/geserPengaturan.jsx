@@ -1,52 +1,172 @@
 /**
- * Slider pengaturan dengan tanda tick + label referensi (pola "Slider with tick
- * marks" reui.io, diselaraskan dengan tema Maestro). Track + thumb bulat memakai
- * input range asli (aksesibel: keyboard, aria-valuenow) sehingga tes dan perilaku
- * numerik tetap sama; di bawahnya deret tick — tick utama lebih tinggi dan
- * berangka, tick minor lebih pendek tanpa angka (aria-hidden).
+ * Kontrol angka pengaturan gaya NumberField reui (Base UI): input angka dengan
+ * tombol chevron naik/turun bertumpuk di kanan, plus "scrub area" — readout
+ * nilai yang bisa klik-tahan lalu geser kiri/kanan untuk mengubah nilai tanpa
+ * slider (drag-to-scrub, seperti Blender/Base UI). Inilah "geser" tanpa membuka
+ * slider: nilai berpindah saat diseret, sambil tetap bisa diketik langsung.
  *
- * `tickMinor` = jarak antar-tick; `tickMajor` = jarak tick berlabel. Nilai saat
- * ini tampil kecil di kanan atas track. onChange menerima angka.
+ * Aksesibel: input spinbutton native (ArrowUp/Down, PageUp/Down, Home/End),
+ * tombol chevron berlabel, nilai dijepit ke rentang [min,max]. onChange menerima
+ * angka. Mengetik memakai pola draft hybrid seperti input kedalaman/Elo: angka
+ * sah dalam rentang langsung disimpan, teks parsial ditunggu sampai blur.
+ *
+ * Bebas impor selain react agar kontrak deps-map pengaturan tetap sederhana;
+ * chevron memakai SVG inline (bukan lucide) supaya komponen tetap mandiri.
  */
-function buatTicks(min, max, minor, major) {
-  const daftar = [];
-  const langkah = minor > 0 ? minor : 1;
-  for (let v = min; v <= max + 1e-9; v += langkah) {
-    const nilai = Math.round(v);
-    const utama = nilai === min || nilai === max || (major > 0 && nilai % major === 0);
-    daftar.push({ nilai, utama });
-  }
-  return daftar;
+import { useEffect, useRef, useState } from "react";
+
+// px gerakan pointer per satu langkah scrub (Base UI pixelSensitivity = 2).
+const SENSITIVITAS_SCRUB = 2;
+
+function jepit(n, min, max) {
+  return Math.min(max, Math.max(min, n));
+}
+
+function Chevron({ arah }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-3 [@media(pointer:coarse)]:size-4" aria-hidden="true">
+      {arah === "atas" ? <path d="m18 15-6-6-6 6" /> : <path d="m6 9 6 6 6-6" />}
+    </svg>
+  );
 }
 
 export default function GeserPengaturan({
   nilai, onChange, min = 0, max = 100, step = 1, ariaLabel, satuan = "",
-  tickMinor, tickMajor,
+  labelNaik, labelTurun, hintSeret,
 }) {
-  const minor = tickMinor ?? Math.max(step, Math.round((max - min) / 20));
-  const major = tickMajor ?? Math.round((max - min) / 4);
-  const ticks = buatTicks(min, max, minor, major);
+  const [draf, setDraf] = useState(String(nilai));
+  const scrub = useRef(null);
+  useEffect(() => { setDraf(String(nilai)); }, [nilai]);
+
+  // Simpan nilai final (blur/Enter): jepit + bulatkan; teks kosong → nilai lama.
+  function commit(teks) {
+    const n = Number(teks);
+    const sah = String(teks).trim() !== "" && Number.isFinite(n) ? jepit(Math.round(n), min, max) : nilai;
+    setDraf(String(sah));
+    if (sah !== nilai) onChange(sah);
+  }
+
+  // Ubah langsung (chevron/scrub/keyboard): jepit ke rentang, simpan seketika.
+  function ubahLangsung(n) {
+    const sah = jepit(n, min, max);
+    setDraf(String(sah));
+    if (sah !== nilai) onChange(sah);
+  }
+  const dasar = Number.isFinite(nilai) ? nilai : min;
+  function naik() { ubahLangsung(dasar + step); }
+  function turun() { ubahLangsung(dasar - step); }
+
+  function ketik(e) {
+    const teks = e.target.value;
+    setDraf(teks);
+    if (teks.trim() === "") return;
+    const n = Number(teks);
+    if (!Number.isFinite(n)) return;
+    // Hanya simpan bila angka bulat sah dalam rentang (pola kedalaman/Elo):
+    // biarkan user mengetik '2' yang ingin jadi '20' tanpa dijepit prematur.
+    if (n >= min && n <= max && String(Math.round(n)) === teks.trim() && n !== nilai) onChange(n);
+  }
+
+  function tombol(e) {
+    switch (e.key) {
+      case "Enter": e.preventDefault(); commit(draf); break;
+      case "Escape": e.preventDefault(); setDraf(String(nilai)); break;
+      case "ArrowUp": e.preventDefault(); naik(); break;
+      case "ArrowDown": e.preventDefault(); turun(); break;
+      case "PageUp": e.preventDefault(); ubahLangsung(dasar + step * 10); break;
+      case "PageDown": e.preventDefault(); ubahLangsung(dasar - step * 10); break;
+      case "Home": e.preventDefault(); ubahLangsung(min); break;
+      case "End": e.preventDefault(); ubahLangsung(max); break;
+      default: break;
+    }
+  }
+
+  // Scrub: klik-tahan pada readout lalu geser horizontal. Nilai dilacak di ref
+  // agar tidak bergantung closure basi saat drag cepat melintasi banyak event.
+  function mulaiScrub(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    scrub.current = { sisa: 0, nilai: dasar, terakhir: Number.isFinite(e.clientX) ? e.clientX : null };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  }
+  function gerakScrub(e) {
+    const s = scrub.current;
+    if (!s) return;
+    // Pointer sudah dilepas di luar elemen (pointerup tidak sampai ke sini):
+    // hentikan scrub supaya hover berikutnya tidak mengubah nilai lagi.
+    if (e.buttons !== undefined && e.buttons === 0) { akhirScrub(e); return; }
+    // movementX tidak tersedia di sebagian peramban sentuh → pakai selisih
+    // clientX sebagai cadangan agar geser tetap berfungsi di layar sentuh.
+    let dx = e.movementX;
+    if (!Number.isFinite(dx) || dx === 0) {
+      dx = Number.isFinite(e.clientX) && s.terakhir !== null ? e.clientX - s.terakhir : 0;
+    }
+    if (Number.isFinite(e.clientX)) s.terakhir = e.clientX;
+    s.sisa += dx;
+    let langkah = 0;
+    while (s.sisa >= SENSITIVITAS_SCRUB) { langkah++; s.sisa -= SENSITIVITAS_SCRUB; }
+    while (s.sisa <= -SENSITIVITAS_SCRUB) { langkah--; s.sisa += SENSITIVITAS_SCRUB; }
+    if (langkah) {
+      const baru = jepit(s.nilai + langkah * step, min, max);
+      // Hanya tulis bila benar-benar berubah: menahan geser di batas tidak
+      // membanjiri penyimpanan preferensi dengan nilai yang sama.
+      if (baru !== s.nilai) {
+        s.nilai = baru;
+        setDraf(String(baru));
+        onChange(baru);
+      }
+    }
+  }
+  function akhirScrub(e) {
+    if (!scrub.current) return;
+    scrub.current = null;
+    const el = e.currentTarget;
+    // Lepas capture hanya bila masih terpegang (lostpointercapture sudah lepas).
+    if (typeof el?.hasPointerCapture === "function") {
+      if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture?.(e.pointerId);
+    } else {
+      el?.releasePointerCapture?.(e.pointerId);
+    }
+  }
+
+  const kelasChevron = "flex w-6 [@media(pointer:coarse)]:w-9 flex-1 items-center justify-center text-foregroundGrey transition-colors hover:bg-backgroundBoxBox hover:text-foreground focus-visible:bg-backgroundBoxBox focus-visible:text-foreground focus-visible:outline-none";
+
   return (
-    <div className="flex w-[220px] flex-col gap-1">
-      <span className="self-end text-[12px] font-medium tabular-nums text-foregroundGrey">{nilai}{satuan}</span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={nilai}
-        aria-label={ariaLabel}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="geser-pengaturan w-full"
-      />
-      <span aria-hidden="true" className="flex w-full items-start justify-between px-[7px] text-[10px] font-medium leading-none text-foregroundGrey">
-        {ticks.map((tick) => (
-          <span key={tick.nilai} className="flex w-0 flex-col items-center gap-1">
-            <span className={tick.utama ? "h-1.5 w-px bg-foregroundGrey" : "h-[3px] w-px bg-foregroundGrey/60"} />
-            <span className={tick.utama ? "tabular-nums" : "opacity-0"}>{tick.nilai}</span>
-          </span>
-        ))}
-      </span>
+    <div className="flex w-[132px] flex-col gap-1">
+      <span
+        aria-hidden="true"
+        title={hintSeret ?? ariaLabel}
+        onPointerDown={mulaiScrub}
+        onPointerMove={gerakScrub}
+        onPointerUp={akhirScrub}
+        onPointerCancel={akhirScrub}
+        onLostPointerCapture={akhirScrub}
+        className="cursor-ew-resize touch-none select-none self-end text-[11px] [@media(pointer:coarse)]:py-1 [@media(pointer:coarse)]:text-[13px] font-medium tabular-nums text-foregroundGrey"
+      >{nilai}{satuan}</span>
+      <div className="flex h-8 [@media(pointer:coarse)]:h-14 items-stretch overflow-hidden rounded-borderRoundness border border-border bg-backgroundDropdown transition-colors focus-within:border-backgroundBoxBoxHighlightedHover">
+        <input
+          type="number"
+          min={min}
+          max={max}
+          step={step}
+          value={draf}
+          aria-label={ariaLabel}
+          inputMode="numeric"
+          onChange={ketik}
+          onBlur={() => commit(draf)}
+          onKeyDown={tombol}
+          className="angka-input w-full min-w-0 flex-1 bg-transparent px-2 text-start text-[12.5px] [@media(pointer:coarse)]:text-[15px] tabular-nums text-foreground outline-none"
+        />
+        {satuan ? <span className="pointer-events-none flex items-center pr-1 text-[11px] text-foregroundGrey">{satuan}</span> : null}
+        <div className="m-px flex shrink-0 flex-col overflow-hidden rounded-[3px] border border-border bg-backgroundBoxBox">
+          <button type="button" data-stepper="true" aria-label={labelNaik ?? `${ariaLabel} +`} onClick={naik} className={`${kelasChevron} border-b border-border`}>
+            <Chevron arah="atas" />
+          </button>
+          <button type="button" data-stepper="true" aria-label={labelTurun ?? `${ariaLabel} −`} onClick={turun} className={kelasChevron}>
+            <Chevron arah="bawah" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
