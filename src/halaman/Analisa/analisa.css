@@ -278,48 +278,17 @@
 }
 
 /*
- * Slider pengaturan (GeserPengaturan) — track 4px + thumb bulat 14px, pola
- * "Slider with tick marks" reui.io. Thumb memakai --foreground agar kontras di
- * kedua tema (terang di tema gelap, gelap di tema terang); track --backgroundTrack.
- * Pusat thumb berada 7px dari tepi sehingga deret tick px-[7px] sejajar.
+ * Kontrol angka pengaturan (GeserPengaturan) — gaya NumberField reui/Base UI:
+ * input angka + chevron naik/turun + scrub area (readout nilai yang digeser).
+ * Spin-button native disembunyikan karena chevron kustom yang dipakai; scrub
+ * area memakai cursor-ew-resize + touch-none + select-none (kelas Tailwind).
  */
-.analisa-root .geser-pengaturan {
+.analisa-root .angka-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.analisa-root .angka-input::-webkit-outer-spin-button,
+.analisa-root .angka-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
-  appearance: none;
-  height: 14px;
-  background: transparent;
-  cursor: pointer;
-}
-.analisa-root .geser-pengaturan::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 9999px;
-  background: var(--backgroundTrack);
-}
-.analisa-root .geser-pengaturan::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  margin-top: -5px;
-  border-radius: 9999px;
-  background: var(--foreground);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-}
-.analisa-root .geser-pengaturan::-moz-range-track {
-  height: 4px;
-  border-radius: 9999px;
-  background: var(--backgroundTrack);
-}
-.analisa-root .geser-pengaturan::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border: none;
-  border-radius: 9999px;
-  background: var(--foreground);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-}
-.analisa-root .geser-pengaturan:focus-visible {
-  outline: 2px solid var(--backgroundBoxBoxHighlighted);
-  outline-offset: 2px;
-  border-radius: 9999px;
+  margin: 0;
 }

@@ -55,7 +55,7 @@ const IsiTampilan = memo(function IsiTampilan({ fontSize, setFontSize, accentCol
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelFont}</span>}
       deskripsi={deskripsi("ukuranFont")}
     >
-      <GeserPengaturan nilai={fontSize} onChange={changeFontSize} min={50} max={200} step={10} ariaLabel={labelFont} satuan="%" tickMajor={50} tickMinor={10} />
+      <GeserPengaturan nilai={fontSize} onChange={changeFontSize} min={50} max={200} step={10} ariaLabel={labelFont} satuan="%" labelNaik={t("analisa.pengaturan.naikkan")} labelTurun={t("analisa.pengaturan.turunkan")} hintSeret={t("analisa.pengaturan.seretNilai")} />
     </BarisPengaturan> : null}
     {cocok("warnaAksen", labelAksen) ? <BarisPengaturan
       judul={<span className="text-[13.5px] font-medium text-foreground">{labelAksen}</span>}

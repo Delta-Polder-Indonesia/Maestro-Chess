@@ -1014,6 +1014,9 @@ export const analisa = {
       tema: "Tema",
       ukuranFont: "Ukuran font",
       warnaAksen: "Warna aksen",
+      naikkan: "Naikkan nilai",
+      turunkan: "Turunkan nilai",
+      seretNilai: "Seret kiri/kanan untuk mengubah nilai",
       tampilan: "Tampilan",
       koordinat: {
         tanpa: "Tanpa",

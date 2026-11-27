@@ -564,8 +564,8 @@ test("Tier 3 controls persist switches, collection, font size, accent and theme 
   // Urutan opsi = DAFTAR_KOLEKSI_SUARA: standard, futuristic, lisp, nes, piano, ...
   await act(async () => { listbox.findAllByProps({ role: "option" })[4].findByType("button").props.onClick(); });
   assert.deepEqual(tulisan.at(-1), ["soundCollection", "piano"]);
-  // Slider font menulis angka yang dijepit.
-  const slider = renderer.root.findByProps({ type: "range", "aria-label": "analisa.pengaturan.ukuranFont" });
+  // Kontrol angka font (NumberField) menulis angka yang dijepit.
+  const slider = renderer.root.findByProps({ type: "number", "aria-label": "analisa.pengaturan.ukuranFont" });
   assert.equal(slider.props.min, 50);
   assert.equal(slider.props.max, 200);
   assert.equal(slider.props.step, 10);
