@@ -640,7 +640,9 @@ function pasangPapan(tes, { fen, terkunci = false } = {}) {
   let papanProps = null;
   const PapanStub = (props) => { papanProps = props; return React.createElement("div", { "data-papan": true }); };
   const DialogStub = (props) => React.createElement("div", { "data-dialog": true, "data-warna": props.warna },
-    React.createElement("button", { "data-pilih": "q", onClick: () => props.onPilih("q") }),
+    ...["q", "r", "b", "n"].map((tipe) => React.createElement(
+      "button", { "data-pilih": tipe, onClick: () => props.onPilih(tipe) },
+    )),
     React.createElement("button", { "data-batal": true, onClick: props.onBatal }));
   const Komponen = kompilasi("../src/halaman/TekaTeki/komponen/papanTekaTeki.jsx", {
     "chess.js": require("chess.js"),
@@ -657,7 +659,21 @@ function pasangPapan(tes, { fen, terkunci = false } = {}) {
       React.createElement(Komponen, { fen, pihak: "w", ukuran: 320, onLangkah: (l) => panggilan.push(l), petunjuk: null, terkunci })));
   });
   tes.after(() => act(() => renderer.unmount()));
-  return { renderer, panggilan, props: () => papanProps };
+  const pasang = (fenBaru, kunciBaru = terkunci) => React.createElement(
+    ConfigContext.Provider, { value: nilai },
+    React.createElement(Komponen, {
+      fen: fenBaru, pihak: "w", ukuran: 320, onLangkah: (l) => panggilan.push(l),
+      petunjuk: null, terkunci: kunciBaru,
+    }),
+  );
+  return {
+    renderer,
+    panggilan,
+    props: () => papanProps,
+    // Soal berganti / solusi diputar / riwayat ditinjau: FEN papan berubah.
+    gantiFen(fenBaru, kunciBaru) { act(() => renderer.update(pasang(fenBaru, kunciBaru))); },
+    adaDialog() { return renderer.root.findAllByProps({ "data-dialog": true }).length > 0; },
+  };
 }
 
 test("a shipped mate-in-one opens playable, not already checkmated (regression: wrong player side)", (tes) => {
@@ -725,6 +741,63 @@ test("puzzle board: pawn to last rank opens promotion dialog and plays the chose
   assert.equal(panggilan.length, 0, "belum main sampai bidak promosi dipilih");
   act(() => dialog.findByProps({ "data-pilih": "q" }).props.onClick());
   assert.deepEqual(panggilan.at(-1), { from: "a7", to: "a8", promotion: "q" });
+});
+
+test("puzzle board: a new position closes a pending promotion dialog instead of carrying it over", (tes) => {
+  const FEN_PROMOSI = "7k/P7/8/8/8/8/8/7K w - - 0 1";
+  const papan = pasangPapan(tes, { fen: FEN_PROMOSI });
+  act(() => papan.props().onSelesaiSeret("a7", "a8", false));
+  assert.ok(papan.adaDialog(), "dialog promosi terbuka");
+  assert.equal(papan.panggilan.length, 0);
+
+  // Soal baru terbuka saat dialog masih menggantung.
+  papan.gantiFen(FEN_MAT);
+  assert.equal(papan.adaDialog(), false, "dialog soal lama tidak boleh muncul di soal baru");
+  assert.equal(papan.props().terpilih, null, "pilihan lama dibersihkan");
+  assert.equal(papan.panggilan.length, 0, "tidak ada langkah yang terkirim ke soal baru");
+
+  // Dialog yang sudah ditutup tidak bisa lagi mengirim langkah promosi basi.
+  const lama = papan.renderer.root.findAllByProps({ "data-pilih": "q" });
+  assert.equal(lama.length, 0, "tombol promosi soal lama tidak ada lagi");
+
+  // Papan baru tetap bisa dimainkan normal.
+  act(() => papan.props().onKlik("e1"));
+  assert.equal(papan.props().terpilih, "e1");
+  act(() => papan.props().onSelesaiSeret("e1", "e8", false));
+  assert.deepEqual(papan.panggilan.at(-1), { from: "e1", to: "e8" });
+
+  // Papan terkunci tanpa ganti FEN (mis. "lihat solusi" pada posisi awal):
+  // dialog tidak boleh menggantung di atas papan yang tidak menerima langkah.
+  const kunci = pasangPapan(tes, { fen: FEN_PROMOSI });
+  act(() => kunci.props().onSelesaiSeret("a7", "a8", false));
+  assert.ok(kunci.adaDialog());
+  kunci.gantiFen(FEN_PROMOSI, true);
+  assert.equal(kunci.adaDialog(), false, "dialog ditutup saat papan terkunci");
+  assert.equal(kunci.panggilan.length, 0);
+});
+
+test("puzzle board: promotion still offers every piece and cancelling leaves the board usable", (tes) => {
+  const FEN_PROMOSI = "7k/P7/8/8/8/8/8/7K w - - 0 1";
+  for (const tipe of ["q", "r", "b", "n"]) {
+    const papan = pasangPapan(tes, { fen: FEN_PROMOSI });
+    act(() => papan.props().onSelesaiSeret("a7", "a8", false));
+    assert.ok(papan.adaDialog(), `dialog terbuka untuk pilihan ${tipe}`);
+    const dialog = papan.renderer.root.findByProps({ "data-dialog": true });
+    act(() => dialog.findByProps({ "data-pilih": tipe }).props.onClick());
+    assert.deepEqual(papan.panggilan.at(-1), { from: "a7", to: "a8", promotion: tipe });
+    assert.equal(papan.adaDialog(), false, "dialog tertutup setelah bidak dipilih");
+  }
+
+  // Batal: tidak ada langkah terkirim, dialog tertutup, papan tetap bisa dipakai.
+  const batal = pasangPapan(tes, { fen: FEN_PROMOSI });
+  act(() => batal.props().onSelesaiSeret("a7", "a8", false));
+  const dialog = batal.renderer.root.findByProps({ "data-dialog": true });
+  act(() => dialog.findByProps({ "data-batal": true }).props.onClick());
+  assert.equal(batal.adaDialog(), false);
+  assert.equal(batal.panggilan.length, 0, "batal tidak mengirim langkah");
+  assert.equal(batal.props().terpilih, null);
+  act(() => batal.props().onSelesaiSeret("a7", "a8", false));
+  assert.ok(batal.adaDialog(), "promosi bisa diminta lagi setelah batal");
 });
 
 test("puzzle board: a locked board ignores clicks and drags", (tes) => {

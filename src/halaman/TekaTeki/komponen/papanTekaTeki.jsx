@@ -26,8 +26,11 @@ export default function PapanTekaTeki({ fen, pihak, ukuran, onLangkah, petunjuk,
   const [promosi, setPromosi] = useState(null); // { from, to, warna }
   const { tanda, tandaPetak, tandaPanah, hapusSemuaTanda } = useTandaBantu();
 
-  // Posisi berganti (langkah dimainkan / soal baru) → pilihan lama dibersihkan.
-  useEffect(() => { setTerpilih(null); }, [fen]);
+  // Posisi berganti (langkah dimainkan / soal baru) atau papan terkunci →
+  // pilihan DAN dialog promosi lama dibersihkan. Dialog yang dibiarkan terbuka
+  // akan menempel pada soal berikutnya dan tombolnya mengirim langkah promosi
+  // dari soal lama ke posisi yang baru.
+  useEffect(() => { setTerpilih(null); setPromosi(null); }, [fen, terkunci]);
 
   const { sasaran, sasaranTangkap } = useMemo(() => {
     if (!terpilih || !fen || terkunci) return { sasaran: [], sasaranTangkap: [] };
