@@ -10,7 +10,9 @@ src/halaman/TekaTeki/
 ├── TekaTeki.jsx                  # entry layar: papan kiri, panel + daftar langkah kanan
 ├── README.md                     # berkas ini
 ├── komponen/
-│   ├── papanTekaTeki.jsx         # memakai ulang papan Analisa + panah petunjuk
+│   ├── papanTekaTeki.jsx         # pembungkus: terpilih/sasaran/promosi/tanda → sesi
+│   ├── papanInteraktif.jsx       # papan drag/klik adopsi ChessClub (bidak hantu, pointer capture)
+│   ├── dialogPromosi.jsx         # pilih bidak promosi (wajib) saat pion ke baris akhir
 │   ├── panelTekaTeki.jsx         # sumber + sampah + gigi, 4 kartu statistik, aksi, petunjuk/solusi
 │   ├── pengaturanTekaTeki.jsx    # pengaturan latihan DI DALAM layar (buka/tutup)
 │   ├── rentangRating.jsx         # slider dua-thumb rentang rating (scrub+keyboard)
@@ -21,8 +23,31 @@ src/halaman/TekaTeki/
     ├── usePreferensiTekaTeki.js  # preferensi milik fitur (bukan config umum)
     ├── useUkuranPapan.js         # papan persegi mengikuti wadah
     ├── jejakLangkah.js           # posisi + SAN dari awal s.d. indeks dimainkan
+    ├── tandaBantu.js             # toggle mark petak + panah (klik kanan, ala chess.com)
     └── pgnDariSoal.js            # PGN untuk "Analisa posisi ini"
 ```
+
+## Papan interaktif (adopsi ChessClub)
+
+Papan teka-teki memakai papan interaktif sendiri (`papanInteraktif.jsx`),
+diadopsi dari **ChessClub** `src/halaman/TekaTeki/PapanTekaTeki.jsx` dan
+disambungkan ke aset Maestro (PieceSVG, boardThemes, urlBidak, animasiBidak):
+
+- **Seret**: bidak hantu mengikuti kursor lewat transform DOM langsung (tanpa
+  re-render → tanpa lag), `setPointerCapture` pada akar papan, slop **5px** untuk
+  membedakan klik dari seret, `select-none` + `preventDefault` non-sentuh sehingga
+  teks di sekitar papan tidak ikut terblok. **Klik kanan saat menyeret = batal**
+  (bidak kembali ke asal).
+- **Klik-untuk-jalan**: klik bidak → titik langkah sah; klik tujuan → main; klik
+  ulang bidak terpilih → batal pilih. Klik "hantu" pasca-seret ditelan agar tidak
+  dobel.
+- **Tanda bantu**: klik kanan petak = mark; seret klik kanan = panah (Shift/Ctrl/
+  Alt → merah/hijau/biru); klik kiri = hapus semua tanda.
+- **Promosi**: pion ke baris akhir membuka dialog wajib pilih (menteri/benteng/
+  gajah/kuda). **Luncuran** bidak saat FEN berganti memakai GESER_ISEPIC.
+
+Pembungkus (`papanTekaTeki.jsx`) memiliki keadaan interaksi dan membaca tema/set
+bidak/koordinat dari ConfigContext (Pengaturan umum); aturan main tetap di sesi.
 
 ## Tata letak (pola En Croissant)
 
@@ -95,6 +120,10 @@ tombol gigi di kepala panel membuka panel pengaturan (pola En Croissant).
   Replica" — empat kartu statistik mono (rantai berikon api), grid 2x2 sakelar
   ringkas, toolbar aksi, kotak status + daftar langkah SAN dengan navigasi
   « ‹ › » (menggantikan keping riwayat sesi).
+- **Tahap 2d** (selesai): papan drag/klik diadopsi dari **ChessClub**
+  (`papanInteraktif.jsx`) — bidak hantu, pointer capture, slop 5px, klik-untuk-
+  jalan + titik langkah sah, klik-kanan batal seret, tanda bantu, dialog promosi,
+  luncuran bidak; menggantikan papan Analisa yang sebelumnya dipakai ulang.
 - **Tahap 3** (rencana): pemilih tahun untuk soal harian, penanda video, penyaring
   tema dari data aktif, dan penyimpanan sesi antar kunjungan.
 

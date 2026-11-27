@@ -49,6 +49,10 @@ export default function TekaTeki({ onAnalisa }) {
   const meninjau = tinjau !== null && tampilIndex < lastIndex;
   const fenTampil = meninjau ? (jejak[tampilIndex]?.fen ?? sesi.fen) : sesi.fen;
   const terkunci = meninjau || !sesi.belumSelesai || sesi.solusiBerjalan;
+  // Langkah terakhir yang menghasilkan posisi tampil → sorotan + asal luncuran.
+  const idxTampil = meninjau ? tampilIndex : sesi.indeks;
+  const langkahTerakhir = sesi.soal?.langkah?.[idxTampil - 1];
+  const langkahAkhir = langkahTerakhir ? { from: langkahTerakhir.from, to: langkahTerakhir.to } : null;
 
   function navigasi(arah) {
     let baru;
@@ -68,12 +72,12 @@ export default function TekaTeki({ onAnalisa }) {
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto lg:flex-row lg:overflow-hidden">
         <div ref={wadahPapan} className="flex min-h-[260px] shrink-0 items-start justify-center lg:min-h-0 lg:flex-1">
           <PapanTekaTeki
-            t={t}
             fen={fenTampil}
             pihak={sesi.soal?.pihak ?? "w"}
             ukuran={ukuran}
             onLangkah={sesi.mainkan}
             petunjuk={sesi.petunjuk}
+            langkahAkhir={langkahAkhir}
             terkunci={terkunci}
           />
         </div>

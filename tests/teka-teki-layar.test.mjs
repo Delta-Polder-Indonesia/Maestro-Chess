@@ -11,8 +11,10 @@ import React from "react";
 import TestRenderer from "react-test-renderer";
 import ts from "typescript";
 
+import { Chess } from "chess.js";
 import * as modulTekaTeki from "../src/modul/tekaTeki/index.js";
 import buatJejak from "../src/halaman/TekaTeki/logika/jejakLangkah.js";
+import * as tandaBantu from "../src/halaman/TekaTeki/logika/tandaBantu.js";
 import { tekaTeki as kamusId } from "../src/lib/terjemahan/id/tekaTeki.js";
 import { tekaTeki as kamusEn } from "../src/lib/terjemahan/en/tekaTeki.js";
 
@@ -434,6 +436,96 @@ test("empty move list disables every navigation button", (tes) => {
   assert.ok(tombolNav.every((b) => b.props.disabled === true), "tanpa langkah, semua navigasi mati");
 });
 
+/* ---------------------- Papan interaktif (adopsi ChessClub) ---------------------- */
+
+test("marks helper toggles square marks by color and arrows by pair", () => {
+  let t = tandaBantu.tandaKosong();
+  t = tandaBantu.togglePetak(t, "e4", "bawaan");
+  assert.equal(t.petak.e4, "bawaan");
+  t = tandaBantu.togglePetak(t, "e4", "bawaan");
+  assert.equal(t.petak.e4, undefined, "warna sama → hapus mark itu");
+  t = tandaBantu.togglePetak(t, "d5", "merah");
+  t = tandaBantu.togglePetak(t, "d5", "hijau");
+  assert.equal(t.petak.d5, "hijau", "warna beda → ganti warna");
+  t = tandaBantu.togglePanah(t, "e2", "e4", "bawaan");
+  assert.equal(t.panah.length, 1);
+  t = tandaBantu.togglePanah(t, "e2", "e4", "bawaan");
+  assert.equal(t.panah.length, 0, "pasangan sama → hapus panah");
+});
+
+function pasangPapan(tes, { fen, terkunci = false } = {}) {
+  const panggilan = [];
+  const ConfigContext = React.createContext(null);
+  let papanProps = null;
+  const PapanStub = (props) => { papanProps = props; return React.createElement("div", { "data-papan": true }); };
+  const DialogStub = (props) => React.createElement("div", { "data-dialog": true, "data-warna": props.warna },
+    React.createElement("button", { "data-pilih": "q", onClick: () => props.onPilih("q") }),
+    React.createElement("button", { "data-batal": true, onClick: props.onBatal }));
+  const Komponen = kompilasi("../src/halaman/TekaTeki/komponen/papanTekaTeki.jsx", {
+    "chess.js": require("chess.js"),
+    "../../../modul/sesi/preferensi.js": { ConfigContext },
+    "../../Analisa/mesin/engine.js": { formatSquare: (x) => x },
+    "./papanInteraktif.jsx": { default: PapanStub },
+    "./dialogPromosi.jsx": { default: DialogStub },
+    "../logika/tandaBantu.js": tandaBantu,
+  }).default;
+  const nilai = { boardTheme: [0], pieceSet: ["cburnett"], coordinates: ["edge"] };
+  let renderer;
+  act(() => {
+    renderer = TestRenderer.create(React.createElement(ConfigContext.Provider, { value: nilai },
+      React.createElement(Komponen, { fen, pihak: "w", ukuran: 320, onLangkah: (l) => panggilan.push(l), petunjuk: null, terkunci })));
+  });
+  tes.after(() => act(() => renderer.unmount()));
+  return { renderer, panggilan, props: () => papanProps };
+}
+
+test("puzzle board: click a piece shows legal targets, click a target plays the move", (tes) => {
+  const { panggilan, props } = pasangPapan(tes, { fen: new Chess().fen() });
+  act(() => props().onKlik("e2"));
+  assert.equal(props().terpilih, "e2");
+  assert.ok(props().sasaran.includes("e4"), "titik langkah sah tampil");
+  act(() => props().onKlik("e4"));
+  assert.deepEqual(panggilan.at(-1), { from: "e2", to: "e4" });
+});
+
+test("puzzle board: re-clicking the selected piece deselects it", (tes) => {
+  const { props } = pasangPapan(tes, { fen: new Chess().fen() });
+  act(() => props().onKlik("e2"));
+  assert.equal(props().terpilih, "e2");
+  act(() => props().onKlik("e2"));
+  assert.equal(props().terpilih, null);
+});
+
+test("puzzle board: drag release plays the move; re-drop on origin deselects without moving", (tes) => {
+  const { panggilan, props } = pasangPapan(tes, { fen: new Chess().fen() });
+  act(() => props().onMulaiSeret("e2"));
+  assert.equal(props().terpilih, "e2");
+  act(() => props().onSelesaiSeret("e2", "e4", false));
+  assert.deepEqual(panggilan.at(-1), { from: "e2", to: "e4" });
+  const sebelum = panggilan.length;
+  act(() => props().onSelesaiSeret("e2", "e2", true));
+  assert.equal(panggilan.length, sebelum, "klik ulang tidak memainkan langkah");
+  assert.equal(props().terpilih, null);
+});
+
+test("puzzle board: pawn to last rank opens promotion dialog and plays the chosen piece", (tes) => {
+  const { renderer, panggilan, props } = pasangPapan(tes, { fen: "7k/P7/8/8/8/8/8/7K w - - 0 1" });
+  act(() => props().onSelesaiSeret("a7", "a8", false));
+  const dialog = renderer.root.findByProps({ "data-dialog": true });
+  assert.equal(dialog.props["data-warna"], "w");
+  assert.equal(panggilan.length, 0, "belum main sampai bidak promosi dipilih");
+  act(() => dialog.findByProps({ "data-pilih": "q" }).props.onClick());
+  assert.deepEqual(panggilan.at(-1), { from: "a7", to: "a8", promotion: "q" });
+});
+
+test("puzzle board: a locked board ignores clicks and drags", (tes) => {
+  const { panggilan, props } = pasangPapan(tes, { fen: new Chess().fen(), terkunci: true });
+  act(() => props().onKlik("e2"));
+  assert.equal(props().terpilih, null);
+  act(() => props().onSelesaiSeret("e2", "e4", false));
+  assert.equal(panggilan.length, 0);
+});
+
 /* ------------------------------ Pemasangan & i18n ------------------------------ */
 
 test("puzzle enters only via the Papan card; its settings live in-screen, not in nav or general settings", () => {
@@ -484,14 +576,30 @@ test("the feature keeps its own shelf: entry, components, logic, and a README", 
     "../src/halaman/TekaTeki/komponen/rentangRating.jsx",
     "../src/halaman/TekaTeki/komponen/sakelarRingkas.jsx",
     "../src/halaman/TekaTeki/komponen/riwayatLangkah.jsx",
+    "../src/halaman/TekaTeki/komponen/papanInteraktif.jsx",
+    "../src/halaman/TekaTeki/komponen/dialogPromosi.jsx",
     "../src/halaman/TekaTeki/logika/useSesiTekaTeki.js",
     "../src/halaman/TekaTeki/logika/usePreferensiTekaTeki.js",
     "../src/halaman/TekaTeki/logika/jejakLangkah.js",
+    "../src/halaman/TekaTeki/logika/tandaBantu.js",
     "../src/halaman/TekaTeki/logika/pgnDariSoal.js",
   ]) assert.ok(baca(berkas).length > 0, berkas);
-  // Papan dipakai ulang dari Analisa, tidak diduplikasi ke fitur ini.
+  // Papan teka-teki kini papan interaktif sendiri (diadopsi dari ChessClub):
+  // pembungkus memiliki terpilih/sasaran/promosi dan meneruskan drag/klik ke sesi.
   const papan = baca("../src/halaman/TekaTeki/komponen/papanTekaTeki.jsx");
-  assert.ok(papan.includes('import Board from "../../Analisa/komponen/game/board.jsx"'));
+  assert.ok(papan.includes('import PapanInteraktif from "./papanInteraktif.jsx"'), "pembungkus memakai papan interaktif");
+  assert.ok(papan.includes("ConfigContext"), "tema/set bidak/koordinat dibaca dari pengaturan umum");
+  assert.ok(papan.includes("onSelesaiSeret") && papan.includes("cobaLangkah"), "seret/klik diteruskan ke sesi");
+  // Perilaku drag/klik ChessClub: bidak hantu, pointer capture, slop, select-none,
+  // preventDefault non-sentuh, klik-kanan batal seret. Aset Maestro dipakai ulang.
+  const interaktif = baca("../src/halaman/TekaTeki/komponen/papanInteraktif.jsx");
+  assert.ok(interaktif.includes("select-none"), "papan non-seleksi teks");
+  assert.ok(interaktif.includes('e.pointerType !== "touch"') && interaktif.includes("e.preventDefault()"), "preventDefault seret non-sentuh");
+  assert.ok(interaktif.includes("setPointerCapture"), "pointer capture pada akar papan");
+  assert.ok(interaktif.includes("jarak > 5"), "slop 5px membedakan klik dari seret");
+  assert.ok(interaktif.includes("batalkanSeretInternal"), "klik kanan membatalkan seret");
+  assert.ok(interaktif.includes('import PieceSVG from "../../Analisa/komponen/svg/piece.jsx"'), "bidak memakai ulang PieceSVG Maestro");
+  assert.ok(interaktif.includes("../animasiBidak.js"), "luncuran memakai ulang animasiBidak Maestro");
   // Aturan main tetap di modul bersama, bukan ditulis ulang di hook.
   const hook = baca("../src/halaman/TekaTeki/logika/useSesiTekaTeki.js");
   assert.ok(hook.includes('../../../modul/tekaTeki/index.js'));
