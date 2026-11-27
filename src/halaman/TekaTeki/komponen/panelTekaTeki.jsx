@@ -114,7 +114,7 @@ export default function PanelTekaTeki({
         <TombolAksi kecil label={t("tekaTeki.panel.analisaPosisi")} onClick={onAnalisa} disabled={!soal}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-[13px] w-[13px]" aria-hidden="true"><circle cx="11" cy="11" r="7" /><line x1="20" y1="20" x2="16.2" y2="16.2" /></svg>
         </TombolAksi>
-        <TombolAksi kecil label={t("tekaTeki.panel.ulangSoal")} onClick={() => sesi.pilihRiwayat(aktif)} disabled={!soal}>
+        <TombolAksi kecil label={t("tekaTeki.panel.ulangSoal")} onClick={sesi.ulangSoal} disabled={!soal}>
           <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" className="h-[13px] w-[13px]" aria-hidden="true"><path d="M3 3L11 11M11 3L3 11" /></svg>
         </TombolAksi>
       </div>

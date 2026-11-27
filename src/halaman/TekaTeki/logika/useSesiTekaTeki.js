@@ -201,11 +201,21 @@ export default function useSesiTekaTeki({
     bukaSoal(ditemukan, entri);
   }, [riwayat, daftar, bukaSoal]);
 
+  // Ulangi soal aktif sebagai percobaan baru: entri dicatat ulang belum dikerjakan
+  // (waktu nol), papan kembali ke posisi awal pemain dan terbuka untuk dimainkan.
+  const ulangSoal = useCallback(() => {
+    if (!soal) return;
+    batalSolusi.current?.abort?.();
+    const entri = buatEntri(soal);
+    setRiwayat((lama) => lama.map((e, i) => (i === aktif ? entri : e)));
+    bukaSoal(soal, entri);
+  }, [soal, aktif, bukaSoal]);
+
   return {
     memuat, soal, fen, indeks, riwayat, aktif, pesan, petunjuk, waktu, solusiBerjalan,
     statistik: hitungStatistik(riwayat),
     status, belumSelesai,
     mainkan, ambilPetunjuk, lihatSolusi, soalBaru: () => soalBaru(daftar, soal?.rating ?? null),
-    bersihkanSesi, pilihRiwayat,
+    bersihkanSesi, pilihRiwayat, ulangSoal,
   };
 }

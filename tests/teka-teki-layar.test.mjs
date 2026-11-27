@@ -160,6 +160,25 @@ test("reopening history keeps a solved puzzle locked and an incorrect one playab
   sesi.unmount();
 });
 
+test("retrying the active puzzle resets it to a fresh, playable attempt", async (tes) => {
+  const sesi = pasangHook(tes, { lompatCepat: false });
+  await sesi.mount();
+  const awalFen = sesi.keluaran.current.fen;
+  await sesi.jalankan((s) => s.mainkan({ from: "e1", to: "e8" }));
+  assert.equal(sesi.keluaran.current.belumSelesai, false, "terpecahkan → terkunci");
+  const keadaan = await sesi.jalankan((s) => s.ulangSoal());
+  assert.equal(keadaan.riwayat[0].status, "belum", "entri dicatat ulang belum dikerjakan");
+  assert.equal(keadaan.belumSelesai, true, "papan terbuka lagi untuk percobaan baru");
+  assert.equal(keadaan.indeks, 1);
+  assert.equal(keadaan.fen, awalFen, "kembali ke posisi awal pemain");
+  assert.equal(keadaan.waktu, 0);
+  // Bisa dituntaskan lagi setelah diulang.
+  const lagi = await sesi.jalankan((s) => s.mainkan({ from: "e1", to: "e8" }));
+  assert.equal(lagi.riwayat[0].status, "benar");
+  assert.equal(lagi.belumSelesai, false);
+  sesi.unmount();
+});
+
 test("viewing the solution replays it and marks the puzzle incorrect", async (tes) => {
   const sesi = pasangHook(tes);
   await sesi.mount();
