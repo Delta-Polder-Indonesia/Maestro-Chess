@@ -12,14 +12,35 @@ const PILIHAN = ["q", "r", "b", "n"];
 export default function DialogPromosi({ warna, onPilih, onBatal }) {
   const { t } = useI18n();
   const wadah = useRef(null);
+  // onBatal dibuat ulang setiap render induk; disimpan di ref supaya efek fokus
+  // berjalan sekali per pembukaan dialog, bukan memindahkan fokus tiap render.
+  const batalRef = useRef(onBatal);
+  batalRef.current = onBatal;
   useEffect(() => {
-    wadah.current?.querySelector("button")?.focus();
+    // Pemicu = elemen yang sedang fokus saat dialog dibuka (petak papan).
+    const pemicu = document.activeElement;
+    const tombol = () => Array.from(wadah.current?.querySelectorAll("button") ?? []);
+    tombol()[0]?.focus();
     function tekan(e) {
-      if (e.key === "Escape") { e.preventDefault(); onBatal(); }
+      if (e.key === "Escape") { e.preventDefault(); batalRef.current(); return; }
+      if (e.key !== "Tab") return;
+      // Focus trap: Tab/Shift+Tab berputar di dalam dialog selama terbuka.
+      const daftar = tombol();
+      if (!daftar.length) return;
+      const pertama = daftar[0];
+      const terakhir = daftar[daftar.length - 1];
+      const aktif = document.activeElement;
+      const diDalam = !!wadah.current?.contains?.(aktif);
+      if (e.shiftKey && (!diDalam || aktif === pertama)) { e.preventDefault(); terakhir.focus(); }
+      else if (!e.shiftKey && (!diDalam || aktif === terakhir)) { e.preventDefault(); pertama.focus(); }
     }
     document.addEventListener("keydown", tekan);
-    return () => document.removeEventListener("keydown", tekan);
-  }, [onBatal]);
+    return () => {
+      document.removeEventListener("keydown", tekan);
+      // Pulihkan fokus ke pemicu bila masih ada di dokumen.
+      if (pemicu && typeof pemicu.focus === "function" && document.contains?.(pemicu)) pemicu.focus();
+    };
+  }, []);
 
   return (
     <div

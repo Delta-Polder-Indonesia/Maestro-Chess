@@ -925,6 +925,118 @@ function pasangPengaturanLayar(tes, prefsOverride = {}, temaTersedia = []) {
   return { renderer, panggilan };
 }
 
+// Lingkungan fokus terkendali untuk uji aksesibilitas dialog. react-test-renderer
+// tidak punya DOM, jadi uji ini menyediakan activeElement/contains/querySelector
+// minimal. Ini uji unit perilaku fokus, BUKAN uji browser/screen reader.
+function pasangDialogPromosi(tes, { onPilih, onBatal } = {}) {
+  const tombol = ["q", "r", "b", "n", "batal"].map((nama) => ({
+    nama,
+    fokus: false,
+    focus() { this.fokus = true; lingkungan.activeElement = this; },
+  }));
+  const wadah = {
+    querySelector: (sel) => (sel === "button" ? tombol[0] : null),
+    querySelectorAll: (sel) => (sel === "button" ? tombol : []),
+    contains: (el) => tombol.includes(el),
+  };
+  const pemicu = { nama: "pemicu", focus() { this.fokus = true; lingkungan.activeElement = this; } };
+  const pendengar = new Map();
+  const lingkungan = {
+    activeElement: pemicu,
+    addEventListener: (jenis, fn) => pendengar.set(jenis, fn),
+    removeEventListener: (jenis) => pendengar.delete(jenis),
+    contains: (el) => el === pemicu || tombol.includes(el),
+  };
+  const asli = globalThis.document;
+  globalThis.document = lingkungan;
+  const Komponen = kompilasi("../src/halaman/TekaTeki/komponen/dialogPromosi.jsx", {
+    "../../Analisa/komponen/svg/piece.jsx": { default: () => React.createElement("span") },
+    "../../../lib/i18n.jsx": { useI18n: () => ({ t: (k) => k }) },
+  }).default;
+  let renderer;
+  act(() => {
+    renderer = TestRenderer.create(React.createElement(Komponen, {
+      warna: "w", onPilih: onPilih ?? (() => {}), onBatal: onBatal ?? (() => {}),
+    }), {
+      // Ref wadah dialog diisi mock agar querySelector/contains bisa dipakai.
+      createNodeMock: (el) => (typeof el.props?.className === "string" && el.props.className.includes("flex flex-col") ? wadah : null),
+    });
+  });
+  tes.after(() => {
+    act(() => renderer.unmount());
+    if (asli === undefined) delete globalThis.document; else globalThis.document = asli;
+  });
+  return {
+    renderer, tombol, pemicu, wadah, lingkungan,
+    tekan(key, shiftKey = false) {
+      const fn = pendengar.get("keydown");
+      let dicegah = false;
+      act(() => fn?.({ key, shiftKey, preventDefault() { dicegah = true; } }));
+      return dicegah;
+    },
+    aktif: () => lingkungan.activeElement,
+  };
+}
+
+test("promotion dialog moves focus to the first choice and traps Tab and Shift+Tab", (tes) => {
+  const dialog = pasangDialogPromosi(tes);
+  assert.equal(dialog.aktif().nama, "q", "fokus awal ke pilihan promosi pertama");
+  // Tab dari tombol terakhir kembali ke pertama.
+  dialog.tombol.at(-1).focus();
+  assert.equal(dialog.tekan("Tab"), true, "Tab di tombol terakhir dicegah agar tidak keluar dialog");
+  assert.equal(dialog.aktif().nama, "q");
+  // Shift+Tab dari tombol pertama lompat ke tombol terakhir.
+  dialog.tombol[0].focus();
+  assert.equal(dialog.tekan("Tab", true), true);
+  assert.equal(dialog.aktif().nama, "batal");
+  // Fokus di luar dialog ditarik masuk.
+  dialog.pemicu.focus();
+  dialog.tekan("Tab");
+  assert.equal(dialog.aktif().nama, "q", "Tab dari luar dialog masuk ke pilihan pertama");
+  dialog.pemicu.focus();
+  dialog.tekan("Tab", true);
+  assert.equal(dialog.aktif().nama, "batal", "Shift+Tab dari luar dialog masuk ke tombol terakhir");
+  // Tab di tengah dialog dibiarkan berjalan alami (tidak dicegah).
+  dialog.tombol[1].focus();
+  assert.equal(dialog.tekan("Tab"), false, "Tab di tengah tidak dicegah");
+});
+
+test("promotion dialog cancels on Escape and restores focus to the trigger on close", (tes) => {
+  let batal = 0;
+  const dialog = pasangDialogPromosi(tes, { onBatal: () => { batal++; } });
+  assert.equal(dialog.tekan("Escape"), true, "Escape dicegah agar tidak merembet");
+  assert.equal(batal, 1, "Escape membatalkan dialog");
+  // Penutupan (unmount) memulihkan fokus ke pemicu.
+  dialog.tombol[2].focus();
+  act(() => dialog.renderer.unmount());
+  assert.equal(dialog.aktif().nama, "pemicu", "fokus kembali ke elemen pemicu");
+});
+
+test("promotion dialog keeps its four choices and cancel button wired", (tes) => {
+  const pilihan = [];
+  let batal = 0;
+  const dialog = pasangDialogPromosi(tes, { onPilih: (tipe) => pilihan.push(tipe), onBatal: () => { batal++; } });
+  const root = dialog.renderer.root;
+  assert.equal(root.findAllByProps({ role: "dialog" }).length, 1);
+  const kotak = root.findByProps({ role: "dialog" });
+  assert.equal(String(kotak.props["aria-modal"]), "true", "dialog ditandai modal");
+  const tombol = root.findAllByType("button");
+  assert.equal(tombol.length, 5, "empat bidak + tombol batal");
+  for (const tipe of ["q", "r", "b", "n"]) {
+    const target = tombol.find((b) => b.props["aria-label"] === `tekaTeki.promosi.${tipe}`);
+    act(() => target.props.onClick());
+    assert.equal(pilihan.at(-1), tipe);
+  }
+  act(() => tombol.at(-1).props.onClick());
+  assert.equal(batal, 1, "tombol batal membatalkan");
+  // Klik latar membatalkan; klik isi dialog tidak.
+  act(() => kotak.props.onMouseDown({ target: kotak, currentTarget: kotak }));
+  assert.equal(batal, 2);
+  const isi = {};
+  act(() => kotak.props.onMouseDown({ target: isi, currentTarget: kotak }));
+  assert.equal(batal, 2, "klik di dalam dialog tidak membatalkan");
+});
+
 test("the theme catalog offers every theme the active source actually has", () => {
   const skakmat = modulTekaTeki.normalisasiBerkas(JSON.parse(baca("../public/data/teka-teki.json")), "skakmat");
   const video = modulTekaTeki.normalisasiBerkas(JSON.parse(baca("../public/data/teka-teki-video.json")), "video");
@@ -1121,10 +1233,21 @@ test("move list shows clickable SAN chips and four navigation buttons", (tes) =>
     }));
   });
   tes.after(() => act(() => renderer.unmount()));
-  const keping = renderer.root.findAllByProps({ role: "listitem" });
-  assert.equal(keping.length, 3, "posisi awal bukan keping; tiga langkah dimainkan");
+  // Struktur list asli: ul > li > button (bukan role=listitem di atas tombol).
+  const daftar = renderer.root.findAllByType("ul");
+  assert.equal(daftar.length, 1, "daftar langkah memakai elemen ul");
+  const butir = renderer.root.findAllByType("li");
+  assert.equal(butir.length, 3, "posisi awal bukan butir; tiga langkah dimainkan");
+  const keping = butir.map((li) => li.findByType("button"));
+  assert.equal(keping.length, 3, "setiap butir memuat tombol");
+  for (const tombol of keping) {
+    assert.equal(tombol.props.type, "button", "tetap tombol semantik");
+    assert.equal(tombol.props.role, undefined, "peran tombol tidak ditimpa");
+    assert.notEqual(tombol.props.tabIndex, -1, "langkah bisa dicapai keyboard");
+  }
   assert.ok(keping[2].props.children.join("").includes("Rxe1#"));
-  assert.equal(keping[2].props["aria-current"], true, "langkah live ditandai aktif");
+  assert.equal(keping[2].props["aria-current"], "step", "langkah live ditandai langkah aktif");
+  assert.equal(keping[0].props["aria-current"], undefined, "langkah lain tidak ditandai aktif");
   act(() => keping[0].props.onClick());
   assert.equal(tinjauan.at(-1), 1, "klik keping meninjau posisi itu");
   const tombolNav = renderer.root.findAllByType("button").filter((b) => ["To start", "Previous move", "Next move", "To end"].includes(b.props["aria-label"]));
@@ -1150,7 +1273,7 @@ test("empty move list disables every navigation button", (tes) => {
     }));
   });
   tes.after(() => act(() => renderer.unmount()));
-  assert.equal(renderer.root.findAllByProps({ role: "listitem" }).length, 0);
+  assert.equal(renderer.root.findAllByType("li").length, 0);
   const tombolNav = renderer.root.findAllByType("button").filter((b) => ["To start", "Previous move", "Next move", "To end"].includes(b.props["aria-label"]));
   assert.ok(tombolNav.every((b) => b.props.disabled === true), "tanpa langkah, semua navigasi mati");
 });

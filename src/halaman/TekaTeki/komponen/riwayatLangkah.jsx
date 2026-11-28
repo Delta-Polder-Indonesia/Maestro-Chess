@@ -38,22 +38,24 @@ export default function RiwayatLangkah({ t, jejak, tinjau, onTinjau, onNavigasi 
         {kosong ? (
           <p className="text-[12px] text-foregroundGrey">{t("tekaTeki.langkah.kosong")}</p>
         ) : (
-          <div className="flex flex-wrap gap-1.5 font-mono text-[12.5px] text-foregroundGrey" role="list" aria-label={t("tekaTeki.langkah.judul")}>
+          <ul className="flex list-none flex-wrap gap-1.5 font-mono text-[12.5px] text-foregroundGrey" aria-label={t("tekaTeki.langkah.judul")}>
             {langkah.map((l, i) => {
               const idx = i + 1;
               const nomor = l.warna === "w" ? `${l.nomor}. ` : (i === 0 ? `${l.nomor}… ` : "");
+              // Struktur list asli (ul/li) dengan tombol di dalamnya: memberi
+              // role="listitem" pada <button> menimpa semantik tombol interaktif.
               return (
-                <button
-                  key={idx}
-                  type="button"
-                  role="listitem"
-                  aria-current={idx === tinjau}
-                  onClick={() => onTinjau(idx)}
-                  className={`rounded px-1.5 py-0.5 transition-colors ${idx === tinjau ? "bg-backgroundBoxBoxHover text-foreground" : "hover:bg-backgroundBox"}`}
-                >{nomor}{l.san}</button>
+                <li key={idx}>
+                  <button
+                    type="button"
+                    aria-current={idx === tinjau ? "step" : undefined}
+                    onClick={() => onTinjau(idx)}
+                    className={`rounded px-1.5 py-0.5 transition-colors ${idx === tinjau ? "bg-backgroundBoxBoxHover text-foreground" : "hover:bg-backgroundBox"}`}
+                  >{nomor}{l.san}</button>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
       </div>
       <div className="grid shrink-0 grid-cols-4 gap-2">
