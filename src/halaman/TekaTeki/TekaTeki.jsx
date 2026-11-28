@@ -78,11 +78,14 @@ export default function TekaTeki({ onAnalisa }) {
   const giliran = sesi.soal?.pihak === "w" ? t("tekaTeki.panel.giliranPutih") : t("tekaTeki.panel.giliranHitam");
 
   return (
-    <PanelLayar lebarMaks="max-w-[1200px]">
+    <PanelLayar>
       {/* Nama fitur sudah menjadi label tab di bilah atas; kepala penjelasan
           tidak diulang di dalam layar. Judul tetap ada untuk pembaca layar. */}
       <h1 className="sr-only">{t("tekaTeki.judul")}</h1>
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto lg:flex-row lg:overflow-hidden">
+      {/* -mr meniadakan bantalan kanan PanelLayar, sama seperti layar
+          Pengaturan, supaya tepi scroll menempel di tepi panel. Gutter cukup
+          ada pada panel kanan — kontainer luar tidak perlu menyisihkan ruang. */}
+      <div className="-mr-3 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto sm:-mr-5 lg:flex-row lg:overflow-hidden">
         <div ref={wadahPapan} className="flex min-h-[260px] shrink-0 items-start justify-center lg:min-h-0 lg:flex-1">
           <PapanTekaTeki
             fen={fenTampil}
@@ -94,7 +97,7 @@ export default function TekaTeki({ onAnalisa }) {
             terkunci={terkunci}
           />
         </div>
-        <div className="flex min-h-0 w-full flex-col gap-2.5 overflow-y-auto lg:min-w-[340px] lg:flex-1">
+        <div className="flex min-h-0 w-full flex-col gap-2.5 overflow-y-auto [scrollbar-gutter:stable] lg:min-w-[340px] lg:flex-1">
           {sesi.memuat ? <p className="text-[13px] text-foregroundGrey">{t("tekaTeki.status.memuat")}</p> : null}
           {!sesi.memuat && !sesi.soal ? (
             <p className="text-[13px] text-foregroundGrey">{t(`tekaTeki.status.${sesi.pesan === "gagal" ? "gagal" : "kosong"}`)}</p>
