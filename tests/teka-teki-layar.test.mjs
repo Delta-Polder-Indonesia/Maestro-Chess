@@ -902,7 +902,7 @@ test("rating bounds clamp against each other and stay within 600–2800", async 
   assert.equal(tersimpan.keluaran.current.ratingMax, 600, "nilai tersimpan dijepit ke bawah");
 });
 
-function pasangPengaturanLayar(tes, prefsOverride = {}) {
+function pasangPengaturanLayar(tes, prefsOverride = {}, temaTersedia = []) {
   const panggilan = [];
   const prefs = {
     ratingMin: 1000, ratingMax: 1500, tema: "", progresif: false,
@@ -920,13 +920,106 @@ function pasangPengaturanLayar(tes, prefsOverride = {}) {
     "../logika/usePreferensiTekaTeki.js": { RATING_BAWAH: 600, RATING_ATAS: 2800 },
   }).default;
   let renderer;
-  act(() => { renderer = TestRenderer.create(React.createElement(Komponen, { prefs, t: tUji })); });
+  act(() => { renderer = TestRenderer.create(React.createElement(Komponen, { prefs, t: tUji, temaTersedia })); });
   tes.after(() => act(() => renderer.unmount()));
   return { renderer, panggilan };
 }
 
+test("the theme catalog offers every theme the active source actually has", () => {
+  const skakmat = modulTekaTeki.normalisasiBerkas(JSON.parse(baca("../public/data/teka-teki.json")), "skakmat");
+  const video = modulTekaTeki.normalisasiBerkas(JSON.parse(baca("../public/data/teka-teki-video.json")), "video");
+  const temaSkakmat = modulTekaTeki.daftarTema(skakmat);
+  const temaVideo = modulTekaTeki.daftarTema(video);
+  assert.equal(temaSkakmat.length, 50, "data skakmat punya 50 tema");
+  assert.equal(temaVideo.length, 9, "data video punya 9 tema");
+  // Tema yang dulu tidak terjangkau daftar statis 13 tema.
+  for (const nama of ["smotheredMate", "hangingPiece", "master", "promotion", "anastasiaMate", "enPassant"]) {
+    assert.ok(temaSkakmat.includes(nama), `${nama} ada di data skakmat`);
+  }
+  // Katalog tidak boleh mencampur tema sumber lain.
+  assert.ok(!temaVideo.includes("mateIn1"), "video tidak punya mateIn1");
+  assert.ok(temaSkakmat.includes("mateIn1"));
+  assert.notDeepEqual(temaSkakmat, temaVideo);
+});
+
+test("settings list the active source's themes, keep 'all themes', and fall back for unavailable ones", (tes) => {
+  const skakmat = modulTekaTeki.normalisasiBerkas(JSON.parse(baca("../public/data/teka-teki.json")), "skakmat");
+  const temaSkakmat = modulTekaTeki.daftarTema(skakmat);
+  const layar = pasangPengaturanLayar(tes, {}, temaSkakmat);
+  const pilih = layar.renderer.root.findByProps({ "data-pilih": tUji("tekaTeki.pengaturan.tema") });
+  const opsi = pilih.props["data-opsi"].split(",");
+  assert.equal(opsi[0], "semua", "pilihan semua tema tetap ada");
+  assert.deepEqual(opsi.slice(1), temaSkakmat, "seluruh tema sumber aktif tersedia");
+  assert.equal(opsi.length, 51);
+
+  // Tema terpilih yang tidak ada di sumber ini ditampilkan sebagai semua tema.
+  const basi = pasangPengaturanLayar(tes, { tema: "mateIn1" }, modulTekaTeki.daftarTema(
+    modulTekaTeki.normalisasiBerkas(JSON.parse(baca("../public/data/teka-teki-video.json")), "video"),
+  ));
+  const pilihVideo = basi.renderer.root.findByProps({ "data-pilih": tUji("tekaTeki.pengaturan.tema") });
+  assert.equal(pilihVideo.props.value, "semua", "tema tak tersedia tidak ditampilkan sebagai pilihan aktif");
+  assert.ok(!pilihVideo.props["data-opsi"].split(",").includes("mateIn1"));
+
+  // Sumber harian tidak punya tema → hanya "semua tema".
+  const harian = pasangPengaturanLayar(tes, { tema: "mateIn1" }, []);
+  const pilihHarian = harian.renderer.root.findByProps({ "data-pilih": tUji("tekaTeki.pengaturan.tema") });
+  assert.equal(pilihHarian.props["data-opsi"], "semua");
+  assert.equal(pilihHarian.props.value, "semua");
+
+  // Memilih tema tetap menulis lewat prefs.ubah; "semua" mengosongkan tema.
+  act(() => pilih.props.onChange({ target: { value: "smotheredMate" } }));
+  assert.deepEqual(layar.panggilan.at(-1), ["tema", "smotheredMate"]);
+  act(() => pilih.props.onChange({ target: { value: "semua" } }));
+  assert.deepEqual(layar.panggilan.at(-1), ["tema", ""]);
+});
+
+test("the session exposes the active source's theme catalog and refreshes it on source change", async (tes) => {
+  const kendali = sumberTerkendali();
+  const layar = await pasangLayar(tes, { muat: kendali.muat }).mount();
+  tes.after(() => layar.unmount());
+  const skakmat = modulTekaTeki.normalisasiBerkas(JSON.parse(baca("../public/data/teka-teki.json")), "skakmat");
+  await layar.jalankan(() => kendali.permintaan[0].selesai(skakmat));
+  assert.deepEqual(layar.sesi().temaTersedia, modulTekaTeki.daftarTema(skakmat));
+  assert.equal(layar.sesi().temaTersedia.length, 50);
+
+  // Ganti sumber: katalog ikut berubah, tidak mencampur tema skakmat.
+  const video = modulTekaTeki.normalisasiBerkas(JSON.parse(baca("../public/data/teka-teki-video.json")), "video");
+  await layar.jalankan(({ panel }) => panel.onSumber("video"));
+  assert.deepEqual(layar.sesi().temaTersedia, [], "katalog dikosongkan selama memuat");
+  await layar.jalankan(() => kendali.permintaan[1].selesai(video));
+  assert.deepEqual(layar.sesi().temaTersedia, modulTekaTeki.daftarTema(video));
+  assert.equal(layar.sesi().temaTersedia.length, 9);
+  assert.ok(!layar.sesi().temaTersedia.includes("mateIn1"));
+
+  // Sumber harian: katalog kosong dan soal tetap terbuka (filter tema diabaikan).
+  const harian = [modulTekaTeki.normalisasiSoal({ tanggal: "2025-03-03", fen: FEN_MAT, langkah: "e1-e8" }, "harian")];
+  await layar.jalankan(({ panel }) => panel.onSumber("harian"));
+  await layar.jalankan(() => kendali.permintaan[2].selesai(harian));
+  assert.deepEqual(layar.sesi().temaTersedia, []);
+  assert.ok(layar.sesi().soal, "soal harian tetap terpilih tanpa tema");
+});
+
+test("a theme the new source does not offer no longer empties the puzzle pool", async (tes) => {
+  const video = modulTekaTeki.normalisasiBerkas(JSON.parse(baca("../public/data/teka-teki-video.json")), "video");
+  // mateIn1 ada di skakmat tetapi tidak di video: dulu membuat sumber video kosong.
+  const sesi = pasangHook(tes, { daftar: video, tema: "mateIn1", lompatCepat: false });
+  const keadaan = await sesi.mount();
+  assert.ok(keadaan.soal, "tema yang tidak ditawarkan sumber tidak mengosongkan kolam");
+  assert.notEqual(keadaan.pesan, "kosong");
+  assert.ok(!keadaan.temaTersedia.includes("mateIn1"));
+  // Tema yang benar-benar ditawarkan tetap menyaring.
+  const temas = pasangHook(tes, { daftar: video, tema: "endgame", lompatCepat: false });
+  const akhir = await temas.mount();
+  assert.ok(akhir.soal.tema.includes("endgame"), "tema valid tetap diterapkan");
+  sesi.unmount(); temas.unmount();
+});
+
 test("in-screen settings show range + theme + four switches and write through prefs.ubah", (tes) => {
-  const { renderer, panggilan } = pasangPengaturanLayar(tes);
+  // Katalog tema kini datang dari sumber aktif; pakai tema skakmat sebenarnya.
+  const temaSkakmat = modulTekaTeki.daftarTema(
+    modulTekaTeki.normalisasiBerkas(JSON.parse(baca("../public/data/teka-teki.json")), "skakmat"),
+  );
+  const { renderer, panggilan } = pasangPengaturanLayar(tes, {}, temaSkakmat);
   assert.ok(renderer.root.findByProps({ "data-rentang": true }), "rentang rating tampil");
   const pilih = renderer.root.findByType("select");
   assert.ok(pilih.props["data-opsi"].startsWith("semua,"), "opsi pertama = semua tema");

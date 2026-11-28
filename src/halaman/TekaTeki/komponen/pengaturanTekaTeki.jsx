@@ -5,17 +5,10 @@
  * sifat kerja sesi (judul + deskripsi). Sakelar memakai kontrol ringkas gaya
  * Mantine; pemilih tema memakai komponen pengaturan yang sudah ada.
  */
-import { daftarTema } from "../../../modul/tekaTeki/index.js";
 import PilihRingkas from "../../Analisa/komponen/pengaturan/pilihRingkas.jsx";
 import SakelarRingkas from "./sakelarRingkas.jsx";
 import RentangRating from "./rentangRating.jsx";
 import { RATING_ATAS, RATING_BAWAH } from "../logika/usePreferensiTekaTeki.js";
-
-/** Tema bawaan dari kosakata soal Lichess yang paling sering dipakai. */
-const TEMA_BAWAAN = [
-  "backRankMate", "mateIn1", "mateIn2", "mateIn3", "fork", "pin", "skewer",
-  "discoveredAttack", "sacrifice", "deflection", "endgame", "middlegame", "opening",
-];
 
 function BarisSakelar({ label, deskripsi, checked, onChange }) {
   return (
@@ -29,11 +22,18 @@ function BarisSakelar({ label, deskripsi, checked, onChange }) {
   );
 }
 
-export default function PengaturanTekaTeki({ prefs, t }) {
+export default function PengaturanTekaTeki({ prefs, t, temaTersedia = [] }) {
+  // Katalog tema = tema yang benar-benar ada pada sumber aktif (dihitung sesi
+  // dari data yang sudah dimuat). Daftar statis sebelumnya hanya memuat 13 tema
+  // sehingga 37 dari 50 tema skakmat dan 4 dari 9 tema video tidak bisa dipilih,
+  // sementara 8 di antaranya tidak ada di sumber video sama sekali.
   const pilihanTema = [
     { id: "semua", label: t("tekaTeki.pengaturan.semuaTema") },
-    ...daftarTema(TEMA_BAWAAN.map((nama) => ({ tema: [nama] }))).map((nama) => ({ id: nama, label: nama })),
+    ...temaTersedia.map((nama) => ({ id: nama, label: nama })),
   ];
+  // Tema terpilih yang tidak tersedia di sumber ini ditampilkan sebagai
+  // "semua tema", sejalan dengan penyaringan yang mengabaikannya.
+  const temaTampil = prefs.tema && temaTersedia.includes(prefs.tema) ? prefs.tema : "semua";
 
   return (
     <div className="flex flex-col gap-4 border-b border-border pb-3.5" data-uji="pengaturan-teka-teki">
@@ -59,7 +59,7 @@ export default function PengaturanTekaTeki({ prefs, t }) {
         <PilihRingkas
           ariaLabel={t("tekaTeki.pengaturan.tema")}
           lebar="w-full"
-          nilai={prefs.tema || "semua"}
+          nilai={temaTampil}
           pilihan={pilihanTema}
           onChange={(nilai) => prefs.ubah("tema", nilai === "semua" ? "" : nilai)}
           labelNaik={t("analisa.pengaturan.opsiSebelumnya")}

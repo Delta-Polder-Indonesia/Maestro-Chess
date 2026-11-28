@@ -86,7 +86,7 @@ export default function PanelTekaTeki({
         </TombolAksi>
       </div>
 
-      {bukaPengaturan ? <PengaturanTekaTeki prefs={prefs} t={t} /> : null}
+      {bukaPengaturan ? <PengaturanTekaTeki prefs={prefs} t={t} temaTersedia={sesi.temaTersedia} /> : null}
 
       {/* Empat kartu statistik (mono) — rantai memakai ikon api */}
       <div className="grid grid-cols-4 gap-2.5">

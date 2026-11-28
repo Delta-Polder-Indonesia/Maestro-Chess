@@ -15,9 +15,9 @@
  *
  * Semua aturan main tinggal di modul bersama; hook ini hanya orkestrasi state.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  muatSoal, pilihSoal, rentangProgresif, posisiAwalPemain, nilaiLangkah, terapkanLangkah,
+  muatSoal, pilihSoal, daftarTema, rentangProgresif, posisiAwalPemain, nilaiLangkah, terapkanLangkah,
   petunjukBerikutnya, langkahDiharapkan, buatEntri, hitungStatistik, STATUS_SOAL,
 } from "../../../modul/tekaTeki/index.js";
 
@@ -57,6 +57,14 @@ export default function useSesiTekaTeki({
   const riwayatRef = useRef([]);
   riwayatRef.current = riwayat;
 
+  // Katalog tema diambil dari kolam yang SUDAH dimuat untuk sumber aktif, jadi
+  // tidak ada unduhan tambahan dan tema sumber lain tidak pernah tercampur.
+  // Sumber harian tidak punya tema → katalognya kosong.
+  const temaTersedia = useMemo(() => daftarTema(daftar), [daftar]);
+  // Tema yang tidak ditawarkan sumber aktif tidak dipakai menyaring; kalau
+  // dipaksakan, seluruh soal terbuang dan layar berhenti di "kosong".
+  const temaAktif = tema && temaTersedia.includes(tema) ? tema : "";
+
   const bukaSoal = useCallback((dipilih, entri = null) => {
     batalSolusi.current?.abort?.();
     setSolusiBerjalan(false);
@@ -81,14 +89,14 @@ export default function useSesiTekaTeki({
       ? rentangProgresif(dasarRating)
       : [ratingMin, ratingMax];
     const terpakai = riwayatRef.current.map((entri) => entri.id);
-    const dipilih = pilihSoal(kolam, { terpakai, ratingMin: bawah, ratingMax: atas, tema: tema || null });
+    const dipilih = pilihSoal(kolam, { terpakai, ratingMin: bawah, ratingMax: atas, tema: temaAktif || null });
     if (!dipilih) { setSoal(null); setFen(""); setPesan("kosong"); return null; }
     const entri = buatEntri(dipilih);
     setRiwayat((lama) => [...lama, entri]);
     setAktif(riwayatRef.current.length);
     bukaSoal(dipilih, entri);
     return dipilih;
-  }, [daftar, progresif, ratingMin, ratingMax, tema, bukaSoal]);
+  }, [daftar, progresif, ratingMin, ratingMax, temaAktif, bukaSoal]);
 
   // Muat sumber lalu buka soal pertama. Pergantian sumber memulai sesi baru.
   useEffect(() => {
@@ -119,9 +127,9 @@ export default function useSesiTekaTeki({
       setDaftar(hasil);
       setMemuat(false);
       if (!hasil.length) { setPesan("gagal"); return; }
-      const dipilih = pilihSoal(hasil, {
-        ratingMin, ratingMax, tema: tema || null,
-      });
+      // Tema dinilai terhadap sumber yang baru dimuat, bukan kolam sebelumnya.
+      const temaSumber = tema && daftarTema(hasil).includes(tema) ? tema : null;
+      const dipilih = pilihSoal(hasil, { ratingMin, ratingMax, tema: temaSumber });
       if (!dipilih) { setPesan("kosong"); return; }
       const entri = buatEntri(dipilih);
       setRiwayat([entri]);
@@ -265,6 +273,7 @@ export default function useSesiTekaTeki({
 
   return {
     memuat, soal, fen, indeks, langkahNyata, riwayat, aktif, pesan, petunjuk, waktu, solusiBerjalan,
+    temaTersedia,
     statistik: hitungStatistik(riwayat),
     status, belumSelesai,
     mainkan, ambilPetunjuk, lihatSolusi, soalBaru: () => soalBaru(daftar, soal?.rating ?? null),
