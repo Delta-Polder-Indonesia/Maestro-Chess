@@ -65,6 +65,27 @@ export default function useSesiTekaTeki({
   // dipaksakan, seluruh soal terbuang dan layar berhenti di "kosong".
   const temaAktif = tema && temaTersedia.includes(tema) ? tema : "";
 
+  // Satu pintu pembersihan sesi aktif. Dipakai saat sumber berganti dan saat
+  // tidak ada soal yang lolos saringan, supaya keadaan kosong selalu sama:
+  // tanpa soal, tanpa progres, tanpa petunjuk, dan TANPA pewaktu yang hidup.
+  // Riwayat/daftar/pesan sengaja tidak disentuh di sini — pemanggil yang
+  // menentukan (ganti sumber memulai sesi baru; saringan kosong mempertahankan
+  // riwayat beserta statistiknya).
+  const kosongkanSesi = useCallback(() => {
+    batalSolusi.current?.abort?.();
+    setSolusiBerjalan(false);
+    setSoal(null);
+    setFen("");
+    setIndeks(0);
+    setLangkahNyata([]);
+    setPetunjuk({ tingkat: "kosong", petak: null, panah: null });
+    setJalurSelesai(false);
+    setAktif(-1);
+    terekam.current = 0;
+    setWaktu(0);
+    setMulai(null);
+  }, []);
+
   const bukaSoal = useCallback((dipilih, entri = null) => {
     batalSolusi.current?.abort?.();
     setSolusiBerjalan(false);
@@ -90,37 +111,34 @@ export default function useSesiTekaTeki({
       : [ratingMin, ratingMax];
     const terpakai = riwayatRef.current.map((entri) => entri.id);
     const dipilih = pilihSoal(kolam, { terpakai, ratingMin: bawah, ratingMax: atas, tema: temaAktif || null });
-    if (!dipilih) { setSoal(null); setFen(""); setPesan("kosong"); return null; }
+    if (!dipilih) {
+      // Tidak ada kandidat: sesi lama wajib dibersihkan seluruhnya. Sebelumnya
+      // hanya soal/fen yang dihapus sehingga pewaktu lama terus berjalan dan
+      // progres soal lama masih dianggap sesi aktif.
+      kosongkanSesi();
+      setPesan("kosong");
+      return null;
+    }
     const entri = buatEntri(dipilih);
     setRiwayat((lama) => [...lama, entri]);
     setAktif(riwayatRef.current.length);
     bukaSoal(dipilih, entri);
     return dipilih;
-  }, [daftar, progresif, ratingMin, ratingMax, temaAktif, bukaSoal]);
+  }, [daftar, progresif, ratingMin, ratingMax, temaAktif, bukaSoal, kosongkanSesi]);
 
   // Muat sumber lalu buka soal pertama. Pergantian sumber memulai sesi baru.
   useEffect(() => {
     let hidup = true;
-    batalSolusi.current?.abort?.();
     setMemuat(true);
     // Sesi sumber lama dibersihkan SEBELUM menunggu unduhan. Kalau soal/FEN
     // lama dibiarkan, papan masih bisa dimainkan selama sumber baru dimuat dan
     // langkahnya tercatat ke soal sumber lama; pewaktu lama juga terus berjalan.
-    setSolusiBerjalan(false);
+    // Ganti sumber juga memulai riwayat baru, berbeda dari saringan kosong.
+    kosongkanSesi();
     setDaftar([]);
-    setSoal(null);
-    setFen("");
-    setIndeks(0);
-    setLangkahNyata([]);
-    setPetunjuk({ tingkat: "kosong", petak: null, panah: null });
     setPesan("");
-    setJalurSelesai(false);
     setRiwayat([]);
     riwayatRef.current = [];
-    setAktif(-1);
-    terekam.current = 0;
-    setWaktu(0);
-    setMulai(null);
     muatSoal(sumber).then((hasil) => {
       // Respons sumber yang sudah ditinggalkan tidak boleh menimpa sumber aktif.
       if (!hidup) return;
@@ -146,7 +164,9 @@ export default function useSesiTekaTeki({
   const status = riwayat[aktif]?.status ?? STATUS_SOAL.BELUM;
   // Papan boleh dimainkan selama jalur belum selesai dan soal belum benar —
   // soal yang sudah ditandai salah tetap bisa dilanjutkan (paritas En Croissant).
-  const belumSelesai = !jalurSelesai && status !== STATUS_SOAL.BENAR;
+  // Tanpa soal aktif tidak ada sesi yang "belum selesai": keadaan kosong tidak
+  // boleh menghidupkan pewaktu maupun menyatakan sesi lama masih berjalan.
+  const belumSelesai = !!soal && !jalurSelesai && status !== STATUS_SOAL.BENAR;
 
   // Nyalakan/matikan pencatatan di tengah soal. Mematikan membekukan waktu yang
   // sudah terkumpul; menyalakan melanjutkan dari angka itu. Tanpa ini, mematikan

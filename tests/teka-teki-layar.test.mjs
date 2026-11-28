@@ -871,6 +871,156 @@ test("dealing another puzzle while the clock runs resets the timer state", async
   assert.equal(interval.size, 0);
 });
 
+test("case A: requesting a puzzle with no match stops the running clock and freezes time", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["Date", "setInterval"], now: 1_000_000 });
+  const interval = pasangPenghitungInterval(tes);
+  const sesi = pasangHook(tes, { catatWaktu: true, lompatCepat: false });
+  await sesi.mount();
+  assert.equal(interval.size, 1, "pewaktu hidup saat soal berjalan");
+  await sesi.jalankan(() => jam.tick(1000));
+  assert.equal(sesi.keluaran.current.waktu, 1000);
+
+  // Filter diubah sehingga tidak ada soal yang cocok, lalu minta soal baru.
+  await sesi.ubah({ ratingMin: 2700, ratingMax: 2800 });
+  const kosong = await sesi.jalankan((s) => s.soalBaru());
+  assert.equal(kosong.pesan, "kosong");
+  assert.equal(kosong.soal, null);
+  assert.equal(interval.size, 0, "interval pewaktu lama dilepas saat sesi kosong");
+  assert.equal(kosong.waktu, 0, "waktu sesi lama tidak dibawa ke keadaan kosong");
+  await sesi.jalankan(() => jam.tick(5000));
+  assert.equal(sesi.keluaran.current.waktu, 0, "waktu tidak bertambah setelah sesi kosong");
+  assert.equal(interval.size, 0);
+  sesi.unmount();
+});
+
+test("case B: an empty result clears the old puzzle's progress and completion state", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["Date", "setInterval"], now: 1_000_000 });
+  const sesi = pasangHook(tes, { daftar: [SOAL_PANJANG], ratingMin: 600, catatWaktu: true, lompatCepat: false });
+  await sesi.mount();
+  // Mainkan satu langkah (pemain + balasan lawan) sehingga ada progres nyata.
+  await sesi.jalankan((s) => s.mainkan({ from: "d8", to: "d1" }));
+  assert.equal(sesi.keluaran.current.indeks, 2);
+  assert.equal(sesi.keluaran.current.langkahNyata.length, 2);
+  await sesi.jalankan(() => jam.tick(2000));
+  assert.equal(sesi.keluaran.current.waktu, 2000);
+
+  await sesi.ubah({ ratingMin: 2700, ratingMax: 2800 });
+  const kosong = await sesi.jalankan((s) => s.soalBaru());
+  assert.equal(kosong.pesan, "kosong");
+  assert.equal(kosong.indeks, 0, "indeks progres soal lama dibersihkan");
+  assert.deepEqual(kosong.langkahNyata, [], "jejak langkah lama tidak dianggap sesi aktif");
+  assert.deepEqual(buatJejak(kosong.soal, kosong.indeks, kosong.langkahNyata), [], "tidak ada jejak saat kosong");
+  assert.equal(kosong.belumSelesai, false, "sesi kosong tidak menyatakan sesi lama masih berjalan");
+  assert.equal(kosong.solusiBerjalan, false);
+  assert.deepEqual(kosong.petunjuk, { tingkat: "kosong", petak: null, panah: null }, "petunjuk lama dibersihkan");
+  assert.equal(kosong.aktif, -1, "tidak ada entri riwayat yang dianggap aktif");
+  assert.equal(kosong.fen, "");
+  sesi.unmount();
+});
+
+test("case C: after an empty result, widening the filter starts a normal playable session", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["Date", "setInterval"], now: 1_000_000 });
+  const interval = pasangPenghitungInterval(tes);
+  const sesi = pasangHook(tes, { catatWaktu: true, lompatCepat: false });
+  await sesi.mount();
+  await sesi.jalankan(() => jam.tick(1500));
+  await sesi.ubah({ ratingMin: 2700, ratingMax: 2800 });
+  const kosong = await sesi.jalankan((s) => s.soalBaru());
+  assert.equal(kosong.pesan, "kosong");
+  assert.equal(interval.size, 0);
+
+  // Filter dibuka lagi → soal baru harus bisa dimainkan seperti biasa.
+  await sesi.ubah({ ratingMin: 1000, ratingMax: 1500 });
+  const pulih = await sesi.jalankan((s) => s.soalBaru());
+  assert.ok(pulih.soal, "soal baru terbuka setelah kondisi kosong");
+  assert.equal(pulih.pesan, "", "pesan kosong dibersihkan");
+  assert.equal(pulih.indeks, 0);
+  assert.deepEqual(pulih.langkahNyata, []);
+  assert.equal(pulih.belumSelesai, true, "sesi baru berjalan");
+  assert.equal(pulih.aktif, pulih.riwayat.length - 1, "entri baru menjadi aktif");
+  assert.equal(interval.size, 1, "pewaktu sesi baru hidup tepat satu");
+  assert.equal(pulih.waktu, 0, "waktu mulai dari nol, bukan sisa sesi lama");
+  await sesi.jalankan(() => jam.tick(1000));
+  assert.equal(sesi.keluaran.current.waktu, 1000);
+
+  const akhir = await sesi.jalankan((s) => s.mainkan({ from: "e1", to: "e8" }));
+  assert.equal(akhir.riwayat.at(-1).status, "benar");
+  assert.equal(akhir.riwayat.at(-1).waktu, 1000);
+  assert.equal(akhir.indeks, 1);
+  assert.equal(akhir.langkahNyata.length, 1);
+  assert.equal(interval.size, 0, "pewaktu berhenti setelah soal selesai");
+  sesi.unmount();
+});
+
+test("case D: a source that is empty from the start reports it without starting a clock", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["Date", "setInterval"], now: 1_000_000 });
+  const interval = pasangPenghitungInterval(tes);
+  const sesi = pasangHook(tes, { daftar: [], catatWaktu: true });
+  const keadaan = await sesi.mount();
+  assert.equal(keadaan.memuat, false);
+  assert.equal(keadaan.soal, null);
+  assert.equal(keadaan.pesan, "gagal");
+  assert.equal(keadaan.waktu, 0);
+  assert.equal(keadaan.belumSelesai, false, "sumber kosong tidak dianggap sesi berjalan");
+  assert.equal(interval.size, 0, "tidak ada interval untuk sumber kosong");
+  await sesi.jalankan(() => jam.tick(4000));
+  assert.equal(sesi.keluaran.current.waktu, 0);
+  assert.equal(interval.size, 0);
+  // Minta soal baru pada sumber kosong tetap aman.
+  const lagi = await sesi.jalankan((s) => s.soalBaru());
+  assert.equal(lagi.soal, null);
+  assert.equal(interval.size, 0);
+  sesi.unmount();
+});
+
+test("progressive mode also cleans up when its raised range has no candidate, and recovers", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["Date", "setInterval"], now: 1_000_000 });
+  const interval = pasangPenghitungInterval(tes);
+  // Soal pertama berating 2500; rentang progresifnya [2550, 2600] tidak punya
+  // kandidat. Soal 1100 dipakai untuk membuktikan pemulihan.
+  const tinggi = modulTekaTeki.normalisasiSoal({ problemid: 1, fen: FEN_MAT, moves: "e1-e8", rating: 2500, tema: "mateIn1" }, "skakmat");
+  const rendah = modulTekaTeki.normalisasiSoal({ problemid: 2, fen: FEN_MAT2, moves: "e1-e8", rating: 1100, tema: "mateIn1" }, "skakmat");
+  const sesi = pasangHook(tes, {
+    daftar: [tinggi, rendah], progresif: true, catatWaktu: true, lompatCepat: true,
+    ratingMin: 2400, ratingMax: 2600,
+  });
+  await sesi.mount();
+  assert.equal(sesi.keluaran.current.soal.rating, 2500);
+  await sesi.jalankan(() => jam.tick(1200));
+  assert.equal(sesi.keluaran.current.waktu, 1200);
+
+  // Menyelesaikan soal memicu lompat cepat dengan dasar rating 2500 → kosong.
+  const kosong = await sesi.jalankan((s) => s.mainkan({ from: "e1", to: "e8" }));
+  assert.equal(kosong.pesan, "kosong");
+  assert.equal(kosong.soal, null);
+  assert.equal(interval.size, 0, "pewaktu mati pada rentang progresif kosong");
+  assert.equal(kosong.belumSelesai, false);
+  assert.equal(kosong.indeks, 0);
+  assert.deepEqual(kosong.langkahNyata, []);
+  await sesi.jalankan(() => jam.tick(3000));
+  assert.equal(sesi.keluaran.current.waktu, 0, "waktu tidak berjalan saat kosong");
+  // Riwayat beserta waktu soal yang sudah benar tetap tersimpan.
+  assert.equal(kosong.riwayat[0].status, "benar");
+  assert.equal(kosong.riwayat[0].waktu, 1200);
+
+  // Rentang dibuka lagi → soal baru bisa dimainkan (dasar rating null karena
+  // tidak ada soal aktif, jadi memakai rentang manual).
+  await sesi.ubah({ ratingMin: 1000, ratingMax: 1500 });
+  const pulih = await sesi.jalankan((s) => s.soalBaru());
+  assert.ok(pulih.soal, "progresif pulih dari kondisi kosong");
+  assert.equal(pulih.soal.rating, 1100);
+  assert.equal(pulih.indeks, 0);
+  assert.equal(pulih.belumSelesai, true);
+  assert.equal(interval.size, 1);
+  assert.equal(pulih.waktu, 0);
+  sesi.unmount();
+});
+
 test("feature-local prefs default like En Croissant and persist every change", async (tes) => {
   const p = pasangPrefs(tes);
   const awal = p.keluaran.current;
