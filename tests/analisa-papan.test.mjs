@@ -250,6 +250,7 @@ test("dashboard has one report button and opens recent features or saved work", 
   const renderer = renderPapan(indonesia, {
     onReport: () => calls.push("report"),
     onImpor: () => calls.push("impor"),
+    onTekaTeki: () => calls.push("teka-teki"),
     onDeteksiEngine: () => calls.push("deteksi-engine"),
     onWawasan: () => calls.push("wawasan"),
     onBukaPekerjaan: (record) => calls.push(`buka:${record.id}`),
@@ -274,14 +275,17 @@ test("dashboard has one report button and opens recent features or saved work", 
   TestRenderer.act(() => {
     byTestId(renderer, "papan-tombol-report").props.onClick();
     byTestId(renderer, "papan-tombol-impor").props.onClick();
+    byTestId(renderer, "papan-tombol-puzzle").props.onClick();
     byTestId(renderer, "papan-tombol-deteksi-engine").props.onClick();
     byTestId(renderer, "papan-tombol-wawasan").props.onClick();
     for (const id of ["draft", "done", "interrupted", "previous", "running", "fitur:wawasan"]) {
       item(renderer, id).find((node) => node.props["data-uji"] === "pekerjaan-buka").props.onClick();
     }
   });
-  assert.deepEqual(calls, ["report", "impor", "deteksi-engine", "wawasan", "buka:draft", "buka:done", "buka:interrupted", "buka:previous", "buka:running", "buka:fitur:wawasan"]);
-  for (const key of ["main", "analisa", "repertoar", "puzzle"]) {
+  assert.deepEqual(calls, ["report", "impor", "teka-teki", "deteksi-engine", "wawasan", "buka:draft", "buka:done", "buka:interrupted", "buka:previous", "buka:running", "buka:fitur:wawasan"]);
+  // Kartu teka-teki sudah hidup: tombol aktif dan membuka layar puzzle.
+  assert.ok(!byTestId(renderer, "papan-tombol-puzzle").props.disabled, "tombol puzzle tidak dinonaktifkan");
+  for (const key of ["main", "analisa", "repertoar"]) {
     assert.equal(byTestId(renderer, `papan-tombol-${key}`).props.disabled, true);
   }
   renderer.unmount();

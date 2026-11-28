@@ -83,6 +83,7 @@ test("the original Analyze context has three named exports and immutable screen 
   assert.deepEqual(asli.TAMPILAN_ANALISA, {
     PAPAN: "papan", BERMAIN: "bermain", AKUN: "akun", DETEKSI_ENGINE: "deteksi-engine",
     WAWASAN: "wawasan", PENGATURAN: "pengaturan", BASIS_DATA: "database", ENGINE: "engine", IMPOR: "impor",
+    TEKA_TEKI: "teka-teki",
   });
   assert.equal(Object.isFrozen(asli.TAMPILAN_ANALISA), true);
   assert.equal(Reflect.set(asli.TAMPILAN_ANALISA, "PAPAN", "lain"), false);

@@ -254,11 +254,9 @@ export default function LayarImpor({ onTutup, onImpor, onSebelumImpor, drafId, o
   const labelTombol = t(tipe === "online" ? "analisa.impor.ambil" : "analisa.impor.analisa");
 
   return (
-    <PanelLayar
-      judul={t("analisa.impor.judul")}
-      subjudul={t("analisa.impor.tipe")}
-      lebarMaks="max-w-[720px]"
-    >
+    <PanelLayar lebarMaks="max-w-[720px]">
+      {/* Nama fitur menjadi label tab di bilah atas; tanpa kepala penjelasan. */}
+      <h1 className="sr-only">{t("analisa.impor.judul")}</h1>
       <div className="grid grid-cols-3 gap-2">
         {TIPE.map((ti) => (
           <KartuTipe

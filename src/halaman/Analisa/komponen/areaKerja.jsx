@@ -79,10 +79,24 @@ const LayarImpor = lazy(() => import("./nav/layarImpor.jsx"));
 const LayarDeteksiEngine = lazy(() => import("./nav/layarDeteksiEngine.jsx"));
 const LayarWawasan = lazy(() => import("./nav/layarWawasan.jsx"));
 const LayarPengaturan = lazy(() => import("./nav/layarPengaturan.jsx"));
+const LayarTekaTeki = lazy(() => import("../../TekaTeki/TekaTeki.jsx"));
 
-/** Bilah tab hanya ditampilkan di beranda Papan dan papan laporan. */
+/**
+ * Bilah tab tampil di beranda Papan, papan laporan, dan fitur yang dibuka dari
+ * beranda Papan (Impor, Teka-Teki, Deteksi Engine, Wawasan). Nama fitur menjadi
+ * label tab — bukan judul penjelasan di dalam layar — sehingga pengguna cukup
+ * melihat tab fitur yang sedang dibuka. Menu bilah samping (Akun/Database/
+ * Engine/Pengaturan) bukan fitur Papan, jadi tetap tanpa bilah tab.
+ */
 function tampilkanBilahTab(tampilan) {
-  return tampilan === TAMPILAN_ANALISA.PAPAN || tampilan === TAMPILAN_ANALISA.BERMAIN;
+  return [
+    TAMPILAN_ANALISA.PAPAN,
+    TAMPILAN_ANALISA.BERMAIN,
+    TAMPILAN_ANALISA.IMPOR,
+    TAMPILAN_ANALISA.TEKA_TEKI,
+    TAMPILAN_ANALISA.DETEKSI_ENGINE,
+    TAMPILAN_ANALISA.WAWASAN,
+  ].includes(tampilan);
 }
 
 /**
@@ -597,6 +611,7 @@ function LapisanLayar({
                       <LayarPapan
                         onReport={() => { void bukaLaporanAktif(); }}
                         onImpor={keImpor}
+                        onTekaTeki={() => { if (masihAktif()) setTampilan(TAMPILAN_ANALISA.TEKA_TEKI); }}
                         onDeteksiEngine={() => { if (masihAktif()) setTampilan(TAMPILAN_ANALISA.DETEKSI_ENGINE); }}
                         onWawasan={() => { if (masihAktif()) setTampilan(TAMPILAN_ANALISA.WAWASAN); }}
                         onBukaPekerjaan={bukaRiwayat}
@@ -606,6 +621,9 @@ function LapisanLayar({
                       <LayarAkun aktif={aktif} akunTab={akunTab} onAkunDihapus={hapusAkunTerpilih} />
                     ) : null}
                     {layar === TAMPILAN_ANALISA.PENGATURAN ? <LayarPengaturan aktif={aktif} /> : null}
+                    {layar === TAMPILAN_ANALISA.TEKA_TEKI ? (
+                      <LayarTekaTeki onAnalisa={(pgn) => { if (pgn) muatPartai({ format: "pgn", string: pgn }); }} />
+                    ) : null}
                     {layar === TAMPILAN_ANALISA.DETEKSI_ENGINE ? (
                       <LayarDeteksiEngine aktif={aktif} akunTab={akunTab} onBukaAkun={() => { if (masihAktif()) keAkun(); }} />
                     ) : null}
@@ -730,8 +748,9 @@ export default function AreaKerja() {
       return;
     }
     // Saat memilih tab Papan, fokus tetap di bilah untuk navigasi panah.
-    // Tab yang membuka fitur menyembunyikan bilah, jadi fokus perlu pindah
-    // ke layar fitur meskipun perpindahannya berasal dari pemilihan tab.
+    // Menu bilah samping (tanpa bilah tab) perlu memindahkan fokus ke layar
+    // meskipun perpindahannya berasal dari pemilihan tab; fitur Papan tetap
+    // memakai bilah tab sehingga fokus mengikuti pemilihan tab seperti biasa.
     if (!papanAktif && (!bergantiTab || !tampilkanBilahTab(tampilan))) {
       lapisanRef.current?.focus({ preventScroll: true });
     } else if (papanAktif && !bergantiTab) {

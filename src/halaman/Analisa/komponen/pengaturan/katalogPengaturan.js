@@ -11,6 +11,11 @@
  * diterjemahkan oleh layar. Ikon/render tetap di layar karena berupa komponen.
  * Baris dinamis (tema papan & label penilaian) ditambahkan layar di atas
  * BARIS_STATIS karena jumlahnya mengikuti registri tema/rating.
+ *
+ * Hanya pengaturan yang bersifat UMUM (tampilan papan, bidak, perilaku,
+ * penilaian, bahasa, dokumentasi) yang terdaftar di sini. Pengaturan sifat
+ * kerja sebuah fitur — seperti preferensi latihan teka-teki — bersifat personal
+ * untuk fitur itu dan tinggal di dalam layarnya sendiri, bukan di katalog ini.
  */
 
 export const TAB_META = [

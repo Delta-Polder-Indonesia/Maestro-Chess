@@ -3,7 +3,7 @@ import test from "node:test";
 import { Chess } from "chess.js";
 import { ID_DRAF_IMPOR, buatAdapterPekerjaan, buatIdDrafImpor, buatPenyimpananPekerjaan, simpanDrafImpor, snapshotLaporanAman } from "../src/halaman/Analisa/pekerjaan.js";
 import { buatManajerLaporan } from "../src/halaman/Analisa/manajerLaporan.js";
-import { catatFitur, daftarRiwayat } from "../src/halaman/Analisa/riwayatFitur.js";
+import { catatFitur, daftarRiwayat, KUNCI_FITUR } from "../src/halaman/Analisa/riwayatFitur.js";
 import { tangkapGalatDiuji } from "./bantuGalat.mjs";
 
 function adapterMemori(records = []) {
@@ -57,6 +57,16 @@ test("feature history persists, updates recency, and retains older work without 
   assert.equal(daftarRiwayat(reopened.snapshot().daftar)[0].item.id, "fitur:impor");
   catatFitur("impor", "draf:lama", reopened, 13);
   assert.equal(daftarRiwayat(reopened.snapshot().daftar).filter((row) => row.fitur === "impor").length, 1);
+  // Teka-teki adalah fitur beranda Papan: kunjungannya dicatat dan punya label
+  // tab sendiri, sama seperti Impor/Deteksi Engine/Wawasan.
+  catatFitur("teka-teki", null, reopened, 14);
+  const barisTekaTeki = daftarRiwayat(reopened.snapshot().daftar)[0];
+  assert.equal(barisTekaTeki.item.id, "fitur:teka-teki");
+  assert.equal(barisTekaTeki.fitur, "teka-teki");
+  assert.equal(barisTekaTeki.pekerjaan, null);
+  assert.equal(KUNCI_FITUR["teka-teki"], "analisa.papan.kartu.puzzle.judul");
+  catatFitur("teka-teki", null, reopened, 15);
+  assert.equal(daftarRiwayat(reopened.snapshot().daftar).filter((row) => row.fitur === "teka-teki").length, 1);
   await reopened.tungguTulis();
 });
 

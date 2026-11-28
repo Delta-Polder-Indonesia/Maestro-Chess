@@ -21,6 +21,9 @@ function komponenTab() {
     "analisa.tabKerja.tutup": "Tutup tab {nama}",
     "analisa.papan.kartu.report.judul": "Report Analisa",
     "analisa.papan.kartu.impor.judul": "Impor Permainan",
+    "analisa.papan.kartu.puzzle.judul": "Teka-Teki",
+    "analisa.nav.deteksiEngine": "Deteksi Engine",
+    "analisa.nav.wawasan": "Wawasan",
   };
   const dependencies = {
     "lucide-react": require("lucide-react"),
@@ -68,6 +71,78 @@ test("tab bar labels each tab with its feature name, and exposes select, close a
   act(() => renderer.update(React.createElement(TabBar, { ...props, sibuk: true })));
   assert.ok(renderer.root.findAll((node) => ["tab-kerja-pilih", "tab-kerja-tutup", "tab-kerja-tambah"].includes(node.props["data-uji"])).every((node) => node.props.disabled));
   act(() => renderer.unmount());
+});
+
+test("every Papan feature tab is labelled with its own feature name, including Teka-Teki", () => {
+  const TabBar = komponenTab();
+  // Fitur yang dibuka dari beranda Papan: label tab memakai nama fitur, bukan
+  // kunci terjemahan mentah dan bukan judul laporan.
+  const fitur = [
+    ["bermain", "Report Analisa"],
+    ["impor", "Impor Permainan"],
+    ["teka-teki", "Teka-Teki"],
+    ["deteksi-engine", "Deteksi Engine"],
+    ["wawasan", "Wawasan"],
+  ];
+  const daftar = fitur.map(([tampilan], indeks) => ({ id: `tab:${indeks}`, tampilan }));
+  let renderer;
+  act(() => {
+    renderer = TestRenderer.create(React.createElement(TabBar, {
+      daftar, aktifId: "tab:2", sibuk: false, tampilanAktif: "teka-teki",
+      onPilih() {}, onTutup() {}, onTambah() {},
+    }));
+  });
+  const tombol = renderer.root.findAll((node) => node.props.role === "tab");
+  assert.deepEqual(tombol.map((node) => node.children.join("")), fitur.map(([, nama]) => nama));
+  // Tidak ada label yang bocor sebagai kunci terjemahan.
+  assert.ok(tombol.every((node) => !node.children.join("").startsWith("analisa.")));
+  assert.deepEqual(
+    renderer.root.findAllByProps({ "data-uji": "tab-kerja-item" }).map((node) => node.props["data-tab-fitur"]),
+    fitur.map(([tampilan]) => tampilan),
+  );
+  assert.equal(renderer.root.findAllByProps({ "data-uji": "tab-kerja-tutup" })[2].props["aria-label"], "Tutup tab Teka-Teki");
+  act(() => renderer.unmount());
+});
+
+test("Papan feature screens leave their name to the tab bar instead of an in-screen explanation header", () => {
+  const baca = (p) => readFileSync(new URL(p, import.meta.url), "utf8");
+  // Bilah tab tetap tampil di seluruh fitur yang dibuka dari beranda Papan.
+  const area = baca("../src/halaman/Analisa/komponen/areaKerja.jsx");
+  const aturan = area.slice(area.indexOf("function tampilkanBilahTab"), area.indexOf("\n}", area.indexOf("function tampilkanBilahTab")));
+  for (const layar of ["PAPAN", "BERMAIN", "IMPOR", "TEKA_TEKI", "DETEKSI_ENGINE", "WAWASAN"]) {
+    assert.ok(aturan.includes(`TAMPILAN_ANALISA.${layar}`), `${layar} memakai bilah tab`);
+  }
+  // Menu bilah samping bukan fitur Papan: tetap tanpa bilah tab.
+  for (const layar of ["AKUN", "BASIS_DATA", "ENGINE", "PENGATURAN"]) {
+    assert.ok(!aturan.includes(`TAMPILAN_ANALISA.${layar},`), `${layar} tanpa bilah tab`);
+  }
+  // Kepala penjelasan (judul besar + deskripsi) dihapus; nama fitur cukup di tab.
+  // Judul tetap tersedia sebagai h1 sr-only agar pembaca layar tidak kehilangan konteks.
+  const layarFitur = [
+    ["../src/halaman/TekaTeki/TekaTeki.jsx", "tekaTeki.judul"],
+    ["../src/halaman/Analisa/komponen/nav/layarImpor.jsx", "analisa.impor.judul"],
+    ["../src/halaman/Analisa/komponen/nav/layarDeteksiEngine.jsx", "analisa.antiCheat.judul"],
+    ["../src/halaman/Analisa/komponen/nav/layarWawasan.jsx", "analisa.wawasan.judul"],
+  ];
+  for (const [berkas, kunciJudul] of layarFitur) {
+    const sumber = baca(berkas);
+    assert.ok(!sumber.includes("subjudul="), `${berkas} tanpa subjudul penjelasan`);
+    assert.ok(sumber.includes(`<h1 className="sr-only">{t("${kunciJudul}")}</h1>`), `${berkas} menyimpan judul untuk pembaca layar`);
+    // Satu-satunya h1 layar adalah judul tersembunyi: tidak ada kepala terlihat.
+    assert.deepEqual(sumber.match(/<h1[^>]*>/g), ['<h1 className="sr-only">'], `${berkas} tanpa judul terlihat`);
+    assert.ok(!sumber.includes(`judul={t("${kunciJudul}")}`), `${berkas} tidak mengirim judul ke kepala panel`);
+  }
+  // Kunci deskripsi yang tidak lagi dipakai dibuang dari kedua kamus.
+  const tekaTekiId = baca("../src/lib/terjemahan/id/tekaTeki.js");
+  const tekaTekiEn = baca("../src/lib/terjemahan/en/tekaTeki.js");
+  assert.ok(!tekaTekiId.includes("deskripsi:") && !tekaTekiEn.includes("deskripsi:"), "kamus teka-teki tanpa deskripsi layar");
+  for (const bahasa of ["id", "en"]) {
+    const analisa = baca(`../src/lib/terjemahan/${bahasa}/analisa.js`);
+    const impor = analisa.slice(analisa.indexOf("\n    impor: {"), analisa.indexOf("\n    akun: {"));
+    assert.ok(!impor.includes("tipe:"), `kamus ${bahasa} tanpa subjudul tipe impor`);
+    const wawasan = analisa.slice(analisa.indexOf("\n    wawasan: {"), analisa.indexOf("\n    wawasan: {") + 400);
+    assert.ok(!wawasan.includes("deskripsi:"), `kamus ${bahasa} tanpa deskripsi wawasan`);
+  }
 });
 
 test("active tab follows the live screen before the recorded tab feature catches up", () => {

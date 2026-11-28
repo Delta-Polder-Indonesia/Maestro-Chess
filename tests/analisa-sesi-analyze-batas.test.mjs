@@ -201,6 +201,7 @@ test("context entry and legacy context load only the implementation and React, w
 test("provider entry and old provider load only the documented Board/Import/Pekerjaan closure, not the session barrel", () => {
   const internal = [
     "src/lib/i18n.jsx", "src/lib/terjemahan/en/analisa.js", "src/lib/terjemahan/id/analisa.js",
+    "src/lib/terjemahan/en/tekaTeki.js", "src/lib/terjemahan/id/tekaTeki.js",
     "src/modul/pekerjaan/index.js", "src/modul/pekerjaan/manajerLaporan.js", "src/modul/pekerjaan/pekerjaan.js",
     "src/modul/pekerjaan/riwayatFitur.js", "src/modul/pekerjaan/usePekerjaan.js",
     providerImplementasi, "src/modul/sesi/BoardProvider.jsx", "src/modul/sesi/ImportProvider.jsx",

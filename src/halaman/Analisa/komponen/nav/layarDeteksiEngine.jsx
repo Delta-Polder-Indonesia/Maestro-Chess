@@ -321,7 +321,9 @@ export default function LayarDeteksiEngine({ onBukaAkun, akunTab, aktif = true }
   }
 
   return (
-    <PanelLayar judul={t("analisa.antiCheat.judul")}>
+    <PanelLayar>
+      {/* Nama fitur menjadi label tab di bilah atas; tanpa kepala penjelasan. */}
+      <h1 className="sr-only">{t("analisa.antiCheat.judul")}</h1>
       <div className="-mr-3 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] pr-3 sm:-mr-5 sm:gap-4 sm:pr-5 lg:flex-row lg:overflow-hidden">
         <div className="flex w-full shrink-0 flex-col lg:min-h-0 lg:flex-1">
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[0.4rem] border border-border bg-backgroundBox">
