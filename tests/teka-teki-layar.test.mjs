@@ -15,6 +15,7 @@ import { Chess } from "chess.js";
 import * as modulTekaTeki from "../src/modul/tekaTeki/index.js";
 import buatJejak from "../src/halaman/TekaTeki/logika/jejakLangkah.js";
 import * as tandaBantu from "../src/halaman/TekaTeki/logika/tandaBantu.js";
+import * as animasiBidak from "../src/halaman/TekaTeki/animasiBidak.js";
 import { tekaTeki as kamusId } from "../src/lib/terjemahan/id/tekaTeki.js";
 import { tekaTeki as kamusEn } from "../src/lib/terjemahan/en/tekaTeki.js";
 
@@ -305,6 +306,174 @@ function pasangLayar(tes, { daftar = DAFTAR_UJI, prefs = {}, muat } = {}) {
     unmount() { act(() => renderer.unmount()); },
   };
 }
+
+let papanPalsuAktif = 0;
+let documentPapanAsli;
+function documentPapanPalsu() {
+  if (papanPalsuAktif === 0) {
+    documentPapanAsli = globalThis.document;
+    const petaTitik = new Map();
+    globalThis.document = {
+      petaTitik,
+      elementFromPoint(x, y) {
+        const sq = petaTitik.get(`${x},${y}`);
+        return sq ? { closest: () => ({ getAttribute: () => sq }) } : null;
+      },
+      // Papan memasang pendengar global pointer/klik; uji memanggil handler
+      // lewat props, jadi pendengar cukup dicatat tanpa efek.
+      addEventListener() {}, removeEventListener() {},
+    };
+  }
+  return globalThis.document;
+}
+
+// Pasang papan interaktif untuk uji pointer. `cariPetak` memakai
+// document.elementFromPoint, yang tidak ada di react-test-renderer, jadi uji ini
+// memasang peta koordinat→petak terkendali. Ini uji unit handler, BUKAN uji
+// browser: hit-testing nyata tidak diverifikasi di sini.
+function pasangPapanInteraktif(tes, { fen = new Chess().fen(), ...props } = {}) {
+  const panggilan = { panah: [], petak: [], hapus: 0, selesaiSeret: [], batal: 0 };
+  const Komponen = kompilasi("../src/halaman/TekaTeki/komponen/papanInteraktif.jsx", {
+    "../../Analisa/komponen/svg/piece.jsx": { default: () => React.createElement("span") },
+    "../../Analisa/komponen/pengaturan/setBidak.js": { urlBidak: () => "" },
+    "../../../modul/sesi/preferensi.js": { boardThemes: [{ white: "#ebecd0", black: "#779556" }] },
+    "../animasiBidak.js": animasiBidak,
+    "../../../lib/i18n.jsx": { useI18n: () => ({ t: (k) => k }) },
+  }).default;
+  const { petaTitik } = documentPapanPalsu();
+  let renderer;
+  act(() => {
+    renderer = TestRenderer.create(React.createElement(Komponen, {
+      fen, orientasi: "w",
+      onTandaPanah: (from, to, warna) => panggilan.panah.push({ from, to, warna }),
+      onTandaPetak: (petak, warna) => panggilan.petak.push({ petak, warna }),
+      onHapusTanda: () => { panggilan.hapus++; },
+      onSelesaiSeret: (from, to, klikUlang) => panggilan.selesaiSeret.push({ from, to, klikUlang }),
+      onBatalSeret: () => { panggilan.batal++; },
+      ...props,
+    }));
+  });
+  // Satu document palsu dipakai bersama oleh semua papan dalam satu uji;
+  // dipulihkan hanya setelah papan terakhir dilepas agar cleanup tidak gagal.
+  papanPalsuAktif++;
+  tes.after(() => {
+    act(() => renderer.unmount());
+    papanPalsuAktif--;
+    if (papanPalsuAktif === 0) {
+      if (documentPapanAsli === undefined) delete globalThis.document;
+      else globalThis.document = documentPapanAsli;
+    }
+  });
+  const akar = () => renderer.root.findAll((n) => typeof n.props?.onPointerMove === "function")[0];
+  const petakEl = (sq) => renderer.root.findByProps({ "data-petak": sq });
+  let titik = 0;
+  return {
+    renderer,
+    panggilan,
+    // Tekan tombol pada petak; kembalikan koordinat untuk gerak/lepas.
+    tekan(sq, { button = 2, shiftKey = false, ctrlKey = false, altKey = false, metaKey = false } = {}) {
+      titik += 10;
+      const x = titik; const y = titik;
+      petaTitik.set(`${x},${y}`, sq);
+      const peristiwa = {
+        button, shiftKey, ctrlKey, altKey, metaKey, pointerId: 1, buttons: button === 2 ? 2 : 1,
+        clientX: x, clientY: y, pointerType: "mouse", preventDefault() {},
+      };
+      act(() => petakEl(sq).props.onPointerDown(peristiwa));
+      return { x, y };
+    },
+    arahkan(x, y, sq) { if (sq) petaTitik.set(`${x},${y}`, sq); },
+    gerak(x, y) { act(() => akar().props.onPointerMove({ clientX: x, clientY: y, buttons: 2, pointerId: 1 })); },
+    lepas(x, y, button = 2) { act(() => akar().props.onPointerUp({ clientX: x, clientY: y, button, pointerId: 1 })); },
+    batal() { act(() => akar().props.onPointerCancel({ pointerId: 1 })); },
+    panahSementara() {
+      const svg = renderer.root.findAll((n) => n.props?.className === "arrow");
+      return svg.map((n) => n.props.fill);
+    },
+  };
+}
+
+test("right-drag arrows keep the modifier colour end to end (default, Shift, Ctrl, Alt)", (tes) => {
+  // Konvensi proyek: Shift=merah, Ctrl/Cmd=hijau, Alt=biru, tanpa modifier=bawaan.
+  const kasus = [
+    [{}, "bawaan"],
+    [{ shiftKey: true }, "merah"],
+    [{ ctrlKey: true }, "hijau"],
+    [{ metaKey: true }, "hijau"],
+    [{ altKey: true }, "biru"],
+  ];
+  for (const [modifier, harapan] of kasus) {
+    const papan = pasangPapanInteraktif(tes);
+    const { x, y } = papan.tekan("e2", modifier);
+    assert.equal(papan.panahSementara().length, 0, "panah nol-panjang belum digambar");
+    papan.arahkan(x + 1, y + 1, "e4");
+    papan.gerak(x + 1, y + 1);
+    assert.equal(papan.panahSementara().length, 1, "panah sementara tampil saat pointer pindah");
+    const sementara = papan.panahSementara()[0];
+    // Pointer pindah lagi: warna tetap, tidak kembali ke bawaan.
+    papan.arahkan(x + 2, y + 2, "e5");
+    papan.gerak(x + 2, y + 2);
+    assert.deepEqual(papan.panahSementara(), [sementara], "warna panah sementara konsisten saat pointer pindah");
+    papan.lepas(x + 2, y + 2);
+    assert.deepEqual(papan.panggilan.panah, [{ from: "e2", to: "e5", warna: harapan }],
+      `warna modifier ${JSON.stringify(modifier)} diteruskan ke panah permanen`);
+    assert.equal(papan.panahSementara().length, 0, "panah sementara dibersihkan setelah lepas");
+
+    // Warna panah sementara harus sama dengan panah permanen berwarna itu.
+    const pembanding = pasangPapanInteraktif(tes, { tanda: { panah: [{ from: "e2", to: "e5", warna: harapan }], petak: {} } });
+    const permanen = pembanding.renderer.root.findByProps({ "data-arrow": "e2e5" }).props.fill;
+    assert.equal(sementara, permanen, "panah sementara dan permanen memakai warna yang sama");
+  }
+});
+
+test("right-click without a valid target marks the square with the modifier colour", (tes) => {
+  for (const [modifier, harapan] of [[{}, "bawaan"], [{ shiftKey: true }, "merah"], [{ altKey: true }, "biru"]]) {
+    const papan = pasangPapanInteraktif(tes);
+    const { x, y } = papan.tekan("d4", modifier);
+    papan.lepas(x, y); // lepas di petak yang sama → tanda petak, bukan panah
+    assert.deepEqual(papan.panggilan.panah, [], "tidak ada panah tanpa tujuan berbeda");
+    assert.deepEqual(papan.panggilan.petak, [{ petak: "d4", warna: harapan }]);
+  }
+  // Lepas di luar papan: tidak ada panah maupun tanda petak.
+  const luar = pasangPapanInteraktif(tes);
+  const titik = luar.tekan("d4");
+  luar.lepas(titik.x + 99, titik.y + 99);
+  assert.deepEqual(luar.panggilan.panah, []);
+  assert.deepEqual(luar.panggilan.petak, []);
+});
+
+test("cancelling an arrow leaves no permanent mark and no temporary arrow", (tes) => {
+  const papan = pasangPapanInteraktif(tes);
+  const { x, y } = papan.tekan("e2", { shiftKey: true });
+  papan.arahkan(x + 1, y + 1, "e4");
+  papan.gerak(x + 1, y + 1);
+  assert.equal(papan.panahSementara().length, 1);
+  papan.batal();
+  assert.equal(papan.panahSementara().length, 0, "panah sementara hilang saat batal");
+  assert.deepEqual(papan.panggilan.panah, [], "batal tidak menambah panah permanen");
+  assert.deepEqual(papan.panggilan.petak, []);
+  // Setelah batal, menggambar panah baru tetap berfungsi dengan warnanya.
+  const lagi = papan.tekan("g1", { altKey: true });
+  papan.arahkan(lagi.x + 1, lagi.y + 1, "f3");
+  papan.gerak(lagi.x + 1, lagi.y + 1);
+  papan.lepas(lagi.x + 1, lagi.y + 1);
+  assert.deepEqual(papan.panggilan.panah, [{ from: "g1", to: "f3", warna: "biru" }]);
+});
+
+test("permanent arrows render with their stored colour, and left click clears all marks", (tes) => {
+  const papan = pasangPapanInteraktif(tes, {
+    tanda: { panah: [{ from: "e2", to: "e4", warna: "merah" }, { from: "g1", to: "f3", warna: "biru" }], petak: { d4: "hijau" } },
+  });
+  const panah = papan.renderer.root.findAll((n) => typeof n.props?.["data-arrow"] === "string");
+  assert.deepEqual(panah.map((n) => n.props["data-arrow"]), ["e2e4", "g1f3"]);
+  // Warna permanen dibaca dari state tanda, bukan dipaksa bawaan.
+  assert.notEqual(panah[0].props.fill, panah[1].props.fill, "dua warna berbeda dirender berbeda");
+  assert.ok(papan.renderer.root.findAllByProps({ "data-tanda-petak": "hijau" }).length === 1);
+  act(() => papan.renderer.root.findByProps({ "data-petak": "e2" }).props.onPointerDown({
+    button: 0, pointerId: 1, buttons: 1, clientX: 0, clientY: 0, pointerType: "mouse", preventDefault() {},
+  }));
+  assert.equal(papan.panggilan.hapus, 1, "klik kiri meminta hapus semua tanda");
+});
 
 test("board highlight follows the move actually played, not the recorded solution", async (tes) => {
   const soal = modulTekaTeki.normalisasiSoal({

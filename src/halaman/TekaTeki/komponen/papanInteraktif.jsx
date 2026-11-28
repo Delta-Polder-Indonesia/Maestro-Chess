@@ -415,7 +415,9 @@ export default function PapanInteraktif({
       e.preventDefault();
       const warna = warnaDariPeristiwa(e);
       kananRef.current = { petak: petakAwal, warna };
-      setPanahSementara({ from: petakAwal, to: petakAwal, warna: "bawaan" });
+      // Panah sementara memakai warna modifier yang sama dengan panah permanen,
+      // supaya warna tidak berubah saat tombol dilepas.
+      setPanahSementara({ from: petakAwal, to: petakAwal, warna });
       try { akar.current?.setPointerCapture(e.pointerId); } catch { /* abaikan */ }
       return;
     }
@@ -467,7 +469,9 @@ export default function PapanInteraktif({
       if (!kananRef.current) return;
       const { petak: asal, warna } = kananRef.current;
       const tujuan = cariPetak(e.clientX, e.clientY);
-      if (tujuan && tujuan !== asal) onTandaPanah?.(asal, tujuan, "bawaan");
+      // Warna modifier yang disimpan saat tombol ditekan wajib diteruskan;
+      // sebelumnya selalu "bawaan" sehingga Shift/Ctrl/Alt tidak berpengaruh.
+      if (tujuan && tujuan !== asal) onTandaPanah?.(asal, tujuan, warna);
       else if (tujuan) onTandaPetak?.(asal, warna);
       kananRef.current = null;
       setPanahSementara(null);
