@@ -23,7 +23,10 @@ export default function buatJejak(soal, indeks, langkahNyata = null) {
       const langkah = jalur[i];
       const nomor = papan.moveNumber();
       const hasil = papan.move({ from: langkah.from, to: langkah.to, promotion: langkah.promotion });
-      jejak.push({ fen: papan.fen(), san: hasil.san, warna: hasil.color, nomor });
+      // from/to ikut dibawa supaya sorotan langkah terakhir di papan mengambil
+      // langkah yang benar-benar dimainkan dari jejak ini — bukan dari solusi soal,
+      // yang bisa berbeda bila pemain menang lewat jalur alternatif.
+      jejak.push({ fen: papan.fen(), san: hasil.san, warna: hasil.color, nomor, from: hasil.from, to: hasil.to });
     }
   } catch {
     // Langkah tidak sah menghentikan jejak pada posisi terakhir yang sah.

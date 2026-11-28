@@ -52,10 +52,12 @@ export default function TekaTeki({ onAnalisa }) {
   const meninjau = tinjau !== null && tampilIndex < lastIndex;
   const fenTampil = meninjau ? (jejak[tampilIndex]?.fen ?? sesi.fen) : sesi.fen;
   const terkunci = meninjau || !sesi.belumSelesai || sesi.solusiBerjalan;
-  // Langkah terakhir yang menghasilkan posisi tampil → sorotan + asal luncuran.
-  const idxTampil = meninjau ? tampilIndex : sesi.indeks;
-  const langkahTerakhir = sesi.soal?.langkah?.[idxTampil - 1];
-  const langkahAkhir = langkahTerakhir ? { from: langkahTerakhir.from, to: langkahTerakhir.to } : null;
+  // Langkah yang menghasilkan posisi tampil → sorotan + asal luncuran. Diambil
+  // dari jejak yang sama dengan daftar langkah dan FEN tampil, jadi sorotan
+  // selalu cocok dengan papan — termasuk saat pemain menang lewat jalur
+  // alternatif (solusi soal menyebut langkah lain) dan saat meninjau riwayat.
+  const entriTampil = jejak[tampilIndex];
+  const langkahAkhir = entriTampil?.from ? { from: entriTampil.from, to: entriTampil.to } : null;
 
   function navigasi(arah) {
     let baru;

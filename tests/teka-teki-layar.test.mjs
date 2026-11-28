@@ -254,6 +254,149 @@ test("clearing the session empties history and deals a fresh puzzle; history ent
   sesi.unmount();
 });
 
+// Pasang layar Teka-Teki utuh: hook sesi asli (sumber data di-stub) + papan dan
+// panel di-stub agar props yang diterima layar bisa diperiksa. Dipakai uji
+// sorotan langkah, penguncian saat memuat, dan pergantian sumber.
+function pasangLayar(tes, { daftar = DAFTAR_UJI, prefs = {}, muat } = {}) {
+  const hook = kompilasi("../src/halaman/TekaTeki/logika/useSesiTekaTeki.js", {
+    "../../../modul/tekaTeki/index.js": {
+      ...modulTekaTeki,
+      muatSoal: muat ?? (async () => daftar),
+    },
+  }).default;
+  let papanProps = null;
+  let panelProps = null;
+  let riwayatProps = null;
+  const PapanStub = (props) => { papanProps = props; return React.createElement("div", { "data-papan": true }); };
+  const PanelStub = (props) => { panelProps = props; return React.createElement("div", { "data-panel": true }); };
+  const RiwayatStub = (props) => { riwayatProps = props; return React.createElement("div", { "data-riwayat": true }); };
+  const Komponen = kompilasi("../src/halaman/TekaTeki/TekaTeki.jsx", {
+    "../../lib/i18n.jsx": { useI18n: () => ({ t: (k) => k }) },
+    "../Analisa/komponen/nav/PanelLayar.jsx": { default: (p) => React.createElement("div", null, p.children) },
+    "./logika/useSesiTekaTeki.js": { default: hook },
+    "./logika/usePreferensiTekaTeki.js": {
+      default: () => ({
+        ratingMin: 1000, ratingMax: 1500, tema: "", progresif: false,
+        sembunyiRating: false, lompatCepat: false, catatWaktu: false, ubah() {}, ...prefs,
+      }),
+    },
+    "./logika/useUkuranPapan.js": { default: () => 320 },
+    "./logika/pgnDariSoal.js": { default: () => "" },
+    "./logika/jejakLangkah.js": { default: buatJejak },
+    "./komponen/papanTekaTeki.jsx": { default: PapanStub },
+    "./komponen/panelTekaTeki.jsx": { default: PanelStub },
+    "./komponen/riwayatLangkah.jsx": { default: RiwayatStub },
+  }).default;
+  let renderer;
+  return {
+    async mount() {
+      await act(async () => { renderer = TestRenderer.create(React.createElement(Komponen)); });
+      return this;
+    },
+    async jalankan(fn) {
+      await act(async () => { await fn({ papan: papanProps, panel: panelProps, riwayat: riwayatProps }); });
+      return this;
+    },
+    papan: () => papanProps,
+    panel: () => panelProps,
+    riwayat: () => riwayatProps,
+    sesi: () => panelProps?.sesi,
+    teks() { return JSON.stringify(renderer.toJSON()); },
+    unmount() { act(() => renderer.unmount()); },
+  };
+}
+
+test("board highlight follows the move actually played, not the recorded solution", async (tes) => {
+  const soal = modulTekaTeki.normalisasiSoal({
+    problemid: 77, fen: "6k1/5ppp/8/8/8/8/5PPP/3RR1K1 w - - 0 1",
+    moves: "e1-e2;g7-g6;d1-d8", rating: 1200, tema: "mateIn1",
+  }, "skakmat");
+  const layar = await pasangLayar(tes, { daftar: [soal] }).mount();
+  tes.after(() => layar.unmount());
+  assert.equal(layar.papan().langkahAkhir, null, "belum ada langkah → tidak ada sorotan");
+
+  // Jalur alternatif yang langsung skakmat: solusi menyebut Re2, pemain Rd8#.
+  await layar.jalankan(({ papan }) => papan.onLangkah({ from: "d1", to: "d8" }));
+  assert.deepEqual(layar.papan().langkahAkhir, { from: "d1", to: "d8" },
+    "sorotan menunjuk langkah nyata, bukan langkah solusi");
+  assert.ok(new Chess(layar.papan().fen).isCheckmate());
+  assert.equal(layar.sesi().langkahNyata.length, 1);
+});
+
+test("board highlight stays correct on the normal line and while reviewing history", async (tes) => {
+  // SOAL_PANJANG berating 600 → rentang prefs harus mencakupnya.
+  const layar = await pasangLayar(tes, { daftar: [SOAL_PANJANG], prefs: { ratingMin: 600 } }).mount();
+  tes.after(() => layar.unmount());
+  // Jalur normal: Hitam Rd1+, Putih Qe1, Hitam Rxe1#.
+  await layar.jalankan(({ papan }) => papan.onLangkah({ from: "d8", to: "d1" }));
+  assert.deepEqual(layar.papan().langkahAkhir, { from: "c3", to: "e1" }, "balasan lawan jadi sorotan terakhir");
+  assert.equal(layar.sesi().indeks, 2);
+
+  await layar.jalankan(({ papan }) => papan.onLangkah({ from: "d1", to: "e1" }));
+  assert.deepEqual(layar.papan().langkahAkhir, { from: "d1", to: "e1" });
+  const fenLive = layar.papan().fen;
+  assert.ok(new Chess(fenLive).isCheckmate());
+
+  // Tinjau langkah pertama: FEN dan sorotan ikut mundur bersama.
+  await layar.jalankan(({ riwayat }) => riwayat.onTinjau(1));
+  assert.deepEqual(layar.papan().langkahAkhir, { from: "d8", to: "d1" }, "sorotan langkah yang ditinjau");
+  assert.equal(layar.papan().terkunci, true, "papan terkunci saat meninjau");
+  assert.notEqual(layar.papan().fen, fenLive, "FEN tinjauan berbeda dari live");
+  assert.equal(new Chess(layar.papan().fen).isCheckmate(), false);
+
+  // Kembali ke posisi terbaru: sorotan dan FEN pulih seperti semula.
+  await layar.jalankan(({ riwayat }) => riwayat.onNavigasi("akhir"));
+  assert.deepEqual(layar.papan().langkahAkhir, { from: "d1", to: "e1" });
+  assert.equal(layar.papan().fen, fenLive);
+
+  // Navigasi bertahap mundur lalu maju tetap konsisten dengan jejak.
+  await layar.jalankan(({ riwayat }) => riwayat.onNavigasi("awal"));
+  assert.equal(layar.papan().langkahAkhir, null, "posisi awal tidak punya sorotan");
+  await layar.jalankan(({ riwayat }) => riwayat.onNavigasi("berikut"));
+  assert.deepEqual(layar.papan().langkahAkhir, { from: "d8", to: "d1" });
+  await layar.jalankan(({ riwayat }) => riwayat.onNavigasi("berikut"));
+  assert.deepEqual(layar.papan().langkahAkhir, { from: "c3", to: "e1" });
+});
+
+test("an alternative move that does not end the game leaves the highlight untouched", async (tes) => {
+  const soal = modulTekaTeki.normalisasiSoal({
+    problemid: 79, fen: "6k1/5ppp/8/8/8/8/5PPP/3RR1K1 w - - 0 1",
+    moves: "e1-e2;g7-g6;d1-d8", rating: 1200, tema: "mateIn1",
+  }, "skakmat");
+  const layar = await pasangLayar(tes, { daftar: [soal] }).mount();
+  tes.after(() => layar.unmount());
+  // Langkah solusi dulu supaya ada sorotan yang bisa dibandingkan.
+  await layar.jalankan(({ papan }) => papan.onLangkah({ from: "e1", to: "e2" }));
+  const sorotan = layar.papan().langkahAkhir;
+  const fen = layar.papan().fen;
+  assert.deepEqual(sorotan, { from: "g7", to: "g6" }, "balasan lawan tersorot");
+
+  // Alternatif yang bukan skakmat dinilai salah: posisi & sorotan tidak maju.
+  await layar.jalankan(({ papan }) => papan.onLangkah({ from: "d1", to: "d5" }));
+  assert.equal(layar.sesi().status, "salah");
+  assert.deepEqual(layar.papan().langkahAkhir, sorotan, "sorotan tidak berubah");
+  assert.equal(layar.papan().fen, fen, "posisi tidak maju");
+  assert.equal(layar.sesi().langkahNyata.length, 2, "tidak ada langkah palsu tercatat");
+});
+
+test("viewing the solution after an alternative line restores the recorded line and its highlight", async (tes) => {
+  const soal = modulTekaTeki.normalisasiSoal({
+    problemid: 78, fen: "6k1/5ppp/8/8/8/8/5PPP/3RR1K1 w - - 0 1",
+    moves: "e1-e2;g7-g6;d1-d8", rating: 1200, tema: "mateIn1",
+  }, "skakmat");
+  const layar = await pasangLayar(tes, { daftar: [soal] }).mount();
+  tes.after(() => layar.unmount());
+  await layar.jalankan(({ papan }) => papan.onLangkah({ from: "d1", to: "d8" }));
+  assert.deepEqual(layar.papan().langkahAkhir, { from: "d1", to: "d8" });
+
+  // Lihat Solusi memutar jalur tercatat dari awal: sorotan mengikuti jalur itu.
+  await layar.jalankan(({ panel }) => panel.sesi.lihatSolusi());
+  assert.deepEqual(layar.sesi().langkahNyata, soal.langkah, "jalur solusi asli diputar ulang");
+  assert.deepEqual(layar.papan().langkahAkhir, { from: "d1", to: "d8" }, "langkah terakhir jalur solusi");
+  assert.equal(layar.sesi().indeks, 3);
+  assert.equal(layar.papan().fen, layar.sesi().fen);
+});
+
 test("an alternative mate ends the session cleanly: no illegal reply, index and trace stay honest", async (tes) => {
   // Jalur solusi tercatat 3 langkah, tetapi Rd8# langsung skakmat di langkah 1.
   const soal = modulTekaTeki.normalisasiSoal({
