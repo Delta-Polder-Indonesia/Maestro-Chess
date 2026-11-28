@@ -80,6 +80,9 @@ function ConfigContextProvider(props) {
     return nilai === "wdl" ? "wdl" : "cp";
   });
   const [tablebase, setTablebase] = useState(() => bacaBoolean("tablebase", false));
+  // Preferensi latihan teka-teki TIDAK tinggal di sini: ia bersifat personal
+  // untuk fitur teka-teki (sifat kerja sesi), bukan pengaturan umum aplikasi,
+  // sehingga disimpan dan disunting di dalam layar teka-teki itu sendiri.
   // Ukuran font akar dan warna aksen diterapkan ke root dokumen seperti
   // App.tsx En Croissant (fontSize %) dan Mantine primaryColor. Hanya selama
   // provider Analisa terpasang; cleanup memulihkan tampilan semula sehingga

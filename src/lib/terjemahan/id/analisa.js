@@ -344,7 +344,6 @@ export const analisa = {
     },
     impor: {
       judul: "Impor permainan",
-      tipe: "Tipe impor",
       pgn: "Tempel PGN",
       fen: "Tempel FEN",
       online: "Online",
@@ -657,7 +656,6 @@ export const analisa = {
 },
     wawasan: {
       judul: "Wawasan Profil",
-      deskripsi: "Ringkasan performa dari partai yang tersimpan: statistik kemenangan, tren rating, pembukaan favorit, dan akurasi taktikal.",
       pilihAkun: "Pilih akun",
       pilihAkunPetunjuk: "Pilih akun dari daftar untuk melihat wawasan performa.",
       memuat: "Memuat partai…",

@@ -206,6 +206,7 @@ test("the provider entry and legacy provider load only the documented closure, n
   const internal = [
     "src/modul/sesi/analyzeKonteks.js", "src/lib/i18n.jsx",
     "src/lib/terjemahan/en/analisa.js", "src/lib/terjemahan/id/analisa.js",
+    "src/lib/terjemahan/en/tekaTeki.js", "src/lib/terjemahan/id/tekaTeki.js",
     providerImplementasi, pathImplementasi, "src/modul/sesi/boardThemes.js", "src/modul/sesi/configKonteks.js",
     "src/modul/sesi/penyimpanan.js", "src/modul/sesi/preferensi.js",
   ];

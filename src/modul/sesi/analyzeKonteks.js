@@ -15,6 +15,7 @@ export const TAMPILAN_ANALISA = Object.freeze({
   BASIS_DATA: "database",
   ENGINE: "engine",
   IMPOR: "impor",
+  TEKA_TEKI: "teka-teki",
 });
 
 const PEMAIN_KOSONG = Object.freeze([

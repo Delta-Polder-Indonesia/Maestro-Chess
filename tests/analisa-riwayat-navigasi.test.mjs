@@ -64,6 +64,7 @@ function siapkanAreaKerja(store, navigasi) {
   const pembungkus = ({ children }) => React.createElement(React.Fragment, null, children);
   const layarPapan = (props) => { navigasi.papan = props; return null; };
   const layarImpor = (props) => { navigasi.impor = props; return null; };
+  const layarTekaTeki = (props) => { navigasi.tekaTeki = props; return null; };
   function GameMock() {
     navigasi.gameRenders = (navigasi.gameRenders ?? 0) + 1;
     React.useEffect(() => {
@@ -121,6 +122,7 @@ function siapkanAreaKerja(store, navigasi) {
     "../../../modul/sesi/titipan.js": { ambilPgnTitipan: () => "" },
     "./nav/layarPapan.jsx": { default: layarPapan },
     "./nav/layarImpor.jsx": { default: layarImpor },
+    "../../TekaTeki/TekaTeki.jsx": { default: layarTekaTeki },
     "./nav/layarDatabase.jsx": { default: LayarDatabaseMock },
     ...layar,
   };
@@ -298,7 +300,7 @@ test("opened screens enter history and their rows return to the corresponding fe
   await act(async () => { renderer.unmount(); await store.tungguTulis(); });
 });
 
-test("the workspace tab bar appears only on board screens without deleting tab data", async (t) => {
+test("the workspace tab bar stays on every Papan feature and only hides for sidebar menus, without deleting tab data", async (t) => {
   pasangDocument(t);
   const nilai = pasangSession(t);
   const store = buatPenyimpananPekerjaan(adapterMemori());
@@ -324,7 +326,21 @@ test("the workspace tab bar appears only on board screens without deleting tab d
     assert.equal(konten().props["aria-labelledby"], terlihat ? `tab-kerja-${tab2}` : undefined);
   }
   periksaBilah(true);
-  for (const fitur of ["akun", "database", "impor", "deteksi-engine", "wawasan", "pengaturan"]) {
+  // Fitur yang dibuka dari beranda Papan tetap memakai bilah tab: nama fitur
+  // menjadi label tab, bukan kepala penjelasan di dalam layar.
+  for (const fitur of ["impor", "teka-teki", "deteksi-engine", "wawasan"]) {
+    await act(async () => { navigasi.setTampilan(fitur); await flush(); });
+    periksaBilah(true);
+    assert.equal(navigasi.tabBar.tampilanAktif, fitur);
+    assert.equal(navigasi.tab.aktifId, tab2);
+    assert.deepEqual(navigasi.tab.daftar[0], pertama);
+    assert.equal(navigasi.tab.daftar[1].laporanId, "laporan:aktif");
+    assert.equal(navigasi.tab.daftar[1].drafId, "draf:2");
+    await act(async () => { navigasi.setTampilan("papan"); await flush(); });
+    periksaBilah(true);
+  }
+  // Menu bilah samping bukan fitur Papan: tanpa bilah tab, fokus masuk layar.
+  for (const fitur of ["akun", "database", "engine", "pengaturan"]) {
     await act(async () => { navigasi.setTampilan(fitur); await flush(); });
     periksaBilah(false);
     assert.equal(navigasi.tab.aktifId, tab2);
@@ -341,6 +357,40 @@ test("the workspace tab bar appears only on board screens without deleting tab d
   assert.deepEqual(tersimpan.daftar[0], pertama);
   assert.equal(tersimpan.daftar[1].drafId, "draf:2");
   assert.equal(tersimpan.daftar[1].laporanId, "laporan:aktif");
+  await act(async () => { renderer.unmount(); await store.tungguTulis(); });
+});
+
+test("opening a feature from its Papan card keeps the tab bar and names the tab after the feature", async (t) => {
+  pasangDocument(t);
+  pasangSession(t);
+  const store = buatPenyimpananPekerjaan(adapterMemori());
+  await store.init();
+  const navigasi = {};
+  let renderer;
+  await act(async () => { renderer = TestRenderer.create(React.createElement(siapkanAreaKerja(store, navigasi))); await flush(); });
+  const idTab = navigasi.tab.aktifId;
+  const bilah = () => renderer.root.findAllByProps({ "data-uji": "tab-kerja-bar-test" });
+  // Kartu beranda Papan membuka fitur di tab yang sama; bilah tab tidak hilang.
+  for (const [pembuka, fitur] of [
+    ["onTekaTeki", "teka-teki"],
+    ["onDeteksiEngine", "deteksi-engine"],
+    ["onWawasan", "wawasan"],
+    ["onImpor", "impor"],
+  ]) {
+    await act(async () => { navigasi.setTampilan("papan"); await flush(); });
+    assert.equal(bilah().length, 1);
+    await act(async () => { navigasi.papan[pembuka](); await flush(); });
+    assert.equal(navigasi.tampilan, fitur);
+    assert.equal(bilah().length, 1, `bilah tab tetap tampil saat ${fitur} dibuka`);
+    assert.equal(navigasi.tabBar.tampilanAktif, fitur);
+    assert.equal(navigasi.tabBar.aktifId, idTab);
+    assert.equal(navigasi.tab.aktifId, idTab);
+    // Layar fitur dirender di dalam panel tab, bukan menggantikan area kerja.
+    const panel = renderer.root.findByProps({ "data-layar": fitur });
+    assert.equal(panel.props.hidden, false);
+    assert.equal(renderer.root.findByProps({ id: "konten-tab-kerja" }).props.role, "tabpanel");
+  }
+  assert.equal(typeof navigasi.tekaTeki.onAnalisa, "function", "layar teka-teki terpasang dengan jalur analisa");
   await act(async () => { renderer.unmount(); await store.tungguTulis(); });
 });
 
@@ -417,7 +467,9 @@ test("switching import tabs never changes the other tab's draft pointer", async 
   await act(async () => { await navigasi.tab.bukaImpor(); await flush(); });
   const idDraf1 = navigasi.tab.daftar[0].drafId;
   assert.equal(navigasi.impor.drafId, idDraf1);
-  assert.equal(navigasi.tabBar, null);
+  // Impor tetap menampilkan bilah tab dengan label fiturnya sendiri.
+  assert.ok(navigasi.tabBar);
+  assert.equal(navigasi.tabBar.tampilanAktif, "impor");
   simpanDrafImpor({ tipe: "pgn", pgn: "draft first" }, idDraf1, store);
   await act(async () => { navigasi.setTampilan("papan"); await flush(); });
   await act(async () => { navigasi.tabBar.onTambah(); await flush(); });

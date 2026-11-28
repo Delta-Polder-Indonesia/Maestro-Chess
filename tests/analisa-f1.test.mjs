@@ -255,8 +255,13 @@ test("FormatEval falls back to mate text even in WDL mode (no WDL for mate)", as
 
 /* ------------------------------ Katalog & i18n & CSP ------------------------------ */
 
-test("catalog registers formatSkor and tablebase rows in the evaluation group (29 rows)", () => {
+test("catalog registers formatSkor and tablebase rows in the evaluation group (29 general rows)", () => {
+  // Katalog hanya memuat pengaturan UMUM. Preferensi latihan teka-teki bersifat
+  // personal untuk fitur itu dan tinggal di dalam layarnya, bukan di sini.
   assert.equal(BARIS_STATIS.length, 29);
+  for (const kunci of ["puzzleRentangRating", "puzzleTema", "puzzleProgresif", "puzzleSembunyiRating", "puzzleLompatCepat", "puzzleCatatWaktu"]) {
+    assert.equal(BARIS_STATIS.find((b) => b.kunci === kunci), undefined, `${kunci} tidak terdaftar di katalog umum`);
+  }
   for (const kunci of ["formatSkor", "tablebase"]) {
     const baris = BARIS_STATIS.find((b) => b.kunci === kunci);
     assert.ok(baris, kunci);

@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { analisa as indonesia } from "./terjemahan/id/analisa.js";
+import { tekaTeki as tekaTekiId } from "./terjemahan/id/tekaTeki.js";
 
 const Context = createContext(null);
 const KUNCI_BAHASA = "maestro-chess-bahasa";
@@ -16,12 +17,16 @@ export function I18nProvider({ children }) {
     }
   });
   const [inggris, setInggris] = useState(null);
+  const [inggrisTekaTeki, setInggrisTekaTeki] = useState(null);
 
   useEffect(() => {
     if (bahasa !== "en" || inggris) return undefined;
     let aktif = true;
     import("./terjemahan/en/analisa.js")
       .then((modul) => { if (aktif) setInggris(modul.analisa); })
+      .catch(() => {});
+    import("./terjemahan/en/tekaTeki.js")
+      .then((modul) => { if (aktif) setInggrisTekaTeki(modul.tekaTeki); })
       .catch(() => {});
     return () => { aktif = false; };
   }, [bahasa, inggris]);
@@ -32,12 +37,15 @@ export function I18nProvider({ children }) {
   }, [bahasa]);
 
   const t = useCallback((kunci, ganti = {}) => {
-    const kamus = { analisa: bahasa === "en" && inggris ? inggris : indonesia };
+    const kamus = {
+      analisa: bahasa === "en" && inggris ? inggris : indonesia,
+      tekaTeki: bahasa === "en" && inggrisTekaTeki ? inggrisTekaTeki : tekaTekiId,
+    };
     let teks = kunci.split(".").reduce((nilai, bagian) => nilai?.[bagian], kamus) ?? kunci;
     if (typeof teks !== "string") return teks;
     for (const [nama, nilai] of Object.entries(ganti)) teks = teks.replaceAll(`{${nama}}`, String(nilai));
     return teks;
-  }, [bahasa, inggris]);
+  }, [bahasa, inggris, inggrisTekaTeki]);
 
   const nilai = useMemo(() => ({ bahasa, setBahasa, t }), [bahasa, t]);
   return <Context.Provider value={nilai}>{children}</Context.Provider>;

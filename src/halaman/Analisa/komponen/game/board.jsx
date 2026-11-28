@@ -282,6 +282,16 @@ function Piece(props) {
      * FEN berganti. Ditutup di pintu masuk, bukan lewat efek pembersih.
      */
     if (!bolehSeret) return;
+    /*
+     * Hentikan gestur seleksi teks bawaan peramban. Tanpa preventDefault,
+     * mousedown+mousemove saat menyeret bidak ikut "mengeblok" teks di sekitar
+     * papan: koordinat file/rank di tepi papan DAN notasi/status di panel
+     * samping (PanelLayar ber-`select-text`). Ini pola chessground/chess.com/
+     * lichess: preventDefault pada mousedown mematikan seleksi native SELAMA
+     * seret, sementara daftar langkah tetap bisa disalin saat tidak menyeret.
+     * Jalur sentuh/pena sudah memanggil preventDefault di handlePointerStart.
+     */
+    e.preventDefault();
     wasSelectedRef.current = drag.id === id;
     pindahKotakRef.current = false;
     const element = e.currentTarget;
@@ -800,7 +810,7 @@ function Board(props) {
 
   const boardColors = [boardThemes[boardTheme].white, boardThemes[boardTheme].black];
   const adaptedCoronationSquare = coronation.movement[0] ? adaptSquare(coronation.movement[0]) : null;
-  return <div ref={boardRef} role="group" aria-label={t("analisa.papanKeyboard.nama")} aria-describedby={idPetunjuk} onContextMenu={(e) => e.preventDefault()} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onWheel={props.onWheel} className="grid w-fit h-fit relative" style={{ gridTemplateColumns: `repeat(8, ${squareSize}px)`, pointerEvents: drag.is ? "none" : "unset" }}>
+  return <div ref={boardRef} role="group" aria-label={t("analisa.papanKeyboard.nama")} aria-describedby={idPetunjuk} onContextMenu={(e) => e.preventDefault()} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onWheel={props.onWheel} className="grid w-fit h-fit relative select-none" style={{ gridTemplateColumns: `repeat(8, ${squareSize}px)`, pointerEvents: drag.is ? "none" : "unset" }}>
             <span id={idPetunjuk} className="sr-only">{t("analisa.papanKeyboard.petunjuk")}</span>
             {(() => {
     const squares = [];
