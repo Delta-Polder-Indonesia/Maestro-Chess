@@ -53,7 +53,10 @@ export default function TekaTeki({ onAnalisa }) {
   const fenTampil = meninjau ? (jejak[tampilIndex]?.fen ?? sesi.fen) : sesi.fen;
   // Selama sumber dimuat papan wajib terkunci: soal sumber lama sudah
   // dibersihkan, tetapi papan tidak boleh menerima langkah sampai soal baru ada.
-  const terkunci = meninjau || sesi.memuat || !sesi.soal || !sesi.belumSelesai || sesi.solusiBerjalan;
+  // `balasanBerjalan` mengunci papan selama luncuran pemain→balasan berlangsung,
+  // supaya langkah berikutnya tidak menimpa rangkaian animasi yang belum selesai.
+  const terkunci = meninjau || sesi.memuat || !sesi.soal || !sesi.belumSelesai
+    || sesi.solusiBerjalan || sesi.balasanBerjalan;
   // Langkah yang menghasilkan posisi tampil → sorotan + asal luncuran. Diambil
   // dari jejak yang sama dengan daftar langkah dan FEN tampil, jadi sorotan
   // selalu cocok dengan papan — termasuk saat pemain menang lewat jalur

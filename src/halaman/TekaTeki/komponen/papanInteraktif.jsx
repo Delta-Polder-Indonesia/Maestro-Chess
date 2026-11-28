@@ -366,7 +366,12 @@ export default function PapanInteraktif({
     if (orientasiLama !== orientasi) { hentikanSemuaAnimasi(); return; }
     const wadah = akar.current;
     if (!wadah) return;
-    const geseran = geseranDenganAsalEksplisit(fenLama, fen, langkahAkhir);
+    // Tanpa langkah yang menghasilkan posisi tampil (posisi awal soal, sesi
+    // dikosongkan, soal diulang) tidak ada perpindahan bidak untuk dianimasikan:
+    // posisi dipasang apa adanya. Tanpa penjaga ini, mengulang soal di tengah
+    // luncuran akan meluncurkan bidak "kembali ke asal" — bukan langkah catur —
+    // dan bertumpuk dengan luncuran lama yang masih berjalan.
+    const geseran = langkahAkhir ? geseranDenganAsalEksplisit(fenLama, fen, langkahAkhir) : [];
     if (!geseran.length) { if (fenLama !== fen) hentikanSemuaAnimasi(); return; }
     const papanRect = wadah.getBoundingClientRect();
     if (!papanRect.width) return;

@@ -58,6 +58,7 @@ const SOAL_PANJANG = modulTekaTeki.normalisasiSoal({
 function pasangHook(tes, { daftar = DAFTAR_UJI, ...opsi } = {}) {
   const hook = kompilasi("../src/halaman/TekaTeki/logika/useSesiTekaTeki.js", {
     "../../../modul/tekaTeki/index.js": { ...modulTekaTeki, muatSoal: async () => daftar },
+    "../animasiBidak.js": animasiBidak,
   }).default;
   const keluaran = { current: null };
   const props = { current: { catatWaktu: false, ...opsi } };
@@ -264,6 +265,7 @@ function pasangLayar(tes, { daftar = DAFTAR_UJI, prefs = {}, muat } = {}) {
       ...modulTekaTeki,
       muatSoal: muat ?? (async () => daftar),
     },
+    "../animasiBidak.js": animasiBidak,
   }).default;
   let papanProps = null;
   let panelProps = null;
@@ -1716,4 +1718,681 @@ test("Indonesian and English puzzle dictionaries expose the same keys", () => {
   ));
   assert.deepEqual(kunci(kamusId).sort(), kunci(kamusEn).sort());
   assert.ok(kunci(kamusId).length >= 40, "kamus mencakup panel, status, pesan, riwayat, pengaturan");
+});
+
+/* ==========================================================================
+ * Animasi perpindahan bidak — integrasi sesi × papan interaktif.
+ *
+ * Yang diuji di sini adalah RANGKAIAN penerbitan FEN (hook) bersama efek
+ * luncuran papan (papanInteraktif), bukan utilitas diff-FEN saja: papan nyata
+ * dipasang di dalam layar nyata, dan `animate()` direkam lewat DOM palsu.
+ *
+ * BATAS VERIFIKASI: DOM palsu hanya menyediakan yang dipakai efek animasi
+ * (getBoundingClientRect, querySelector, animate). Tidak ada peramban di sini —
+ * kelancaran visual/kedip nyata tidak diukur; yang dibuktikan adalah jumlah,
+ * urutan, asal-tujuan, durasi, dan pembatalan pemanggilan animasi.
+ * ========================================================================== */
+const KOTAK_PALSU = 40; // papan 320 px → 8 × 40 px
+
+const FILE_UJI = ["a", "b", "c", "d", "e", "f", "g", "h"];
+function geometriPalsu(sq, orientasi) {
+  const lajur = FILE_UJI.indexOf(sq[0]);
+  const baris = Number(sq[1]);
+  const kolom = orientasi === "w" ? lajur : 7 - lajur;
+  const barisTampil = orientasi === "w" ? 8 - baris : baris - 1;
+  return { left: kolom * KOTAK_PALSU, top: barisTampil * KOTAK_PALSU, width: KOTAK_PALSU, height: KOTAK_PALSU };
+}
+
+// DOM palsu dengan simpul STABIL per petak: `createNodeMock` react-test-renderer
+// membuat mock baru setiap kali `.instance` dibaca, jadi identitas simpul harus
+// dipegang sendiri supaya peta animasi papan (el → gerak) berperilaku seperti DOM.
+function domAnimasi({ bacaFen, bacaOrientasi, log, aktif, puncak }) {
+  const petakNode = new Map();
+  const bidakNode = new Map();
+  const anak = new Map();
+
+  const nodeBidak = (sq) => {
+    if (bidakNode.has(sq)) return bidakNode.get(sq);
+    const node = {
+      style: {},
+      animate(kunci, opsi) {
+        const [, dx, dy] = /translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)/.exec(kunci[0].transform) ?? [];
+        const kode = animasiBidak.petaBidak(bacaFen())[sq] ?? "";
+        const rekaman = { petak: sq, kode, dx: Number(dx), dy: Number(dy), durasi: opsi.duration, easing: opsi.easing };
+        log.push({ jenis: "mulai", ...rekaman });
+        let selesai;
+        const finished = new Promise((r) => { selesai = r; });
+        const gerak = {
+          finished,
+          oncancel: null,
+          cancel() {
+            if (!aktif.has(gerak)) return;
+            aktif.delete(gerak);
+            log.push({ jenis: "batal", ...rekaman });
+            gerak.oncancel?.();
+            selesai();
+          },
+        };
+        gerak.selesaikan = () => {
+          if (!aktif.has(gerak)) return;
+          aktif.delete(gerak);
+          log.push({ jenis: "selesai", ...rekaman });
+          selesai();
+        };
+        aktif.add(gerak);
+        puncak.nilai = Math.max(puncak.nilai, aktif.size);
+        return gerak;
+      },
+    };
+    bidakNode.set(sq, node);
+    return node;
+  };
+
+  const nodePetak = (sq) => {
+    if (petakNode.has(sq)) return petakNode.get(sq);
+    const node = {
+      style: {},
+      getBoundingClientRect: () => geometriPalsu(sq, bacaOrientasi()),
+      querySelector(pilih) {
+        if (pilih !== "[data-bidak]") return null;
+        // Hanya ada bidak bila FEN yang SEDANG tampil memang menaruhnya di situ.
+        return animasiBidak.petaBidak(bacaFen())[sq] ? nodeBidak(sq) : null;
+      },
+      querySelectorAll: () => [],
+      appendChild(el) {
+        if (!anak.has(sq)) anak.set(sq, []);
+        anak.get(sq).push(el);
+        el.remove = () => node.removeChild(el);
+        return el;
+      },
+      removeChild(el) { anak.set(sq, (anak.get(sq) ?? []).filter((x) => x !== el)); return el; },
+    };
+    petakNode.set(sq, node);
+    return node;
+  };
+
+  const akarNode = {
+    style: {},
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: KOTAK_PALSU * 8, height: KOTAK_PALSU * 8 }),
+    querySelector(pilih) {
+      const sq = /\[data-petak="([a-h][1-8])"\]/.exec(pilih)?.[1];
+      return sq ? nodePetak(sq) : null;
+    },
+    querySelectorAll: () => [],
+    setPointerCapture() {}, releasePointerCapture() {},
+  };
+
+  const dokumen = {
+    addEventListener() {}, removeEventListener() {},
+    elementFromPoint: () => null,
+    createElement() {
+      const el = { style: {}, setAttribute() {}, appendChild() {}, remove() {} };
+      return el;
+    },
+  };
+  return { dokumen, akarNode, nodePetak, anakGhost: anak };
+}
+
+// Layar nyata + papan nyata; hanya panel/riwayat/i18n/prefs yang dipalsukan.
+function pasangLayarAnimasi(tes, { daftar = [SOAL_PANJANG], prefs = {}, muat, jam } = {}) {
+  const log = [];
+  const aktif = new Set();
+  const puncak = { nilai: 0 };
+  let papanProps = null;
+  let panelProps = null;
+  let riwayatProps = null;
+  let renderer = null;
+  const bacaFen = () => papanProps?.fen ?? "";
+  const bacaOrientasi = () => papanProps?.orientasi ?? "w";
+  const dom = domAnimasi({ bacaFen, bacaOrientasi, log, aktif, puncak });
+  const dokumenAsli = globalThis.document;
+  globalThis.document = dom.dokumen;
+
+  const ConfigContext = React.createContext(null);
+  const PapanAsli = kompilasi("../src/halaman/TekaTeki/komponen/papanInteraktif.jsx", {
+    "../../Analisa/komponen/svg/piece.jsx": { default: () => React.createElement("span") },
+    "../../Analisa/komponen/pengaturan/setBidak.js": { urlBidak: (set, kode) => `/bidak/${set}/${kode}.svg` },
+    "../../../modul/sesi/preferensi.js": { boardThemes: [{ white: "#ebecd0", black: "#779556" }] },
+    "../animasiBidak.js": animasiBidak,
+    "../../../lib/i18n.jsx": { useI18n: () => ({ t: (k) => k }) },
+  }).default;
+  const PapanSpy = (props) => { papanProps = props; return React.createElement(PapanAsli, props); };
+  const DialogStub = (props) => React.createElement("div", { "data-dialog": true, "data-warna": props.warna },
+    ...["q", "r", "b", "n"].map((tipe) => React.createElement("button", { "data-pilih": tipe, onClick: () => props.onPilih(tipe) })));
+  const PapanTekaTekiAsli = kompilasi("../src/halaman/TekaTeki/komponen/papanTekaTeki.jsx", {
+    "chess.js": require("chess.js"),
+    "../../../modul/sesi/preferensi.js": { ConfigContext },
+    "../../Analisa/mesin/engine.js": { formatSquare: (x) => x },
+    "./papanInteraktif.jsx": { default: PapanSpy },
+    "./dialogPromosi.jsx": { default: DialogStub },
+    "../logika/tandaBantu.js": tandaBantu,
+  }).default;
+  // Pembungkus asli dipakai apa adanya; `onLangkah` hanya dibungkus untuk
+  // menangkap janji rangkaian balasan (klik papan tidak mengembalikannya).
+  const PapanWrapperSpy = (props) => React.createElement(PapanTekaTekiAsli, {
+    ...props,
+    onLangkah: (l) => { janjiMain = props.onLangkah(l); return janjiMain; },
+  });
+  const hook = kompilasi("../src/halaman/TekaTeki/logika/useSesiTekaTeki.js", {
+    "../../../modul/tekaTeki/index.js": { ...modulTekaTeki, muatSoal: muat ?? (async () => daftar) },
+    "../animasiBidak.js": animasiBidak,
+  }).default;
+  const Komponen = kompilasi("../src/halaman/TekaTeki/TekaTeki.jsx", {
+    "../../lib/i18n.jsx": { useI18n: () => ({ t: (k) => k }) },
+    "../Analisa/komponen/nav/PanelLayar.jsx": { default: (p) => React.createElement("div", null, p.children) },
+    "./logika/useSesiTekaTeki.js": { default: hook },
+    "./logika/usePreferensiTekaTeki.js": {
+      default: () => ({
+        ratingMin: 600, ratingMax: 1500, tema: "", progresif: false,
+        sembunyiRating: false, lompatCepat: false, catatWaktu: false, ubah() {}, ...prefs,
+      }),
+    },
+    "./logika/useUkuranPapan.js": { default: () => KOTAK_PALSU * 8 },
+    "./logika/pgnDariSoal.js": { default: () => "" },
+    "./logika/jejakLangkah.js": { default: buatJejak },
+    "./komponen/papanTekaTeki.jsx": { default: PapanWrapperSpy },
+    "./komponen/panelTekaTeki.jsx": { default: (p) => { panelProps = p; return React.createElement("div"); } },
+    "./komponen/riwayatLangkah.jsx": { default: (p) => { riwayatProps = p; return React.createElement("div"); } },
+  }).default;
+
+  const nilaiConfig = { boardTheme: [0], pieceSet: ["cburnett"], coordinates: ["edge"] };
+  const pohon = () => React.createElement(ConfigContext.Provider, { value: nilaiConfig }, React.createElement(Komponen));
+  let janjiMain = null;
+  const pulihkan = () => {
+    if (dokumenAsli === undefined) delete globalThis.document;
+    else globalThis.document = dokumenAsli;
+  };
+  tes.after(() => { if (renderer) act(() => renderer.unmount()); pulihkan(); });
+
+  return {
+    log,
+    dom,
+    async mount() {
+      await act(async () => { renderer = TestRenderer.create(pohon(), { createNodeMock: (el) => {
+        if (el.props?.["data-petak"]) return dom.nodePetak(el.props["data-petak"]);
+        if (String(el.props?.className ?? "").includes("aspect-square")) return dom.akarNode;
+        return { style: {}, focus() {}, querySelectorAll: () => [] };
+      } }); });
+      return this;
+    },
+    papan: () => papanProps,
+    sesi: () => panelProps?.sesi,
+    riwayat: () => riwayatProps,
+    mulai: () => log.filter((x) => x.jenis === "mulai"),
+    aktif: () => aktif.size,
+    puncakAktif: () => puncak.nilai,
+    ghost: (sq) => (dom.anakGhost.get(sq) ?? []).length,
+    // Langkah pemain TIDAK ditunggu sampai rangkaian selesai: justru urutan
+    // penerbitannya yang diuji. Janjinya disimpan untuk ditutup di akhir uji.
+    async main(langkah) {
+      // Jalur nyata: klik bidak lalu klik petak tujuan pada papan.
+      await act(async () => { papanProps.onKlik(langkah.from); });
+      await act(async () => { papanProps.onKlik(langkah.to); });
+      return this;
+    },
+    async klik(sq) { await act(async () => { papanProps.onKlik(sq); }); return this; },
+    async pilihPromosi(tipe) {
+      await act(async () => {
+        renderer.root.findByProps({ "data-pilih": tipe }).props.onClick();
+      });
+      return this;
+    },
+    async tick(ms) { await act(async () => { jam.tick(ms); }); return this; },
+    // Tandai luncuran yang sedang jalan sebagai selesai (pengganti selesainya
+    // animasi peramban), supaya urutan "pemain selesai → balasan mulai" terbukti.
+    async selesaiAnimasi() {
+      await act(async () => { for (const g of [...aktif]) g.selesaikan(); });
+      return this;
+    },
+    async rangkaianSelesai() {
+      // Seperti peramban: luncuran yang sedang jalan selesai dulu, baru jeda
+      // rangkaian habis dan tahap berikutnya diterbitkan. Dua putaran menutup
+      // jalur lompat-cepat yang menunggu luncuran balasan sebelum ganti soal.
+      for (let i = 0; i < 2; i++) {
+        await this.selesaiAnimasi();
+        await this.tick(animasiBidak.GESER_ISEPIC.durasi);
+      }
+      await this.selesaiAnimasi();
+      await act(async () => { await janjiMain; });
+      janjiMain = null;
+      return this;
+    },
+    async navigasi(arah) { await act(async () => { riwayatProps.onNavigasi(arah); }); return this; },
+    // Pemutaran solusi memakai jeda 450 ms per langkah; tiap langkah harus
+    // menerbitkan FEN sendiri supaya tidak ada luncuran dua warna sekaligus.
+    async solusi() {
+      let janji;
+      await act(async () => { janji = this.sesi().lihatSolusi(); });
+      for (let i = 0; i < 6; i++) { await this.selesaiAnimasi(); await this.tick(450); }
+      await act(async () => { await janji; });
+      return this;
+    },
+    async jalankan(fn) { await act(async () => { await fn({ sesi: this.sesi(), papan: papanProps, panel: panelProps, riwayat: riwayatProps }); }); return this; },
+    async tutup() { await act(async () => { if (janjiMain) await janjiMain; janjiMain = null; }); return this; },
+    unmount() { act(() => renderer.unmount()); renderer = null; pulihkan(); },
+  };
+}
+
+// FEN khusus rangkaian animasi (semua langkahnya sudah dicek legal chess.js).
+const SOAL_EP = modulTekaTeki.normalisasiSoal({
+  problemid: 91, fen: "4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 2", moves: "e5-d6;e8-f7;d6-d7", rating: 1100, tema: "enPassant",
+}, "skakmat");
+const SOAL_ROKADE = modulTekaTeki.normalisasiSoal({
+  problemid: 92, fen: "4k3/8/8/8/8/8/8/4K2R w K - 0 1", moves: "e1-g1;e8-d8;f1-f8", rating: 1100, tema: "castling",
+}, "skakmat");
+const SOAL_PROMOSI = modulTekaTeki.normalisasiSoal({
+  problemid: 93, fen: "7k/P7/8/8/8/8/8/7K w - - 0 1", moves: "a7-a8q;h8-h7;a8-a7", rating: 1100, tema: "promotion",
+}, "skakmat");
+
+test("animasi 1: langkah tanpa balasan meluncurkan satu bidak lalu berhenti", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, { daftar: [DAFTAR_UJI[0]], jam }).mount();
+  assert.equal(layar.papan().fen, FEN_MAT);
+  assert.deepEqual(layar.mulai(), [], "belum ada langkah → belum ada luncuran");
+
+  await layar.main({ from: "e1", to: "e8" });
+  const luncuran = layar.mulai();
+  assert.equal(luncuran.length, 1, "tepat satu bidak meluncur");
+  assert.equal(luncuran[0].petak, "e8");
+  assert.equal(luncuran[0].kode, "R");
+  // Asal e1 → tujuan e8 pada orientasi putih: lurus ke atas 7 baris.
+  assert.equal(luncuran[0].dx, 0);
+  assert.equal(luncuran[0].dy, 7 * KOTAK_PALSU);
+  assert.equal(luncuran[0].durasi, animasiBidak.GESER_ISEPIC.durasi, "durasi tetap 300 ms");
+  assert.equal(luncuran[0].easing, animasiBidak.GESER_ISEPIC.kurva, "kurva tetap ease");
+
+  await layar.selesaiAnimasi();
+  await layar.tick(1000);
+  await layar.tutup();
+  assert.equal(layar.mulai().length, 1, "tidak ada luncuran tambahan tanpa balasan");
+  assert.equal(layar.aktif(), 0, "tidak ada animasi tertinggal");
+  assert.equal(layar.sesi().fen, modulTekaTeki.terapkanLangkah(FEN_MAT, { from: "e1", to: "e8" }));
+  assert.equal(layar.sesi().status, modulTekaTeki.STATUS_SOAL.BENAR);
+});
+
+test("animasi 2: balasan lawan meluncur terpisah setelah luncuran pemain selesai", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, { jam }).mount();
+  const awal = layar.sesi().soal.fen;
+  const pemain = { from: "d8", to: "d1" };
+  const balasan = { from: "c3", to: "e1" };
+  const fenPemain = modulTekaTeki.terapkanLangkah(awal, pemain);
+  const fenAkhir = modulTekaTeki.terapkanLangkah(fenPemain, balasan);
+
+  await layar.main(pemain);
+  // Tahap 1: HANYA bidak pemain yang meluncur, FEN balasan belum diterapkan.
+  assert.equal(layar.mulai().length, 1, "satu luncuran, bukan gabungan pemain+balasan");
+  assert.equal(layar.mulai()[0].petak, "d1");
+  assert.equal(layar.mulai()[0].kode, "r", "benteng hitam milik pemain");
+  assert.equal(layar.papan().fen, fenPemain, "FEN tahap 1 = langkah pemain saja");
+  assert.equal(layar.sesi().indeks, 1);
+  assert.equal(layar.sesi().balasanBerjalan, true);
+  assert.equal(layar.papan().terkunci, true, "papan dikunci selama rangkaian berlangsung");
+  assert.deepEqual(layar.papan().langkahAkhir, pemain, "sorotan mengikuti langkah yang sedang meluncur");
+
+  // Belum 300 ms → balasan belum boleh menyusul (jeda terikat durasi luncuran).
+  await layar.tick(animasiBidak.GESER_ISEPIC.durasi - 1);
+  assert.equal(layar.mulai().length, 1, "balasan tidak menyusul sebelum luncuran pemain selesai");
+  await layar.selesaiAnimasi();
+  await layar.tick(1);
+
+  // Tahap 2: balasan lawan sebagai luncuran KEDUA.
+  assert.equal(layar.mulai().length, 2, "balasan punya luncurannya sendiri");
+  assert.equal(layar.mulai()[1].petak, "e1");
+  assert.equal(layar.mulai()[1].kode, "Q", "menteri putih milik lawan");
+  assert.equal(layar.mulai()[1].durasi, animasiBidak.GESER_ISEPIC.durasi);
+  assert.equal(layar.mulai()[1].easing, animasiBidak.GESER_ISEPIC.kurva);
+  assert.deepEqual(layar.log.map((x) => `${x.jenis}:${x.petak}`), ["mulai:d1", "selesai:d1", "mulai:e1"],
+    "urutan wajib: pemain mulai → pemain selesai → balasan mulai");
+  assert.equal(layar.puncakAktif(), 1, "tidak pernah dua bidak meluncur bersamaan");
+
+  await layar.selesaiAnimasi();
+  await layar.tutup();
+  assert.equal(layar.papan().fen, fenAkhir, "posisi akhir sama persis dengan hasil aturan catur");
+  assert.equal(layar.sesi().fen, fenAkhir);
+  assert.equal(layar.sesi().indeks, 2);
+  assert.deepEqual(layar.sesi().langkahNyata, [
+    { from: "d8", to: "d1", promotion: undefined }, { from: "c3", to: "e1" },
+  ], "jejak langkah tetap lengkap dan berurutan");
+  assert.deepEqual(layar.papan().langkahAkhir, balasan, "sorotan langkah terakhir = balasan");
+  assert.equal(layar.sesi().balasanBerjalan, false);
+  assert.equal(layar.papan().terkunci, false, "papan terbuka lagi setelah rangkaian selesai");
+  assert.equal(layar.aktif(), 0, "tidak ada animasi tertinggal");
+});
+
+test("animasi 3: langkah salah tidak menggerakkan bidak sama sekali", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, { jam }).mount();
+  const awal = layar.sesi().soal.fen;
+  await layar.main({ from: "g6", to: "g5" }); // legal, tetapi bukan langkah solusi
+  await layar.tick(1000);
+  await layar.tutup();
+  assert.deepEqual(layar.mulai(), [], "tidak ada luncuran untuk langkah salah");
+  assert.equal(layar.papan().fen, awal, "posisi tidak berubah");
+  assert.equal(layar.sesi().indeks, 0);
+  assert.equal(layar.sesi().status, modulTekaTeki.STATUS_SOAL.SALAH);
+  assert.equal(layar.sesi().balasanBerjalan, false);
+  assert.equal(layar.aktif(), 0);
+});
+
+test("animasi 4: langkah menangkap meluncurkan satu bidak dan hantu bidak tertangkap dibersihkan", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, { jam }).mount();
+  await layar.main({ from: "d8", to: "d1" });
+  await layar.rangkaianSelesai();
+  const sebelum = layar.mulai().length;
+  const fenSebelum = layar.papan().fen;
+  assert.equal(animasiBidak.petaBidak(fenSebelum).e1, "Q", "menteri putih masih di e1 sebelum ditangkap");
+
+  await layar.main({ from: "d1", to: "e1" }); // Rxe1# — menangkap, tanpa balasan
+  const baru = layar.mulai().slice(sebelum);
+  assert.equal(baru.length, 1, "satu luncuran untuk langkah menangkap");
+  assert.equal(baru[0].petak, "e1");
+  assert.equal(baru[0].kode, "r");
+  assert.equal(layar.ghost("e1"), 1, "bidak tertangkap ditahan sebentar sebagai hantu");
+  await layar.selesaiAnimasi();
+  await layar.tick(1000);
+  await layar.tutup();
+  assert.equal(layar.ghost("e1"), 0, "hantu dibersihkan setelah luncuran selesai");
+  assert.equal(layar.mulai().length, sebelum + 1, "tidak ada luncuran tambahan");
+  assert.equal(animasiBidak.petaBidak(layar.papan().fen).e1, "r", "posisi akhir benar");
+  assert.equal(layar.sesi().status, modulTekaTeki.STATUS_SOAL.BENAR);
+  assert.equal(layar.puncakAktif(), 1);
+});
+
+test("animasi 5: en passant meluncurkan pion pemain lalu balasan terpisah", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, { daftar: [SOAL_EP], jam }).mount();
+  await layar.main({ from: "e5", to: "d6" });
+  assert.equal(layar.mulai().length, 1);
+  assert.equal(layar.mulai()[0].petak, "d6");
+  assert.equal(layar.mulai()[0].kode, "P");
+  assert.equal(animasiBidak.petaBidak(layar.papan().fen).d5, undefined, "pion yang ditangkap lewat en passant sudah hilang");
+  await layar.rangkaianSelesai();
+  assert.equal(layar.mulai().length, 2, "balasan raja meluncur sendiri");
+  assert.equal(layar.mulai()[1].petak, "f7");
+  assert.equal(layar.mulai()[1].kode, "k");
+  assert.equal(layar.papan().fen, new Chess(new Chess(SOAL_EP.fen).move({ from: "e5", to: "d6" }).after).move({ from: "e8", to: "f7" }).after,
+    "posisi akhir en passant + balasan sama dengan chess.js");
+  assert.equal(layar.puncakAktif(), 1);
+  assert.equal(layar.aktif(), 0);
+});
+
+test("animasi 6: rokade meluncurkan raja+benteng sewarna, balasan lawan menyusul terpisah", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, { daftar: [SOAL_ROKADE], jam }).mount();
+  await layar.main({ from: "e1", to: "g1" });
+  const tahap1 = layar.mulai();
+  assert.equal(tahap1.length, 2, "rokade = raja dan benteng, satu langkah sewarna");
+  assert.deepEqual(tahap1.map((x) => x.petak).sort(), ["f1", "g1"]);
+  assert.deepEqual(tahap1.map((x) => x.kode).sort(), ["K", "R"], "keduanya bidak putih");
+  assert.equal(layar.sesi().balasanBerjalan, true);
+  await layar.rangkaianSelesai();
+  const tahap2 = layar.mulai().slice(2);
+  assert.equal(tahap2.length, 1, "balasan raja hitam meluncur sendiri");
+  assert.equal(tahap2[0].petak, "d8");
+  assert.equal(tahap2[0].kode, "k");
+  assert.equal(layar.papan().fen, new Chess(new Chess(SOAL_ROKADE.fen).move({ from: "e1", to: "g1" }).after).move({ from: "e8", to: "d8" }).after);
+  assert.equal(layar.aktif(), 0);
+});
+
+test("animasi 7: promosi meluncurkan bidak hasil promosi tanpa kedip pion di petak tujuan", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, { daftar: [SOAL_PROMOSI], jam }).mount();
+  await layar.klik("a7");
+  await layar.klik("a8");
+  assert.deepEqual(layar.mulai(), [], "dialog promosi terbuka dulu, belum ada luncuran");
+  assert.equal(layar.papan().fen, SOAL_PROMOSI.fen, "posisi belum berubah selama memilih");
+  await layar.pilihPromosi("q");
+  const tahap1 = layar.mulai();
+  assert.equal(tahap1.length, 1, "satu luncuran untuk langkah promosi");
+  assert.equal(tahap1[0].petak, "a8");
+  assert.equal(tahap1[0].kode, "Q", "yang meluncur langsung menteri, bukan pion lalu bertukar");
+  assert.equal(animasiBidak.petaBidak(layar.papan().fen).a8, "Q", "tidak ada keadaan antara pion di a8");
+  await layar.rangkaianSelesai();
+  assert.equal(layar.mulai().length, 2);
+  assert.equal(layar.mulai()[1].petak, "h7");
+  assert.equal(layar.mulai()[1].kode, "k");
+  assert.equal(layar.papan().fen, new Chess(new Chess(SOAL_PROMOSI.fen).move({ from: "a7", to: "a8", promotion: "q" }).after).move({ from: "h8", to: "h7" }).after);
+  assert.equal(layar.puncakAktif(), 1);
+});
+
+test("animasi 8: pemutaran solusi meluncurkan satu langkah per tahap, tidak pernah dua warna", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, { jam }).mount();
+  const awal = layar.sesi().soal.fen;
+  await layar.solusi();
+  const luncuran = layar.mulai();
+  assert.deepEqual(luncuran.map((x) => x.petak), ["d1", "e1", "e1"], "tiga langkah solusi, tiga luncuran");
+  assert.deepEqual(luncuran.map((x) => x.kode), ["r", "Q", "r"], "warna bergantian per tahap, bukan digabung");
+  assert.equal(layar.puncakAktif(), 1, "tidak ada dua bidak meluncur bersamaan");
+  // Setiap tahap hanya menggerakkan satu warna — pengaman dua warna tetap utuh.
+  let posisi = awal;
+  for (const langkah of layar.sesi().soal.langkah) {
+    const berikut = modulTekaTeki.terapkanLangkah(posisi, langkah);
+    const geseran = animasiBidak.geseranDariFen(posisi, berikut);
+    assert.ok(geseran.length > 0, `tahap ${langkah.from}-${langkah.to} tetap bisa dianimasikan`);
+    assert.equal(new Set(geseran.map((g) => (g.bidak === g.bidak.toUpperCase() ? "w" : "b"))).size, 1);
+    posisi = berikut;
+  }
+  assert.equal(layar.papan().fen, posisi, "posisi akhir pemutaran solusi sesuai aturan");
+  assert.equal(layar.sesi().solusiBerjalan, false);
+  assert.equal(layar.aktif(), 0);
+});
+
+test("animasi 9: navigasi riwayat tidak menciptakan luncuran palsu", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, { jam }).mount();
+  const awal = layar.sesi().soal.fen;
+  await layar.main({ from: "d8", to: "d1" });
+  await layar.rangkaianSelesai();
+  const fenPemain = modulTekaTeki.terapkanLangkah(awal, { from: "d8", to: "d1" });
+  const fenAkhir = layar.papan().fen;
+  const jumlah = layar.mulai().length;
+
+  // Mundur satu langkah: perbedaan posisi memang satu langkah nyata (balasan
+  // yang ditarik kembali), jadi luncuran yang muncul harus cocok dengan diff itu.
+  await layar.navigasi("sebelum");
+  assert.equal(layar.papan().fen, fenPemain, "papan menampilkan posisi yang ditinjau");
+  assert.equal(layar.papan().terkunci, true, "papan terkunci saat meninjau");
+  for (const g of layar.mulai().slice(jumlah)) {
+    const diff = animasiBidak.geseranDariFen(fenAkhir, fenPemain);
+    assert.ok(diff.some((d) => d.ke === g.petak && d.bidak === g.kode),
+      `luncuran ${g.kode}@${g.petak} harus berasal dari perbedaan posisi nyata`);
+    assert.equal(new Set(diff.map((d) => (d.bidak === d.bidak.toUpperCase() ? "w" : "b"))).size, 1);
+  }
+  await layar.selesaiAnimasi();
+
+  // Lompat ke posisi awal: dua langkah ditarik sekaligus → TIDAK boleh ada
+  // luncuran gabungan dua warna; papan langsung menampilkan posisi awal.
+  const sebelumLompat = layar.mulai().length;
+  await layar.navigasi("awal");
+  assert.equal(layar.papan().fen, awal);
+  assert.equal(layar.mulai().length, sebelumLompat, "lompat multi-langkah tidak dianimasikan palsu");
+  assert.equal(layar.puncakAktif(), 1);
+
+  // Kembali ke posisi live: tidak ada langkah baru yang dimainkan.
+  await layar.navigasi("akhir");
+  assert.equal(layar.papan().fen, fenAkhir);
+  assert.equal(layar.papan().terkunci, false);
+  assert.equal(layar.sesi().indeks, 2, "navigasi tidak mengubah progres soal");
+  assert.deepEqual(layar.sesi().langkahNyata.length, 2);
+  await layar.selesaiAnimasi();
+  assert.equal(layar.aktif(), 0);
+});
+
+test("animasi 10: ganti soal di tengah luncuran membatalkan balasan yang belum diterbitkan", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, { daftar: [SOAL_PANJANG, SOAL_EP], jam }).mount();
+  // Pemilih soal acak: langkah diambil dari soal yang benar-benar terbuka.
+  const soalLama = layar.sesi().soal;
+  const pemainLama = soalLama.langkah[0];
+  const balasanLama = soalLama.langkah[1];
+  const kodeBalasan = animasiBidak.petaBidak(modulTekaTeki.terapkanLangkah(soalLama.fen, pemainLama))[balasanLama.from];
+  await layar.main(pemainLama);
+  assert.equal(layar.mulai().length, 1);
+  assert.equal(layar.sesi().balasanBerjalan, true);
+
+  // Soal berganti SEBELUM luncuran pemain selesai.
+  await layar.jalankan(({ sesi }) => sesi.soalBaru());
+  await layar.tick(2000);
+  await layar.selesaiAnimasi();
+  await layar.tutup();
+  const luncuran = layar.mulai();
+  assert.ok(!luncuran.some((g) => g.kode === kodeBalasan && g.petak === balasanLama.to),
+    "balasan soal lama tidak boleh meluncur setelah soal berganti");
+  assert.equal(layar.sesi().balasanBerjalan, false, "bendera rangkaian dibersihkan");
+  assert.equal(layar.aktif(), 0, "tidak ada animasi tertinggal dari soal lama");
+  assert.equal(layar.papan().fen, layar.sesi().soal.fen, "papan menampilkan soal baru, bukan sisa animasi lama");
+  assert.equal(layar.sesi().indeks, 0);
+  assert.deepEqual(layar.sesi().langkahNyata, []);
+  assert.equal(layar.papan().terkunci, false, "soal baru langsung bisa dimainkan");
+});
+
+test("animasi 11: orientasi papan berubah di tengah luncuran tidak menyisakan animasi basi", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  // Sumber hitam → sumber putih: orientasi papan benar-benar berbalik.
+  const layar = await pasangLayarAnimasi(tes, {
+    jam, muat: async (jenis) => (jenis === "skakmat" ? [SOAL_PANJANG] : [DAFTAR_UJI[0]]),
+  }).mount();
+  assert.equal(layar.papan().orientasi, "b", "pemain hitam → papan dibalik");
+  await layar.main({ from: "d8", to: "d1" });
+  assert.equal(layar.mulai().length, 1);
+
+  await layar.jalankan(({ panel }) => panel.onSumber("harian"));
+  assert.equal(layar.sesi().balasanBerjalan, false, "rangkaian dibatalkan saat sumber berganti");
+  await layar.tick(2000);
+  await layar.selesaiAnimasi();
+  await layar.tutup();
+  assert.equal(layar.papan().orientasi, "w", "orientasi berbalik mengikuti pihak pemain soal baru");
+  assert.equal(layar.papan().fen, FEN_MAT);
+  assert.ok(!layar.mulai().some((g) => g.kode === "Q" && g.petak === "e1"), "balasan lama tidak meluncur di orientasi baru");
+  assert.equal(layar.aktif(), 0);
+  assert.ok(layar.log.some((x) => x.jenis === "batal"), "luncuran yang sedang jalan dibatalkan, bukan dibiarkan menggantung");
+
+  // Soal baru tetap bisa dianimasikan dengan geometri orientasi yang baru.
+  await layar.main({ from: "e1", to: "e8" });
+  const terakhir = layar.mulai().at(-1);
+  assert.equal(terakhir.petak, "e8");
+  assert.equal(terakhir.dy, 7 * KOTAK_PALSU, "arah luncuran memakai geometri orientasi putih");
+  await layar.selesaiAnimasi();
+  await layar.tutup();
+  assert.equal(layar.aktif(), 0);
+});
+
+test("animasi 12: ulang soal di tengah luncuran mengembalikan posisi awal dan tetap bisa dianimasikan", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, { jam }).mount();
+  const awal = layar.sesi().soal.fen;
+  await layar.main({ from: "d8", to: "d1" });
+  assert.equal(layar.sesi().balasanBerjalan, true);
+
+  await layar.jalankan(({ sesi }) => sesi.ulangSoal());
+  await layar.tick(2000);
+  await layar.selesaiAnimasi();
+  await layar.tutup();
+  assert.equal(layar.papan().fen, awal, "posisi kembali ke awal soal");
+  assert.equal(layar.sesi().indeks, 0);
+  assert.deepEqual(layar.sesi().langkahNyata, []);
+  assert.equal(layar.sesi().balasanBerjalan, false);
+  assert.equal(layar.aktif(), 0, "animasi lama dibersihkan");
+  assert.ok(!layar.mulai().some((g) => g.kode === "Q" && g.petak === "e1"), "balasan lama tidak menyusul setelah ulang soal");
+  assert.equal(layar.papan().terkunci, false);
+
+  // Ulangi langkah yang sama: rangkaian harus berjalan normal lagi.
+  const sebelum = layar.mulai().length;
+  await layar.main({ from: "d8", to: "d1" });
+  assert.equal(layar.mulai().length, sebelum + 1, "luncuran pemain berjalan lagi");
+  await layar.rangkaianSelesai();
+  assert.equal(layar.mulai().length, sebelum + 2, "balasan menyusul terpisah seperti semula");
+  assert.equal(layar.mulai().at(-1).petak, "e1");
+  assert.equal(layar.sesi().indeks, 2);
+  assert.equal(layar.aktif(), 0);
+  assert.equal(layar.puncakAktif(), 1, "tidak pernah dua bidak meluncur bersamaan");
+});
+
+// Soal jalur GENAP (sebagian soal harian berakhir pada balasan lawan) membuat
+// `selesai` datang bersama balasan. Dengan lompat cepat, soal berikutnya tidak
+// boleh membuka sebelum luncuran balasan itu terlihat. Dua fixture berbagi
+// langkah pertama supaya uji tetap sah apa pun hasil pemilih acak.
+const FEN_GENAP = "4k3/8/8/8/8/8/8/4K2R w - - 0 1";
+const SOAL_GENAP = modulTekaTeki.normalisasiSoal({
+  problemid: 94, fen: FEN_GENAP, moves: "h1-h5;e8-d8", rating: 1100, tema: "endgame",
+}, "skakmat");
+const SOAL_GENAP2 = modulTekaTeki.normalisasiSoal({
+  problemid: 95, fen: FEN_GENAP, moves: "h1-h5;e8-f8", rating: 1100, tema: "endgame",
+}, "skakmat");
+
+test("animasi 13: jalur genap + lompat cepat menampilkan balasan terakhir sebelum soal berikutnya", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, {
+    daftar: [SOAL_GENAP, SOAL_GENAP2], prefs: { lompatCepat: true }, jam,
+  }).mount();
+  const soalAwal = layar.sesi().soal;
+  const balasanAwal = soalAwal.langkah[1];
+  const fenAkhir = modulTekaTeki.terapkanLangkah(
+    modulTekaTeki.terapkanLangkah(FEN_GENAP, { from: "h1", to: "h5" }), balasanAwal,
+  );
+  await layar.main({ from: "h1", to: "h5" });
+  assert.equal(layar.mulai().length, 1, "luncuran pemain");
+  assert.equal(layar.sesi().status, modulTekaTeki.STATUS_SOAL.BENAR, "status dicatat saat langkah pemain, bukan setelah animasi");
+  assert.equal(layar.sesi().balasanBerjalan, true);
+
+  await layar.selesaiAnimasi();
+  await layar.tick(animasiBidak.GESER_ISEPIC.durasi);
+  assert.equal(layar.mulai().length, 2, "balasan terakhir tetap diluncurkan");
+  assert.equal(layar.mulai()[1].petak, balasanAwal.to);
+  assert.equal(layar.mulai()[1].kode, "k");
+  assert.equal(layar.sesi().soal, soalAwal, "soal belum berganti selama balasan meluncur");
+  assert.equal(layar.papan().fen, fenAkhir, "posisi akhir jalur genap benar");
+
+  // Luncuran balasan selesai → baru soal berikutnya dibuka.
+  await layar.selesaiAnimasi();
+  await layar.tick(animasiBidak.GESER_ISEPIC.durasi - 1);
+  assert.equal(layar.sesi().soal, soalAwal, "tidak memotong luncuran balasan");
+  await layar.tick(1);
+  await layar.tutup();
+  assert.equal(layar.sesi().indeks, 0, "lompat cepat membuka sesi soal berikutnya");
+  assert.deepEqual(layar.sesi().langkahNyata, []);
+  assert.equal(layar.papan().fen, FEN_GENAP, "papan kembali ke posisi awal soal, bukan posisi akhir soal lama");
+  assert.notEqual(layar.papan().fen, fenAkhir);
+  assert.equal(layar.sesi().balasanBerjalan, false);
+  assert.equal(layar.papan().terkunci, false);
+  assert.equal(layar.puncakAktif(), 1);
+  await layar.selesaiAnimasi();
+  assert.equal(layar.aktif(), 0);
+});
+
+test("animasi 14: dua klik cepat tidak menumpuk rangkaian dan petunjuk tidak menunjuk langkah lawan", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["setTimeout"], now: 1_000_000 });
+  const layar = await pasangLayarAnimasi(tes, { jam }).mount();
+  await layar.main({ from: "d8", to: "d1" });
+  const jumlah = layar.mulai().length;
+  // Langkah berikutnya dikirim sebelum rangkaian selesai (papan sudah terkunci,
+  // jadi dipanggil lewat sesi untuk menembus lapisan UI dan menguji penjaga hook).
+  await layar.jalankan(({ sesi }) => sesi.mainkan({ from: "d1", to: "e1" }));
+  await layar.jalankan(({ sesi }) => sesi.ambilPetunjuk());
+  assert.equal(layar.mulai().length, jumlah, "tidak ada luncuran baru di tengah rangkaian");
+  assert.deepEqual(layar.sesi().petunjuk, { tingkat: "kosong", petak: null, panah: null },
+    "petunjuk tidak menunjuk langkah lawan yang sedang meluncur");
+  assert.equal(layar.sesi().indeks, 1, "indeks tidak maju karena langkah kedua");
+  await layar.rangkaianSelesai();
+  assert.equal(layar.sesi().indeks, 2, "rangkaian asli tetap tuntas");
+  assert.equal(layar.mulai().length, jumlah + 1);
+  assert.equal(layar.puncakAktif(), 1);
+  assert.equal(layar.aktif(), 0);
 });

@@ -20,6 +20,7 @@ import {
   muatSoal, pilihSoal, daftarTema, rentangProgresif, posisiAwalPemain, nilaiLangkah, terapkanLangkah,
   petunjukBerikutnya, langkahDiharapkan, buatEntri, hitungStatistik, STATUS_SOAL,
 } from "../../../modul/tekaTeki/index.js";
+import { GESER_ISEPIC } from "../animasiBidak.js";
 
 const JEDA_SOLUSI = 450;
 
@@ -49,6 +50,10 @@ export default function useSesiTekaTeki({
   const mulaiRef = useRef(null);
   mulaiRef.current = mulai;
   const [solusiBerjalan, setSolusiBerjalan] = useState(false);
+  // Rangkaian balasan otomatis sedang meluncur: papan terkunci sebentar supaya
+  // langkah baru tidak bertabrakan dengan animasi yang belum selesai.
+  const [balasanBerjalan, setBalasanBerjalan] = useState(false);
+  const batalBalasan = useRef(null);
   // Jalur solusi sudah dituntaskan (langkah terakhir atau lihat solusi).
   // Terpisah dari status benar/salah: soal yang salah tetap boleh dilanjutkan.
   const [jalurSelesai, setJalurSelesai] = useState(false);
@@ -65,6 +70,20 @@ export default function useSesiTekaTeki({
   // dipaksakan, seluruh soal terbuang dan layar berhenti di "kosong".
   const temaAktif = tema && temaTersedia.includes(tema) ? tema : "";
 
+  // Batalkan rangkaian balasan yang sedang berjalan (timer + janji jedanya).
+  const batalkanBalasan = useCallback(() => {
+    batalBalasan.current?.abort?.();
+    batalBalasan.current = null;
+  }, []);
+
+  // Jeda sepanjang luncuran papan, dibaca dari tetapan yang SAMA dengan yang
+  // dipakai papan saat memanggil animate(). Abort menyelesaikan janji lebih
+  // awal supaya pemanggil tidak menggantung saat soal berganti/unmount.
+  const jedaLuncuran = useCallback((pengendali) => new Promise((resolve) => {
+    const id = setTimeout(resolve, GESER_ISEPIC.durasi);
+    pengendali.signal.addEventListener("abort", () => { clearTimeout(id); resolve(); }, { once: true });
+  }), []);
+
   // Satu pintu pembersihan sesi aktif. Dipakai saat sumber berganti dan saat
   // tidak ada soal yang lolos saringan, supaya keadaan kosong selalu sama:
   // tanpa soal, tanpa progres, tanpa petunjuk, dan TANPA pewaktu yang hidup.
@@ -73,6 +92,8 @@ export default function useSesiTekaTeki({
   // riwayat beserta statistiknya).
   const kosongkanSesi = useCallback(() => {
     batalSolusi.current?.abort?.();
+    batalkanBalasan();
+    setBalasanBerjalan(false);
     setSolusiBerjalan(false);
     setSoal(null);
     setFen("");
@@ -84,10 +105,12 @@ export default function useSesiTekaTeki({
     terekam.current = 0;
     setWaktu(0);
     setMulai(null);
-  }, []);
+  }, [batalkanBalasan]);
 
   const bukaSoal = useCallback((dipilih, entri = null) => {
     batalSolusi.current?.abort?.();
+    batalkanBalasan();
+    setBalasanBerjalan(false);
     setSolusiBerjalan(false);
     setSoal(dipilih);
     setFen(posisiAwalPemain(dipilih.fen));
@@ -102,7 +125,7 @@ export default function useSesiTekaTeki({
     setWaktu(terekam.current);
     setMulai(catatWaktu && statusEntri === STATUS_SOAL.BELUM ? Date.now() : null);
     setJalurSelesai(statusEntri === STATUS_SOAL.BENAR);
-  }, [catatWaktu]);
+  }, [catatWaktu, batalkanBalasan]);
 
   const soalBaru = useCallback((kolam = daftar, dasarRating = null) => {
     if (!kolam.length) return null;
@@ -161,6 +184,9 @@ export default function useSesiTekaTeki({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sumber]);
 
+  // Rangkaian balasan tidak boleh hidup melewati umur komponen.
+  useEffect(() => () => batalkanBalasan(), [batalkanBalasan]);
+
   const status = riwayat[aktif]?.status ?? STATUS_SOAL.BELUM;
   // Papan boleh dimainkan selama jalur belum selesai dan soal belum benar —
   // soal yang sudah ditandai salah tetap bisa dilanjutkan (paritas En Croissant).
@@ -203,9 +229,27 @@ export default function useSesiTekaTeki({
     )));
   }, [aktif, mulai, soal]);
 
-  /** Dipanggil papan saat pemain melepas bidak: (fen, {from,to,promotion}). */
-  const mainkan = useCallback((langkah) => {
-    if (!soal || !belumSelesai || solusiBerjalan) return;
+  /**
+   * Dipanggil papan saat pemain melepas bidak/klik tujuan: ({from,to,promotion}).
+   *
+   * Langkah pemain dinilai seperti biasa, tetapi balasan lawan diterbitkan
+   * sebagai perubahan FEN TERSENDIRI setelah luncuran bidak pemain selesai.
+   *
+   * Mengapa: papan menyimpulkan luncuran dari perbedaan FEN, dan
+   * `geseranDariFen` menolak perubahan yang menggerakkan dua warna sekaligus
+   * (pengaman itu benar — satu langkah catur hanya memindahkan satu warna).
+   * Menerapkan pemain + balasan dalam satu `setFen` karena itu menghasilkan
+   * daftar luncuran kosong dan kedua bidak "teleport". Pemeriksa dua warna
+   * TIDAK dilonggarkan; urutan penerbitan FEN yang dipisah di sini.
+   *
+   * Jeda dibaca dari `GESER_ISEPIC.durasi` — tetapan yang sama dipakai
+   * `animate()` papan — jadi bukan angka arbitrer dan tidak bisa melenceng
+   * dari durasi luncuran sebenarnya.
+   */
+  const mainkan = useCallback(async (langkah) => {
+    // `batalBalasan.current` dipasang sinkron sebelum jeda pertama, jadi dua
+    // klik cepat tidak bisa lolos bersamaan menunggu state React ter-commit.
+    if (!soal || !belumSelesai || solusiBerjalan || balasanBerjalan || batalBalasan.current) return;
     const hasil = nilaiLangkah({ fen, langkahSoal: soal.langkah, indeks, pemain: langkah });
     if (!hasil.sah) return;
     if (!hasil.benar) {
@@ -214,37 +258,71 @@ export default function useSesiTekaTeki({
       setPesan("salah");
       return;
     }
-    let posisi = hasil.fenBaru;
-    let berikutnya = indeks + 1;
-    const dimainkan = [{ from: langkah.from, to: langkah.to, promotion: langkah.promotion }];
-    if (hasil.balasan) {
-      posisi = terapkanLangkah(posisi, hasil.balasan);
-      berikutnya = indeks + 2;
-      dimainkan.push(hasil.balasan);
-    }
-    setFen(posisi);
-    setIndeks(berikutnya);
-    setLangkahNyata((lama) => [...lama, ...dimainkan]);
+    const langkahPemain = { from: langkah.from, to: langkah.to, promotion: langkah.promotion };
     setPetunjuk({ tingkat: "kosong", petak: null, panah: null });
-    if (!hasil.selesai) { setPesan("benar"); return; }
-    setJalurSelesai(true);
-    // Soal yang sudah salah tetap tercatat salah meski jalur dituntaskan.
-    if (status === STATUS_SOAL.BELUM) tandai(STATUS_SOAL.BENAR);
-    setPesan("selesai");
-    if (lompatCepat) soalBaru(daftar, soal.rating);
-  }, [soal, belumSelesai, solusiBerjalan, fen, indeks, status, tandai, lompatCepat, soalBaru, daftar]);
+    // Status/waktu dicatat pada SAAT langkah pemain dimainkan, bukan setelah
+    // animasi: durasi luncuran tidak boleh ikut terhitung sebagai waktu berpikir.
+    const tandaiSelesai = () => {
+      if (!hasil.selesai) { setPesan("benar"); return; }
+      setJalurSelesai(true);
+      // Soal yang sudah salah tetap tercatat salah meski jalur dituntaskan.
+      if (status === STATUS_SOAL.BELUM) tandai(STATUS_SOAL.BENAR);
+      setPesan("selesai");
+    };
+
+    if (!hasil.balasan) {
+      setFen(hasil.fenBaru);
+      setIndeks(indeks + 1);
+      setLangkahNyata((lama) => [...lama, langkahPemain]);
+      tandaiSelesai();
+      if (hasil.selesai && lompatCepat) soalBaru(daftar, soal.rating);
+      return;
+    }
+
+    const posisiAkhir = terapkanLangkah(hasil.fenBaru, hasil.balasan);
+    const pengendali = new AbortController();
+    batalBalasan.current = pengendali;
+    setBalasanBerjalan(true);
+    // 1) Penerbitan langkah pemain saja → papan meluncurkan bidak pemain.
+    setFen(hasil.fenBaru);
+    setIndeks(indeks + 1);
+    setLangkahNyata((lama) => [...lama, langkahPemain]);
+    tandaiSelesai();
+
+    await jedaLuncuran(pengendali);
+    if (pengendali.signal.aborted) return; // soal berganti/dibatalkan: jangan terapkan balasan
+    // 2) Balasan lawan sebagai FEN tersendiri → luncuran kedua, bukan lompatan gabungan.
+    setFen(posisiAkhir);
+    setIndeks(indeks + 2);
+    setLangkahNyata((lama) => [...lama, hasil.balasan]);
+
+    if (hasil.selesai && lompatCepat) {
+      // Luncuran balasan dibiarkan selesai dulu; kalau soal berikutnya langsung
+      // dibuka, FEN-nya menimpa posisi ini dan balasan tidak pernah terlihat.
+      await jedaLuncuran(pengendali);
+      if (pengendali.signal.aborted) return;
+      batalBalasan.current = null;
+      setBalasanBerjalan(false);
+      soalBaru(daftar, soal.rating);
+      return;
+    }
+    batalBalasan.current = null;
+    setBalasanBerjalan(false);
+  }, [soal, belumSelesai, solusiBerjalan, balasanBerjalan, fen, indeks, status, tandai, lompatCepat, soalBaru, daftar, jedaLuncuran]);
 
   const ambilPetunjuk = useCallback(() => {
-    if (!soal || !belumSelesai || solusiBerjalan) return;
+    // Selama balasan lawan meluncur, indeks sudah maju ke langkah lawan;
+    // petunjuk saat itu akan menunjuk langkah yang bukan milik pemain.
+    if (!soal || !belumSelesai || solusiBerjalan || balasanBerjalan) return;
     const diharapkan = langkahDiharapkan(soal.langkah, indeks);
     setPetunjuk((lama) => petunjukBerikutnya(lama.tingkat, diharapkan));
     // Memakai petunjuk berarti soal tidak lagi dihitung benar.
     if (status === STATUS_SOAL.BELUM) tandai(STATUS_SOAL.SALAH);
     setPesan("salah");
-  }, [soal, belumSelesai, solusiBerjalan, indeks, status, tandai]);
+  }, [soal, belumSelesai, solusiBerjalan, balasanBerjalan, indeks, status, tandai]);
 
   const lihatSolusi = useCallback(async () => {
-    if (!soal || solusiBerjalan) return;
+    if (!soal || solusiBerjalan || balasanBerjalan) return;
     if (status === STATUS_SOAL.BELUM) tandai(STATUS_SOAL.SALAH);
     setJalurSelesai(true);
     const pengendali = new AbortController();
@@ -262,15 +340,19 @@ export default function useSesiTekaTeki({
       await new Promise((selesaiJeda) => setTimeout(selesaiJeda, JEDA_SOLUSI));
     }
     if (!pengendali.signal.aborted) { setSolusiBerjalan(false); setPesan("solusi"); }
-  }, [soal, solusiBerjalan, status, tandai]);
+  }, [soal, solusiBerjalan, balasanBerjalan, status, tandai]);
 
   const bersihkanSesi = useCallback(() => {
     batalSolusi.current?.abort?.();
+    // `soalBaru` kembali lebih awal bila kolam kosong, jadi rangkaian balasan
+    // dibatalkan di sini juga — bukan hanya lewat bukaSoal/kosongkanSesi.
+    batalkanBalasan();
+    setBalasanBerjalan(false);
     setRiwayat([]);
     riwayatRef.current = [];
     setAktif(-1);
     soalBaru(daftar, null);
-  }, [daftar, soalBaru]);
+  }, [daftar, soalBaru, batalkanBalasan]);
 
   const pilihRiwayat = useCallback((i) => {
     const entri = riwayat[i];
@@ -293,6 +375,8 @@ export default function useSesiTekaTeki({
 
   return {
     memuat, soal, fen, indeks, langkahNyata, riwayat, aktif, pesan, petunjuk, waktu, solusiBerjalan,
+    // Rangkaian balasan otomatis masih meluncur → papan dikunci sebentar.
+    balasanBerjalan,
     temaTersedia,
     statistik: hitungStatistik(riwayat),
     status, belumSelesai,
