@@ -93,19 +93,36 @@ export default function useSesiTekaTeki({
   // Muat sumber lalu buka soal pertama. Pergantian sumber memulai sesi baru.
   useEffect(() => {
     let hidup = true;
+    batalSolusi.current?.abort?.();
     setMemuat(true);
+    // Sesi sumber lama dibersihkan SEBELUM menunggu unduhan. Kalau soal/FEN
+    // lama dibiarkan, papan masih bisa dimainkan selama sumber baru dimuat dan
+    // langkahnya tercatat ke soal sumber lama; pewaktu lama juga terus berjalan.
+    setSolusiBerjalan(false);
+    setDaftar([]);
+    setSoal(null);
+    setFen("");
+    setIndeks(0);
+    setLangkahNyata([]);
+    setPetunjuk({ tingkat: "kosong", petak: null, panah: null });
+    setPesan("");
+    setJalurSelesai(false);
+    setRiwayat([]);
+    riwayatRef.current = [];
+    setAktif(-1);
+    terekam.current = 0;
+    setWaktu(0);
+    setMulai(null);
     muatSoal(sumber).then((hasil) => {
+      // Respons sumber yang sudah ditinggalkan tidak boleh menimpa sumber aktif.
       if (!hidup) return;
       setDaftar(hasil);
       setMemuat(false);
-      setRiwayat([]);
-      riwayatRef.current = [];
-      setAktif(-1);
-      if (!hasil.length) { setSoal(null); setFen(""); setPesan("gagal"); return; }
+      if (!hasil.length) { setPesan("gagal"); return; }
       const dipilih = pilihSoal(hasil, {
         ratingMin, ratingMax, tema: tema || null,
       });
-      if (!dipilih) { setSoal(null); setFen(""); setPesan("kosong"); return; }
+      if (!dipilih) { setPesan("kosong"); return; }
       const entri = buatEntri(dipilih);
       setRiwayat([entri]);
       riwayatRef.current = [entri];

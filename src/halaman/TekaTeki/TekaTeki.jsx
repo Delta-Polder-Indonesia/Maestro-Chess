@@ -51,7 +51,9 @@ export default function TekaTeki({ onAnalisa }) {
   const tampilIndex = tinjau === null ? lastIndex : Math.min(tinjau, lastIndex);
   const meninjau = tinjau !== null && tampilIndex < lastIndex;
   const fenTampil = meninjau ? (jejak[tampilIndex]?.fen ?? sesi.fen) : sesi.fen;
-  const terkunci = meninjau || !sesi.belumSelesai || sesi.solusiBerjalan;
+  // Selama sumber dimuat papan wajib terkunci: soal sumber lama sudah
+  // dibersihkan, tetapi papan tidak boleh menerima langkah sampai soal baru ada.
+  const terkunci = meninjau || sesi.memuat || !sesi.soal || !sesi.belumSelesai || sesi.solusiBerjalan;
   // Langkah yang menghasilkan posisi tampil → sorotan + asal luncuran. Diambil
   // dari jejak yang sama dengan daftar langkah dan FEN tampil, jadi sorotan
   // selalu cocok dengan papan — termasuk saat pemain menang lewat jalur

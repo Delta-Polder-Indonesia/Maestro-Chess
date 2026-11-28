@@ -393,6 +393,139 @@ function pasangPapanInteraktif(tes, { fen = new Chess().fen(), ...props } = {}) 
   };
 }
 
+// Sumber terkendali: setiap panggilan muatSoal mengembalikan janji yang bisa
+// diselesaikan manual, untuk menguji keadaan selama memuat dan respons yang
+// datang tidak berurutan.
+function sumberTerkendali() {
+  const permintaan = [];
+  return {
+    permintaan,
+    muat(jenis) {
+      let selesai;
+      const janji = new Promise((r) => { selesai = r; });
+      permintaan.push({ jenis, selesai });
+      return janji;
+    },
+  };
+}
+
+test("switching source locks the board and clears the old puzzle, steps and timer while loading", async (tes) => {
+  const jam = tes.mock.timers;
+  jam.enable({ apis: ["Date", "setInterval"], now: 1_000_000 });
+  const interval = pasangPenghitungInterval(tes);
+  const kendali = sumberTerkendali();
+  const layar = await pasangLayar(tes, { muat: kendali.muat, prefs: { catatWaktu: true } }).mount();
+  tes.after(() => layar.unmount());
+  // Soal pertama dari sumber skakmat.
+  await layar.jalankan(() => kendali.permintaan[0].selesai(DAFTAR_UJI));
+  assert.equal(layar.sesi().memuat, false);
+  assert.equal(layar.papan().terkunci, false, "papan bisa dimainkan setelah soal terbuka");
+  await layar.jalankan(() => jam.tick(3000));
+  assert.equal(layar.sesi().waktu, 3000);
+  await layar.jalankan(({ papan }) => papan.onLangkah({ from: "e1", to: "e8" }));
+  assert.equal(layar.sesi().riwayat.length, 1);
+
+  // Ganti sumber: selama memuat tidak ada soal/FEN lama, papan terkunci, timer mati.
+  await layar.jalankan(({ panel }) => panel.onSumber("harian"));
+  assert.equal(layar.sesi().memuat, true);
+  assert.equal(layar.sesi().soal, null, "soal sumber lama dibersihkan saat memuat");
+  assert.equal(layar.sesi().fen, "", "FEN lama tidak tersisa");
+  assert.equal(layar.sesi().indeks, 0);
+  assert.deepEqual(layar.sesi().langkahNyata, []);
+  assert.deepEqual(layar.sesi().riwayat, [], "riwayat sesi lama tidak bercampur");
+  assert.equal(layar.sesi().waktu, 0, "pewaktu lama dibersihkan");
+  assert.equal(interval.size, 0, "tidak ada interval pewaktu selama memuat");
+  assert.equal(layar.papan().terkunci, true, "papan terkunci selama memuat");
+  assert.ok(layar.teks().includes("tekaTeki.status.memuat"), "indikator pemuatan tetap tampil");
+
+  // Langkah yang dikirim selama memuat tidak mengubah apa pun.
+  await layar.jalankan(({ papan }) => papan.onLangkah?.({ from: "e1", to: "e8" }));
+  assert.equal(layar.sesi().soal, null);
+  assert.deepEqual(layar.sesi().riwayat, []);
+
+  // Sumber baru tiba: soal baru terbuka dan papan hidup kembali.
+  const harian = [modulTekaTeki.normalisasiSoal({ tanggal: "2025-01-01", fen: FEN_MAT, langkah: "e1-e8" }, "harian")];
+  await layar.jalankan(() => kendali.permintaan[1].selesai(harian));
+  assert.equal(layar.sesi().memuat, false);
+  assert.equal(layar.sesi().soal.jenis, "harian");
+  assert.equal(layar.papan().terkunci, false);
+  assert.equal(layar.sesi().waktu, 0, "waktu soal baru mulai dari nol");
+});
+
+test("switching source while the solution is replaying stops it and never resumes on the new source", async (tes) => {
+  const kendali = sumberTerkendali();
+  const layar = await pasangLayar(tes, { muat: kendali.muat, prefs: { ratingMin: 600 } }).mount();
+  tes.after(() => layar.unmount());
+  await layar.jalankan(() => kendali.permintaan[0].selesai([SOAL_PANJANG]));
+  // Mulai pemutaran solusi tanpa menunggu selesai, lalu ganti sumber.
+  let putar;
+  await act(async () => { putar = layar.sesi().lihatSolusi(); });
+  assert.equal(layar.sesi().solusiBerjalan, true);
+  await layar.jalankan(({ panel }) => panel.onSumber("video"));
+  assert.equal(layar.sesi().solusiBerjalan, false, "pemutaran solusi dihentikan");
+  assert.equal(layar.sesi().soal, null);
+  assert.equal(layar.papan().terkunci, true);
+  await act(async () => { await putar; });
+  assert.equal(layar.sesi().solusiBerjalan, false, "pemutaran lama tidak menghidupkan state lagi");
+  assert.equal(layar.sesi().soal, null, "sumber lama tidak menimpa keadaan memuat");
+  await layar.jalankan(() => kendali.permintaan[1].selesai(DAFTAR_UJI));
+  assert.equal(layar.sesi().soal.jenis, "skakmat");
+  assert.equal(layar.sesi().solusiBerjalan, false);
+});
+
+test("rapid source switches ignore out-of-order responses and keep the newest source", async (tes) => {
+  const kendali = sumberTerkendali();
+  const layar = await pasangLayar(tes, { muat: kendali.muat }).mount();
+  tes.after(() => layar.unmount());
+  // skakmat → video → harian, semua masih menggantung.
+  await layar.jalankan(({ panel }) => panel.onSumber("video"));
+  await layar.jalankan(({ panel }) => panel.onSumber("harian"));
+  assert.equal(kendali.permintaan.length, 3);
+  const harian = [modulTekaTeki.normalisasiSoal({ tanggal: "2025-02-02", fen: FEN_MAT, langkah: "e1-e8" }, "harian")];
+  const video = [modulTekaTeki.normalisasiSoal({ problemid: 900, fen: FEN_MAT2, moves: "e1-e8", rating: 1200, tema: "endgame" }, "video")];
+
+  // Respons sumber LAMA datang lebih dulu, lalu yang terbaru.
+  await layar.jalankan(() => kendali.permintaan[0].selesai(DAFTAR_UJI));
+  assert.equal(layar.sesi().soal, null, "respons skakmat basi diabaikan");
+  assert.equal(layar.sesi().memuat, true);
+  await layar.jalankan(() => kendali.permintaan[1].selesai(video));
+  assert.equal(layar.sesi().soal, null, "respons video basi diabaikan");
+  await layar.jalankan(() => kendali.permintaan[2].selesai(harian));
+  assert.equal(layar.sesi().memuat, false);
+  assert.equal(layar.sesi().soal.jenis, "harian", "hanya sumber terbaru yang dipakai");
+  assert.equal(layar.sesi().soal.id, "harian-2025-02-02");
+
+  // Respons terbaru datang lebih dulu, lalu yang basi: tetap tidak menimpa.
+  await layar.jalankan(({ panel }) => panel.onSumber("video"));
+  await layar.jalankan(({ panel }) => panel.onSumber("skakmat"));
+  await layar.jalankan(() => kendali.permintaan[4].selesai(DAFTAR_UJI));
+  assert.equal(layar.sesi().soal.jenis, "skakmat");
+  await layar.jalankan(() => kendali.permintaan[3].selesai(video));
+  assert.equal(layar.sesi().soal.jenis, "skakmat", "respons video yang terlambat tidak menimpa");
+  assert.equal(layar.sesi().memuat, false);
+});
+
+test("an empty or failed source still reports the right message after the lock", async (tes) => {
+  const kendali = sumberTerkendali();
+  const layar = await pasangLayar(tes, { muat: kendali.muat }).mount();
+  tes.after(() => layar.unmount());
+  await layar.jalankan(() => kendali.permintaan[0].selesai([]));
+  assert.equal(layar.sesi().memuat, false);
+  assert.equal(layar.sesi().soal, null);
+  assert.equal(layar.sesi().pesan, "gagal", "sumber gagal dimuat");
+  assert.ok(layar.teks().includes("tekaTeki.status.gagal"));
+  assert.equal(layar.papan().terkunci, true, "papan tetap terkunci tanpa soal");
+
+  // Sumber berikutnya ada datanya tetapi tersaring habis → pesan "kosong".
+  await layar.jalankan(({ panel }) => panel.onSumber("video"));
+  assert.equal(layar.papan().terkunci, true);
+  const diLuarRentang = [modulTekaTeki.normalisasiSoal({ problemid: 901, fen: FEN_MAT, moves: "e1-e8", rating: 2700, tema: "endgame" }, "video")];
+  await layar.jalankan(() => kendali.permintaan[1].selesai(diLuarRentang));
+  assert.equal(layar.sesi().pesan, "kosong");
+  assert.ok(layar.teks().includes("tekaTeki.status.kosong"));
+  assert.equal(layar.sesi().soal, null);
+});
+
 test("right-drag arrows keep the modifier colour end to end (default, Shift, Ctrl, Alt)", (tes) => {
   // Konvensi proyek: Shift=merah, Ctrl/Cmd=hijau, Alt=biru, tanpa modifier=bawaan.
   const kasus = [
